@@ -1,0 +1,60 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+.next/
+out/
+dist/
+build/
+*.tsbuildinfo
+
+# Turbo
+.turbo/
+
+# Vercel
+.vercel/
+
+# Environment — NEVER commit. See .env.example for the contract.
+.env
+.env.*
+!.env.example
+
+# Test artifacts
+coverage/
+playwright-report/
+test-results/
+blob-report/
+.playwright/
+
+# Financial documents and PII — must never enter version control (spec §126)
+documents/
+receipts/
+statements/
+exports/
+fixtures/pii/
+*.ofx
+*.qfx
+# Bank statements / spreadsheets. Test fixtures live in fixtures/synthetic/ and are
+# force-added deliberately when they contain only generated data.
+*.pdf
+*.csv
+*.xlsx
+!fixtures/synthetic/**
+
+# Supabase local
+supabase/.temp/
+supabase/.branches/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*

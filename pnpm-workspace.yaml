@@ -1,0 +1,18 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+
+# Packages allowed to run install scripts. Everything else is blocked by default —
+# a postinstall script is arbitrary code execution inside a repo that will hold
+# financial data (spec §47). Each entry below is a build toolchain that compiles
+# a native binary and genuinely needs one.
+allowBuilds:
+  esbuild: true
+  '@tailwindcss/oxide': true
+  sharp: true
+  unrs-resolver: true
+  '@parcel/watcher': true
+  '@swc/core': true
+
+minimumReleaseAgeExclude:
+  - tsx@4.23.9

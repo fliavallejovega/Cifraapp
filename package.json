@@ -1,0 +1,35 @@
+{
+  "name": "norte",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Financial operating system for households, couples, families and independent professionals.",
+  "packageManager": "pnpm@11.20.0",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint -- --fix",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:watch": "turbo run test:watch",
+    "test:e2e": "pnpm --filter @app/web test:e2e",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,mjs,cjs,json,md,css,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,mjs,cjs,json,md,css,yml,yaml}\"",
+    "db:migrate": "pnpm --filter @app/database db:migrate",
+    "db:seed": "pnpm --filter @app/database db:seed",
+    "db:reset": "pnpm --filter @app/database db:reset",
+    "db:types": "pnpm --filter @app/database db:types",
+    "db:generate": "pnpm --filter @app/database db:generate",
+    "clean": "turbo run clean && rm -rf node_modules .turbo"
+  },
+  "devDependencies": {
+    "@app/config": "workspace:*",
+    "prettier": "3.9.6",
+    "prettier-plugin-tailwindcss": "0.8.1",
+    "turbo": "2.10.8",
+    "typescript": "6.0.3"
+  }
+}
