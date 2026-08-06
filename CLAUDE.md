@@ -1,7 +1,10 @@
 # Working in this repository
 
 A financial operating system for households and independent professionals.
-Read `PRODUCT.md` for product truth, `docs/architecture.md` for structure, and
+
+**Start with [`docs/context.md`](docs/context.md)** — it carries the complete
+system context, the current state, and full detail on all 21 remaining phases.
+Then `PRODUCT.md` for product truth, `docs/architecture.md` for structure, and
 `docs/decisions.md` before proposing anything that contradicts an ADR.
 
 ## Commands

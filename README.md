@@ -62,15 +62,16 @@ docs/              Architecture, database, security, decisions, roadmap
 
 ## Documentation
 
-|                                              |                                               |
-| -------------------------------------------- | --------------------------------------------- |
-| [PRODUCT.md](PRODUCT.md)                     | What the product is and who it is for         |
-| [docs/architecture.md](docs/architecture.md) | Structure, dependency direction, request path |
-| [docs/database.md](docs/database.md)         | Schemas, conventions, migrations, seed        |
-| [docs/security.md](docs/security.md)         | What is protected, and what is not yet        |
-| [docs/decisions.md](docs/decisions.md)       | Architecture decision records                 |
-| [docs/roadmap.md](docs/roadmap.md)           | Phases and status                             |
-| [CLAUDE.md](CLAUDE.md)                       | Conventions and non-negotiable rules          |
+|                                              |                                                      |
+| -------------------------------------------- | ---------------------------------------------------- |
+| [docs/context.md](docs/context.md)           | **Full context, state, and all 21 remaining phases** |
+| [PRODUCT.md](PRODUCT.md)                     | What the product is and who it is for                |
+| [docs/architecture.md](docs/architecture.md) | Structure, dependency direction, request path        |
+| [docs/database.md](docs/database.md)         | Schemas, conventions, migrations, seed               |
+| [docs/security.md](docs/security.md)         | What is protected, and what is not yet               |
+| [docs/decisions.md](docs/decisions.md)       | Architecture decision records                        |
+| [docs/roadmap.md](docs/roadmap.md)           | Phases and status                                    |
+| [CLAUDE.md](CLAUDE.md)                       | Conventions and non-negotiable rules                 |
 
 ## License
 
