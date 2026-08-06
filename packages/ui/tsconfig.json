@@ -1,0 +1,4 @@
+{
+  "extends": "@app/config/tsconfig/next.json",
+  "include": ["src/**/*.ts", "src/**/*.tsx", "eslint.config.js"]
+}

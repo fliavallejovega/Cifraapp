@@ -1,0 +1,35 @@
+{
+  "common": {
+    "appName": "Norte",
+    "tagline": "Your life's financial system.",
+    "loading": "Loading…",
+    "retry": "Try again"
+  },
+  "status": {
+    "title": "System status",
+    "subtitle": "Phase 0 — repository foundation.",
+    "descriptionLead": "This screen is provisional. It exists to prove the application boots, that both language routes respond, and that the database is connected.",
+    "checks": {
+      "heading": "Checks",
+      "application": "Application",
+      "applicationDetail": "Next.js with the App Router and Server Components.",
+      "localization": "Languages",
+      "localizationDetail": "Spanish and English, with per-locale routes.",
+      "database": "Database",
+      "databaseDetailConnected": "Connected. Schema version {version}.",
+      "databaseDetailPending": "Not connected. Supabase credentials are not configured yet."
+    },
+    "state": {
+      "ready": "Ready",
+      "pending": "Pending"
+    },
+    "switchLanguage": "Español"
+  },
+  "errors": {
+    "notFoundTitle": "We couldn't find this page",
+    "notFoundBody": "The link may be broken, or the page may have moved.",
+    "genericTitle": "Something went wrong",
+    "genericBody": "We couldn't complete that. Please try again in a moment.",
+    "backHome": "Back to start"
+  }
+}

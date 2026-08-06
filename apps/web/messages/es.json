@@ -1,0 +1,35 @@
+{
+  "common": {
+    "appName": "Norte",
+    "tagline": "El sistema financiero de tu vida.",
+    "loading": "Cargando…",
+    "retry": "Reintentar"
+  },
+  "status": {
+    "title": "Estado del sistema",
+    "subtitle": "Fase 0 — fundación del repositorio.",
+    "descriptionLead": "Esta pantalla es provisional. Existe para probar que la aplicación arranca, que las dos rutas de idioma responden y que la base de datos está conectada.",
+    "checks": {
+      "heading": "Comprobaciones",
+      "application": "Aplicación",
+      "applicationDetail": "Next.js con App Router y componentes de servidor.",
+      "localization": "Idiomas",
+      "localizationDetail": "Español e inglés, con rutas por locale.",
+      "database": "Base de datos",
+      "databaseDetailConnected": "Conectada. Esquema versión {version}.",
+      "databaseDetailPending": "Sin conectar. Falta configurar las credenciales de Supabase."
+    },
+    "state": {
+      "ready": "Listo",
+      "pending": "Pendiente"
+    },
+    "switchLanguage": "English"
+  },
+  "errors": {
+    "notFoundTitle": "No encontramos esta página",
+    "notFoundBody": "El enlace puede estar roto o la página pudo haberse movido.",
+    "genericTitle": "Algo salió mal",
+    "genericBody": "No pudimos completar la operación. Vuelve a intentarlo en un momento.",
+    "backHome": "Volver al inicio"
+  }
+}

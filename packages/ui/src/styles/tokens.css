@@ -1,0 +1,136 @@
+/*
+ * PROVISIONAL DESIGN TOKENS — Phase 0.
+ *
+ * This file exists so the application has a coherent surface to boot on. It is
+ * NOT the product's visual identity. Phase 1 replaces the color, type and
+ * surface tokens wholesale, alongside a DESIGN.md that records the decision.
+ *
+ * The motion and spacing tokens below are the exception: they encode behavior
+ * rather than style, and are expected to survive Phase 1 largely intact.
+ */
+
+@theme {
+  /* --- Type ---------------------------------------------------------------
+   * A system stack until Phase 1 chooses faces. System fonts already ship
+   * optical sizing and tracking tables tuned for interface text, which is a
+   * better starting point than an arbitrary webfont.
+   */
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Tracking is size-specific: large text reads too loose at default spacing,
+     small text too tight. One letter-spacing value for every size is wrong
+     somewhere. */
+  --tracking-display: -0.022em;
+  --tracking-title: -0.014em;
+  --tracking-body: 0em;
+  --tracking-caption: 0.008em;
+
+  /* --- Space ---------------------------------------------------------------
+   * A 4px base. Every gap in the interface is a multiple of it, so alignment is
+   * a property of the system rather than a per-component negotiation.
+   */
+  --spacing: 0.25rem;
+
+  /* --- Surface -------------------------------------------------------------
+   * Monochrome, per the brief. Values are deliberately plain; Phase 1 owns the
+   * real palette.
+   */
+  --color-canvas: oklch(99% 0 0);
+  --color-surface: oklch(100% 0 0);
+  --color-border: oklch(91% 0 0);
+  --color-ink: oklch(21% 0 0);
+  --color-ink-muted: oklch(52% 0 0);
+  --color-ink-subtle: oklch(66% 0 0);
+
+  /* Semantic color is restrained and never the only signal — WCAG 2.2 AA
+     requires meaning to survive without hue (spec §64). */
+  --color-positive: oklch(52% 0.13 155);
+  --color-negative: oklch(53% 0.19 25);
+  --color-caution: oklch(62% 0.14 75);
+
+  /* --- Motion --------------------------------------------------------------
+   * Two springs, not a library of easings.
+   *
+   * The default is critically damped: it settles without overshoot, which is
+   * what an interface element that simply appeared should do. Bounce is
+   * reserved for motion the user's own gesture set going — a flicked card, a
+   * dragged sheet — because overshoot on something that merely faded in reads
+   * as decoration rather than physics.
+   *
+   * These CSS values cover non-interactive transitions. Anything a user can
+   * grab mid-flight uses a real spring in JS, so it can be interrupted and
+   * redirected from its current on-screen value.
+   */
+  --ease-settle: linear(
+    0,
+    0.0018 3.7%,
+    0.0722 12.3%,
+    0.2223 21%,
+    0.4212 29.6%,
+    0.6244 38.3%,
+    0.8039 47%,
+    0.9367 55.6%,
+    1.0175 64.3%,
+    1.0532 73%,
+    1.0553 81.6%,
+    1.0397 90.3%,
+    1.0004 100%
+  );
+  --ease-standard: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+
+  --duration-instant: 100ms;
+  --duration-quick: 200ms;
+  --duration-standard: 320ms;
+  --duration-deliberate: 480ms;
+
+  /* --- Elevation -----------------------------------------------------------
+   * Restrained. A financial surface earns separation from borders and spacing
+   * first; shadow is the last resort, not the first.
+   */
+  --shadow-raised: 0 1px 2px oklch(0% 0 0 / 0.04), 0 1px 3px oklch(0% 0 0 / 0.06);
+  --shadow-overlay: 0 8px 24px oklch(0% 0 0 / 0.08), 0 2px 6px oklch(0% 0 0 / 0.04);
+
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+}
+
+/*
+ * Dark is not an afterthought and not a default. Phase 1 decides which one the
+ * product opens in, based on where and under what light it is actually used.
+ */
+@media (prefers-color-scheme: dark) {
+  @theme {
+    --color-canvas: oklch(16% 0 0);
+    --color-surface: oklch(20% 0 0);
+    --color-border: oklch(29% 0 0);
+    --color-ink: oklch(96% 0 0);
+    --color-ink-muted: oklch(70% 0 0);
+    --color-ink-subtle: oklch(55% 0 0);
+  }
+}
+
+/*
+ * Reduced motion means a gentler equivalent, not the absence of feedback.
+ * Opacity changes that aid comprehension stay; travel and overshoot go.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Figures must align in a column. Non-tabular digits make a balance sheet
+   ripple as values change. */
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}

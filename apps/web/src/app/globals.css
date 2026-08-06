@@ -1,0 +1,25 @@
+@import 'tailwindcss';
+@import '@app/ui/styles.css';
+
+@layer base {
+  html {
+    /* Spacing scales in rem so a user's larger text setting grows the layout
+       with it, instead of overflowing a fixed-pixel container (spec §64). */
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+  }
+
+  /* A visible focus ring is not optional in a product where a keystroke can
+     move money. */
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+}
