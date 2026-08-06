@@ -1,0 +1,47 @@
+{
+  "name": "@app/database",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./schema": {
+      "types": "./dist/schema/index.d.ts",
+      "default": "./dist/schema/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist .turbo",
+    "typecheck": "tsc -p tsconfig.json",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "db:seed": "tsx scripts/seed.ts",
+    "db:reset": "tsx scripts/reset.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:types": "supabase gen types typescript --db-url \"$DIRECT_URL\" --schema public --schema app --schema platform > src/generated/supabase.ts"
+  },
+  "dependencies": {
+    "@app/domain": "workspace:*",
+    "@app/validation": "workspace:*",
+    "drizzle-orm": "0.45.2",
+    "postgres": "3.4.9"
+  },
+  "devDependencies": {
+    "@app/config": "workspace:*",
+    "@types/node": "26.1.2",
+    "drizzle-kit": "0.31.10",
+    "eslint": "10.8.0",
+    "tsx": "4.23.9",
+    "typescript": "6.0.3",
+    "vitest": "4.1.10"
+  }
+}
