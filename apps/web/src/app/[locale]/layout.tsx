@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 
 import { routing } from '@/i18n/routing';
 
+import { archivo, chivoMono } from '../fonts';
 import '../globals.css';
 
 export function generateStaticParams(): { locale: string }[] {
@@ -21,7 +22,7 @@ export async function generateMetadata({
   const t = await getTranslations({ locale, namespace: 'common' });
 
   return {
-    title: t('appName'),
+    title: { default: t('appName'), template: `%s · ${t('appName')}` },
     description: t('tagline'),
     robots: { index: false, follow: false },
   };
@@ -46,12 +47,12 @@ export default async function LocaleLayout({
   // next-intl points at `next/root-params` as the successor, but Next 16.3 only
   // generates types for that module during a build, so importing it today
   // resolves to `any` and defeats the strict-type rules this repo runs on.
-  // Migration is tracked for Phase 1, when the app's routing settles.
+  // Migration is tracked for Phase 2 (ADR-011).
   // eslint-disable-next-line @typescript-eslint/no-deprecated
   setRequestLocale(locale);
 
   return (
-    <html lang={locale}>
+    <html lang={locale} className={`${archivo.variable} ${chivoMono.variable}`}>
       <body className="min-h-dvh antialiased">
         <NextIntlClientProvider>{children}</NextIntlClientProvider>
       </body>

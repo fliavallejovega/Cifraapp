@@ -1,29 +1,51 @@
 {
   "common": {
     "appName": "Norte",
-    "tagline": "El sistema financiero de tu vida.",
+    "tagline": "Sabes cuánto tienes, qué ya está comprometido y qué debe hacer el próximo dólar.",
     "loading": "Cargando…",
     "retry": "Reintentar"
   },
-  "status": {
-    "title": "Estado del sistema",
-    "subtitle": "Fase 0 — fundación del repositorio.",
-    "descriptionLead": "Esta pantalla es provisional. Existe para probar que la aplicación arranca, que las dos rutas de idioma responden y que la base de datos está conectada.",
-    "checks": {
-      "heading": "Comprobaciones",
-      "application": "Aplicación",
-      "applicationDetail": "Next.js con App Router y componentes de servidor.",
-      "localization": "Idiomas",
-      "localizationDetail": "Español e inglés, con rutas por locale.",
-      "database": "Base de datos",
-      "databaseDetailConnected": "Conectada. Esquema versión {version}.",
-      "databaseDetailPending": "Sin conectar. Falta configurar las credenciales de Supabase."
+  "overview": {
+    "title": "Tu posición",
+    "switchLanguage": "English",
+    "gauge": {
+      "label": "Disponible para gastar",
+      "buffer": "Colchón mínimo",
+      "explanation": "El nivel baja cuando comprometes dinero y sube solo cuando entra dinero de verdad. Lo que está por encima de la superficie ya tiene dueño."
     },
-    "state": {
-      "ready": "Listo",
-      "pending": "Pendiente"
+    "readout": {
+      "label": "Disponible para gastar",
+      "detail": "de {liquid} líquido, con {committed} ya comprometido"
     },
-    "switchLanguage": "English"
+    "stats": {
+      "netWorth": "Patrimonio neto",
+      "committed": "Comprometido"
+    },
+    "claims": {
+      "title": "Qué reclama ese dinero",
+      "detail": "Compromisos de los próximos 30 días, ordenados por fecha de vencimiento.",
+      "total": "Total comprometido",
+      "columns": {
+        "item": "Concepto",
+        "due": "Vence",
+        "kind": "Tipo",
+        "amount": "Monto"
+      },
+      "kinds": {
+        "essential": "Esencial",
+        "debt": "Deuda",
+        "reserve": "Reserva"
+      },
+      "items": {
+        "rent": "Alquiler",
+        "electricity": "Electricidad",
+        "visaMinimum": "Visa — pago mínimo",
+        "mastercardMinimum": "Mastercard — pago mínimo",
+        "taxReserve": "Reserva fiscal estimada",
+        "internet": "Internet"
+      }
+    },
+    "synthetic": "Las cifras de esta pantalla son datos de demostración generados, no de una persona real. Existen para construir y evaluar el sistema visual antes de que haya cuentas conectadas."
   },
   "errors": {
     "notFoundTitle": "No encontramos esta página",

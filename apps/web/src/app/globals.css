@@ -1,25 +1,32 @@
 @import 'tailwindcss';
 @import '@app/ui/styles.css';
 
+/* Tailwind cannot see class names inside a workspace package unless told where
+   to look. Without this, every utility used in @app/ui is dropped from the
+   build. */
+@source '../../../../packages/ui/src';
+
 @layer base {
   html {
-    /* Spacing scales in rem so a user's larger text setting grows the layout
-       with it, instead of overflowing a fixed-pixel container (spec §64). */
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
 
   body {
-    background-color: var(--color-canvas);
+    background-color: var(--color-ground);
     color: var(--color-ink);
   }
 
-  /* A visible focus ring is not optional in a product where a keystroke can
-     move money. */
+  /* A keystroke in this product eventually moves money. The focus ring is not
+     optional and is never removed. */
   :focus-visible {
     outline: 2px solid var(--color-ink);
     outline-offset: 2px;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-xs);
+  }
+
+  ::selection {
+    background-color: color-mix(in oklch, var(--color-ink) 16%, transparent);
   }
 }

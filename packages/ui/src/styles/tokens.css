@@ -1,122 +1,262 @@
 /*
- * PROVISIONAL DESIGN TOKENS — Phase 0.
+ * Design tokens — the committed world.
  *
- * This file exists so the application has a coherent surface to boot on. It is
- * NOT the product's visual identity. Phase 1 replaces the color, type and
- * surface tokens wholesale, alongside a DESIGN.md that records the decision.
+ * Instrument gauge: engraved gradations, named thresholds, a defined surface
+ * line, read-outs in tabular figures. Paper ground, graphite ink, color reserved
+ * for financial meaning only. See DESIGN.md for the direction contract.
  *
- * The motion and spacing tokens below are the exception: they encode behavior
- * rather than style, and are expected to survive Phase 1 largely intact.
+ * Light is the default, chosen from the use scene: a person reviewing a
+ * statement at a desk in daylight. Dark is fully designed, not derived.
  */
 
-@theme {
+@theme inline {
   /* --- Type ---------------------------------------------------------------
-   * A system stack until Phase 1 chooses faces. System fonts already ship
-   * optical sizing and tracking tables tuned for interface text, which is a
-   * better starting point than an arbitrary webfont.
+   * Archivo for interface and prose; Chivo Mono for measurement — figures,
+   * gradation labels, anything that is a reading rather than a word. Same
+   * foundry, related skeletons, so the two sit together without a seam.
+   *
+   * Monospace here is not a costume for "technical". Money is measurement, and
+   * a figure column that reflows as values change is a defect.
    */
-  --font-sans:
-    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-  --font-mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-chivo-mono), ui-monospace, 'SF Mono', Menlo, monospace;
 
-  /* Tracking is size-specific: large text reads too loose at default spacing,
-     small text too tight. One letter-spacing value for every size is wrong
-     somewhere. */
+  /* Tracking is size-specific. One value for every size is wrong somewhere:
+     large text reads too loose at default spacing, small text too tight. */
+  --tracking-readout: -0.03em;
   --tracking-display: -0.022em;
   --tracking-title: -0.014em;
   --tracking-body: 0em;
-  --tracking-caption: 0.008em;
+  --tracking-label: 0.02em;
+
+  /* --- Surface ------------------------------------------------------------ */
+  --color-ground: var(--c-ground);
+  --color-ground-sunk: var(--c-ground-sunk);
+  --color-ground-raised: var(--c-ground-raised);
+
+  --color-ink: var(--c-ink);
+  --color-ink-secondary: var(--c-ink-secondary);
+  --color-ink-tertiary: var(--c-ink-tertiary);
+  --color-ink-inverse: var(--c-ink-inverse);
+
+  --color-rule: var(--c-rule);
+  --color-rule-strong: var(--c-rule-strong);
+
+  /* --- Semantic ------------------------------------------------------------
+   * Color carries financial meaning and nothing else. There is no brand accent:
+   * the primary action is solid ink. If a hue appears, it means something about
+   * money, and the interface also says so in words (spec §64).
+   */
+  --color-positive: var(--c-positive);
+  --color-negative: var(--c-negative);
+  --color-caution: var(--c-caution);
+  --color-signal: var(--c-signal);
+
+  --color-positive-sunk: var(--c-positive-sunk);
+  --color-negative-sunk: var(--c-negative-sunk);
+  --color-caution-sunk: var(--c-caution-sunk);
 
   /* --- Space ---------------------------------------------------------------
-   * A 4px base. Every gap in the interface is a multiple of it, so alignment is
-   * a property of the system rather than a per-component negotiation.
+   * 4px base in rem, so a larger text setting grows the layout with it.
    */
   --spacing: 0.25rem;
 
-  /* --- Surface -------------------------------------------------------------
-   * Monochrome, per the brief. Values are deliberately plain; Phase 1 owns the
-   * real palette.
+  /* --- Radius --------------------------------------------------------------
+   * Small. A level has a straight surface line, not a rounded cap.
    */
-  --color-canvas: oklch(99% 0 0);
-  --color-surface: oklch(100% 0 0);
-  --color-border: oklch(91% 0 0);
-  --color-ink: oklch(21% 0 0);
-  --color-ink-muted: oklch(52% 0 0);
-  --color-ink-subtle: oklch(66% 0 0);
+  --radius-xs: 0.125rem;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
 
-  /* Semantic color is restrained and never the only signal — WCAG 2.2 AA
-     requires meaning to survive without hue (spec §64). */
-  --color-positive: oklch(52% 0.13 155);
-  --color-negative: oklch(53% 0.19 25);
-  --color-caution: oklch(62% 0.14 75);
+  /* --- Elevation -----------------------------------------------------------
+   * Reserved for things that genuinely float over content. Every shadow carries
+   * an offset and a soft blur; a zero-offset halo is decoration.
+   */
+  --shadow-sheet: 0 1px 2px var(--c-shadow-near), 0 16px 40px -8px var(--c-shadow-far);
+  --shadow-popover: 0 1px 2px var(--c-shadow-near), 0 8px 24px -6px var(--c-shadow-far);
 
   /* --- Motion --------------------------------------------------------------
-   * Two springs, not a library of easings.
+   * Springs, because springs can be interrupted. These CSS curves cover
+   * non-interactive transitions; anything the user can grab mid-flight uses a
+   * real spring in JS so it animates from its live on-screen value.
    *
-   * The default is critically damped: it settles without overshoot, which is
-   * what an interface element that simply appeared should do. Bounce is
-   * reserved for motion the user's own gesture set going — a flicked card, a
-   * dragged sheet — because overshoot on something that merely faded in reads
-   * as decoration rather than physics.
-   *
-   * These CSS values cover non-interactive transitions. Anything a user can
-   * grab mid-flight uses a real spring in JS, so it can be interrupted and
-   * redirected from its current on-screen value.
+   * --ease-settle is critically damped: it arrives without overshoot, which is
+   * what something that merely appeared should do. --ease-carry has the slight
+   * overshoot that only earns its place after a gesture carried momentum.
    */
   --ease-settle: linear(
     0,
-    0.0018 3.7%,
-    0.0722 12.3%,
-    0.2223 21%,
-    0.4212 29.6%,
-    0.6244 38.3%,
-    0.8039 47%,
-    0.9367 55.6%,
-    1.0175 64.3%,
-    1.0532 73%,
-    1.0553 81.6%,
-    1.0397 90.3%,
-    1.0004 100%
+    0.0064 1.94%,
+    0.0592 5.5%,
+    0.2013 10.68%,
+    0.4235 16.5%,
+    0.6668 22.65%,
+    0.8226 27.19%,
+    0.9305 31.73%,
+    0.9994 36.6%,
+    1.0345 41.47%,
+    1.0459 46.99%,
+    1.0396 55.11%,
+    1.0009 79.9%,
+    1
   );
-  --ease-standard: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-carry: linear(
+    0,
+    0.0092 3.4%,
+    0.0851 9.71%,
+    0.2848 18.44%,
+    0.6002 28.14%,
+    0.8886 36.87%,
+    1.0397 43.18%,
+    1.0968 48.03%,
+    1.1069 53.36%,
+    1.0762 60.15%,
+    1.0186 70.34%,
+    0.9964 80.05%,
+    1
+  );
   --ease-exit: cubic-bezier(0.4, 0, 1, 1);
 
-  --duration-instant: 100ms;
-  --duration-quick: 200ms;
-  --duration-standard: 320ms;
-  --duration-deliberate: 480ms;
-
-  /* --- Elevation -----------------------------------------------------------
-   * Restrained. A financial surface earns separation from borders and spacing
-   * first; shadow is the last resort, not the first.
-   */
-  --shadow-raised: 0 1px 2px oklch(0% 0 0 / 0.04), 0 1px 3px oklch(0% 0 0 / 0.06);
-  --shadow-overlay: 0 8px 24px oklch(0% 0 0 / 0.08), 0 2px 6px oklch(0% 0 0 / 0.04);
-
-  --radius-sm: 0.25rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
+  --duration-tap: 90ms;
+  --duration-quick: 180ms;
+  --duration-settle: 340ms;
+  --duration-sheet: 420ms;
 }
 
-/*
- * Dark is not an afterthought and not a default. Phase 1 decides which one the
- * product opens in, based on where and under what light it is actually used.
- */
+/* ---------------------------------------------------------------------------
+ * Light — the default
+ * ------------------------------------------------------------------------ */
+
+:root {
+  color-scheme: light;
+
+  /* Paper, not cream. A hair cool rather than warm, so it reads as an
+     instrument face rather than a book page. */
+  --c-ground: oklch(98.8% 0.0015 250);
+  --c-ground-sunk: oklch(96.4% 0.003 250);
+  --c-ground-raised: oklch(100% 0 0);
+
+  --c-ink: oklch(24% 0.008 250);
+  --c-ink-secondary: oklch(45% 0.007 250);
+  --c-ink-tertiary: oklch(55.5% 0.006 250);
+  --c-ink-inverse: oklch(98.8% 0.0015 250);
+
+  --c-rule: oklch(90.5% 0.004 250);
+  --c-rule-strong: oklch(70% 0.006 250);
+
+  --c-positive: oklch(46% 0.115 158);
+  --c-negative: oklch(50% 0.175 25);
+  --c-caution: oklch(52% 0.125 70);
+  --c-signal: oklch(46% 0.095 232);
+
+  --c-positive-sunk: oklch(95% 0.03 158);
+  --c-negative-sunk: oklch(95.5% 0.03 25);
+  --c-caution-sunk: oklch(95.5% 0.04 70);
+
+  --c-shadow-near: oklch(24% 0.008 250 / 0.06);
+  --c-shadow-far: oklch(24% 0.008 250 / 0.14);
+}
+
+/* ---------------------------------------------------------------------------
+ * Dark — designed, not derived. Chroma rises slightly because saturated hues
+ * lose apparent intensity against a dark ground.
+ * ------------------------------------------------------------------------ */
+
 @media (prefers-color-scheme: dark) {
-  @theme {
-    --color-canvas: oklch(16% 0 0);
-    --color-surface: oklch(20% 0 0);
-    --color-border: oklch(29% 0 0);
-    --color-ink: oklch(96% 0 0);
-    --color-ink-muted: oklch(70% 0 0);
-    --color-ink-subtle: oklch(55% 0 0);
+  :root {
+    color-scheme: dark;
+
+    --c-ground: oklch(17.5% 0.005 250);
+    --c-ground-sunk: oklch(14% 0.005 250);
+    --c-ground-raised: oklch(22% 0.006 250);
+
+    --c-ink: oklch(95% 0.003 250);
+    --c-ink-secondary: oklch(74% 0.005 250);
+    --c-ink-tertiary: oklch(62% 0.006 250);
+    --c-ink-inverse: oklch(17.5% 0.005 250);
+
+    --c-rule: oklch(28% 0.006 250);
+    --c-rule-strong: oklch(46% 0.008 250);
+
+    --c-positive: oklch(74% 0.15 158);
+    --c-negative: oklch(70% 0.16 25);
+    --c-caution: oklch(78% 0.13 75);
+    --c-signal: oklch(72% 0.11 232);
+
+    --c-positive-sunk: oklch(26% 0.045 158);
+    --c-negative-sunk: oklch(26% 0.05 25);
+    --c-caution-sunk: oklch(26% 0.05 75);
+
+    --c-shadow-near: oklch(0% 0 0 / 0.4);
+    --c-shadow-far: oklch(0% 0 0 / 0.55);
   }
 }
 
-/*
- * Reduced motion means a gentler equivalent, not the absence of feedback.
- * Opacity changes that aid comprehension stay; travel and overshoot go.
- */
+/* The viewer's explicit choice wins over the system preference, in both
+   directions. */
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --c-ground: oklch(98.8% 0.0015 250);
+  --c-ground-sunk: oklch(96.4% 0.003 250);
+  --c-ground-raised: oklch(100% 0 0);
+
+  --c-ink: oklch(24% 0.008 250);
+  --c-ink-secondary: oklch(45% 0.007 250);
+  --c-ink-tertiary: oklch(55.5% 0.006 250);
+  --c-ink-inverse: oklch(98.8% 0.0015 250);
+
+  --c-rule: oklch(90.5% 0.004 250);
+  --c-rule-strong: oklch(70% 0.006 250);
+
+  --c-positive: oklch(46% 0.115 158);
+  --c-negative: oklch(50% 0.175 25);
+  --c-caution: oklch(52% 0.125 70);
+  --c-signal: oklch(46% 0.095 232);
+
+  --c-positive-sunk: oklch(95% 0.03 158);
+  --c-negative-sunk: oklch(95.5% 0.03 25);
+  --c-caution-sunk: oklch(95.5% 0.04 70);
+
+  --c-shadow-near: oklch(24% 0.008 250 / 0.06);
+  --c-shadow-far: oklch(24% 0.008 250 / 0.14);
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --c-ground: oklch(17.5% 0.005 250);
+  --c-ground-sunk: oklch(14% 0.005 250);
+  --c-ground-raised: oklch(22% 0.006 250);
+
+  --c-ink: oklch(95% 0.003 250);
+  --c-ink-secondary: oklch(74% 0.005 250);
+  --c-ink-tertiary: oklch(62% 0.006 250);
+  --c-ink-inverse: oklch(17.5% 0.005 250);
+
+  --c-rule: oklch(28% 0.006 250);
+  --c-rule-strong: oklch(46% 0.008 250);
+
+  --c-positive: oklch(74% 0.15 158);
+  --c-negative: oklch(70% 0.16 25);
+  --c-caution: oklch(78% 0.13 75);
+  --c-signal: oklch(72% 0.11 232);
+
+  --c-positive-sunk: oklch(26% 0.045 158);
+  --c-negative-sunk: oklch(26% 0.05 25);
+  --c-caution-sunk: oklch(26% 0.05 75);
+
+  --c-shadow-near: oklch(0% 0 0 / 0.4);
+  --c-shadow-far: oklch(0% 0 0 / 0.55);
+}
+
+/* ---------------------------------------------------------------------------
+ * Accessibility preferences
+ * ------------------------------------------------------------------------ */
+
+/* Reduced motion means a gentler equivalent, not the absence of feedback.
+   Opacity changes that aid comprehension survive; travel and overshoot do not. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -128,9 +268,44 @@
   }
 }
 
-/* Figures must align in a column. Non-tabular digits make a balance sheet
-   ripple as values change. */
+@media (prefers-contrast: more) {
+  :root {
+    --c-ink-secondary: var(--c-ink);
+    --c-ink-tertiary: var(--c-ink);
+    --c-rule: var(--c-rule-strong);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Utilities
+ * ------------------------------------------------------------------------ */
+
+/* Figures must hold their column. Proportional digits make a balance sheet
+   ripple as values change, which reads as instability in a product whose job is
+   to be trusted with numbers. */
 @utility tabular {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings:
+    'tnum' 1,
+    'lnum' 1;
+}
+
+/* An instrument read-out: the figure below the scale. */
+@utility readout {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: var(--tracking-readout);
+  font-feature-settings:
+    'tnum' 1,
+    'lnum' 1;
+}
+
+/* Gradation labels along a scale. */
+@utility gradation-label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1.2;
+  letter-spacing: var(--tracking-label);
+  color: var(--color-ink-tertiary);
   font-variant-numeric: tabular-nums;
-  font-feature-settings: 'tnum' 1;
 }

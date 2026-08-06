@@ -1,29 +1,51 @@
 {
   "common": {
     "appName": "Norte",
-    "tagline": "Your life's financial system.",
+    "tagline": "Know what you have, what is already committed, and what the next dollar should do.",
     "loading": "Loading…",
     "retry": "Try again"
   },
-  "status": {
-    "title": "System status",
-    "subtitle": "Phase 0 — repository foundation.",
-    "descriptionLead": "This screen is provisional. It exists to prove the application boots, that both language routes respond, and that the database is connected.",
-    "checks": {
-      "heading": "Checks",
-      "application": "Application",
-      "applicationDetail": "Next.js with the App Router and Server Components.",
-      "localization": "Languages",
-      "localizationDetail": "Spanish and English, with per-locale routes.",
-      "database": "Database",
-      "databaseDetailConnected": "Connected. Schema version {version}.",
-      "databaseDetailPending": "Not connected. Supabase credentials are not configured yet."
+  "overview": {
+    "title": "Your position",
+    "switchLanguage": "Español",
+    "gauge": {
+      "label": "Safe to spend",
+      "buffer": "Buffer minimum",
+      "explanation": "The level falls when you commit money and rises only when money actually arrives. Everything above the surface already belongs to something."
     },
-    "state": {
-      "ready": "Ready",
-      "pending": "Pending"
+    "readout": {
+      "label": "Safe to spend",
+      "detail": "of {liquid} liquid, with {committed} already committed"
     },
-    "switchLanguage": "Español"
+    "stats": {
+      "netWorth": "Net worth",
+      "committed": "Committed"
+    },
+    "claims": {
+      "title": "What claims that money",
+      "detail": "Commitments in the next 30 days, ordered by due date.",
+      "total": "Total committed",
+      "columns": {
+        "item": "Item",
+        "due": "Due",
+        "kind": "Kind",
+        "amount": "Amount"
+      },
+      "kinds": {
+        "essential": "Essential",
+        "debt": "Debt",
+        "reserve": "Reserve"
+      },
+      "items": {
+        "rent": "Rent",
+        "electricity": "Electricity",
+        "visaMinimum": "Visa — minimum payment",
+        "mastercardMinimum": "Mastercard — minimum payment",
+        "taxReserve": "Estimated tax reserve",
+        "internet": "Internet"
+      }
+    },
+    "synthetic": "The figures on this screen are generated demonstration data, not a real person's. They exist so the visual system can be built and judged before any account is connected."
   },
   "errors": {
     "notFoundTitle": "We couldn't find this page",
