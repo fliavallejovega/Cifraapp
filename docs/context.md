@@ -11,7 +11,13 @@ status table.
 
 **Status as of the last session:** Phase 0 complete. Phase 1 complete. Phase 2's
 database layer complete and validated; its auth flows are not built.
-**Phases 3 and 4 are partly built; Phase 5 is complete.**
+**Phases 1, 2 and 5 complete. Phases 3 and 4 substantially built.**
+
+Supabase (`sdeeoccvwcvgsmgfsuoz`, us-west-2) and Cloudflare R2 (`cifraapp`) are
+live and wired. `.env.local` at the repo root holds the credentials and
+`apps/web/.env.local` symlinks to it, because Next reads only the app's own.
+Tests use `TEST_DATABASE_URL` against local Postgres and never touch the real
+project.
 
 ## Read this before resuming
 

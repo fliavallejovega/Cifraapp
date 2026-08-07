@@ -43,14 +43,14 @@ test.describe('locale negotiation', () => {
 test('the Spanish route renders Spanish copy', async ({ page }) => {
   await page.goto('/es');
 
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Tu posición');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('sistema financiero');
   await expect(page.locator('html')).toHaveAttribute('lang', 'es');
 });
 
 test('the English route renders English copy', async ({ page }) => {
   await page.goto('/en');
 
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Your position');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('financial system');
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
 });
 
@@ -59,7 +59,7 @@ test('the language switch moves between locales', async ({ page }) => {
   await page.getByRole('link', { name: 'English' }).click();
 
   await expect(page).toHaveURL(/\/en(\/|$)/);
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Your position');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('financial system');
 });
 
 test('an unknown locale is a 404, not a silent fallback', async ({ page }) => {
@@ -143,12 +143,11 @@ test('the page never scrolls horizontally', async ({ page }) => {
   expect(overflows).toBe(false);
 });
 
-test('the level gauge reports its reading to assistive technology', async ({ page }) => {
+test('the landing page exposes exactly one primary action', async ({ page }) => {
+  // The gauge moved behind authentication with real data; its accessible
+  // reading is asserted in auth.spec.ts. What the public shell owes a visitor
+  // is a clear offer and one thing to do about it.
   await page.goto('/es');
 
-  const meter = page.getByRole('meter');
-  await expect(meter).toHaveAttribute('aria-valuenow', '2562.11');
-  await expect(meter).toHaveAttribute('aria-valuemax', '4180');
-  // The geometry is decorative; the reading is the information.
-  await expect(meter).toHaveAttribute('aria-valuetext', /2,562\.11/);
+  await expect(page.getByRole('link', { name: /Crear mi sistema/i })).toBeVisible();
 });

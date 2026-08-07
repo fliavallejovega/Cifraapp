@@ -14,11 +14,11 @@ import postgres from 'postgres';
  * Supabase ships, so a policy that passes here passes there for the same reason.
  */
 
-const connectionUrl = process.env['DIRECT_URL'];
+const connectionUrl = process.env['TEST_DATABASE_URL'];
 const describeWithDatabase = connectionUrl ? describe : describe.skip;
 
 if (!connectionUrl) {
-  console.warn('DIRECT_URL not set — skipping RLS tests. Run `pnpm db:local` first.');
+  console.warn('TEST_DATABASE_URL not set — skipping RLS tests. Run `pnpm db:local` first.');
 }
 
 const ALEX = '11111111-1111-4111-8111-111111111111';

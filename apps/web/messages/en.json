@@ -5,9 +5,65 @@
     "loading": "Loading…",
     "retry": "Try again"
   },
+  "landing": {
+    "headline": "Your life's financial system.",
+    "subheadline": "Know what you have. Know what is coming. Know exactly what your next dollar should do.",
+    "primaryCta": "Build my financial system",
+    "secondaryCta": "I already have an account",
+    "switchLanguage": "Español"
+  },
+  "auth": {
+    "fields": {
+      "email": "Email",
+      "password": "Password",
+      "passwordHint": "At least 8 characters.",
+      "displayName": "What we should call you"
+    },
+    "signIn": {
+      "title": "Sign in to your system",
+      "detail": "Your accounts, your rules, and your allocation plan.",
+      "submit": "Sign in",
+      "noAccount": "No account yet?",
+      "createOne": "Create one"
+    },
+    "signUp": {
+      "title": "Create your account",
+      "detail": "The account first; your household and bank accounts come next.",
+      "submit": "Create account",
+      "haveAccount": "Already have an account?",
+      "signInInstead": "Sign in",
+      "checkYourEmail": "We sent you an email to confirm your address. Open it to finish creating your account."
+    },
+    "errors": {
+      "title": "We couldn't continue",
+      "signInFailed": "That email and password don't match. Check them and try again.",
+      "signUpFailed": "We couldn't create the account. Please try again in a moment.",
+      "invalidCredentialsFormat": "Check the email and password.",
+      "passwordTooShort": "The password needs at least 8 characters.",
+      "invalidEmail": "That email doesn't look valid.",
+      "linkExpired": "That link has expired. Request a new one.",
+      "generic": "Something went wrong. Please try again."
+    }
+  },
+  "onboarding": {
+    "title": "Let's start with your household",
+    "detail": "A household groups the finances that are managed together. It can be just you, a couple, or a family. You decide what gets shared afterwards.",
+    "fields": {
+      "name": "Household name",
+      "nameHint": "Your name, for instance, or yours and your partner's.",
+      "currency": "Base currency"
+    },
+    "submit": "Create household",
+    "errors": {
+      "title": "We couldn't create the household",
+      "nameRequired": "Give the household a name.",
+      "createFailed": "We couldn't create the household. Please try again in a moment.",
+      "signInRequired": "Your session expired. Please sign in again."
+    }
+  },
   "overview": {
     "title": "Your position",
-    "switchLanguage": "Español",
+    "signOut": "Sign out",
     "gauge": {
       "label": "Safe to spend",
       "buffer": "Buffer minimum",
@@ -18,13 +74,20 @@
       "detail": "of {liquid} liquid, with {committed} already committed"
     },
     "stats": {
-      "netWorth": "Net worth",
+      "liquid": "Liquid",
       "committed": "Committed"
+    },
+    "empty": {
+      "title": "Give your money somewhere to live.",
+      "body": "Add your first account or import a statement. From there we work out what is committed and what is genuinely left.",
+      "action": "Add an account"
     },
     "claims": {
       "title": "What claims that money",
       "detail": "Commitments in the next 30 days, ordered by due date.",
       "total": "Total committed",
+      "emptyTitle": "Nothing committed in the next 30 days.",
+      "emptyBody": "Once you record a recurring obligation it appears here and lowers what is available.",
       "columns": {
         "item": "Item",
         "due": "Due",
@@ -33,19 +96,10 @@
       },
       "kinds": {
         "essential": "Essential",
-        "debt": "Debt",
-        "reserve": "Reserve"
-      },
-      "items": {
-        "rent": "Rent",
-        "electricity": "Electricity",
-        "visaMinimum": "Visa — minimum payment",
-        "mastercardMinimum": "Mastercard — minimum payment",
-        "taxReserve": "Estimated tax reserve",
-        "internet": "Internet"
+        "other": "Discretionary"
       }
     },
-    "synthetic": "The figures on this screen are generated demonstration data, not a real person's. They exist so the visual system can be built and judged before any account is connected."
+    "scopeNote": "For now, what is available subtracts recorded obligations due in the next 30 days. Minimum debt payments and the tax reserve join the calculation in a later phase."
   },
   "errors": {
     "notFoundTitle": "We couldn't find this page",
@@ -53,5 +107,48 @@
     "genericTitle": "Something went wrong",
     "genericBody": "We couldn't complete that. Please try again in a moment.",
     "backHome": "Back to start"
+  },
+  "documents": {
+    "title": "Documents and imports",
+    "detail": "Upload a statement as CSV or OFX. We read every line and tell you how many are new, how many were already there, and which ones need you to look.",
+    "backToOverview": "Back to your position",
+    "form": {
+      "file": "Statement file",
+      "fileHint": "CSV or OFX. Up to 15 MB.",
+      "submit": "Analyze file",
+      "errorTitle": "We couldn't import",
+      "errors": {
+        "tooLarge": "The file is over 15 MB. Export a shorter date range.",
+        "unsupportedType": "We read CSV and OFX for now. Export the statement in one of those formats.",
+        "alreadyImported": "You already imported this exact file. Nothing was created, so your transactions are not duplicated.",
+        "unreadable": "We couldn't read this file.",
+        "storageUnavailable": "We couldn't store the file. Please try again in a moment.",
+        "noAccount": "Add an account for these transactions to belong to first.",
+        "generic": "Something went wrong. Please try again."
+      }
+    },
+    "history": {
+      "title": "Earlier imports",
+      "empty": "You haven't imported a file yet.",
+      "columns": {
+        "file": "File",
+        "when": "Date",
+        "found": "Found",
+        "new": "New",
+        "duplicate": "Duplicate",
+        "review": "Need review",
+        "status": "Status"
+      },
+      "statuses": {
+        "uploaded": "Uploaded",
+        "parsing": "Parsing",
+        "review": "Needs review",
+        "importing": "Importing",
+        "completed": "Completed",
+        "failed": "Failed",
+        "discarded": "Discarded"
+      }
+    },
+    "note": "Analyzing a file does not create transactions yet. Every line gets a verdict and you confirm before anything enters your records."
   }
 }

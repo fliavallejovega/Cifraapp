@@ -21,8 +21,15 @@ export default defineConfig({
 
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
-    // Mobile is a first-class target, not a later adaptation (spec §63).
-    { name: 'mobile', use: { ...devices['iPhone 14'] } },
+    {
+      // Mobile is a first-class target, not a later adaptation (spec §63). It
+      // runs the public shell only: the authenticated suites sign in as one
+      // shared account and mutate one household, so running them in a second
+      // project races the first rather than testing anything new.
+      name: 'mobile',
+      use: { ...devices['iPhone 14'] },
+      testMatch: /foundation\.spec\.ts/,
+    },
   ],
 
   webServer: {
@@ -32,8 +39,9 @@ export default defineConfig({
     url: baseURL,
     reuseExistingServer: !process.env['CI'],
     timeout: 180_000,
-    env: {
-      SKIP_ENV_VALIDATION: 'true',
-    },
+    // Real credentials: the guards, the session cookie and the proxy refresh
+    // are the parts that break in production, and none of them exist without a
+    // real Supabase project behind them.
+    env: {},
   },
 });

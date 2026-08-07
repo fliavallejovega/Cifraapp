@@ -14,11 +14,11 @@ import { CATEGORY_SEED, CURRENCY_SEED } from './seed-data.js';
  * skip is reported, never silent — a suite that quietly tests nothing is worse
  * than one that fails.
  */
-const connectionUrl = process.env['DIRECT_URL'];
+const connectionUrl = process.env['TEST_DATABASE_URL'];
 const describeWithDatabase = connectionUrl ? describe : describe.skip;
 
 if (!connectionUrl) {
-  console.warn('DIRECT_URL not set — skipping database integration tests.');
+  console.warn('TEST_DATABASE_URL not set — skipping database integration tests.');
 }
 
 describeWithDatabase('database connection', () => {

@@ -5,9 +5,65 @@
     "loading": "Cargando…",
     "retry": "Reintentar"
   },
+  "landing": {
+    "headline": "El sistema financiero de tu vida.",
+    "subheadline": "Sabes cuánto tienes. Sabes qué viene. Sabes exactamente qué debe hacer tu próximo dólar.",
+    "primaryCta": "Crear mi sistema financiero",
+    "secondaryCta": "Ya tengo cuenta",
+    "switchLanguage": "English"
+  },
+  "auth": {
+    "fields": {
+      "email": "Correo",
+      "password": "Contraseña",
+      "passwordHint": "Mínimo 8 caracteres.",
+      "displayName": "Cómo te llamamos"
+    },
+    "signIn": {
+      "title": "Entra a tu sistema",
+      "detail": "Tus cuentas, tus reglas y tu plan de asignación.",
+      "submit": "Entrar",
+      "noAccount": "¿Aún no tienes cuenta?",
+      "createOne": "Crear una"
+    },
+    "signUp": {
+      "title": "Crea tu cuenta",
+      "detail": "Primero la cuenta; el hogar y las cuentas bancarias vienen después.",
+      "submit": "Crear cuenta",
+      "haveAccount": "¿Ya tienes cuenta?",
+      "signInInstead": "Entrar",
+      "checkYourEmail": "Te enviamos un correo para confirmar tu dirección. Ábrelo para terminar de crear tu cuenta."
+    },
+    "errors": {
+      "title": "No pudimos continuar",
+      "signInFailed": "El correo o la contraseña no coinciden. Revísalos e intenta de nuevo.",
+      "signUpFailed": "No pudimos crear la cuenta. Intenta de nuevo en un momento.",
+      "invalidCredentialsFormat": "Revisa el correo y la contraseña.",
+      "passwordTooShort": "La contraseña necesita al menos 8 caracteres.",
+      "invalidEmail": "Ese correo no parece válido.",
+      "linkExpired": "Ese enlace ya venció. Pide uno nuevo.",
+      "generic": "Algo no salió bien. Intenta de nuevo."
+    }
+  },
+  "onboarding": {
+    "title": "Empecemos por tu hogar",
+    "detail": "Un hogar agrupa las finanzas que se administran juntas. Puede ser solo tuyo, de una pareja o de una familia. Después decides qué se comparte.",
+    "fields": {
+      "name": "Nombre del hogar",
+      "nameHint": "Por ejemplo, tu nombre o el de tu pareja y el tuyo.",
+      "currency": "Moneda base"
+    },
+    "submit": "Crear hogar",
+    "errors": {
+      "title": "No pudimos crear el hogar",
+      "nameRequired": "Escribe un nombre para el hogar.",
+      "createFailed": "No pudimos crear el hogar. Intenta de nuevo en un momento.",
+      "signInRequired": "Tu sesión venció. Vuelve a entrar."
+    }
+  },
   "overview": {
     "title": "Tu posición",
-    "switchLanguage": "English",
+    "signOut": "Salir",
     "gauge": {
       "label": "Disponible para gastar",
       "buffer": "Colchón mínimo",
@@ -18,13 +74,20 @@
       "detail": "de {liquid} líquido, con {committed} ya comprometido"
     },
     "stats": {
-      "netWorth": "Patrimonio neto",
+      "liquid": "Líquido",
       "committed": "Comprometido"
+    },
+    "empty": {
+      "title": "Dale a tu dinero un lugar donde vivir.",
+      "body": "Agrega tu primera cuenta o importa un estado de cuenta. A partir de ahí calculamos qué está comprometido y qué te queda de verdad.",
+      "action": "Agregar una cuenta"
     },
     "claims": {
       "title": "Qué reclama ese dinero",
       "detail": "Compromisos de los próximos 30 días, ordenados por fecha de vencimiento.",
       "total": "Total comprometido",
+      "emptyTitle": "Nada comprometido en los próximos 30 días.",
+      "emptyBody": "Cuando registres una obligación recurrente, aparecerá aquí y bajará tu disponible.",
       "columns": {
         "item": "Concepto",
         "due": "Vence",
@@ -33,19 +96,10 @@
       },
       "kinds": {
         "essential": "Esencial",
-        "debt": "Deuda",
-        "reserve": "Reserva"
-      },
-      "items": {
-        "rent": "Alquiler",
-        "electricity": "Electricidad",
-        "visaMinimum": "Visa — pago mínimo",
-        "mastercardMinimum": "Mastercard — pago mínimo",
-        "taxReserve": "Reserva fiscal estimada",
-        "internet": "Internet"
+        "other": "Discrecional"
       }
     },
-    "synthetic": "Las cifras de esta pantalla son datos de demostración generados, no de una persona real. Existen para construir y evaluar el sistema visual antes de que haya cuentas conectadas."
+    "scopeNote": "Por ahora el disponible descuenta las obligaciones registradas de los próximos 30 días. Los pagos mínimos de deuda y la reserva fiscal entran en el cálculo en una fase posterior."
   },
   "errors": {
     "notFoundTitle": "No encontramos esta página",
@@ -53,5 +107,48 @@
     "genericTitle": "Algo salió mal",
     "genericBody": "No pudimos completar la operación. Vuelve a intentarlo en un momento.",
     "backHome": "Volver al inicio"
+  },
+  "documents": {
+    "title": "Documentos e importaciones",
+    "detail": "Sube un estado de cuenta en CSV u OFX. Analizamos cada línea y te decimos cuántas son nuevas, cuántas ya estaban y cuáles necesitan que las revises.",
+    "backToOverview": "Volver a tu posición",
+    "form": {
+      "file": "Archivo del estado de cuenta",
+      "fileHint": "CSV u OFX. Máximo 15 MB.",
+      "submit": "Analizar archivo",
+      "errorTitle": "No pudimos importar",
+      "errors": {
+        "tooLarge": "El archivo pesa más de 15 MB. Exporta un rango de fechas más corto.",
+        "unsupportedType": "Solo leemos CSV y OFX por ahora. Exporta el estado de cuenta en uno de esos formatos.",
+        "alreadyImported": "Ya importaste este mismo archivo. No creamos nada para no duplicar tus movimientos.",
+        "unreadable": "No pudimos leer este archivo.",
+        "storageUnavailable": "No pudimos guardar el archivo. Intenta de nuevo en un momento.",
+        "noAccount": "Primero agrega una cuenta a la que pertenezcan estos movimientos.",
+        "generic": "Algo no salió bien. Intenta de nuevo."
+      }
+    },
+    "history": {
+      "title": "Importaciones anteriores",
+      "empty": "Todavía no has importado ningún archivo.",
+      "columns": {
+        "file": "Archivo",
+        "when": "Fecha",
+        "found": "Encontradas",
+        "new": "Nuevas",
+        "duplicate": "Duplicadas",
+        "review": "Por revisar",
+        "status": "Estado"
+      },
+      "statuses": {
+        "uploaded": "Subido",
+        "parsing": "Analizando",
+        "review": "Por revisar",
+        "importing": "Importando",
+        "completed": "Completado",
+        "failed": "Falló",
+        "discarded": "Descartado"
+      }
+    },
+    "note": "Analizar un archivo no crea movimientos todavía. Cada línea recibe un veredicto y tú confirmas antes de que algo entre a tus registros."
   }
 }

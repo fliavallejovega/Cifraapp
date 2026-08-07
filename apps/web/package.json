@@ -17,12 +17,19 @@
   "dependencies": {
     "@app/database": "workspace:*",
     "@app/domain": "workspace:*",
+    "@app/transaction-engine": "workspace:*",
     "@app/ui": "workspace:*",
     "@app/validation": "workspace:*",
+    "@aws-sdk/client-s3": "^3.1104.0",
+    "@aws-sdk/s3-request-presigner": "^3.1104.0",
+    "@supabase/ssr": "0.12.4",
+    "@supabase/supabase-js": "2.112.2",
+    "drizzle-orm": "0.45.2",
     "next": "16.3.0",
     "next-intl": "4.13.5",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "zod": "4.4.3"
   },
   "devDependencies": {
     "@app/config": "workspace:*",
