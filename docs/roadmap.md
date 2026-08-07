@@ -4,30 +4,30 @@ Phases are sequential. Each one ends with lint, typecheck, tests and build
 green, documentation updated, and a report. Nothing starts before the phase
 before it is stable.
 
-| Phase | Scope                                                                                          | Status       |
-| ----- | ---------------------------------------------------------------------------------------------- | ------------ |
-| 0     | Repository foundation: monorepo, strict types, migrations, money primitives, i18n, tests, CI   | **Complete** |
-| 1     | Design system: visual identity, typography, color, motion, components, `DESIGN.md`             | Next         |
-| 2     | Auth and multi-tenancy: users, households, memberships, organizations, RLS, audit log          | Pending      |
-| 3     | Core financial data model: accounts, transactions, categories, merchants, budgets, goals, debt | Pending      |
-| 4     | Import engine: CSV, XLSX, OFX, PDF, document storage, parsing, normalization                   | Pending      |
-| 5     | Duplicate and transfer engine: fingerprints, matching, credit-card payment detection           | Pending      |
-| 6     | Category and learning engine: merchant normalization, user rules, confidence, review           | Pending      |
-| 7     | Budgets and recurring expenses: automatic suggestions, safe-to-spend, projections              | Pending      |
-| 8     | Debt engine: avalanche, snowball, simulations, payoff timelines                                | Pending      |
-| 9     | Rule engine: visual builder, conditions, actions, priorities, audit history                    | Pending      |
-| 10    | Allocation engine: obligation prioritization, tax reserve, goal and debt allocation            | Pending      |
-| 11    | AI copilot: provider abstraction, structured outputs, explanations                             | Pending      |
-| 12    | Panama tax engine: jurisdiction model, versioned rules, DGI sources, review workflow           | Pending      |
-| 13    | Reporting: statements, net worth, PDF and XLSX export                                          | Pending      |
-| 14    | Billing: plans, Stripe abstraction, entitlements, usage, webhooks                              | Pending      |
-| 15    | Internal SaaS accounting: chart of accounts, double-entry ledger, reconciliation               | Pending      |
-| 16    | CMS: content model, editor, blog, SEO, media                                                   | Pending      |
-| 17    | Landing page                                                                                   | Pending      |
-| 18    | Accountant portal                                                                              | Pending      |
-| 19    | White label                                                                                    | Pending      |
-| 20    | Admin platform                                                                                 | Pending      |
-| 21    | Hardening: security review, RLS audit, performance, accessibility, load testing                | Pending      |
+| Phase | Scope                                                                                          | Status                                                                                                       |
+| ----- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| 0     | Repository foundation: monorepo, strict types, migrations, money primitives, i18n, tests, CI   | **Complete**                                                                                                 |
+| 1     | Design system: visual identity, typography, color, motion, components, `DESIGN.md`             | **Complete**                                                                                                 |
+| 2     | Auth and multi-tenancy: users, households, memberships, organizations, RLS, audit log          | **Complete** — no MFA, magic link, OAuth, invitation sending or household switcher                           |
+| 3     | Core financial data model: accounts, transactions, categories, merchants, budgets, goals, debt | **Partial** — schema, RLS and position repository done; **no per-entity CRUD**                               |
+| 4     | Import engine: CSV, XLSX, OFX, PDF, document storage, parsing, normalization                   | **Partial** — CSV/OFX, R2 and review pipeline done; **no row confirmation**, no XLSX/PDF, no background jobs |
+| 5     | Duplicate and transfer engine: fingerprints, matching, credit-card payment detection           | **Complete**                                                                                                 |
+| 6     | Category and learning engine: merchant normalization, user rules, confidence, review           | Pending                                                                                                      |
+| 7     | Budgets and recurring expenses: automatic suggestions, safe-to-spend, projections              | Pending                                                                                                      |
+| 8     | Debt engine: avalanche, snowball, simulations, payoff timelines                                | Pending                                                                                                      |
+| 9     | Rule engine: visual builder, conditions, actions, priorities, audit history                    | Pending                                                                                                      |
+| 10    | Allocation engine: obligation prioritization, tax reserve, goal and debt allocation            | Pending                                                                                                      |
+| 11    | AI copilot: provider abstraction, structured outputs, explanations                             | Pending                                                                                                      |
+| 12    | Panama tax engine: jurisdiction model, versioned rules, DGI sources, review workflow           | Pending                                                                                                      |
+| 13    | Reporting: statements, net worth, PDF and XLSX export                                          | Pending                                                                                                      |
+| 14    | Billing: plans, Stripe abstraction, entitlements, usage, webhooks                              | Pending                                                                                                      |
+| 15    | Internal SaaS accounting: chart of accounts, double-entry ledger, reconciliation               | Pending                                                                                                      |
+| 16    | CMS: content model, editor, blog, SEO, media                                                   | Pending                                                                                                      |
+| 17    | Landing page                                                                                   | Pending                                                                                                      |
+| 18    | Accountant portal                                                                              | Pending                                                                                                      |
+| 19    | White label                                                                                    | Pending                                                                                                      |
+| 20    | Admin platform                                                                                 | Pending                                                                                                      |
+| 21    | Hardening: security review, RLS audit, performance, accessibility, load testing                | Pending                                                                                                      |
 
 ## Priority if scope must be cut
 
@@ -40,7 +40,31 @@ import → duplicate prevention → categorization → budgets → debt → goal
 → allocation engine → safe-to-spend → dashboard. Everything after that is
 valuable; nothing after that is worth compromising the data integrity layer for.
 
-## Phase 0 report
+## Where things stand
+
+Phases 0, 1, 2 and 5 are complete. Phases 3 and 4 are substantially built; their
+exact gaps are in the table above and in [context.md](context.md).
+
+131 unit and integration tests, 38 end-to-end tests, all passing. The end-to-end
+suite runs against the **live Supabase project and the live R2 bucket** — there
+are no mocks.
+
+The two gaps that block everything downstream, in order:
+
+1. **Account and transaction CRUD.** Nothing can be entered through the product
+   today; the test account was inserted with SQL.
+2. **Import row confirmation.** The identity engine writes verdicts into
+   `app.import_rows` and stops. Nothing turns them into transactions.
+
+With those closed, the golden flow runs end to end for the first time: sign up →
+household → account → import → review → transactions.
+
+Credentials for Supabase and R2 were pasted into a chat transcript and **need
+rotating** — see [context.md](context.md).
+
+---
+
+## Phase 0 report (historical)
 
 **Completed**
 

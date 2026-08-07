@@ -9,30 +9,78 @@ traps waiting in each one.
 product truth, `docs/decisions.md` holds the ADRs, `docs/roadmap.md` is the
 status table.
 
-**Status as of the last session:** Phase 0 complete. Phase 1 complete. Phase 2's
-database layer complete and validated; its auth flows are not built.
-**Phases 1, 2 and 5 complete. Phases 3 and 4 substantially built.**
+## Status
 
-Supabase (`sdeeoccvwcvgsmgfsuoz`, us-west-2) and Cloudflare R2 (`cifraapp`) are
-live and wired. `.env.local` at the repo root holds the credentials and
-`apps/web/.env.local` symlinks to it, because Next reads only the app's own.
-Tests use `TEST_DATABASE_URL` against local Postgres and never touch the real
-project.
+|                         |                                                                                                                                         |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| **Complete**            | Phase 0 (foundation) · Phase 1 (design system) · Phase 2 (auth and tenancy) · Phase 5 (duplicate and transfer engine)                   |
+| **Substantially built** | Phase 3 (schema and position repository done, no per-entity CRUD) · Phase 4 (CSV/OFX, R2 and review pipeline done, no row confirmation) |
+| **Not started**         | Phases 6–21                                                                                                                             |
+| **Tests**               | 131 unit and integration · 38 end-to-end · all passing                                                                                  |
+| **Gate**                | 22/22 tasks green: `lint`, `typecheck`, `test`, `build`                                                                                 |
+| **Commits**             | 8, working tree clean                                                                                                                   |
+
+Live infrastructure is connected and exercised by the end-to-end suite. This is
+not a repository that merely compiles; it signs a user in, creates their
+household, stores a statement in object storage, and refuses to import it twice.
 
 ## Read this before resuming
 
-1. A local Postgres 17 runs on `127.0.0.1:5432` with the Supabase roles already
-   created. `pnpm --filter @app/database db:local` drops and rebuilds `norte_dev`
-   from the migrations, applies the `auth` shim, and seeds. This is how the RLS
-   suite runs for real — hosted Supabase credentials are still needed for auth
-   itself, but no longer for schema work.
-2. `.env.local` exists (gitignored) pointing at that database.
-3. `DESIGN.md` is committed and authoritative. The world is the instrument
+1. **Supabase is live.** Project `sdeeoccvwcvgsmgfsuoz`, region **us-west-2**,
+   schema version 5, 28 tables, 33 policies, RLS forced everywhere, seeded, and
+   all five migrations recorded in `supabase_migrations.schema_migrations`.
+2. **Cloudflare R2 is live.** Bucket `cifraapp`, verified by round trip.
+   Documents are keyed `documents/{householdId}/{documentId}.{ext}` and read
+   only through a five-minute signed URL.
+3. **The direct database host resolves only to IPv6**, which this machine cannot
+   route. Both connection strings go through the pooler at
+   `aws-1-us-west-2.pooler.supabase.com` — 6543 for transaction mode, 5432 for
+   session mode. Finding the region required probing every pooler; it is written
+   here so nobody repeats that.
+4. **`.env.local` lives at the repository root**, and `apps/web/.env.local` is a
+   **symlink** to it, because Next reads only the app's own directory. Both are
+   gitignored.
+5. **Tests read `TEST_DATABASE_URL`**, pointing at local Postgres. They never
+   touch the real project — the RLS suite creates and deletes users and
+   households.
+6. A local Postgres 17 runs on `127.0.0.1:5432` with the Supabase roles already
+   created. `pnpm --filter @app/database db:local` drops and rebuilds
+   `norte_dev` from the migrations, applies the `auth` shim, and seeds.
+7. `DESIGN.md` is committed and authoritative. The world is the instrument
    gauge; do not reopen that decision.
-4. What Phase 2 still needs: the Supabase SSR client, sign-in/sign-up/callback
-   routes, profile creation on first sign-in, protected route guards, and the
-   household switcher. The schema, policies and `app.create_household` bootstrap
-   are done and proven.
+
+## ⚠ Credentials need rotating
+
+The Supabase service-role key, the database password and the R2 access keys were
+pasted into a chat transcript. The service-role key bypasses row-level security
+entirely; the R2 keys grant access to stored financial documents.
+
+- Supabase → Settings → API → rotate `service_role`
+- Supabase → Settings → Database → change password, then update both connection
+  strings (URL-encode `!` as `%21`)
+- Cloudflare → R2 → revoke the API token and the access key pair
+
+The `anon` key is public by design and does not need rotating.
+
+## Test data currently in the live project
+
+One confirmed user (`javidavo05@gmail.com`, password `NorteTest2026!`), one
+household (`Hogar de prueba`), one account (`Banco General — Corriente`,
+$4,180.00), one obligation, four import runs. **Zero transactions** — imports
+stop at review by design. Delete or rotate that user before the address is used
+for anything real.
+
+## The two gaps that block everything downstream
+
+1. **Account and transaction CRUD** (Phase 3's remainder). Nothing can be
+   entered through the product today; the test account was inserted with SQL.
+2. **Import row confirmation** (Phase 4's remainder). The identity engine writes
+   verdicts into `app.import_rows` and stops. Nothing turns them into
+   transactions.
+
+With those closed, the golden flow runs end to end for the first time: sign up →
+household → account → import → review → transactions. Phases 6 through 10 all
+assume transactions exist.
 
 ---
 
@@ -115,7 +163,7 @@ When uncertain: **ask, flag, or route to review. Never invent.**
 
 ---
 
-# Part 2 — Current state (end of Phase 0)
+# Part 2 — Current state
 
 ## Toolchain, verified
 
@@ -126,14 +174,15 @@ When uncertain: **ask, flag, or route to review. Never invent.**
 | Supabase CLI | 2.72.7                            |                                                                          |
 | Vercel CLI   | 58.5.1                            |                                                                          |
 | gh           | 2.92.0                            |                                                                          |
-| Docker       | Installed, **daemon not running** | Local Supabase stack unavailable; ADR-002 uses hosted                    |
+| Docker       | Installed, **daemon not running** | Irrelevant now that hosted Supabase is in use                            |
+| Postgres     | 17.7, local on `127.0.0.1:5432`   | Supabase roles already created; used by the RLS and integration suites   |
 
 ## Pinned dependency versions
 
 ```
 next 16.3.0 · react 19.2.8 · typescript 6.0.3 · tailwindcss 4.3.3
 drizzle-orm 0.45.2 · drizzle-kit 0.31.10 · postgres 3.4.9
-@supabase/supabase-js 2.112.2 · @supabase/ssr 0.12.4
+@supabase/supabase-js 2.112.2 · @supabase/ssr 0.12.4 · @aws-sdk/client-s3 3.x
 next-intl 4.13.5 · zod 4.4.3 · vitest 4.1.10 · @playwright/test 1.62.1
 eslint 10.8.0 · typescript-eslint 8.66.0 · turbo 2.10.8 · prettier 3.9.6
 ```
@@ -153,22 +202,33 @@ apps/web/
   eslint.config.js
   tsconfig.json
   AGENTS.md, CLAUDE.md        Generated by `next dev`; meant to be committed
+  .env.local                  SYMLINK → ../../.env.local (Next reads only its own dir)
   messages/es.json            ← every user-visible string
   messages/en.json
-  e2e/foundation.spec.ts      22 passing, 2 skipped
+  e2e/foundation.spec.ts      Public shell: locale, headers, health, keyboard, overflow
+  e2e/auth.spec.ts            Guards, sign-in, onboarding, sign-out — real Supabase
+  e2e/import.spec.ts          Statement upload, re-import refusal — real Supabase + R2
   src/
-    proxy.ts                  Locale negotiation (was middleware.ts; Next 16 renamed it)
-    i18n/routing.ts           es default, en, localePrefix 'always'
-    i18n/request.ts           Catalog loading, timeZone America/Panama
-    i18n/navigation.ts        Locale-aware Link/redirect/useRouter
+    proxy.ts                  Session refresh + locale + route guards (was middleware.ts)
+    i18n/{routing,request,navigation}.ts
     i18n/messages.test.ts     Catalog parity: keys + interpolation placeholders
-    server/database.ts        `server-only` guarded DB handle
-    app/globals.css
-    app/[locale]/layout.tsx
-    app/[locale]/page.tsx     PROVISIONAL status screen — Phase 1 deletes this
-    app/[locale]/not-found.tsx
-    app/[locale]/error.tsx    Never renders the underlying error
+    lib/supabase-browser.ts   Anon-key browser client
+    server/supabase.ts        Request client (RLS) / admin client (bypass) / getUser
+    server/session.ts         loadSession, requireSession, requireHousehold, queryAsUser
+    server/auth-actions.ts    signIn, signUp, signOut, createFirstHousehold
+    server/storage.ts         R2: signed URLs, household-scoped keys
+    server/import-service.ts  Upload → hash → store → parse → assess → review
+    server/import-actions.ts  The upload server action
+    server/repositories/position.ts   liquid, committed, available, claims
+    components/{auth-form,household-form,import-form,sign-out-button}.tsx
+    app/[locale]/page.tsx     Public landing; redirects a signed-in user onward
+    app/[locale]/{sign-in,sign-up,welcome}/page.tsx
+    app/[locale]/overview/page.tsx    The position screen — gauge, read-out, claims
+    app/[locale]/documents/page.tsx   Upload and import history
+    app/[locale]/{not-found,error}.tsx
+    app/auth/callback/route.ts        Code exchange, same-origin redirect only
     app/api/health/route.ts   App + DB readiness, schema version
+    app/fonts.ts              Archivo + Chivo Mono
 
 packages/config/
   tsconfig/{base,library,next}.json
@@ -195,72 +255,95 @@ packages/database/
   src/health.ts               getSchemaVersion
   src/schema/platform.ts      schema_version, currencies, tax_jurisdictions
   src/schema/app.ts           category_templates, category_kind enum
-  src/seed-data.ts            Currencies, PA jurisdiction, 40-node bilingual category tree
-  scripts/{migrate,seed,reset}.ts
-  (+ 2 test files, 10 passing / 4 skipped)
+  src/schema/audit.ts         The audit schema handle
+  src/schema/identity.ts      profiles, households, members, orgs, invitations, events
+  src/schema/financial.ts     accounts, transactions, transfers, budgets, goals, debts…
+  src/schema/documents.ts     documents, imports, import_rows
+  src/seed-data.ts            Currencies, PA jurisdiction, 38-node bilingual category tree
+  src/rls.test.ts             THE MOST IMPORTANT TESTS IN THE REPOSITORY
+  scripts/{migrate,seed,reset,local-db,load-env}.ts
+
+packages/transaction-engine/  NO DEPENDENCIES beyond @app/domain.
+  src/normalize.ts            Description normalization, trigram similarity, containment
+  src/fingerprint.ts          Deterministic transaction identity + document hash
+  src/identity.ts             The duplicate ladder: 5 rungs, 0.95 certain / 0.60 review
+  src/transfers.ts            Transfer + credit-card-payment detection
+  src/parsers/{csv,ofx,index}.ts    Format detection by content, not extension
+  (+ 3 test files, 46 tests)
 
 packages/ui/
-  src/styles/tokens.css       PROVISIONAL — Phase 1 replaces color/type wholesale.
-                              Motion + spacing tokens should survive.
+  src/styles/tokens.css       The committed world: light-first, gauge gradations, springs
+  src/components/gauge.tsx    THE SIGNATURE DEVICE — scale, thresholds, level, hatch
+  src/components/{money,button,field,ledger,status,feedback,page}.tsx
   src/utils/cn.ts
 
-supabase/migrations/
-  20260806120000_foundation.sql     Extensions, 3 schemas, uuid_v7, set_updated_at, schema_version
-  20260806120100_reference_data.sql currencies, tax_jurisdictions, category_templates
+supabase/
+  local/auth-shim.sql               LOCAL ONLY — recreates auth.users and auth.uid()
+  migrations/
+    20260806120000_foundation.sql     Extensions, 3 schemas, uuid_v7, set_updated_at
+    20260806120100_reference_data.sql currencies, tax_jurisdictions, category_templates
+    20260806130000_identity.sql       profiles, households, membership, orgs, audit, RLS
+    20260806140000_financial_model.sql accounts, transactions, transfers, budgets, goals…
+    20260807040000_documents.sql       documents, imports, import_rows, provenance FKs
 
-docs/                         architecture, database, security, decisions, roadmap, context (this file)
+DESIGN.md                     The instrument-gauge world. Authoritative.
+docs/                         architecture, database, security, decisions, roadmap, context
 .github/workflows/ci.yml      verify job + e2e job
 ```
 
-## Test inventory (74 passing)
+Engine packages for later phases (`ai`, `tax-engine`, `accounting-engine`,
+`billing`, `documents`, `analytics`) are **deliberately not created**. Each is
+born in the phase that first needs it, with its first test. An empty package is
+deferred work wearing the costume of architecture.
 
-| Suite               | Count           | Covers                                                                                                                     |
-| ------------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| domain/money        | 21              | Exact decimals, currency mismatch, rounding modes, **allocation reconciliation across every amount 1–1000¢ × 2–7 buckets** |
-| domain/format       | 6               | `$1,234.56`, `B/. 1,234.56`, true minus sign, sign display                                                                 |
-| domain/plain-date   | 12              | Invalid dates, DST boundaries, month-end clamping                                                                          |
-| domain/ids          | 5               | UUID v7 version/variant, time ordering, 5000-item collision check                                                          |
-| validation          | 11              | Rejects JSON numbers for money, timestamps for dates, unbounded pages                                                      |
-| database/seed-data  | 10              | Unique slugs, no orphans, no cycles, bilingual coverage, kind inheritance                                                  |
-| database/connection | 4               | **SKIPPED — no credentials**                                                                                               |
-| web/messages        | 4               | Catalog key + placeholder parity                                                                                           |
-| e2e                 | 22 (+2 skipped) | Locale negotiation ×3, security headers, health, no-store, 404, keyboard, focus ring                                       |
+## Test inventory — 131 unit and integration, 38 end-to-end
+
+| Suite                        | Count | Covers                                                                                                                       |
+| ---------------------------- | ----- | ---------------------------------------------------------------------------------------------------------------------------- |
+| domain/money                 | 20    | Exact decimals, currency mismatch, rounding modes, **allocation reconciliation across every amount 1–1000¢ × 2–7 buckets**   |
+| domain/plain-date            | 11    | Invalid dates, DST boundaries, month-end clamping                                                                            |
+| domain/format                | 6     | `$1,234.56`, `B/. 1,234.56`, true minus sign, sign display                                                                   |
+| domain/ids                   | 5     | UUID v7 version/variant, time ordering, 5000-item collision check                                                            |
+| validation                   | 11    | Rejects JSON numbers for money, timestamps for dates, unbounded pages                                                        |
+| database/rls                 | 14    | **Tenant isolation.** Cross-household reads, self-insertion, role limits, forced RLS everywhere, pinned definer search paths |
+| database/seed-data           | 10    | Unique slugs, no orphans, no cycles, bilingual coverage, kind inheritance                                                    |
+| database/connection          | 4     | Schema version, seed idempotency, no floating-point money columns                                                            |
+| transaction-engine/identity  | 14    | The three-channel example, settlement lag, what must never merge                                                             |
+| transaction-engine/parsers   | 21    | Both thousands conventions, accounting parentheses, the balboa symbol, re-import                                             |
+| transaction-engine/transfers | 11    | Card payments, one claim per leg                                                                                             |
+| web/messages                 | 4     | Catalog key + placeholder parity                                                                                             |
+| e2e/foundation               | 12    | Locale negotiation ×3, security headers, health, 404, keyboard, focus ring, no horizontal overflow                           |
+| e2e/auth                     | 8     | Guards, wrong password, onboarding, sign-in redirect, sign-out re-locks                                                      |
+| e2e/import                   | 4     | **Same statement twice creates nothing**, provenance, unreadable file                                                        |
+
+The end-to-end suite runs against **live Supabase and live R2**. There are no
+mocks. The mobile Playwright project runs the public shell only — the
+authenticated suites share one account and one household, so a second project
+would race the first rather than test anything new.
 
 ## Commands
 
 ```bash
-pnpm dev · build · lint · typecheck · test · test:e2e · format
+pnpm dev · build · lint · typecheck · test · format
 pnpm db:migrate · db:seed · db:generate · db:reset
+pnpm --filter @app/database db:local          # rebuild the local test database
+
+E2E_EMAIL=… E2E_PASSWORD=… pnpm test:e2e      # authenticated suites
 ```
 
-Without credentials, prefix with `SKIP_ENV_VALIDATION=true`.
-
-## BLOCKED — the one thing needed to unblock everything
-
-**Supabase project credentials.** Migrations and seed are written and typechecked
-but **have never run against a real Postgres**. Until they do, Phase 2 cannot
-start, because Phase 2 is entirely database work.
-
-```
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-DATABASE_URL=      # pooler, port 6543
-DIRECT_URL=        # direct, port 5432
-```
-
-First action on receiving them: `pnpm db:migrate && pnpm db:seed && pnpm db:seed`
-(twice, to prove idempotency) then `pnpm test` and confirm the 4 skipped
-integration tests now run and pass.
+Without those variables the authenticated end-to-end suites skip and say so.
+`SKIP_ENV_VALIDATION=true` still works for building without credentials.
 
 ## Known issues carried forward
 
-1. DB integration tests skipped — see above.
-2. `setRequestLocale` deprecation suppressed; `next/root-params` has no types
-   until Next generates them (ADR-011). Revisit in Phase 1.
-3. Product name `Norte` is a placeholder (ADR-001). Must be settled before
+1. `setRequestLocale` deprecation suppressed; `next/root-params` has no types
+   until Next generates them (ADR-011).
+2. Product name `Norte` is a placeholder (ADR-001). Must be settled before
    Phase 17.
-4. Visual identity is provisional and replaced wholesale in Phase 1.
+3. Import picks the household's first active account rather than asking. An
+   account picker is required before real use — a transaction filed against the
+   wrong account is worse than one not filed.
+4. Credentials need rotating (see the top of this document).
 
 ---
 
@@ -316,20 +399,41 @@ not been independently established.
 
 ---
 
-# Part 4 — The remaining 21 phases
+# Part 4 — The 21 phases
 
 Each phase ends with: implementation, migration, RLS, server validation, UI
 (loading/empty/error states), tests, docs, accessibility, mobile — and lint,
 typecheck, build, tests green. Then **stop and report** in the format at the end
 of this document.
 
+Phases 1, 2 and 5 are **done**; their sections below are kept because they
+record why things are the way they are and what was deliberately left out.
+Phases 3 and 4 are **partly done** and their remaining work is called out at the
+top of each. Phases 6–21 are untouched specifications.
+
 ---
 
-## PHASE 1 — Design system
+## PHASE 1 — Design system ✅ COMPLETE
 
-**Goal:** a premium visual foundation the whole product is built on.
-**Depends on:** Phase 0.
-**Blocked by:** nothing. **Can start immediately.**
+**Built.** `DESIGN.md` carries the direction contract. The world is the
+**instrument gauge**: money is a level, not a number. Type is Archivo and Chivo
+Mono (one foundry); monospace carries figures and scale labels only. Color is
+reserved for financial meaning — there is no brand accent, the primary action is
+solid ink. Light is the default, chosen from the use scene; dark is designed,
+not derived.
+
+Components built: `Gauge`, `Amount`, `Readout`, `Button`, `Field`/`Input`/`Select`,
+the `Ledger` family, `Status`, `Provenance`, `EmptyState`, `Skeleton`, `Problem`,
+`Page`/`PageHeader`/`Section`/`Rule`. Deliberately **not** built: Modal, Drawer,
+Sheet, Tabs, Combobox, DataTable, Chart, CommandMenu, DatePicker, RuleBuilder —
+each arrives with the screen that needs it.
+
+**Refused on purpose, recorded in DESIGN.md:** cards as page structure, the
+hero-metric template, decorative rings and sparklines, eyebrows over every
+section, gradient text, color as the sole carrier of state.
+
+The original brief and traps follow, unchanged, because they still govern any
+new surface.
 
 ### Scope
 
@@ -389,11 +493,38 @@ behavior, contrast ratios.
 
 ---
 
-## PHASE 2 — Auth and multi-tenancy
+## PHASE 2 — Auth and multi-tenancy ✅ COMPLETE
 
-**Goal:** a secure multi-tenant foundation.
-**Depends on:** Phase 0 (+ Phase 1 for UI).
-**BLOCKED until Supabase credentials exist.**
+**Built.** Every table below exists on the live project with RLS forced, and 14
+tests assert the isolation boundaries. Sign-in, sign-up, sign-out, the auth
+callback, profile creation on first sign-in, household onboarding and the route
+guards all run; 8 end-to-end tests exercise them against real Supabase.
+
+Two structural decisions the tests exist to protect:
+
+- `app.is_household_member` is `SECURITY DEFINER` **with a pinned
+  `search_path`**. The definer part breaks the recursion a membership policy
+  would otherwise have against its own table; the pinned path stops a caller
+  shadowing `app.household_members` with a temp table and handing themselves
+  access. A test fails if any definer function in `app` loses that pin.
+- Every table uses `FORCE ROW LEVEL SECURITY`, not merely `ENABLE`. Without
+  `FORCE` the table owner is exempt — and migrations, jobs and seeds all connect
+  as the owner, so that exemption is precisely where a mistake would go
+  unnoticed. The test caught `app.category_templates` missing it.
+
+Creating a household is a chicken-and-egg problem against the membership policy:
+you cannot be the owner of a household with no members. Rather than loosen the
+policy, both rows are written by `app.create_household`, a definer function that
+validates the caller.
+
+Sessions are read with `supabase.auth.getUser()`, which validates the token with
+the auth server — never `getSession()`, which decodes a cookie the browser
+controls. The proxy refreshes the session on every request, because a Server
+Component cannot write cookies and without that a user is signed out
+mid-session for no reason they can see.
+
+**Deliberately not built:** MFA, magic link, OAuth, invitation sending, the
+household switcher. The invitations table exists; nothing sends them.
 
 ### Scope
 
@@ -453,10 +584,24 @@ calls it.
 
 ---
 
-## PHASE 3 — Core financial data model
+## PHASE 3 — Core financial data model ⚠ PARTLY DONE
 
-**Goal:** the financial domain works with no AI involved at all.
-**Depends on:** Phase 2.
+**Done.** Every table in the specification below exists on the live project with
+RLS forced, indexes driven by the queries the engines actually make, and a
+Drizzle schema mirroring it (`packages/database/src/schema/financial.ts`). Two
+constraints are load-bearing: the amount's sign must agree with its direction,
+so an inflow recorded as negative cannot quietly reverse a month's cash flow;
+and a `mixed` tax classification without a business percentage is rejected,
+because that is not a classification.
+
+`apps/web/src/server/repositories/position.ts` reads real rows and computes
+liquid, committed and available for the position screen.
+
+**Remaining — the largest single gap in the project.** There is no UI to create
+or edit **accounts, transactions, categories, merchants, budgets, goals or
+debts**. Nothing can be entered through the product today; the test account was
+inserted with SQL. Build this first. Everything from Phase 6 onward assumes
+transactions exist.
 
 ### Database
 
@@ -501,10 +646,38 @@ Indexes driven by real access patterns: `(household_id, transaction_date desc)`,
 
 ---
 
-## PHASE 4 — Import engine
+## PHASE 4 — Import engine ⚠ PARTLY DONE
 
-**Goal:** a user uploads a bank statement and gets transactions.
-**Depends on:** Phase 3.
+**Done.** CSV and OFX parsing with format detection **by content, not by
+extension**. R2 storage with household-scoped keys and five-minute signed URLs.
+The `documents` / `imports` / `import_rows` tables. The upload action, the
+import service and the history screen.
+
+The pipeline is upload → hash → store → parse → assess → **stop at review**.
+Nothing is written to `app.transactions`; an importer that writes first and asks
+later has already broken the promise the product is built on. Three guards in
+order of cheapness: a content hash that rejects a re-uploaded file before it is
+parsed, an idempotency key that makes a retry a no-op, and the identity engine
+on every row.
+
+Verified end to end against live Supabase and R2: the same statement uploaded
+twice under different filenames produced one document, one import and zero
+duplicate transactions. Unreadable lines are reported, never dropped.
+
+The CSV parser handles both thousands conventions, accounting parentheses and
+the balboa symbol — `B/.` left a stray decimal point that a test caught.
+
+**Remaining:**
+
+- **Row-level confirmation.** Verdicts sit in `app.import_rows` and nothing
+  turns them into transactions. This is the second gap that blocks everything.
+- **An account picker.** The import uses the household's first active account
+  rather than asking. A transaction filed against the wrong account is worse
+  than one not filed.
+- **XLSX and PDF.** Both throw an error naming the alternative.
+- **Background jobs.** Parsing runs inside the request. Acceptable for CSV and
+  OFX; mandatory to move before PDF or OCR.
+- Virus scanning, institution detection, ownership prompts.
 
 ### Scope
 
@@ -550,10 +723,35 @@ a public bucket.
 
 ---
 
-## PHASE 5 — Duplicate and transfer engine
+## PHASE 5 — Duplicate and transfer engine ✅ COMPLETE
 
-**Goal:** importing the same statement twice does not duplicate anything.
-**Depends on:** Phase 4. **This is the product's credibility.**
+**Built** in `packages/transaction-engine`, 46 tests. The specification's own
+example passes: `SUPER 99 CDE`, `SUPER99 #034` and `SUPER 99 COSTA DEL ESTE` at
+$72.30 resolve to one transaction across three channels.
+
+The ladder has five rungs — institution reference, fingerprint, exact amount and
+date, amount within a window, merchant agreement — stopping at the first that
+resolves. Certain at 0.95, review at 0.60.
+
+Two calibration findings came out of testing rather than theory, and both are
+worth keeping in mind before anyone "improves" the scoring:
+
+- **Trigram overlap alone underrated abbreviation badly.** `super99` versus
+  `super99 cde` fell into review when it is plainly one shop. Token containment
+  is now a separate signal: one channel spelling out what another shortens is
+  the common case, not the exception.
+- **Two unrelated merchants at the same amount on the same day are treated as
+  separate**, not flagged for review. That is an ordinary coincidence, and an
+  alert that fires on nothing teaches people to dismiss the ones that matter.
+  Genuine re-imports are caught upstream by the document hash and the
+  fingerprint.
+
+Transfer detection claims each leg at most once, so three same-day movements
+produce three transfers rather than nine candidate pairs.
+
+**Not yet wired:** the engine's verdicts are written to `app.import_rows` but
+nothing acts on them, and `app.transfers` / `app.duplicate_candidates` are empty
+because no transactions exist yet.
 
 ### The Transaction Identity Engine
 
@@ -1112,17 +1310,18 @@ fund $5,000 and travel $2,000. Use this to validate the allocation engine.
 
 # Part 6 — Open decisions
 
-| Decision                                                | Owner                     | Needed by              |
-| ------------------------------------------------------- | ------------------------- | ---------------------- |
-| Product name (`Norte` is a placeholder)                 | User                      | Phase 17               |
-| Supabase credentials                                    | User                      | **Phase 2 — blocking** |
-| Whether the product ever positions as tax _preparation_ | User + legal              | Phase 12               |
-| Final pricing figures                                   | User                      | Phase 14               |
-| Which theme the product opens in (light/dark)           | Phase 1, from usage scene | Phase 1                |
-| R2 account and buckets                                  | User                      | Phase 4                |
-| Stripe account                                          | User                      | Phase 14               |
-| AI provider keys                                        | User                      | Phase 11               |
-| GitHub remote (CI is written but has no remote)         | User                      | Any time               |
+| Decision                                                | Owner        | Needed by |
+| ------------------------------------------------------- | ------------ | --------- |
+| Product name (`Norte` is a placeholder)                 | User         | Phase 17  |
+| Whether the product ever positions as tax _preparation_ | User + legal | Phase 12  |
+| Final pricing figures                                   | User         | Phase 14  |
+| Stripe account                                          | User         | Phase 14  |
+| AI provider keys                                        | User         | Phase 11  |
+| GitHub remote (CI is written but has no remote)         | User         | Any time  |
+
+Settled since the original list: Supabase credentials (live), R2 account and
+bucket (live, `cifraapp`), and the theme the product opens in (**light**, chosen
+from the use scene — a person reviewing a statement at a desk in daylight).
 
 ---
 
