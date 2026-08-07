@@ -1,4 +1,6 @@
 /* eslint-disable no-console -- A CLI script's output is its interface. */
+import './load-env.js';
+
 import { getServerEnv } from '@app/validation/env';
 
 import { closeConnections, getAdminDb } from '../src/client.js';

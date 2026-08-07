@@ -1,6 +1,8 @@
 /* eslint-disable no-console -- A CLI script's output is its interface. */
 import { execFileSync } from 'node:child_process';
 
+import './load-env.js';
+
 import { getServerEnv } from '@app/validation/env';
 
 /**

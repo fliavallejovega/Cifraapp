@@ -9,7 +9,24 @@ traps waiting in each one.
 product truth, `docs/decisions.md` holds the ADRs, `docs/roadmap.md` is the
 status table.
 
-**Status as of the last session:** Phase 0 complete. **21 phases remain (1–21).**
+**Status as of the last session:** Phase 0 complete. Phase 1 complete. Phase 2's
+database layer complete and validated; its auth flows are not built.
+**20 phases remain (2–21).**
+
+## Read this before resuming
+
+1. A local Postgres 17 runs on `127.0.0.1:5432` with the Supabase roles already
+   created. `pnpm --filter @app/database db:local` drops and rebuilds `norte_dev`
+   from the migrations, applies the `auth` shim, and seeds. This is how the RLS
+   suite runs for real — hosted Supabase credentials are still needed for auth
+   itself, but no longer for schema work.
+2. `.env.local` exists (gitignored) pointing at that database.
+3. `DESIGN.md` is committed and authoritative. The world is the instrument
+   gauge; do not reopen that decision.
+4. What Phase 2 still needs: the Supabase SSR client, sign-in/sign-up/callback
+   routes, profile creation on first sign-in, protected route guards, and the
+   household switcher. The schema, policies and `app.create_household` bootstrap
+   are done and proven.
 
 ---
 
