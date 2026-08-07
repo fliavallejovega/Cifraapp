@@ -70,7 +70,7 @@ function main(): void {
   // loudly above. Reaching here means the whole set applies from empty.
   const version = psql(DATABASE, [
     '-tAc',
-    'select version || \' — \' || description from platform.schema_version',
+    "select version || ' — ' || description from platform.schema_version",
   ]).trim();
 
   console.log(`\nApplied ${String(migrations.length)} migrations. Schema version ${version}.`);

@@ -156,8 +156,10 @@ describeWithDatabase('row-level security', () => {
     // The attack that matters: granting yourself membership is how every other
     // policy in the system gets bypassed at once.
     await expect(
-      asUser(MORGAN, (tx) =>
-        tx`
+      asUser(
+        MORGAN,
+        (tx) =>
+          tx`
           insert into app.household_members (household_id, user_id, role, status)
           values (${alexHousehold}, ${MORGAN}, 'owner', 'active')
         `,
@@ -200,8 +202,10 @@ describeWithDatabase('row-level security', () => {
 
     // Membership is an owner-only power, even for a full financial peer.
     await expect(
-      asUser(TAYLOR, (tx) =>
-        tx`
+      asUser(
+        TAYLOR,
+        (tx) =>
+          tx`
           insert into app.household_members (household_id, user_id, role, status)
           values (${alexHousehold}, ${MORGAN}, 'viewer', 'active')
         `,
@@ -210,10 +214,7 @@ describeWithDatabase('row-level security', () => {
   });
 
   it('shows a profile only to its owner', async () => {
-    const own = await asUser(
-      ALEX,
-      (tx) => tx<{ id: string }[]>`select id from app.profiles`,
-    );
+    const own = await asUser(ALEX, (tx) => tx<{ id: string }[]>`select id from app.profiles`);
     expect(own.map((profile) => profile.id)).toEqual([ALEX]);
 
     const other = await asUser(

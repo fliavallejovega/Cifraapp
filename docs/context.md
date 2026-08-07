@@ -11,7 +11,7 @@ status table.
 
 **Status as of the last session:** Phase 0 complete. Phase 1 complete. Phase 2's
 database layer complete and validated; its auth flows are not built.
-**20 phases remain (2–21).**
+**Phases 3 and 4 are partly built; Phase 5 is complete.**
 
 ## Read this before resuming
 
