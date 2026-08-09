@@ -147,6 +147,8 @@ export const merchants = appSchema.table('merchants', {
   householdId: uuid('household_id').references(() => households.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   normalizedName: text('normalized_name').notNull(),
+  /** The category this merchant's transactions have settled into (Phase 6). */
+  defaultCategoryId: uuid('default_category_id'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });

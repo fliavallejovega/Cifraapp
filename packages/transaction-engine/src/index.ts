@@ -12,6 +12,7 @@ export {
 } from './identity.js';
 
 export {
+  describesSameMerchant,
   descriptionSimilarity,
   normalizeDescription,
   type NormalizationResult,
