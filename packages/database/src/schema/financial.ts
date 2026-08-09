@@ -317,6 +317,8 @@ export const obligations = appSchema.table(
     isEssential: boolean('is_essential').notNull().default(true),
     confidence: numeric('confidence', { precision: 4, scale: 3, mode: 'string' }),
     detectedBy: provenance('detected_by').notNull().default('user'),
+    /** The pattern that generated this claim, when one did (Phase 7). */
+    seriesId: uuid('series_id'),
     /** Set once a real transaction settles it, so it stops being a claim. */
     settledTransactionId: uuid('settled_transaction_id').references(() => transactions.id, {
       onDelete: 'set null',
@@ -356,6 +358,8 @@ export const budgetLines = appSchema.table('budget_lines', {
     .references(() => budgets.id, { onDelete: 'cascade' }),
   categoryId: uuid('category_id').references(() => categories.id, { onDelete: 'set null' }),
   plannedAmount: money('planned_amount').notNull(),
+  /** Carried in from the period before, when the budget rolls over (Phase 7). */
+  rolloverIn: money('rollover_in').notNull().default('0'),
   currency: char('currency', { length: 3 })
     .notNull()
     .default('USD')
