@@ -14,7 +14,7 @@ status table.
 |                         |                                                                                                                                         |
 | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | **Complete**            | Phase 0 (foundation) · Phase 1 (design system) · Phase 2 (auth and tenancy) · Phase 5 (duplicate and transfer engine)                   |
-| **Engines built**       | Phases 6–10 — category, budget, debt, rule and allocation engines, with schema, RLS and the plan screen; no management UI               |
+| **Engines complete**    | Phases 6–10 — category, budget, debt, rule and allocation engines, all live on the database, with the plan screen; **no management UI** |
 | **Substantially built** | Phase 3 (schema and position repository done, no per-entity CRUD) · Phase 4 (CSV/OFX, R2 and review pipeline done, no row confirmation) |
 | **Not started**         | Phases 11–21                                                                                                                            |
 | **Tests**               | 270 unit and integration · 38 end-to-end · all passing                                                                                  |
@@ -27,14 +27,11 @@ household, stores a statement in object storage, and refuses to import it twice.
 
 ## Read this before resuming
 
-1. **Supabase is live.** Project `sdeeoccvwcvgsmgfsuoz`, region **us-west-2**,
-   RLS forced everywhere, seeded. Migrations 1–5 (through schema version 5) are
-   recorded in `supabase_migrations.schema_migrations`; **migrations 6–9 exist
-   in the repository and have not been applied to the live project** — run
-   `pnpm db:migrate` before the plan screen will work against it. They add
-   `merchant_rules`, `classification_log`, `recurring_series`, `rules`,
-   `rule_executions`, `allocation_plans` and `allocation_lines`, taking the
-   schema to version 9.
+1. **Supabase is live and fully migrated.** Project `sdeeoccvwcvgsmgfsuoz`,
+   region **us-west-2**, **schema version 9**, 35 tables (31 in `app`, 1 in
+   `audit`, 3 in `platform`), 40 policies, **RLS forced on every table** —
+   verified by querying `pg_class` directly, not assumed. All nine migrations are
+   applied and seeded.
 2. **Cloudflare R2 is live.** Bucket `cifraapp`, verified by round trip.
    Documents are keyed `documents/{householdId}/{documentId}.{ext}` and read
    only through a five-minute signed URL.
@@ -72,26 +69,75 @@ The `anon` key is public by design and does not need rotating.
 
 One confirmed user (`javidavo05@gmail.com`, password `NorteTest2026!`), one
 household (`Hogar de prueba`), one account (`Banco General — Corriente`,
-$4,180.00), one obligation, four import runs. **Zero transactions** — imports
-stop at review by design. Delete or rotate that user before the address is used
-for anything real.
+$4,180.00), one obligation, four import runs. Delete or rotate that user before
+the address is used for anything real.
 
-## The two gaps that block everything downstream
+Every table the Phase 6–10 engines write to is **empty**: zero transactions
+(imports stop at review by design), zero debts, zero goals, zero rules, zero
+allocation plans. That is the honest state and it decides what the plan screen
+can currently show — one obligation against one balance, no debt ordering, no
+rules, no goals. The engines are not idle because they are broken; they are idle
+because the product has no way to enter the rows they read.
 
-1. **Account and transaction CRUD** (Phase 3's remainder). Nothing can be
-   entered through the product today; the test account was inserted with SQL.
-2. **Import row confirmation** (Phase 4's remainder). The identity engine writes
-   verdicts into `app.import_rows` and stops. Nothing turns them into
-   transactions.
+## What remains, in the order it should be done
 
-With those closed, the golden flow runs end to end for the first time: sign up →
-household → account → import → review → transactions.
+Phases 0–10 are done. The decision engine the product is built on — identity,
+duplicates, transfers, categorization, recurrence, safe-to-spend, debt strategy,
+rules, allocation — is complete, tested and running against the live database.
 
-**Phases 6–10 are built and tested but starved.** Their engines are pure and
-provable in isolation, which is why they could be built now — but categorization
-has nothing to classify, recurrence has no history to find a cadence in, and the
-allocation plan runs on accounts, obligations, debts and goals rather than on
-real income. Closing the two gaps above is what feeds them.
+**It is also starved.** Every engine reads rows the product cannot create.
+Nothing below is a rewrite; it is all data entry the engines already know how to
+consume. The order matters — each item unblocks the ones under it.
+
+### 1. Account and transaction CRUD — Phase 3's remainder
+
+The largest single gap. Nothing can be entered through the product today; the
+test account was inserted with SQL. Until this exists, no household can reach any
+of the work described in this document.
+
+### 2. Import row confirmation — Phase 4's remainder
+
+The identity engine writes verdicts into `app.import_rows` and stops. Nothing
+turns them into transactions. Also outstanding here: the account picker (import
+currently takes the household's first active account, and a transaction filed
+against the wrong account is worse than one not filed), XLSX and PDF parsing, and
+moving parsing into a background job before either arrives.
+
+With 1 and 2 closed, the golden flow runs end to end for the first time: sign up
+→ household → account → import → review → transactions. **Categorization,
+recurrence detection and forecasting all begin working the moment transactions
+exist**, with no further engine work.
+
+### 3. The management surfaces the engines are waiting for
+
+Each is a screen over a table that already exists, feeding an engine that already
+works:
+
+| Missing surface                   | Feeds                         | Table                         |
+| --------------------------------- | ----------------------------- | ----------------------------- |
+| Debt CRUD                         | Phase 8 ordering, simulation  | `app.debts`                   |
+| Goal CRUD                         | Phase 10 goal tier            | `app.goals`                   |
+| Budget CRUD                       | Phase 7 budget state          | `app.budgets`, `budget_lines` |
+| Rule builder (the visual `WHEN`)  | Phase 9 evaluation            | `app.rules`                   |
+| Category and merchant rule review | Phase 6 corrections, learning | `app.merchant_rules`          |
+| Recurring series review           | Phase 7 detection             | `app.recurring_series`        |
+| Plan accept / modify              | Phase 10 acceptance rate      | `app.allocation_plans`, lines |
+
+The last one is worth calling out: allocation plans are computed and rendered but
+**not persisted**, so acceptance rate — the single most meaningful product metric
+— cannot be measured yet.
+
+### 4. Cross-cutting work the engines assume
+
+Background jobs, notifications, cron (Part 5 of this document), and the account
+picker. All named in Phases 4 and 7 and none built.
+
+### 5. Then Phase 11 onward
+
+Phase 11 (AI copilot) explains what the engines decide. It should not start
+before 1 and 2 are closed: an explanation layer over data that does not exist has
+nothing to explain, and would be the first thing in this project built without a
+way to check whether it is right.
 
 ---
 
@@ -402,12 +448,14 @@ Without those variables the authenticated end-to-end suites skip and say so.
    account picker is required before real use — a transaction filed against the
    wrong account is worse than one not filed.
 4. Credentials need rotating (see the top of this document).
-5. Migrations 6–9 are committed but **not applied to the live project**. Run
-   `pnpm db:migrate`; until then the plan screen's rule query fails there.
-6. The category, budget and debt engines still build their explanation strings in
+5. The category, budget and debt engines still build their explanation strings in
    English. Only the allocation engine's were converted to message keys, because
    only its output reaches a screen. The rest must be converted in the phase that
-   renders them.
+   renders them — the conversion is mechanical (`{ key, values }`, see
+   `LineExplanation`), but it is not done.
+6. Allocation plans are computed and rendered but never written to
+   `app.allocation_plans`. The tables and their constraints exist; the insert
+   does not. Acceptance rate cannot be measured until it does.
 
 ---
 
@@ -473,8 +521,10 @@ of this document.
 Phases 1, 2 and 5 are **done**; their sections below are kept because they
 record why things are the way they are and what was deliberately left out.
 Phases 3 and 4 are **partly done** and their remaining work is called out at the
-top of each. Phases 6–10 have their **engines done** and their UI outstanding,
-noted the same way. Phases 11–21 are untouched specifications.
+top of each. Phases 6–10 have their **engines, schema and RLS complete on the
+live database**; what each still lacks is its management UI, noted the same way
+and gathered in "What remains" at the top of this document. Phases 11–21 are
+untouched specifications.
 
 ---
 
@@ -877,7 +927,7 @@ a false merge.
 
 ---
 
-## PHASE 6 — Category and learning engine ⚙ ENGINE DONE
+## PHASE 6 — Category and learning engine ✅ ENGINE COMPLETE
 
 **Built** in `packages/category-engine`, 33 tests. Four rungs: a rule the
 household or its accountant wrote, the merchant's established category, a
@@ -930,7 +980,7 @@ app.classification_log   (transaction_id, before, after, source, actor, at)
 
 ---
 
-## PHASE 7 — Budgets, recurring detection, safe-to-spend ⚙ ENGINE DONE
+## PHASE 7 — Budgets, recurring detection, safe-to-spend ✅ ENGINE COMPLETE
 
 **Built** in `packages/budget-engine`, 35 tests. Safe-to-spend subtracts the
 whole ladder and records how much of each claim the household can actually
@@ -997,7 +1047,7 @@ forecast; it does not produce it.
 
 ---
 
-## PHASE 8 — Debt engine ⚙ ENGINE DONE
+## PHASE 8 — Debt engine ✅ ENGINE COMPLETE
 
 **Built** in `packages/debt-engine`, 22 tests. Interest accrues daily and
 compounds daily, computed as one exact rational over the whole window and
@@ -1041,7 +1091,7 @@ accrual steps.
 
 ---
 
-## PHASE 9 — Rule engine ⚙ ENGINE DONE
+## PHASE 9 — Rule engine ✅ ENGINE COMPLETE
 
 **Built** in `packages/rule-engine`, 27 tests. `WHEN [condition] THEN [action]`,
 stored as JSON and never executed.
@@ -1091,7 +1141,7 @@ arbitrary data. Store as structured JSON, not as executable code.
 
 ---
 
-## PHASE 10 — Allocation engine ⚙ ENGINE DONE
+## PHASE 10 — Allocation engine ✅ ENGINE COMPLETE
 
 **Built** in `packages/allocation-engine`, 22 tests, and rendered at
 `/[locale]/plan`. A waterfall down a configurable ladder, built on
@@ -1119,10 +1169,16 @@ an engine returning prose would be either monolingual or a second copy of the
 catalogue. `LineExplanation` and `RuleNote` carry the key; the app renders it.
 
 **Not built:** plans are computed and shown but **not persisted** —
-`app.allocation_plans` and `app.allocation_lines` exist and are empty, so there
-is no accepted/modified tracking and therefore no acceptance rate yet. There is
-also no accept or modify interaction, and the plan runs against the liquid
-balance rather than a real arrival of income, because no transactions exist.
+`app.allocation_plans` and `app.allocation_lines` are applied to the live
+database and empty, so there is no accepted/modified tracking and therefore no
+acceptance rate yet. There is also no accept or modify interaction, and the plan
+runs against the liquid balance rather than a real arrival of income, because no
+transactions exist.
+
+The screen currently renders one obligation against one account balance: with
+zero debts, zero goals and zero rules in the live household, the debt-order,
+goal and rule sections have nothing to show. That is the engine working
+correctly on the data that exists, not a defect.
 
 **Goal:** every incoming dollar gets a recommended job. **The core differentiator.**
 **Depends on:** Phase 9.
