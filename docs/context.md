@@ -14,11 +14,12 @@ status table.
 |                         |                                                                                                                                         |
 | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | **Complete**            | Phase 0 (foundation) · Phase 1 (design system) · Phase 2 (auth and tenancy) · Phase 5 (duplicate and transfer engine)                   |
+| **Engines built**       | Phases 6–10 — category, budget, debt, rule and allocation engines, with schema, RLS and the plan screen; no management UI               |
 | **Substantially built** | Phase 3 (schema and position repository done, no per-entity CRUD) · Phase 4 (CSV/OFX, R2 and review pipeline done, no row confirmation) |
-| **Not started**         | Phases 6–21                                                                                                                             |
-| **Tests**               | 131 unit and integration · 38 end-to-end · all passing                                                                                  |
-| **Gate**                | 22/22 tasks green: `lint`, `typecheck`, `test`, `build`                                                                                 |
-| **Commits**             | 8, working tree clean                                                                                                                   |
+| **Not started**         | Phases 11–21                                                                                                                            |
+| **Tests**               | 270 unit and integration · 38 end-to-end · all passing                                                                                  |
+| **Gate**                | 20/20 tasks green: `lint`, `typecheck`, `test`, `build`                                                                                 |
+| **Commits**             | 14, working tree clean                                                                                                                  |
 
 Live infrastructure is connected and exercised by the end-to-end suite. This is
 not a repository that merely compiles; it signs a user in, creates their
@@ -27,8 +28,13 @@ household, stores a statement in object storage, and refuses to import it twice.
 ## Read this before resuming
 
 1. **Supabase is live.** Project `sdeeoccvwcvgsmgfsuoz`, region **us-west-2**,
-   schema version 5, 28 tables, 33 policies, RLS forced everywhere, seeded, and
-   all five migrations recorded in `supabase_migrations.schema_migrations`.
+   RLS forced everywhere, seeded. Migrations 1–5 (through schema version 5) are
+   recorded in `supabase_migrations.schema_migrations`; **migrations 6–9 exist
+   in the repository and have not been applied to the live project** — run
+   `pnpm db:migrate` before the plan screen will work against it. They add
+   `merchant_rules`, `classification_log`, `recurring_series`, `rules`,
+   `rule_executions`, `allocation_plans` and `allocation_lines`, taking the
+   schema to version 9.
 2. **Cloudflare R2 is live.** Bucket `cifraapp`, verified by round trip.
    Documents are keyed `documents/{householdId}/{documentId}.{ext}` and read
    only through a five-minute signed URL.
@@ -79,8 +85,13 @@ for anything real.
    transactions.
 
 With those closed, the golden flow runs end to end for the first time: sign up →
-household → account → import → review → transactions. Phases 6 through 10 all
-assume transactions exist.
+household → account → import → review → transactions.
+
+**Phases 6–10 are built and tested but starved.** Their engines are pure and
+provable in isolation, which is why they could be built now — but categorization
+has nothing to classify, recurrence has no history to find a cadence in, and the
+allocation plan runs on accounts, obligations, debts and goals rather than on
+real income. Closing the two gaps above is what feeds them.
 
 ---
 
@@ -220,10 +231,12 @@ apps/web/
     server/import-service.ts  Upload → hash → store → parse → assess → review
     server/import-actions.ts  The upload server action
     server/repositories/position.ts   liquid, committed, available, claims
+    server/repositories/plan.ts       Phases 6–10 meeting real rows; builds the fact set
     components/{auth-form,household-form,import-form,sign-out-button}.tsx
     app/[locale]/page.tsx     Public landing; redirects a signed-in user onward
     app/[locale]/{sign-in,sign-up,welcome}/page.tsx
     app/[locale]/overview/page.tsx    The position screen — gauge, read-out, claims
+    app/[locale]/plan/page.tsx        The allocation plan — safe-to-spend ladder, lines, rules
     app/[locale]/documents/page.tsx   Upload and import history
     app/[locale]/{not-found,error}.tsx
     app/auth/callback/route.ts        Code exchange, same-origin redirect only
@@ -263,6 +276,39 @@ packages/database/
   src/rls.test.ts             THE MOST IMPORTANT TESTS IN THE REPOSITORY
   scripts/{migrate,seed,reset,local-db,load-env}.ts
 
+packages/category-engine/     Phase 6. Depends on domain + transaction-engine.
+  src/merchants.ts            Merchant resolution: alias, containment, similarity
+  src/rules.ts                Literal match kinds only — never a customer regex
+  src/classify.ts             The four-rung ladder; AI capped and never auto-applied
+  src/learning.ts             Two agreeing corrections before a rule is proposed
+  (+ 2 test files, 33 tests)
+
+packages/budget-engine/       Phase 7. NO DEPENDENCIES beyond @app/domain.
+  src/statistics.ts           Medians and MAD; never a mean, one shock would move it
+  src/recurring.ts            Cadence detection; semimonthly kept apart from biweekly
+  src/safe-to-spend.ts        The full ladder, with per-claim coverage. Never clamped
+  src/budget.ts               spent / committed / remaining / projected, and suggestions
+  src/forecast.ts             Deterministic projection. An LLM is not a forecasting engine
+  (+ 3 test files, 35 tests)
+
+packages/debt-engine/         Phase 8. NO DEPENDENCIES beyond @app/domain.
+  src/interest.ts             Daily compounding as one exact rational, rounded once
+  src/strategy.ts             Avalanche, snowball, custom, hybrid; deterministic ties
+  src/simulate.ts             Month-by-month payoff; Result, not exceptions
+  (+ 1 test file, 22 tests)
+
+packages/rule-engine/         Phase 9. NO DEPENDENCIES beyond @app/domain.
+  src/facts.ts                THE SANDBOX — the only references a rule may name
+  src/schema.ts               Rule shape and validation; depth and count limits
+  src/evaluate.ts             Three-valued: true / false / unknown
+  (+ 1 test file, 27 tests)
+
+packages/allocation-engine/   Phase 10. Depends on domain, debt-engine, rule-engine.
+  src/types.ts                The ladder, and each tier's splitting policy
+  src/allocate.ts             The waterfall, on Money.allocate
+  src/rules.ts                Rule actions into claims; raise-only, stop-wins
+  (+ 1 test file, 22 tests)
+
 packages/transaction-engine/  NO DEPENDENCIES beyond @app/domain.
   src/normalize.ts            Description normalization, trigram similarity, containment
   src/fingerprint.ts          Deterministic transaction identity + document hash
@@ -285,6 +331,10 @@ supabase/
     20260806130000_identity.sql       profiles, households, membership, orgs, audit, RLS
     20260806140000_financial_model.sql accounts, transactions, transfers, budgets, goals…
     20260807040000_documents.sql       documents, imports, import_rows, provenance FKs
+    20260807050000_categorization.sql  merchant_rules, classification_log
+    20260807060000_recurring.sql       recurring_series, budget rollover
+    20260807070000_rules.sql           rules, rule_executions
+    20260807080000_allocation.sql      allocation_plans, allocation_lines
 
 DESIGN.md                     The instrument-gauge world. Authoritative.
 docs/                         architecture, database, security, decisions, roadmap, context
@@ -296,7 +346,7 @@ Engine packages for later phases (`ai`, `tax-engine`, `accounting-engine`,
 born in the phase that first needs it, with its first test. An empty package is
 deferred work wearing the costume of architecture.
 
-## Test inventory — 131 unit and integration, 38 end-to-end
+## Test inventory — 270 unit and integration, 38 end-to-end
 
 | Suite                        | Count | Covers                                                                                                                       |
 | ---------------------------- | ----- | ---------------------------------------------------------------------------------------------------------------------------- |
@@ -311,6 +361,14 @@ deferred work wearing the costume of architecture.
 | transaction-engine/identity  | 14    | The three-channel example, settlement lag, what must never merge                                                             |
 | transaction-engine/parsers   | 21    | Both thousands conventions, accounting parentheses, the balboa symbol, re-import                                             |
 | transaction-engine/transfers | 11    | Card payments, one claim per leg                                                                                             |
+| category-engine/classify     | 20    | User beats AI, accountant beats user, rule windows, `mixed` without a percentage                                             |
+| category-engine/learning     | 13    | One correction proposes nothing, habit changes, proposals stay low-authority                                                 |
+| budget-engine/recurring      | 11    | **Semimonthly is not biweekly**, month-end anchors, scattered dates find nothing                                             |
+| budget-engine/safe-to-spend  | 16    | The whole ladder, which claim is unfunded, negative never clamped, pacing suppressed early                                   |
+| budget-engine/forecast       | 8     | Refuses two months, median not mean, band widens with disagreement                                                           |
+| debt-engine                  | 22    | Daily compounding rounded once, promotional rates, "never clears" instead of a fake date                                     |
+| rule-engine                  | 27    | **Unknown facts skip the rule**, catalogue is the sandbox, depth limits, no cross-currency                                   |
+| allocation-engine            | 22    | The ladder, exact splits, raise-only rules, `set_priority` cannot jump a tier                                                |
 | web/messages                 | 4     | Catalog key + placeholder parity                                                                                             |
 | e2e/foundation               | 12    | Locale negotiation ×3, security headers, health, 404, keyboard, focus ring, no horizontal overflow                           |
 | e2e/auth                     | 8     | Guards, wrong password, onboarding, sign-in redirect, sign-out re-locks                                                      |
@@ -344,6 +402,12 @@ Without those variables the authenticated end-to-end suites skip and say so.
    account picker is required before real use — a transaction filed against the
    wrong account is worse than one not filed.
 4. Credentials need rotating (see the top of this document).
+5. Migrations 6–9 are committed but **not applied to the live project**. Run
+   `pnpm db:migrate`; until then the plan screen's rule query fails there.
+6. The category, budget and debt engines still build their explanation strings in
+   English. Only the allocation engine's were converted to message keys, because
+   only its output reaches a screen. The rest must be converted in the phase that
+   renders them.
 
 ---
 
@@ -409,7 +473,8 @@ of this document.
 Phases 1, 2 and 5 are **done**; their sections below are kept because they
 record why things are the way they are and what was deliberately left out.
 Phases 3 and 4 are **partly done** and their remaining work is called out at the
-top of each. Phases 6–21 are untouched specifications.
+top of each. Phases 6–10 have their **engines done** and their UI outstanding,
+noted the same way. Phases 11–21 are untouched specifications.
 
 ---
 
@@ -812,7 +877,33 @@ a false merge.
 
 ---
 
-## PHASE 6 — Category and learning engine
+## PHASE 6 — Category and learning engine ⚙ ENGINE DONE
+
+**Built** in `packages/category-engine`, 33 tests. Four rungs: a rule the
+household or its accountant wrote, the merchant's established category, a
+model's suggestion, then review. The ordering is what makes "user rules override
+AI inference, always" structural rather than conventional — a suggestion is
+capped below the auto-apply threshold and can never be applied unconfirmed.
+
+Two decisions worth not reopening:
+
+- **Rules are data, never expressions.** Four literal match kinds (`equals`,
+  `starts_with`, `contains`, `tokens`) cover what people actually express and
+  each runs in linear time. A customer-authored regex is arbitrary computation
+  against every row of every import — a catastrophic-backtracking pattern
+  written by someone categorizing their groceries is still a denial of service.
+- **Two agreeing corrections before a proposal.** One correction is a
+  preference; people re-file one-off purchases constantly, and a rule built from
+  that is wrong every month afterwards. A proposal is written with `source: 'ai'`
+  and the lowest authority until the household confirms it.
+
+`shouldConsultAi` is the cost control: it returns false whenever a deterministic
+path already resolves the row, so the model is never paid to re-derive an answer
+a rule already gives.
+
+**Not built:** rule-management UI, the review queue screen, and any actual model
+call — the engine takes a suggestion as input and never makes one. Nothing to
+classify until transactions exist.
 
 **Goal:** the system learns from corrections.
 **Depends on:** Phase 5.
@@ -839,7 +930,34 @@ app.classification_log   (transaction_id, before, after, source, actor, at)
 
 ---
 
-## PHASE 7 — Budgets, recurring detection, safe-to-spend
+## PHASE 7 — Budgets, recurring detection, safe-to-spend ⚙ ENGINE DONE
+
+**Built** in `packages/budget-engine`, 35 tests. Safe-to-spend subtracts the
+whole ladder and records how much of each claim the household can actually
+cover, so "your rent is short $180" is available rather than only "you are $180
+short". It is **never clamped at zero** — a negative figure is the most
+important thing this system can say, and a floor would hide it.
+
+Three findings from building it, all worth keeping:
+
+- **Semimonthly is not biweekly.** A Panamanian salary paid on the 15th and the
+  last day is 24 payments a year on two fixed calendar days, not 26 every
+  fourteen. Collapsing them makes the engine predict a paycheck that never
+  arrives. Anchor days are carried on the series so projecting it forward needs
+  nothing else — and the month-end anchor is compared _after_ clamping to the
+  month's real length, or a 30-day month stalls the series on the 30th forever.
+- **Projection is suppressed until a fifth of the period has passed.** Pacing
+  from day two of a month with rent posted predicts $13,950, and an alert that
+  absurd teaches people to dismiss the ones that are real.
+- **Medians throughout, never means.** One bonus month or one birthday party
+  should not set the year's grocery budget or the next six months of forecast.
+
+Forecasting is deterministic. An LLM is not a forecasting engine; AI explains a
+forecast this package produced.
+
+**Not built:** budget CRUD and screens, the financial calendar, notifications,
+cron, and the health score. `computeSafeToSpend` is on the plan screen; the
+overview still shows its narrower figure and says so.
 
 **Goal:** a realistic budget generated from actual spending.
 **Depends on:** Phase 6.
@@ -879,7 +997,32 @@ forecast; it does not produce it.
 
 ---
 
-## PHASE 8 — Debt engine
+## PHASE 8 — Debt engine ⚙ ENGINE DONE
+
+**Built** in `packages/debt-engine`, 22 tests. Interest accrues daily and
+compounds daily, computed as one exact rational over the whole window and
+rounded once at the end. Thirty-one roundings to the cent, each biased the same
+direction, is a systematic error — and it lands on the side that flatters the
+plan. This is the specific reason `Money` carries four decimal places.
+
+A promotional rate is a real rate until it expires, including inside the month it
+ends, so avalanche does not chase a 0% balance transfer for the whole teaser
+window.
+
+Two refusals matter more than the payoff date, and both come back as a `Result`
+rather than an exception:
+
+- A monthly payment below the sum of the minimums is not a slower plan, it is
+  not a plan. A household asking "what if I pay $300" against $420 of minimums
+  gets an answer.
+- A debt whose minimum does not cover its own interest never clears. It goes to
+  `unresolvedDebtIds` rather than being given a fabricated payoff date.
+
+Avalanche is cheaper and the tests assert it. The engine does not claim it is
+therefore right for a given household — `comparePlans` prices the choice instead.
+
+**Not built:** the simulation screen, debt CRUD, utilization display. `orderDebts`
+feeds the plan; `simulatePayoff` has no UI yet.
 
 **Goal:** the user knows exactly which debt to attack.
 **Depends on:** Phase 7.
@@ -898,7 +1041,35 @@ accrual steps.
 
 ---
 
-## PHASE 9 — Rule engine
+## PHASE 9 — Rule engine ⚙ ENGINE DONE
+
+**Built** in `packages/rule-engine`, 27 tests. `WHEN [condition] THEN [action]`,
+stored as JSON and never executed.
+
+**`src/facts.ts` is the sandbox.** A condition can only compare a key from that
+catalogue against a literal — there is no property path to traverse and nothing
+evaluated as an expression, so there is nothing to escape from. Widening what
+customer rules can see requires a code change and a review, not a row. Depth and
+count limits exist because a rule arrives as JSON from a customer, and a thousand
+nested conditions is a stack overflow with a name.
+
+**Evaluation is three-valued, and that is the correctness argument.** A missing
+fact is `unknown`, not false and not zero. A household with no emergency fund
+writing `WHEN Emergency Fund < $5,000` would otherwise either have money routed
+into an account that does not exist, or silently get nothing with no way to find
+out why. The rule is skipped and the missing fact is named. A definite `false`
+still settles an `all` group and a definite `true` still settles `any`, because
+neither can be changed by whatever the missing fact turns out to be.
+
+Money comparisons refuse to cross currencies. There is no exchange rate in this
+system, by design.
+
+Every evaluation is recorded, including the rules that did not fire — "why did
+nothing happen?" cannot be answered from a log of matches.
+
+**Not built: the visual builder.** `listFacts()` publishes the field list it
+would need. Rules are read from `app.rules` and evaluated on the plan screen;
+there is no way to author one through the product yet.
 
 **Goal:** users customize the financial decision logic.
 **Depends on:** Phase 8.
@@ -920,7 +1091,38 @@ arbitrary data. Store as structured JSON, not as executable code.
 
 ---
 
-## PHASE 10 — Allocation engine
+## PHASE 10 — Allocation engine ⚙ ENGINE DONE
+
+**Built** in `packages/allocation-engine`, 22 tests, and rendered at
+`/[locale]/plan`. A waterfall down a configurable ladder, built on
+`Money.allocate` — which is what it was made exact for in Phase 0. The tests
+assert that the lines sum to `allocated` and that `allocated + unallocated`
+equals `incoming`: a plan losing a cent between its lines and its total is a plan
+nobody can reconcile.
+
+**How a tier splits money it cannot cover is a property of the tier, not the
+algorithm.** Essentials fill one at a time, so the urgent bill is settled rather
+than two left half-paid; equal-priority goals share from the start, which is what
+ranking them equally meant. Neither policy withholds money — the remainder always
+reaches the claim behind, and the gap is reported as that line's shortfall.
+
+Two guards on customer rules:
+
+- A rule may **raise** a claim, never lower one. Lowering is what
+  `stop_allocation` is for, explicitly, and a stop stays stopped.
+- `set_priority` reorders **inside a tier and never across one**. A rule that
+  could move a travel fund ahead of rent is not expressing a preference.
+
+Engines return `{ key, values }`, not sentences. The product ships in two
+languages and no user-visible string may live outside `messages/{es,en}.json`, so
+an engine returning prose would be either monolingual or a second copy of the
+catalogue. `LineExplanation` and `RuleNote` carry the key; the app renders it.
+
+**Not built:** plans are computed and shown but **not persisted** —
+`app.allocation_plans` and `app.allocation_lines` exist and are empty, so there
+is no accepted/modified tracking and therefore no acceptance rate yet. There is
+also no accept or modify interaction, and the plan runs against the liquid
+balance rather than a real arrival of income, because no transactions exist.
 
 **Goal:** every incoming dollar gets a recommended job. **The core differentiator.**
 **Depends on:** Phase 9.

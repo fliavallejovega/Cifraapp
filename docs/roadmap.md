@@ -12,11 +12,11 @@ before it is stable.
 | 3     | Core financial data model: accounts, transactions, categories, merchants, budgets, goals, debt | **Partial** — schema, RLS and position repository done; **no per-entity CRUD**                               |
 | 4     | Import engine: CSV, XLSX, OFX, PDF, document storage, parsing, normalization                   | **Partial** — CSV/OFX, R2 and review pipeline done; **no row confirmation**, no XLSX/PDF, no background jobs |
 | 5     | Duplicate and transfer engine: fingerprints, matching, credit-card payment detection           | **Complete**                                                                                                 |
-| 6     | Category and learning engine: merchant normalization, user rules, confidence, review           | Pending                                                                                                      |
-| 7     | Budgets and recurring expenses: automatic suggestions, safe-to-spend, projections              | Pending                                                                                                      |
-| 8     | Debt engine: avalanche, snowball, simulations, payoff timelines                                | Pending                                                                                                      |
-| 9     | Rule engine: visual builder, conditions, actions, priorities, audit history                    | Pending                                                                                                      |
-| 10    | Allocation engine: obligation prioritization, tax reserve, goal and debt allocation            | Pending                                                                                                      |
+| 6     | Category and learning engine: merchant normalization, user rules, confidence, review           | **Engine complete** — no rule-management UI; nothing to classify until transactions exist                    |
+| 7     | Budgets and recurring expenses: automatic suggestions, safe-to-spend, projections              | **Engine complete** — safe-to-spend is on screen; no budget UI, no cron, no notifications                    |
+| 8     | Debt engine: avalanche, snowball, simulations, payoff timelines                                | **Engine complete** — ordering feeds the plan; no simulation UI                                              |
+| 9     | Rule engine: visual builder, conditions, actions, priorities, audit history                    | **Engine complete** — rules are read and evaluated; **no visual builder**                                    |
+| 10    | Allocation engine: obligation prioritization, tax reserve, goal and debt allocation            | **Engine complete** — the plan screen renders it; plans are not yet persisted or accepted                    |
 | 11    | AI copilot: provider abstraction, structured outputs, explanations                             | Pending                                                                                                      |
 | 12    | Panama tax engine: jurisdiction model, versioned rules, DGI sources, review workflow           | Pending                                                                                                      |
 | 13    | Reporting: statements, net worth, PDF and XLSX export                                          | Pending                                                                                                      |
@@ -42,12 +42,23 @@ valuable; nothing after that is worth compromising the data integrity layer for.
 
 ## Where things stand
 
-Phases 0, 1, 2 and 5 are complete. Phases 3 and 4 are substantially built; their
-exact gaps are in the table above and in [context.md](context.md).
+Phases 0, 1, 2 and 5 are complete. Phases 6 through 10 have their engines built
+and tested, and the allocation plan is on screen. Phases 3 and 4 are
+substantially built; their exact gaps are in the table above and in
+[context.md](context.md).
 
-131 unit and integration tests, 38 end-to-end tests, all passing. The end-to-end
+270 unit and integration tests, 38 end-to-end tests, all passing. The end-to-end
 suite runs against the **live Supabase project and the live R2 bucket** — there
 are no mocks.
+
+**The engines run ahead of the data.** Phases 6–10 were built as pure,
+dependency-free packages the way Phase 5 was, so they are complete and provable
+in isolation. What they cannot yet do is act on a real household, because there
+are no transactions to classify, no spending history to detect recurrence in and
+no import that produces either. The plan screen works on accounts, obligations,
+debts and goals — the rows that can exist today — and says what it is computed
+from. Closing the two gaps below is what turns the engines from correct into
+useful.
 
 The two gaps that block everything downstream, in order:
 
