@@ -85,6 +85,25 @@ export interface Claim {
   readonly weight?: number | null;
 }
 
+/**
+ * Why a line received what it received, as a message key and its values.
+ *
+ * Not a sentence. This engine has no language: the product ships in Spanish and
+ * English, every user-visible string lives in `messages/{es,en}.json`, and an
+ * engine that returned prose would either be monolingual or would need a copy of
+ * the catalogue. The key and its values are the explanation; rendering it is the
+ * app's job.
+ */
+export interface LineExplanation {
+  readonly key: string;
+  readonly values: Readonly<Record<string, string>>;
+  /**
+   * Set when the claim was only partly funded, carrying what it asked for. The
+   * app appends a second sentence rather than the engine concatenating one.
+   */
+  readonly partialOf?: string;
+}
+
 export interface AllocationLine {
   readonly claimId: string;
   readonly kind: ClaimKind;
@@ -95,8 +114,8 @@ export interface AllocationLine {
   /** requested − allocated. Non-zero means this claim went unfunded. */
   readonly shortfall: Money;
   readonly position: number;
-  /** In the household's own terms, citing the reason this claim ranks here. */
-  readonly explanation: string;
+  /** Cites the reason this claim ranks where it does. */
+  readonly explanation: LineExplanation;
   /** Rules that changed this line, so the plan can be traced back to them. */
   readonly appliedRuleIds: readonly string[];
 }

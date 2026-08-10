@@ -99,7 +99,92 @@
         "other": "Discretionary"
       }
     },
-    "scopeNote": "For now, what is available subtracts recorded obligations due in the next 30 days. Minimum debt payments and the tax reserve join the calculation in a later phase."
+    "planLink": "See what to do with this money",
+    "scopeNote": "Available here deducts the obligations recorded for the next 30 days. The full calculation — minimum debt payments, estimated tax reserve and buffer — is in the plan."
+  },
+  "plan": {
+    "title": "What to do with this money",
+    "detail": "A concrete plan for the money you have available right now, line by line, with the reason for each.",
+    "signOut": "Sign out",
+    "basis": "This plan allocates {incoming} of liquid balance. When new money arrives, the same calculation runs against that income.",
+    "empty": {
+      "title": "There is nothing to allocate yet.",
+      "body": "Add an account, record an obligation or a debt. With that we can already tell you where each dollar should go.",
+      "action": "Add an account"
+    },
+    "safeToSpend": {
+      "title": "What is genuinely available",
+      "detail": "The balance less everything already spoken for, in the order it gets covered.",
+      "label": "Safe to spend",
+      "shortfall": "{amount} short of covering everything claimed.",
+      "columns": {
+        "claim": "Claim",
+        "claimed": "Asks for",
+        "covered": "Covered"
+      },
+      "kinds": {
+        "committed": "Spending already committed",
+        "obligations": "Upcoming obligations",
+        "debt_minimums": "Minimum debt payments",
+        "tax_reserve": "Estimated tax reserve",
+        "goals": "Goal contributions",
+        "buffer": "Minimum buffer"
+      }
+    },
+    "lines": {
+      "title": "The allocation",
+      "detail": "Top to bottom. Each line takes what it can from what is left.",
+      "emptyTitle": "Nothing claims this money.",
+      "emptyBody": "With no obligations, debts or goals recorded, the whole balance is free.",
+      "unallocated": "Unallocated",
+      "columns": {
+        "item": "Item",
+        "reason": "Why",
+        "requested": "Asks for",
+        "allocated": "Allocated"
+      }
+    },
+    "reason": {
+      "nothingLeft": "Nothing left for {label} from this money.",
+      "overdueEssential": "Allocate {amount} to {label} because it was due on {due} and is already late.",
+      "upcomingEssential": "Allocate {amount} to {label} because it is due on {due}.",
+      "debtMinimum": "Allocate {amount} to {label} to cover its minimum payment.",
+      "taxReserve": "Set aside {amount} as an estimated tax reserve. Confirm it with your accountant.",
+      "emergencyFund": "Allocate {amount} to {label} because the buffer comes before anything optional.",
+      "highInterestDebt": "Allocate {amount} to {label} because it carries the highest rate at {apr}%.",
+      "expensiveDebt": "Allocate {amount} to {label} because it is the most expensive debt you hold.",
+      "investment": "Allocate {amount} to {label}.",
+      "goal": "Allocate {amount} to {label}.",
+      "goalByDate": "Allocate {amount} to {label}, which you want ready by {due}.",
+      "discretionary": "{amount} is yours to spend as of {today}.",
+      "partial": "That is part of the {requested} it needs."
+    },
+    "rules": {
+      "title": "Your rules",
+      "empty": "No rule changed this plan.",
+      "skippedTitle": "Rules that did not run",
+      "skipped": "{name}: {reason} is missing.",
+      "notes": {
+        "paused": "Contributions to {target} are paused by one of your rules.",
+        "otherCurrency": "A rule for {target} is written in another currency and was skipped.",
+        "marked": "{label} is marked {priority} by one of your rules.",
+        "taxesFirst": "Taxes are reserved before anything else, by one of your rules.",
+        "unreachableTarget": "A rule points at {target}, which is not somewhere money can go.",
+        "raised": {
+          "percentOfIncoming": "Your rule raises {label} to {percent}% of this money.",
+          "fixedAmount": "Your rule raises {label} to {amount}."
+        },
+        "added": {
+          "percentOfIncoming": "Your rule adds {label} at {percent}% of this money.",
+          "fixedAmount": "Your rule adds {label} at {amount}."
+        }
+      }
+    },
+    "debtOrder": {
+      "title": "Which debt to attack",
+      "detail": "The order your strategy imposes. The extra goes to the first; the others keep paying their minimum."
+    },
+    "scopeNote": "The plan is computed from the accounts, obligations, debts and goals you have recorded today. The tax reserve is an estimate from the rate you configured, not a calculation of tax owed."
   },
   "errors": {
     "notFoundTitle": "We couldn't find this page",

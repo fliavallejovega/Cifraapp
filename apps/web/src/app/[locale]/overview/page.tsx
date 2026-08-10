@@ -20,6 +20,7 @@ import { formatMoney, Money } from '@app/domain';
 import { getFormatter, getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { SignOutButton } from '@/components/sign-out-button';
+import { Link } from '@/i18n/navigation';
 import { loadPosition } from '@/server/repositories/position';
 import { requireHousehold } from '@/server/session';
 
@@ -184,10 +185,19 @@ export default async function OverviewPage({ params }: { params: Promise<{ local
         </Section>
       )}
 
+      {!position.isEmpty && (
+        <Section title="" className="mt-16">
+          <Link href="/plan" className="text-sm underline underline-offset-4 hover:no-underline">
+            {t('planLink')}
+          </Link>
+        </Section>
+      )}
+
       <Rule className="mt-16" />
       <footer className="mt-6">
-        {/* The product does not claim completeness it has not earned. Minimum
-            debt payments and tax reserves join the calculation in Phase 7. */}
+        {/* This screen answers "how much is there" and "what is spoken for".
+            The full safe-to-spend ladder lives on the plan, and the note says so
+            rather than implying this figure already accounts for it. */}
         <p className="max-w-[62ch] text-xs text-pretty text-[color:var(--color-ink-tertiary)]">
           {t('scopeNote')}
         </p>

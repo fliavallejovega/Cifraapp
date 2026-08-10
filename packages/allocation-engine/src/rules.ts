@@ -4,6 +4,17 @@ import type { Action, AllocationPriority } from '@app/rule-engine';
 import { DEFAULT_PRIORITY_ORDER, type Claim, type ClaimKind, type TargetRef } from './types.js';
 
 /**
+ * What a rule did to the plan, as a message key and its values.
+ *
+ * The same reasoning as `LineExplanation`: this engine has no language, and a
+ * note assembled here in English would be untranslatable at the screen.
+ */
+export interface RuleNote {
+  readonly key: string;
+  readonly values: Readonly<Record<string, string>>;
+}
+
+/**
  * Turning rule actions into claims.
  *
  * The rule engine decides *what* a household asked for; this decides what that
@@ -41,7 +52,7 @@ export interface RuleApplication {
   readonly claims: readonly Claim[];
   readonly order: readonly ClaimKind[];
   /** What each action did, for the plan's own explanation. */
-  readonly notes: readonly string[];
+  readonly notes: readonly RuleNote[];
 }
 
 export function applyRuleActions(
@@ -52,7 +63,7 @@ export function applyRuleActions(
 ): RuleApplication {
   const byTarget = new Map<TargetRef, Claim>(claims.map((claim) => [claim.target, claim]));
   const stopped = new Set<TargetRef>();
-  const notes: string[] = [];
+  const notes: RuleNote[] = [];
   let effectiveOrder = [...order];
 
   for (const action of actions) {
@@ -62,25 +73,31 @@ export function applyRuleActions(
         // contributions" must not be undone by a rule further down the list.
         stopped.add(action.target);
         byTarget.delete(action.target);
-        notes.push(`Contributions to ${action.target} are paused by one of your rules.`);
+        notes.push({ key: 'paused', values: { target: action.target } });
         break;
       }
 
       case 'allocate_percentage': {
         if (stopped.has(action.target)) break;
         const requested = incoming.percentage(action.percent);
-        raise(byTarget, action.target, requested, notes, `${action.percent}% of this money`);
+        raise(byTarget, action.target, requested, notes, {
+          key: 'percentOfIncoming',
+          values: { percent: action.percent },
+        });
         break;
       }
 
       case 'allocate_amount': {
         if (stopped.has(action.target)) break;
         if (action.currency !== incoming.currency) {
-          notes.push(`A rule for ${action.target} is written in another currency and was skipped.`);
+          notes.push({ key: 'otherCurrency', values: { target: action.target } });
           break;
         }
         const requested = Money.fromDecimalString(action.amount, incoming.currency);
-        raise(byTarget, action.target, requested, notes, requested.toCurrencyString());
+        raise(byTarget, action.target, requested, notes, {
+          key: 'fixedAmount',
+          values: { amount: requested.toCurrencyString() },
+        });
         break;
       }
 
@@ -88,7 +105,10 @@ export function applyRuleActions(
         const existing = byTarget.get(action.target);
         if (!existing) break;
         byTarget.set(action.target, { ...existing, weight: PRIORITY_WEIGHTS[action.priority] });
-        notes.push(`${existing.label} is marked ${action.priority} by one of your rules.`);
+        notes.push({
+          key: 'marked',
+          values: { label: existing.label, priority: action.priority },
+        });
         break;
       }
 
@@ -97,7 +117,7 @@ export function applyRuleActions(
           'tax_reserve',
           ...effectiveOrder.filter((kind) => kind !== 'tax_reserve'),
         ];
-        notes.push('Taxes are reserved before anything else, by one of your rules.');
+        notes.push({ key: 'taxesFirst', values: {} });
         break;
       }
 
@@ -116,33 +136,31 @@ function raise(
   byTarget: Map<TargetRef, Claim>,
   target: TargetRef,
   requested: Money,
-  notes: string[],
-  description: string,
+  notes: RuleNote[],
+  amount: RuleNote,
 ): void {
   const existing = byTarget.get(target);
 
   if (existing) {
     if (requested.greaterThan(existing.requested)) {
       byTarget.set(target, { ...existing, requested });
-      notes.push(`Your rule raises ${existing.label} to ${description}.`);
+      notes.push({
+        key: `raised.${amount.key}`,
+        values: { label: existing.label, ...amount.values },
+      });
     }
     return;
   }
 
   const kind = kindForTarget(target);
   if (!kind) {
-    notes.push(`A rule points at ${target}, which is not something money can go to.`);
+    notes.push({ key: 'unreachableTarget', values: { target } });
     return;
   }
 
-  byTarget.set(target, {
-    id: `rule:${target}`,
-    kind,
-    label: labelForTarget(target),
-    target,
-    requested,
-  });
-  notes.push(`Your rule adds ${labelForTarget(target)} at ${description}.`);
+  const label = labelForTarget(target);
+  byTarget.set(target, { id: `rule:${target}`, kind, label, target, requested });
+  notes.push({ key: `added.${amount.key}`, values: { label, ...amount.values } });
 }
 
 function kindForTarget(target: TargetRef): ClaimKind | null {

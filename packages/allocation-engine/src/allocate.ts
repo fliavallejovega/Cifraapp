@@ -7,6 +7,7 @@ import {
   type AllocationPlan,
   type Claim,
   type ClaimKind,
+  type LineExplanation,
 } from './types.js';
 
 /**
@@ -189,40 +190,55 @@ function withinTier(a: Claim, b: Claim): number {
  * Every line carries one. A plan a person cannot interrogate is a plan they have
  * to take on faith, and this product does not ask anyone to take money advice on
  * faith.
+ *
+ * A key and its values, never a sentence — see `LineExplanation`.
  */
-function explain(claim: Claim, allocated: Money, today: PlainDate): string {
+function explain(claim: Claim, allocated: Money, today: PlainDate): LineExplanation {
   const amount = allocated.toCurrencyString();
+  const label = claim.label;
 
   if (allocated.isZero()) {
-    return `Nothing left for ${claim.label} from this money.`;
+    return { key: 'nothingLeft', values: { label } };
   }
 
   const partial = allocated.lessThan(claim.requested)
-    ? ` That is part of the ${claim.requested.toCurrencyString()} it needs.`
-    : '';
+    ? { partialOf: claim.requested.toCurrencyString() }
+    : {};
 
   switch (claim.kind) {
     case 'overdue_essential':
-      return `Allocate ${amount} to ${claim.label} because it was due on ${String(claim.dueDate)} and is already late.${partial}`;
+      return {
+        key: 'overdueEssential',
+        values: { amount, label, due: String(claim.dueDate) },
+        ...partial,
+      };
     case 'upcoming_essential':
-      return `Allocate ${amount} to ${claim.label} because it is due on ${String(claim.dueDate)}.${partial}`;
+      return {
+        key: 'upcomingEssential',
+        values: { amount, label, due: String(claim.dueDate) },
+        ...partial,
+      };
     case 'debt_minimum':
-      return `Allocate ${amount} to ${claim.label} to cover its minimum payment.${partial}`;
+      return { key: 'debtMinimum', values: { amount, label }, ...partial };
     case 'tax_reserve':
-      return `Set aside ${amount} as an estimated tax reserve. Confirm the figure with your accountant.${partial}`;
+      return { key: 'taxReserve', values: { amount }, ...partial };
     case 'emergency_fund':
-      return `Allocate ${amount} to ${claim.label} because the buffer comes before anything optional.${partial}`;
+      return { key: 'emergencyFund', values: { amount, label }, ...partial };
     case 'high_interest_debt':
       return claim.apr
-        ? `Allocate ${amount} to ${claim.label} because it carries the highest rate at ${claim.apr}%.${partial}`
-        : `Allocate ${amount} to ${claim.label} because it is the most expensive debt you hold.${partial}`;
+        ? { key: 'highInterestDebt', values: { amount, label, apr: claim.apr }, ...partial }
+        : { key: 'expensiveDebt', values: { amount, label }, ...partial };
     case 'investment':
-      return `Allocate ${amount} to ${claim.label}.${partial}`;
+      return { key: 'investment', values: { amount, label }, ...partial };
     case 'goal':
       return claim.dueDate
-        ? `Allocate ${amount} to ${claim.label}, which you want ready by ${String(claim.dueDate)}.${partial}`
-        : `Allocate ${amount} to ${claim.label}.${partial}`;
+        ? {
+            key: 'goalByDate',
+            values: { amount, label, due: String(claim.dueDate) },
+            ...partial,
+          }
+        : { key: 'goal', values: { amount, label }, ...partial };
     case 'discretionary':
-      return `${amount} is yours to spend as of ${String(today)}.`;
+      return { key: 'discretionary', values: { amount, today: String(today) } };
   }
 }

@@ -235,8 +235,8 @@ describe('every line is explainable', () => {
     });
     const line = plan.lines.find((entry) => entry.kind === 'high_interest_debt');
 
-    expect(line?.explanation).toContain('24.500%');
-    expect(line?.explanation).toContain('highest rate');
+    expect(line?.explanation.key).toBe('highInterestDebt');
+    expect(line?.explanation.values['apr']).toBe('24.500');
   });
 
   it('cites the due date on an overdue bill', () => {
@@ -247,8 +247,8 @@ describe('every line is explainable', () => {
     });
     const line = plan.lines.find((entry) => entry.kind === 'overdue_essential');
 
-    expect(line?.explanation).toContain('2026-08-10');
-    expect(line?.explanation).toContain('late');
+    expect(line?.explanation.key).toBe('overdueEssential');
+    expect(line?.explanation.values['due']).toBe('2026-08-10');
   });
 
   it('calls the tax figure an estimate, never a bill', () => {
@@ -259,15 +259,14 @@ describe('every line is explainable', () => {
     });
     const line = plan.lines.find((entry) => entry.kind === 'tax_reserve');
 
-    expect(line?.explanation).toContain('estimated tax reserve');
-    expect(line?.explanation.toLowerCase()).not.toContain('your tax bill');
+    expect(line?.explanation.key).toBe('taxReserve');
   });
 
   it('says plainly when a claim got nothing', () => {
     const plan = buildAllocationPlan({ incoming: usd('90.00'), claims: ALL_CLAIMS, today: TODAY });
     const unfunded = plan.lines.find((line) => line.allocated.isZero());
 
-    expect(unfunded?.explanation).toContain('Nothing left');
+    expect(unfunded?.explanation.key).toBe('nothingLeft');
     expect(plan.fullyFunded).toBe(false);
   });
 });
@@ -281,7 +280,8 @@ describe('rules shaping a plan', () => {
 
     const claim = applied.claims.find((entry) => entry.target === 'goal:emergency-fund');
     expect(claim?.requested.toCurrencyString()).toBe('600.00');
-    expect(applied.notes[0]).toContain('15%');
+    expect(applied.notes[0]?.key).toBe('raised.percentOfIncoming');
+    expect(applied.notes[0]?.values['percent']).toBe('15');
   });
 
   it('raises a claim but never lowers one', () => {
@@ -350,7 +350,7 @@ describe('rules shaping a plan', () => {
     expect(
       applied.claims.find((entry) => entry.target === 'goal:travel')?.requested.toCurrencyString(),
     ).toBe('200.00');
-    expect(applied.notes.some((note) => note.includes('another currency'))).toBe(true);
+    expect(applied.notes.some((note) => note.key === 'otherCurrency')).toBe(true);
   });
 
   it('refuses a target money cannot go to', () => {
@@ -361,7 +361,7 @@ describe('rules shaping a plan', () => {
     );
 
     expect(applied.claims).toHaveLength(0);
-    expect(applied.notes[0]).toContain('not something money can go to');
+    expect(applied.notes[0]?.key).toBe('unreachableTarget');
   });
 
   it('ignores classification actions, which belong to another engine', () => {

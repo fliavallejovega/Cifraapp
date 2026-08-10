@@ -1,6 +1,6 @@
 export { buildAllocationPlan, type AllocationInput } from './allocate.js';
 
-export { applyRuleActions, type RuleApplication } from './rules.js';
+export { applyRuleActions, type RuleApplication, type RuleNote } from './rules.js';
 
 export {
   DEFAULT_PRIORITY_ORDER,
@@ -9,6 +9,7 @@ export {
   type AllocationPlan,
   type Claim,
   type ClaimKind,
+  type LineExplanation,
   type PlanOutcome,
   type TargetRef,
   type TierPolicy,

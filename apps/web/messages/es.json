@@ -99,7 +99,92 @@
         "other": "Discrecional"
       }
     },
-    "scopeNote": "Por ahora el disponible descuenta las obligaciones registradas de los próximos 30 días. Los pagos mínimos de deuda y la reserva fiscal entran en el cálculo en una fase posterior."
+    "planLink": "Ver qué hacer con este dinero",
+    "scopeNote": "Por ahora el disponible descuenta las obligaciones registradas de los próximos 30 días. El cálculo completo — pagos mínimos de deuda, reserva fiscal estimada y colchón — está en el plan."
+  },
+  "plan": {
+    "title": "Qué hacer con este dinero",
+    "detail": "Un plan concreto para el dinero que tienes disponible ahora mismo, línea por línea y con el porqué de cada una.",
+    "signOut": "Salir",
+    "basis": "Este plan reparte {incoming} de saldo líquido. Cuando entre dinero nuevo, el mismo cálculo corre sobre ese ingreso.",
+    "empty": {
+      "title": "Todavía no hay nada que repartir.",
+      "body": "Agrega una cuenta, registra una obligación o una deuda. Con eso ya podemos decirte a qué debería ir cada dólar.",
+      "action": "Agregar una cuenta"
+    },
+    "safeToSpend": {
+      "title": "Qué queda realmente disponible",
+      "detail": "El saldo menos todo lo que ya tiene dueño, en el orden en que se cubre.",
+      "label": "Disponible para gastar",
+      "shortfall": "Faltan {amount} para cubrir todo lo reclamado.",
+      "columns": {
+        "claim": "Reclamo",
+        "claimed": "Pide",
+        "covered": "Cubierto"
+      },
+      "kinds": {
+        "committed": "Gasto ya comprometido",
+        "obligations": "Obligaciones próximas",
+        "debt_minimums": "Pagos mínimos de deuda",
+        "tax_reserve": "Reserva fiscal estimada",
+        "goals": "Aportes a metas",
+        "buffer": "Colchón mínimo"
+      }
+    },
+    "lines": {
+      "title": "El reparto",
+      "detail": "De arriba hacia abajo. Cada línea toma lo que puede de lo que queda.",
+      "emptyTitle": "Nada reclama este dinero.",
+      "emptyBody": "Sin obligaciones, deudas ni metas registradas, todo el saldo queda libre.",
+      "unallocated": "Sin asignar",
+      "columns": {
+        "item": "Concepto",
+        "reason": "Por qué",
+        "requested": "Pide",
+        "allocated": "Asignado"
+      }
+    },
+    "reason": {
+      "nothingLeft": "No queda nada para {label} de este dinero.",
+      "overdueEssential": "Asigna {amount} a {label} porque venció el {due} y ya está atrasado.",
+      "upcomingEssential": "Asigna {amount} a {label} porque vence el {due}.",
+      "debtMinimum": "Asigna {amount} a {label} para cubrir su pago mínimo.",
+      "taxReserve": "Aparta {amount} como reserva fiscal estimada. Confírmalo con tu contador.",
+      "emergencyFund": "Asigna {amount} a {label} porque el colchón va antes que lo opcional.",
+      "highInterestDebt": "Asigna {amount} a {label} porque carga la tasa más alta, {apr}%.",
+      "expensiveDebt": "Asigna {amount} a {label} porque es la deuda más cara que tienes.",
+      "investment": "Asigna {amount} a {label}.",
+      "goal": "Asigna {amount} a {label}.",
+      "goalByDate": "Asigna {amount} a {label}, que quieres lista para el {due}.",
+      "discretionary": "{amount} son tuyos para gastar al {today}.",
+      "partial": "Es parte de los {requested} que necesita."
+    },
+    "rules": {
+      "title": "Tus reglas",
+      "empty": "Ninguna regla cambió este plan.",
+      "skippedTitle": "Reglas que no corrieron",
+      "skipped": "{name}: falta {reason}.",
+      "notes": {
+        "paused": "Los aportes a {target} están pausados por una de tus reglas.",
+        "otherCurrency": "Una regla para {target} está escrita en otra moneda y se omitió.",
+        "marked": "{label} quedó marcada como {priority} por una de tus reglas.",
+        "taxesFirst": "Los impuestos se reservan antes que todo lo demás, por una de tus reglas.",
+        "unreachableTarget": "Una regla apunta a {target}, que no es un destino al que pueda ir dinero.",
+        "raised": {
+          "percentOfIncoming": "Tu regla sube {label} a {percent}% de este dinero.",
+          "fixedAmount": "Tu regla sube {label} a {amount}."
+        },
+        "added": {
+          "percentOfIncoming": "Tu regla agrega {label} con {percent}% de este dinero.",
+          "fixedAmount": "Tu regla agrega {label} con {amount}."
+        }
+      }
+    },
+    "debtOrder": {
+      "title": "A qué deuda atacar",
+      "detail": "El orden que impone tu estrategia. El extra va a la primera; las demás siguen pagando su mínimo."
+    },
+    "scopeNote": "El plan se calcula con las cuentas, obligaciones, deudas y metas que tienes registradas hoy. La reserva fiscal es una estimación a partir de la tasa que configuraste, no un cálculo del impuesto que debes."
   },
   "errors": {
     "notFoundTitle": "No encontramos esta página",

@@ -26,12 +26,27 @@ importers:
 
   apps/web:
     dependencies:
+      '@app/allocation-engine':
+        specifier: workspace:*
+        version: link:../../packages/allocation-engine
+      '@app/budget-engine':
+        specifier: workspace:*
+        version: link:../../packages/budget-engine
+      '@app/category-engine':
+        specifier: workspace:*
+        version: link:../../packages/category-engine
       '@app/database':
         specifier: workspace:*
         version: link:../../packages/database
+      '@app/debt-engine':
+        specifier: workspace:*
+        version: link:../../packages/debt-engine
       '@app/domain':
         specifier: workspace:*
         version: link:../../packages/domain
+      '@app/rule-engine':
+        specifier: workspace:*
+        version: link:../../packages/rule-engine
       '@app/transaction-engine':
         specifier: workspace:*
         version: link:../../packages/transaction-engine
