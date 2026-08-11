@@ -184,6 +184,16 @@
       "title": "A qué deuda atacar",
       "detail": "El orden que impone tu estrategia. El extra va a la primera; las demás siguen pagando su mínimo."
     },
+    "copilot": {
+      "title": "Lectura del plan",
+      "detail": "Un resumen escrito sobre las mismas cifras que ves arriba.",
+      "disclaimer": "Redactado por un asistente sobre el plan ya calculado. Las cifras salen de tus registros, no del asistente.",
+      "declined": {
+        "budget": "El asistente alcanzó su límite de uso de este mes. El plan de arriba está completo sin él.",
+        "quality": "El asistente devolvió algo que no pudimos verificar contra tus cifras, así que no lo mostramos. Cada línea del plan explica su razón.",
+        "error": "El asistente no respondió. El plan de arriba no depende de él."
+      }
+    },
     "scopeNote": "El plan se calcula con las cuentas, obligaciones, deudas y metas que tienes registradas hoy. La reserva fiscal es una estimación a partir de la tasa que configuraste, no un cálculo del impuesto que debes."
   },
   "errors": {

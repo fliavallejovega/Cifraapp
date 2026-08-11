@@ -15,6 +15,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@app/ai": "workspace:*",
     "@app/allocation-engine": "workspace:*",
     "@app/budget-engine": "workspace:*",
     "@app/category-engine": "workspace:*",
@@ -22,6 +23,7 @@
     "@app/debt-engine": "workspace:*",
     "@app/domain": "workspace:*",
     "@app/rule-engine": "workspace:*",
+    "@app/scenario-engine": "workspace:*",
     "@app/transaction-engine": "workspace:*",
     "@app/ui": "workspace:*",
     "@app/validation": "workspace:*",

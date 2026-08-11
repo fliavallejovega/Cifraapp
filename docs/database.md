@@ -58,10 +58,22 @@ session-level locks DDL requires.
 
 ## Applied migrations
 
-| File                                | Adds                                                                                                                                 |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `20260806120000_foundation.sql`     | Extensions (`pgcrypto`, `citext`, `pg_trgm`), the three schemas, `uuid_generate_v7()`, `set_updated_at()`, `platform.schema_version` |
-| `20260806120100_reference_data.sql` | `platform.currencies`, `platform.tax_jurisdictions`, `app.category_templates`, `category_kind` enum                                  |
+| File                                 | Adds                                                                                                                                 |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `20260806120000_foundation.sql`      | Extensions (`pgcrypto`, `citext`, `pg_trgm`), the three schemas, `uuid_generate_v7()`, `set_updated_at()`, `platform.schema_version` |
+| `20260806120100_reference_data.sql`  | `platform.currencies`, `platform.tax_jurisdictions`, `app.category_templates`, `category_kind` enum                                  |
+| `20260806130000_identity.sql`        | Profiles, households, memberships, organizations, `app.is_household_member()`, the audit trail                                       |
+| `20260806140000_financial_model.sql` | Accounts, transactions, categories, merchants, budgets, goals, debts, obligations, household settings                                |
+| `20260807040000_documents.sql`       | Documents, import runs, import rows, R2 keys                                                                                         |
+| `20260807050000_categorization.sql`  | Merchant rules, classification confidence, review state                                                                              |
+| `20260807060000_recurring.sql`       | Recurring series and their detected cadence                                                                                          |
+| `20260807070000_rules.sql`           | Stored rules: conditions, actions, priority, effective window                                                                        |
+| `20260807080000_allocation.sql`      | Allocation plans and lines, `claim_kind` and `plan_outcome` enums                                                                    |
+| `20260811100000_ai.sql`              | `platform.ai_models` (pricing), `app.ai_invocations`, `ai_budgets`, `ai_cache`, `app.scenarios`                                      |
+
+The applied generation is recorded in `platform.schema_version` and reported by
+`GET /api/health`, so a deployment talking to the wrong database is visible
+before a user finds it.
 
 `pg_trgm` is installed early because the duplicate-detection engine in Phase 5
 compares normalized merchant descriptions (`SUPER 99 CDE` against `SUPER99 #034`)

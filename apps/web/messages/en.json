@@ -184,6 +184,16 @@
       "title": "Which debt to attack",
       "detail": "The order your strategy imposes. The extra goes to the first; the others keep paying their minimum."
     },
+    "copilot": {
+      "title": "Reading the plan",
+      "detail": "A written summary over the same figures shown above.",
+      "disclaimer": "Written by an assistant over the plan already computed. The figures come from your records, not from the assistant.",
+      "declined": {
+        "budget": "The assistant reached this month's usage limit. The plan above is complete without it.",
+        "quality": "The assistant returned something we could not check against your figures, so we did not show it. Every line of the plan explains its own reason.",
+        "error": "The assistant did not answer. The plan above does not depend on it."
+      }
+    },
     "scopeNote": "The plan is computed from the accounts, obligations, debts and goals you have recorded today. The tax reserve is an estimate from the rate you configured, not a calculation of tax owed."
   },
   "errors": {

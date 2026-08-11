@@ -76,10 +76,22 @@ supabase/
 docs/                 This directory
 ```
 
-Engine packages — `financial-engine`, `transaction-engine`, `tax-engine`,
-`accounting-engine`, `ai`, `documents`, `billing`, `permissions`, `analytics` —
-are created in the phase that first needs them, each with its first test. Empty
-packages are deferred work wearing the costume of architecture.
+Engine packages are created in the phase that first needs them, each with its
+first test. Empty packages are deferred work wearing the costume of
+architecture. Built so far:
+
+| Package              | Phase | Holds                                                          |
+| -------------------- | ----- | -------------------------------------------------------------- |
+| `transaction-engine` | 4–5   | Parsers, normalization, fingerprints, duplicates, transfers    |
+| `category-engine`    | 6     | Merchant normalization, classification, learning from rules    |
+| `budget-engine`      | 7     | Budget state, recurrence detection, safe-to-spend, forecasting |
+| `debt-engine`        | 8     | Daily interest, payoff simulation, avalanche/snowball ordering |
+| `rule-engine`        | 9     | The `WHEN`/`THEN` language, validation, evaluation             |
+| `allocation-engine`  | 10    | The priority ladder that decides where the next dollar goes    |
+| `ai`                 | 11    | Provider abstraction, versioned prompts, guardrails, cost      |
+| `scenario-engine`    | 11    | Deterministic "what if" projections over a position snapshot   |
+
+Still to come: `tax-engine`, `reporting`, `billing`, `ledger`.
 
 ## Dependency direction
 

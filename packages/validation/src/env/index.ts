@@ -48,6 +48,8 @@ export function getServerEnv(): ServerEnv {
       DATABASE_URL: '',
       DIRECT_URL: '',
       SUPABASE_SERVICE_ROLE_KEY: '',
+      AI_PROVIDER: 'none',
+      AI_MONTHLY_BUDGET: '0',
     };
     return cachedServerEnv;
   }

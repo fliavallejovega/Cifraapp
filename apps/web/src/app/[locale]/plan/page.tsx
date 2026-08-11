@@ -20,6 +20,7 @@ import {
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { SignOutButton } from '@/components/sign-out-button';
+import { explainPlan } from '@/server/repositories/copilot';
 import { loadPlan } from '@/server/repositories/plan';
 import { requireHousehold } from '@/server/session';
 
@@ -38,6 +39,15 @@ export default async function PlanPage({ params }: { params: Promise<{ locale: s
 
   const session = await requireHousehold(locale);
   const view = await loadPlan(session, session.activeHouseholdId);
+
+  // Additive by construction: the plan below renders identically whether or not
+  // this returns anything.
+  const narrative = await explainPlan(
+    session,
+    session.activeHouseholdId,
+    view,
+    locale === 'en' ? 'en' : 'es',
+  );
 
   const t = await getTranslations('plan');
   const common = await getTranslations('common');
@@ -185,6 +195,35 @@ export default async function PlanPage({ params }: { params: Promise<{ locale: s
               </>
             )}
           </Section>
+
+          {narrative.state === 'answered' && (
+            <Section title={t('copilot.title')} detail={t('copilot.detail')} className="mt-16">
+              <p className="max-w-[62ch] text-pretty">{narrative.summary}</p>
+
+              {narrative.cautions.length > 0 && (
+                <ul className="mt-4 space-y-2">
+                  {narrative.cautions.map((caution) => (
+                    <li
+                      key={caution}
+                      className="max-w-[62ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]"
+                    >
+                      {caution}
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <p className="mt-6 max-w-[62ch] text-xs text-pretty text-[color:var(--color-ink-tertiary)]">
+                {t('copilot.disclaimer')}
+              </p>
+            </Section>
+          )}
+
+          {narrative.state === 'declined' && (
+            <p className="mt-16 max-w-[62ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]">
+              {t(`copilot.declined.${narrative.reason}`)}
+            </p>
+          )}
 
           {view.debtOrder.length > 0 && (
             <Section title={t('debtOrder.title')} detail={t('debtOrder.detail')} className="mt-16">

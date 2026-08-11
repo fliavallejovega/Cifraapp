@@ -26,6 +26,29 @@ export const serverEnvSchema = z.object({
    * this key is responsible for its own tenant scoping (spec §6, §47).
    */
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, 'SUPABASE_SERVICE_ROLE_KEY is required.'),
+
+  /**
+   * The AI copilot, off unless a deployment turns it on.
+   *
+   * Off is a working configuration, not a degraded one: the product's decisions
+   * are deterministic and every copilot surface renders without a provider
+   * (spec §41). A missing key must therefore never fail a boot — it selects the
+   * null provider, and the screen says the assistant is unavailable.
+   */
+  AI_PROVIDER: z.enum(['anthropic', 'openai', 'none']).default('none'),
+  ANTHROPIC_API_KEY: z.string().optional(),
+  OPENAI_API_KEY: z.string().optional(),
+  /** Overrides the provider's default model. Pricing is read from the database. */
+  AI_MODEL: z.string().optional(),
+
+  /**
+   * Ceiling per household per calendar month, in whole currency units. Zero is
+   * uncapped and is the wrong setting for anything a customer can reach.
+   */
+  AI_MONTHLY_BUDGET: z
+    .string()
+    .regex(/^\d+(\.\d{1,4})?$/, 'AI_MONTHLY_BUDGET must be an amount like "5.00".')
+    .default('0'),
 });
 
 /**

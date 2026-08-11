@@ -11,15 +11,15 @@ status table.
 
 ## Status
 
-|                         |                                                                                                                                         |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| **Complete**            | Phase 0 (foundation) · Phase 1 (design system) · Phase 2 (auth and tenancy) · Phase 5 (duplicate and transfer engine)                   |
-| **Engines complete**    | Phases 6–10 — category, budget, debt, rule and allocation engines, all live on the database, with the plan screen; **no management UI** |
-| **Substantially built** | Phase 3 (schema and position repository done, no per-entity CRUD) · Phase 4 (CSV/OFX, R2 and review pipeline done, no row confirmation) |
-| **Not started**         | Phases 11–21                                                                                                                            |
-| **Tests**               | 270 unit and integration · 38 end-to-end · all passing                                                                                  |
-| **Gate**                | 20/20 tasks green: `lint`, `typecheck`, `test`, `build`                                                                                 |
-| **Commits**             | 14, working tree clean                                                                                                                  |
+|                         |                                                                                                                                                       |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Complete**            | Phase 0 (foundation) · Phase 1 (design system) · Phase 2 (auth and tenancy) · Phase 5 (duplicate and transfer engine)                                 |
+| **Engines complete**    | Phases 6–11 — category, budget, debt, rule, allocation, AI and scenario engines, all live on the database, with the plan screen; **no management UI** |
+| **Substantially built** | Phase 3 (schema and position repository done, no per-entity CRUD) · Phase 4 (CSV/OFX, R2 and review pipeline done, no row confirmation)               |
+| **Not started**         | Phases 12–21                                                                                                                                          |
+| **Tests**               | 312 unit and integration · 38 end-to-end · all passing                                                                                                |
+| **Gate**                | 20/20 tasks green: `lint`, `typecheck`, `test`, `build`                                                                                               |
+| **Commits**             | 14, working tree clean                                                                                                                                |
 
 Live infrastructure is connected and exercised by the end-to-end suite. This is
 not a repository that merely compiles; it signs a user in, creates their
@@ -1207,10 +1207,28 @@ the single most meaningful product metric.**
 
 ---
 
-## PHASE 11 — AI copilot
+## PHASE 11 — AI copilot ✅ ENGINE COMPLETE
 
 **Goal:** AI explains the system instead of replacing it.
 **Depends on:** Phase 10.
+
+**Built.** `@app/ai` — `AIProvider` with Anthropic, OpenAI, scripted and null
+implementations; eight versioned prompts in `prompts.ts`; structured output
+declared once and used twice (JSON Schema out, validator back); micro-dollar
+cost accounting; a budget checked _before_ the call; a household-scoped cache;
+and the guardrail that rejects any figure the grounding did not carry.
+`@app/scenario-engine` projects a scenario against a position snapshot, never
+against live rows. Schema version 10 adds `platform.ai_models` (pricing lives in
+the database, not in code), `app.ai_invocations`, `ai_budgets`, `ai_cache` and
+`app.scenarios`. The plan screen renders an AI narrative above the lines when a
+provider is configured, and is unchanged when one is not.
+
+**Not built.** No provider key exists, so no call has ever been made against a
+live model — the whole package is exercised through `ScriptedProvider`. There is
+no copilot chat surface, no scenario UI, no anomaly or budget-suggestion caller,
+and the seeded model prices in `platform.ai_models` carry a null
+`price_checked_at`: nobody has confirmed them against the providers, so every
+cost figure is indicative until an administrator does.
 
 ### Architecture
 
