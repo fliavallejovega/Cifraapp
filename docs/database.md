@@ -58,24 +58,25 @@ session-level locks DDL requires.
 
 ## Applied migrations
 
-| File                                   | Adds                                                                                                                                 |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `20260806120000_foundation.sql`        | Extensions (`pgcrypto`, `citext`, `pg_trgm`), the three schemas, `uuid_generate_v7()`, `set_updated_at()`, `platform.schema_version` |
-| `20260806120100_reference_data.sql`    | `platform.currencies`, `platform.tax_jurisdictions`, `app.category_templates`, `category_kind` enum                                  |
-| `20260806130000_identity.sql`          | Profiles, households, memberships, organizations, `app.is_household_member()`, the audit trail                                       |
-| `20260806140000_financial_model.sql`   | Accounts, transactions, categories, merchants, budgets, goals, debts, obligations, household settings                                |
-| `20260807040000_documents.sql`         | Documents, import runs, import rows, R2 keys                                                                                         |
-| `20260807050000_categorization.sql`    | Merchant rules, classification confidence, review state                                                                              |
-| `20260807060000_recurring.sql`         | Recurring series and their detected cadence                                                                                          |
-| `20260807070000_rules.sql`             | Stored rules: conditions, actions, priority, effective window                                                                        |
-| `20260807080000_allocation.sql`        | Allocation plans and lines, `claim_kind` and `plan_outcome` enums                                                                    |
-| `20260811100000_ai.sql`                | `platform.ai_models` (pricing), `app.ai_invocations`, `ai_budgets`, `ai_cache`, `app.scenarios`                                      |
-| `20260811110000_tax.sql`               | `platform.tax_rule_sets`, `platform.tax_rules`, `app.tax_profiles`, `tax_estimates`, `expense_classifications`                       |
-| `20260811120000_reporting.sql`         | `app.accounting_periods` with the closed-month trigger, `app.reconciliations`, `app.report_exports`                                  |
-| `20260811130000_billing.sql`           | `platform.plans`, `plan_entitlements`, `subscriptions`, `billing_events` (unique event id), `invoices`, `app.usage_counters`         |
-| `20260811140000_ledger.sql`            | `platform.ledger_accounts`, `journal_entries`, `journal_lines`, with debits = credits enforced by a deferred trigger                 |
-| `20260811150000_cms.sql`               | `platform.content_pages`, `media_assets` (alt text required), `faqs`, `testimonials`, `redirects`, `legal_documents`                 |
-| `20260811160000_marketing_content.sql` | Seven marketing pages in both languages, eight FAQs, and draft terms and privacy marked unreviewed                                   |
+| File                                     | Adds                                                                                                                                 |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `20260806120000_foundation.sql`          | Extensions (`pgcrypto`, `citext`, `pg_trgm`), the three schemas, `uuid_generate_v7()`, `set_updated_at()`, `platform.schema_version` |
+| `20260806120100_reference_data.sql`      | `platform.currencies`, `platform.tax_jurisdictions`, `app.category_templates`, `category_kind` enum                                  |
+| `20260806130000_identity.sql`            | Profiles, households, memberships, organizations, `app.is_household_member()`, the audit trail                                       |
+| `20260806140000_financial_model.sql`     | Accounts, transactions, categories, merchants, budgets, goals, debts, obligations, household settings                                |
+| `20260807040000_documents.sql`           | Documents, import runs, import rows, R2 keys                                                                                         |
+| `20260807050000_categorization.sql`      | Merchant rules, classification confidence, review state                                                                              |
+| `20260807060000_recurring.sql`           | Recurring series and their detected cadence                                                                                          |
+| `20260807070000_rules.sql`               | Stored rules: conditions, actions, priority, effective window                                                                        |
+| `20260807080000_allocation.sql`          | Allocation plans and lines, `claim_kind` and `plan_outcome` enums                                                                    |
+| `20260811090000_reference_bootstrap.sql` | USD, PAB and the Panama jurisdiction, so later migrations' own catalogues have a foreign key to point at                             |
+| `20260811100000_ai.sql`                  | `platform.ai_models` (pricing), `app.ai_invocations`, `ai_budgets`, `ai_cache`, `app.scenarios`                                      |
+| `20260811110000_tax.sql`                 | `platform.tax_rule_sets`, `platform.tax_rules`, `app.tax_profiles`, `tax_estimates`, `expense_classifications`                       |
+| `20260811120000_reporting.sql`           | `app.accounting_periods` with the closed-month trigger, `app.reconciliations`, `app.report_exports`                                  |
+| `20260811130000_billing.sql`             | `platform.plans`, `plan_entitlements`, `subscriptions`, `billing_events` (unique event id), `invoices`, `app.usage_counters`         |
+| `20260811140000_ledger.sql`              | `platform.ledger_accounts`, `journal_entries`, `journal_lines`, with debits = credits enforced by a deferred trigger                 |
+| `20260811150000_cms.sql`                 | `platform.content_pages`, `media_assets` (alt text required), `faqs`, `testimonials`, `redirects`, `legal_documents`                 |
+| `20260811160000_marketing_content.sql`   | Seven marketing pages in both languages, eight FAQs, and draft terms and privacy marked unreviewed                                   |
 
 The applied generation is recorded in `platform.schema_version` and reported by
 `GET /api/health`, so a deployment talking to the wrong database is visible

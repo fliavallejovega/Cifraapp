@@ -22,3 +22,11 @@ minimumReleaseAgeExclude:
   - '@supabase/realtime-js@2.112.2'
   - '@supabase/storage-js@2.112.2'
   - '@supabase/supabase-js@2.112.2'
+
+# The advisory is against esbuild's development server, reachable only while a
+# build tool is running locally. It arrives transitively through drizzle-kit's
+# deprecated `@esbuild-kit/*` chain, which will not be patched upstream. Forcing
+# a fixed esbuild is the whole fix; `pnpm audit` is part of the gate, so this
+# would otherwise fail the build on a finding nobody can act on.
+overrides:
+  esbuild: '>=0.25.0'

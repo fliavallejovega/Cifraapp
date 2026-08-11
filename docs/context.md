@@ -11,15 +11,15 @@ status table.
 
 ## Status
 
-|                         |                                                                                                                                                       |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Complete**            | Phase 0 (foundation) · Phase 1 (design system) · Phase 2 (auth and tenancy) · Phase 5 (duplicate and transfer engine)                                 |
-| **Engines complete**    | Phases 6–11 — category, budget, debt, rule, allocation, AI and scenario engines, all live on the database, with the plan screen; **no management UI** |
-| **Substantially built** | Phase 3 (schema and position repository done, no per-entity CRUD) · Phase 4 (CSV/OFX, R2 and review pipeline done, no row confirmation)               |
-| **Not started**         | Phases 12–21                                                                                                                                          |
-| **Tests**               | 422 unit and integration · 38 end-to-end · all passing                                                                                                |
-| **Gate**                | 20/20 tasks green: `lint`, `typecheck`, `test`, `build`                                                                                               |
-| **Commits**             | 14, working tree clean                                                                                                                                |
+|                         |                                                                                                                                         |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| **Complete**            | Phase 0 (foundation) · Phase 1 (design system) · Phase 2 (auth and tenancy) · Phase 5 (duplicate and transfer engine)                   |
+| **Engines complete**    | Phases 6–15 — category, budget, debt, rule, allocation, AI, scenario, tax, reporting, billing and ledger engines; **no management UI**  |
+| **Substantially built** | Phase 3 (schema and position repository done, no per-entity CRUD) · Phase 4 (CSV/OFX, R2 and review pipeline done, no row confirmation) |
+| **Not started**         | Phases 12–21                                                                                                                            |
+| **Tests**               | 431 unit and integration · 38 end-to-end · all passing                                                                                  |
+| **Gate**                | 20/20 tasks green: `lint`, `typecheck`, `test`, `build`                                                                                 |
+| **Commits**             | 14, working tree clean                                                                                                                  |
 
 Live infrastructure is connected and exercised by the end-to-end suite. This is
 not a repository that merely compiles; it signs a user in, creates their
@@ -1728,9 +1728,74 @@ Feature flags scoped global / organization / household / user:
 
 ---
 
-## PHASE 21 — Hardening
+## PHASE 21 — Hardening ⚠ PARTLY DONE
 
 **Depends on:** Phase 20.
+
+**Built.** `packages/database/src/security-audit.test.ts` — the security review
+written as a test rather than a checklist, because a pass done by reading the
+schema decays the week after. Nine assertions, each over the **whole schema**
+rather than a list of known tables, so the next migration cannot slip past them:
+
+- row-level security **enabled and forced** on every table in `app`, `platform`
+  and `audit` (forced matters as much as enabled — without it the owner role
+  that migrations and jobs connect as bypasses every policy);
+- a policy on every table that carries a customer-facing grant, with the
+  service-role-only tables named in an allowlist;
+- no floating-point column anywhere near money, and every monetary `numeric` at
+  scale 4;
+- the anonymous role reaching nothing beyond public content, and holding no
+  write anywhere;
+- the audit schema not updatable or deletable by any customer role;
+- every `security definer` function with a pinned `search_path` — the classic
+  Postgres privilege escalation, and one catalogue column away from detectable.
+
+**It found real drift immediately.** `platform.schema_version`, `currencies` and
+`tax_jurisdictions` had RLS enabled but not forced, dating to Phase 0.
+`20260811200000_hardening.sql` fixes them.
+
+Rebuilding the database from empty found a second class of bug that is invisible
+on any database that has ever been seeded: migrations from Phase 11 onward ship
+their own catalogues — AI models, plans, the Panama rule set — each carrying a
+currency foreign key, and currencies were only inserted by `pnpm db:seed`, which
+runs **after** migrations. `20260811090000_reference_bootstrap.sql` lands the
+minimum reference rows before any of them.
+
+`pnpm audit` is clean. The one moderate finding — esbuild's development server,
+arriving transitively through drizzle-kit's deprecated `@esbuild-kit/*` chain
+that will not be patched upstream — is resolved by a pinned override in
+`pnpm-workspace.yaml`. The admin application gained a `not-found` that says
+nothing and an error boundary that shows only a digest.
+
+**All 20 migrations apply cleanly from an empty database**, producing 75 tables
+across the three schemas at schema version 20, verified in this session.
+
+### Not done, and what it would take
+
+**The live Supabase project is still at schema version 9.** Everything from
+Phase 11 onward exists as migrations and has only ever been applied locally.
+Until `pnpm db:migrate` runs against the project, the marketing routes, the
+pricing page and the copilot will fail there — they query tables that do not yet
+exist. Applying migrations to live infrastructure holding real credentials is a
+deliberate act and was left to the user.
+
+**The end-to-end suite was not run.** It exercises the live project, and with
+that project at version 9 every new marketing spec — and the existing foundation
+specs, since `/` is now the marketing home page — would fail for that reason
+rather than for a real one. `apps/web/e2e/marketing.spec.ts` is written and
+waiting: 13 public routes, security headers, the demonstration label, the
+unreviewed-legal notice, and the language switch.
+
+**No load testing, no accessibility audit and no performance measurement.** The
+targets in the original spec — LCP under 2.5s, INP under 200ms, CLS under 0.1,
+WCAG 2.2 AA — have not been measured, and claiming them without a measurement
+would be exactly the kind of unsupported statement the rest of this document
+avoids. The marketing routes are `force-dynamic`, which is the first thing to
+revisit for LCP.
+
+**No observability.** There is no error reporting service, no structured request
+logging and no alerting. Failures are visible in the platform's own logs and
+nowhere else.
 
 Security review, RLS audit, dependency audit, performance optimization,
 accessibility audit, full E2E, load testing, error handling, observability.

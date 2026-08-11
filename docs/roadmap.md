@@ -27,7 +27,7 @@ before it is stable.
 | 18    | Accountant portal                                                                              | **Built** — explicit scoped revocable grants, client list and detail; **no invitation flow, no grant UI**       |
 | 19    | White label                                                                                    | **Model built** — branding, verified domains, per-household resolution; **no admin UI, no domain automation**   |
 | 20    | Admin platform                                                                                 | **Built** — separate app, roles, metrics, flags; **read-only, no support or CMS tooling**                       |
-| 21    | Hardening: security review, RLS audit, performance, accessibility, load testing                | Pending                                                                                                         |
+| 21    | Hardening: security review, RLS audit, performance, accessibility, load testing                | **Partly done** — the security audit is a test and it found real drift; **no load testing, e2e not run**        |
 
 ## Priority if scope must be cut
 
@@ -42,44 +42,45 @@ valuable; nothing after that is worth compromising the data integrity layer for.
 
 ## Where things stand
 
-**Phases 0 through 10 are done.** The deterministic Financial Decision Engine —
-transaction identity, deduplication, transfer detection, categorization,
-recurrence, safe-to-spend, debt strategy, rules and allocation — is complete,
-tested, and running against the live database at **schema version 9**: 35 tables,
-40 policies, row-level security forced on every one of them. Phases 3 and 4
-remain partly built; their exact gaps are in the table above.
+**Every phase has been through once.** Phases 0–2, 5 and 17–18 are complete;
+6–15 are complete as engines with their databases and, in most cases, a screen;
+3, 4, 13, 16, 19, 20 and 21 are partly built, and the table above says exactly
+where each stops.
 
-270 unit and integration tests, 38 end-to-end tests, all passing. The end-to-end
-suite runs against the **live Supabase project and the live R2 bucket** — there
-are no mocks.
+431 unit and integration tests, all passing. **20 migrations apply cleanly from
+an empty database**, producing 75 tables across `app`, `platform` and `audit` at
+schema version 20, with row-level security enabled _and forced_ on every one —
+asserted by `security-audit.test.ts` over the whole schema rather than a list of
+known tables.
 
-**The engines run ahead of the data.** They were built as pure, dependency-free
-packages the way Phase 5 was, so they are provable in isolation — and every table
-they read is empty, because the product has no way to fill it. Categorization has
-nothing to classify, recurrence has no history to find a cadence in, and the plan
-screen renders one obligation against one balance.
+### The two things that block everything else
 
-Nothing that remains is a rewrite. It is all data entry the engines already know
-how to consume.
+1. **The live Supabase project is still at schema version 9.** Everything from
+   Phase 11 onward exists only as migrations applied locally. Until
+   `pnpm db:migrate` runs against the project, the marketing site, the pricing
+   page and the copilot fail there — they query tables that do not exist yet.
+   The end-to-end suite cannot run for the same reason.
 
-### What remains, in order
+2. **Account and transaction CRUD still does not exist** (Phase 3's remainder),
+   and neither does import row confirmation (Phase 4's). Nothing can be entered
+   through the product; the test account was inserted with SQL. Every engine
+   above reads rows the product cannot create.
 
-1. **Account and transaction CRUD** (Phase 3's remainder). Nothing can be entered
-   through the product today; the test account was inserted with SQL.
-2. **Import row confirmation** (Phase 4's remainder). The identity engine writes
-   verdicts into `app.import_rows` and stops. Nothing turns them into
-   transactions. The account picker, XLSX/PDF and background jobs belong here too.
-3. **The management surfaces** each engine is waiting for: debt, goal and budget
-   CRUD, the visual rule builder, category and recurring-series review, and
-   accept/modify on a plan. Each is a screen over a table that already exists.
+### Then, in order
+
+3. **The management surfaces** each engine waits for: debt, goal and budget CRUD,
+   the visual rule builder, category and recurring-series review, accept/modify
+   on a plan, tax onboarding, expense-classification review, and the accountant
+   invitation flow. Each is a screen over a table that already exists.
 4. **Cross-cutting work** the engines assume: background jobs, notifications,
-   cron.
-5. **Phase 11 onward.** The AI copilot explains what the engines decide; it has
-   nothing to explain until 1 and 2 are closed.
+   cron, and the jobs that post to the ledger and expire trials.
+5. **What Phase 21 could not measure**: end-to-end, accessibility, performance
+   and load. No claim is made about any of them.
 
 With 1 and 2 closed, the golden flow runs end to end for the first time: sign up
 → household → account → import → review → transactions — and categorization,
-recurrence and forecasting start working with no further engine work.
+recurrence, forecasting, reporting and the tax reserve all begin working with no
+further engine work.
 
 Full detail on every item is in [context.md](context.md).
 
