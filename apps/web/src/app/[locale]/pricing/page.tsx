@@ -15,6 +15,7 @@ import {
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
+import { publicRobots } from '@/lib/seo';
 import { MarketingShell } from '@/components/marketing/site-chrome';
 import { Link } from '@/i18n/navigation';
 import { listPlans } from '@/server/repositories/plans';
@@ -61,7 +62,7 @@ export async function generateMetadata({
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'marketing' });
 
-  return { title: t('pricing.title'), description: t('pricing.detail') };
+  return { title: t('pricing.title'), description: t('pricing.detail'), robots: publicRobots() };
 }
 
 export default async function PricingPage({ params }: { params: Promise<{ locale: string }> }) {

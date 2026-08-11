@@ -44,6 +44,45 @@ test.describe('guards', () => {
     await expect(page.getByRole('link', { name: /Crear mi sistema/i }).first()).toBeVisible();
   });
 
+  test('a recovery link is caught wherever the provider drops it', async ({ page }) => {
+    // The failure this exists for: a reset email points at the site root and
+    // carries its tokens in the URL fragment, which never reaches a server. The
+    // page rendered as though nobody had arrived and the person was stranded on
+    // marketing holding a valid token.
+    //
+    // An expired link is used here because it needs no live token and exercises
+    // the same path: recognise the fragment, leave the page, land on the form.
+    await page.goto('/es#error=access_denied&error_code=otp_expired&type=recovery');
+
+    await expect(page).toHaveURL(/\/es\/reset-password/);
+    await expect(page.getByText(/Ese enlace ya no sirve/i)).toBeVisible();
+
+    // And the token never survives into history, whatever it was.
+    expect(page.url()).not.toContain('access_token');
+  });
+
+  test('a recovery link reaches the reset form from any page', async ({ page }) => {
+    await page.goto('/es/sign-in#error=access_denied&error_code=otp_expired&type=recovery');
+
+    await expect(page).toHaveURL(/\/es\/reset-password/);
+  });
+
+  test('the reset page turns nobody away without a link', async ({ page }) => {
+    await page.goto('/es/reset-password');
+
+    // No session, no fragment: it says the link is spent and offers another,
+    // rather than showing a password field that cannot work.
+    await expect(page.getByText(/Pedir otro enlace/i)).toBeVisible();
+  });
+
+  test('password recovery can be reached from sign in', async ({ page }) => {
+    await page.goto('/es/sign-in');
+    await page.getByRole('link', { name: /Olvidaste tu contraseña/i }).click();
+
+    await expect(page).toHaveURL(/\/es\/forgot-password/);
+    await expect(page.getByRole('button', { name: /Enviar el enlace/i })).toBeVisible();
+  });
+
   test('the sign-in form is reachable and labelled', async ({ page }) => {
     await page.goto('/es/sign-in');
 

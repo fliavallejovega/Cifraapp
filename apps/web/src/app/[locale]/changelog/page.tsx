@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { Prose } from '@/components/marketing/prose';
+import { publicRobots } from '@/lib/seo';
 import { MarketingShell } from '@/components/marketing/site-chrome';
 import { listPages, loadPage } from '@/server/repositories/content';
 
@@ -25,7 +26,11 @@ export async function generateMetadata({
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'marketing' });
 
-  return { title: t('changelog.title'), description: t('changelog.detail') };
+  return {
+    title: t('changelog.title'),
+    description: t('changelog.detail'),
+    robots: publicRobots(),
+  };
 }
 
 /**

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
 import { LegalPageView } from '@/components/marketing/legal-page';
+import { publicRobots } from '@/lib/seo';
 
 /**
  * Rendered per request rather than at build time.
@@ -22,7 +23,7 @@ export async function generateMetadata({ params }: RouteProps): Promise<Metadata
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'marketing' });
 
-  return { title: t('nav.privacy') };
+  return { title: t('nav.privacy'), robots: publicRobots() };
 }
 
 export default async function PrivacyPage({ params }: RouteProps) {

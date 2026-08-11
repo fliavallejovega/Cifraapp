@@ -51,6 +51,17 @@ household, stores a statement in object storage, and refuses to import it twice.
    `norte_dev` from the migrations, applies the `auth` shim, and seeds.
 7. `DESIGN.md` is committed and authoritative. The world is the instrument
    gauge; do not reopen that decision.
+8. **Password recovery does not depend on the auth provider's redirect
+   configuration.** `RecoveryRedirect` in the locale layout catches a recovery
+   fragment on any page, installs the session and moves the person to
+   `/[locale]/reset-password`. The one thing app code cannot change is which
+   origin the email points at — that is the project's Site URL, and while it
+   reads `http://localhost:3000` every reset email sent from production links to
+   a machine that is not there.
+9. **Indexing is closed by default and opted into.** The locale layout marks
+   everything `noindex`; public routes call `publicRobots()` from
+   `lib/seo.ts`. A marketing page missing from an index is a bad week; an
+   account page present in one is a breach.
 
 ## ⚠ Credentials need rotating
 

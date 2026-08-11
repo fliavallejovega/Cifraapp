@@ -21,6 +21,19 @@ import type { ContentPage } from '@/server/repositories/content';
 
 const LOCALES = ['es', 'en'] as const;
 
+/**
+ * The opt-in that lets a public page be found.
+ *
+ * The locale layout marks everything `noindex`, because everything under it is a
+ * product surface holding somebody's money until a page says otherwise. That
+ * default is the right way round — a marketing page missing from an index is a
+ * bad week, an account page present in one is a breach — but it means every
+ * public route has to say so, and forgetting is silent.
+ */
+export function publicRobots(indexable = true): Metadata['robots'] {
+  return indexable ? { index: true, follow: true } : { index: false, follow: false };
+}
+
 export interface SeoInput {
   readonly page: ContentPage;
   readonly locale: string;
@@ -46,7 +59,7 @@ export function metadataFor(input: SeoInput): Metadata {
     // `noIndex` is a column rather than a convention because the pages that most
     // need it — a comparison page under revision, a legal draft — are exactly
     // the ones nobody remembers to exclude.
-    robots: page.noIndex ? { index: false, follow: false } : undefined,
+    robots: publicRobots(!page.noIndex),
     openGraph: {
       type: 'website',
       title: page.ogTitle ?? title,

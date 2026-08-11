@@ -21,7 +21,7 @@ import { redirect } from 'next/navigation';
 
 import { MarketingShell } from '@/components/marketing/site-chrome';
 import { Link } from '@/i18n/navigation';
-import { productStructuredData } from '@/lib/seo';
+import { productStructuredData, publicRobots } from '@/lib/seo';
 import { listFaqs } from '@/server/repositories/content';
 import { listPlans } from '@/server/repositories/plans';
 import { loadSession } from '@/server/session';
@@ -54,6 +54,7 @@ export async function generateMetadata({
   return {
     title: `${common('appName')} — ${t('headline')}`,
     description: t('subheadline'),
+    robots: publicRobots(),
   };
 }
 

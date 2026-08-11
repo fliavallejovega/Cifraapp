@@ -2,6 +2,7 @@ import { EmptyState, Page, PageHeader } from '@app/ui';
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
+import { publicRobots } from '@/lib/seo';
 import { MarketingShell } from '@/components/marketing/site-chrome';
 import { Link } from '@/i18n/navigation';
 import { listPages } from '@/server/repositories/content';
@@ -25,7 +26,7 @@ export async function generateMetadata({
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'marketing' });
 
-  return { title: t('blog.title'), description: t('blog.detail') };
+  return { title: t('blog.title'), description: t('blog.detail'), robots: publicRobots() };
 }
 
 /**

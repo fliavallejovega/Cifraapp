@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
+import { RecoveryRedirect } from '@/components/recovery-redirect';
 import { routing } from '@/i18n/routing';
 
 import { archivo, chivoMono } from '../fonts';
@@ -24,6 +25,12 @@ export async function generateMetadata({
   return {
     title: { default: t('appName'), template: `%s · ${t('appName')}` },
     description: t('tagline'),
+    // Closed by default: everything under this segment is a product surface
+    // holding somebody's money until a page says otherwise. The public pages
+    // opt themselves in through `publicRobots()` in `lib/seo.ts`, which is the
+    // safe direction — a marketing page that is accidentally missing from a
+    // search index is a bad week, and an account page that is accidentally in
+    // one is a breach.
     robots: { index: false, follow: false },
   };
 }
@@ -54,7 +61,12 @@ export default async function LocaleLayout({
   return (
     <html lang={locale} className={`${archivo.variable} ${chivoMono.variable}`}>
       <body className="min-h-dvh antialiased">
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider>
+          {/* A recovery link can land on any page. This makes every one of them
+              know what to do with it. */}
+          <RecoveryRedirect locale={locale} />
+          {children}
+        </NextIntlClientProvider>
       </body>
     </html>
   );
