@@ -12,6 +12,162 @@
     "secondaryCta": "Ya tengo cuenta",
     "switchLanguage": "English"
   },
+  "marketing": {
+    "switchLanguage": "English",
+    "nav": {
+      "label": "Navegación principal",
+      "features": "Qué hace",
+      "independents": "Independientes",
+      "couples": "Parejas",
+      "accountants": "Contadores",
+      "pricing": "Precios",
+      "security": "Seguridad",
+      "about": "Quiénes somos",
+      "blog": "Artículos",
+      "contact": "Contacto",
+      "changelog": "Novedades",
+      "terms": "Términos",
+      "privacy": "Privacidad",
+      "signIn": "Entrar"
+    },
+    "footer": {
+      "product": "Producto",
+      "who": "Para quién",
+      "company": "Compañía",
+      "legal": "Legal",
+      "note": "{name} organiza tus finanzas y te dice qué hacer con tu dinero. No es un banco, no mueve tu dinero y no reemplaza a tu contador. Las estimaciones fiscales son estimaciones y así se llaman en toda la aplicación."
+    },
+    "demo": {
+      "label": "Demostración",
+      "note": "Cifras de ejemplo, coherentes entre sí. Ninguna pertenece a una persona real."
+    },
+    "home": {
+      "secondaryCta": "Ver cómo funciona",
+      "mechanism": {
+        "title": "El dinero es un nivel, no un número",
+        "detail": "Saber que tienes $4,180 sirve de poco. Lo que necesitas saber es cuánto de eso ya tiene dueño y cuánto queda de verdad.",
+        "gaugeLabel": "Disponible sobre el saldo total",
+        "buffer": "Colchón mínimo",
+        "surface": "Superficie actual",
+        "readout": "Disponible para gastar",
+        "basis": "de {liquid} en cuentas, con {committed} ya comprometido"
+      },
+      "claims": {
+        "title": "Qué reclama ese dinero",
+        "item": "Concepto",
+        "amount": "Monto",
+        "rent": "Alquiler, vence el 1",
+        "card": "Pago mínimo de la tarjeta",
+        "electricity": "Electricidad, vence el 14",
+        "taxReserve": "Reserva fiscal estimada"
+      },
+      "refusals": {
+        "title": "Lo que este producto se niega a hacer",
+        "detail": "Casi todo lo que sigue es una decisión de no hacer algo que sería más fácil.",
+        "duplicates": {
+          "claim": "No importa dos veces la misma transacción",
+          "detail": "Cada movimiento tiene una huella calculada a partir de la cuenta, la fecha, el monto y la descripción normalizada. Si vuelves a subir el mismo estado de cuenta, no pasa nada."
+        },
+        "transfers": {
+          "claim": "El pago de tu tarjeta no cuenta como gasto",
+          "detail": "Mover dinero entre tus propias cuentas no es gastar. Contarlo duplicaría cada compra que ya está en la tarjeta y haría ver un mes disciplinado como una catástrofe."
+        },
+        "ai": {
+          "claim": "La inteligencia artificial nunca decide un saldo",
+          "detail": "Explica y clasifica; no calcula. Cada cifra sale de tus registros y el sistema rechaza cualquier respuesta que mencione un número que no le dimos."
+        },
+        "tax": {
+          "claim": "Nunca decimos “tu impuesto”",
+          "detail": "Decimos reserva fiscal estimada, con la versión de las reglas que la produjo. Las reglas de Panamá viven en la base de datos, con su fuente, y no se muestran hasta que alguien calificado las revisa."
+        }
+      },
+      "who": {
+        "title": "Para quién es",
+        "detail": "El mismo motor, tres situaciones distintas.",
+        "couples": {
+          "title": "Parejas y familias",
+          "detail": "Finanzas que se administran juntas sin perder lo que es de cada quien. Tú decides qué se comparte."
+        },
+        "independents": {
+          "title": "Profesionales independientes",
+          "detail": "El ingreso llega completo y se siente disponible. La reserva fiscal aparta lo que nunca fue tuyo, desde el día que entra."
+        },
+        "accountants": {
+          "title": "Contadores",
+          "detail": "Acceso explícito, con alcance y revocable. Un contador nunca obtiene acceso automáticamente."
+        }
+      },
+      "pricing": {
+        "title": "Precios",
+        "detail": "Un plan gratuito que sirve de verdad, y planes pagos cuando tu situación lo pide.",
+        "from": "Desde {price} al mes con {plan}.",
+        "link": "Ver todos los planes"
+      },
+      "faq": {
+        "title": "Preguntas"
+      },
+      "close": {
+        "title": "Tu dinero es complicado. Tu sistema financiero no debería serlo."
+      }
+    },
+    "pricing": {
+      "title": "Precios",
+      "detail": "Los mismos límites que el producto aplica. Esta tabla se lee de la base de datos, no de una lista escrita aparte.",
+      "columns": {
+        "plan": "Plan",
+        "price": "Precio"
+      },
+      "entitlements": {
+        "household_members": "Miembros",
+        "transactions_per_month": "Transacciones al mes",
+        "document_imports": "Importaciones al mes",
+        "rules": "Reglas",
+        "goals": "Metas",
+        "tax_engine": "Módulo fiscal",
+        "ai_usage": "Consultas al asistente"
+      },
+      "notIncluded": "—",
+      "unlimited": "Sin límite",
+      "free": "Gratis",
+      "perMonth": "{price} / mes",
+      "empty": {
+        "title": "El catálogo de planes todavía no está cargado",
+        "body": "Los precios se leen de la base de datos. Si no hay planes activos, esta página no inventa ninguno."
+      },
+      "notes": {
+        "title": "Antes de decidir",
+        "provisional": "Estas cifras son provisionales: el precio final todavía no está decidido y no constituye una oferta.",
+        "freeTier": "El plan gratuito no es una prueba. Si una suscripción vence, tu cuenta vuelve a ese plan y tu historial sigue siendo tuyo.",
+        "noLockIn": "Puedes exportar todo lo que hay dentro en CSV y JSON, en cualquier momento y sin pedirlo."
+      },
+      "cta": "Crear mi sistema financiero"
+    },
+    "blog": {
+      "title": "Artículos",
+      "detail": "Sobre decisiones de dinero y sobre cómo está construido esto.",
+      "empty": {
+        "title": "Todavía no hemos publicado nada",
+        "body": "Cuando haya algo que valga la pena leer, aparecerá aquí. Preferimos una lista vacía a tres artículos de relleno."
+      }
+    },
+    "changelog": {
+      "title": "Novedades",
+      "detail": "Lo que cambió y en qué fecha.",
+      "empty": {
+        "title": "Sin entradas todavía",
+        "body": "Aquí se publica lo que cambia para quien usa el producto, no cada commit."
+      }
+    },
+    "legal": {
+      "version": "Versión {version}",
+      "unreviewedBadge": "Sin revisar",
+      "unreviewed": "Este texto es un borrador y no ha sido revisado por un abogado. Está publicado para que sepas qué dice hoy, no como un documento definitivo.",
+      "missing": {
+        "title": "Este documento todavía no está publicado",
+        "body": "Preferimos no mostrar nada antes que mostrar un texto legal que nadie escribió."
+      }
+    }
+  },
   "auth": {
     "fields": {
       "email": "Correo",

@@ -1544,10 +1544,35 @@ appropriate. **Never fabricate ratings.**
 
 ---
 
-## PHASE 17 — Landing page
+## PHASE 17 — Landing page ✅ BUILT
 
 **Goal:** a marketing site that could raise venture capital.
 **Depends on:** Phase 16. **Product name must be decided before this ships.**
+
+**Built.** Fifteen routes across both locales: `/`, `/pricing`, `/features`,
+`/couples`, `/independents`, `/accountants`, `/security`, `/about`, `/contact`,
+`/blog`, `/blog/[slug]`, `/changelog`, `/terms`, `/privacy`. The home page shows
+the product's own gauge rather than describing it, over demonstration figures
+that are internally consistent and **labelled as a demonstration where a reader
+sees them**. Pricing renders from `platform.plans` and the same entitlement rows
+the product enforces, so the page cannot disagree with what a customer is
+charged. Seven pages are pure CMS content, written Spanish-first, seeded by
+migration. Legal pages show their version and carry a visible "unreviewed"
+notice that disappears on its own once `reviewed_at` is stamped.
+
+**No testimonials, no customer logos, no ratings.** The tables exist and are
+empty, `aggregateRating` is emitted nowhere, and the `/contact` page states that
+no public address is configured rather than inventing one. The `/security` page
+lists what the product does **not** have — no MFA, no external audit — because a
+financial product enumerating measures it lacks has already told you what it is.
+
+**Not built.** The product name is still `Norte` and remains provisional, so
+nothing here should be advertised yet. Marketing routes are `force-dynamic`:
+every word is a database row and CI builds without credentials, so prerendering
+would bake an empty page into the deployment. Caching them at the edge with
+revalidation is a Phase 21 item. No blog posts or changelog entries are seeded —
+the empty states say so rather than showing filler — and there is no contact
+form, no newsletter, and no OG image pipeline.
 
 Routes: `/ /pricing /features /couples /independents /accountants /security
 /about /blog /blog/[slug] /changelog /contact /terms /privacy`

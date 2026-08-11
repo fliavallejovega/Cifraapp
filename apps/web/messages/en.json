@@ -12,6 +12,162 @@
     "secondaryCta": "I already have an account",
     "switchLanguage": "Español"
   },
+  "marketing": {
+    "switchLanguage": "Español",
+    "nav": {
+      "label": "Main navigation",
+      "features": "What it does",
+      "independents": "Independents",
+      "couples": "Couples",
+      "accountants": "Accountants",
+      "pricing": "Pricing",
+      "security": "Security",
+      "about": "About",
+      "blog": "Writing",
+      "contact": "Contact",
+      "changelog": "Changelog",
+      "terms": "Terms",
+      "privacy": "Privacy",
+      "signIn": "Sign in"
+    },
+    "footer": {
+      "product": "Product",
+      "who": "Who it is for",
+      "company": "Company",
+      "legal": "Legal",
+      "note": "{name} organizes your finances and tells you what to do with your money. It is not a bank, it does not move your money, and it does not replace your accountant. Tax figures are estimates and are called that everywhere in the application."
+    },
+    "demo": {
+      "label": "Demonstration",
+      "note": "Example figures, consistent with each other. None belong to a real person."
+    },
+    "home": {
+      "secondaryCta": "See how it works",
+      "mechanism": {
+        "title": "Money is a level, not a number",
+        "detail": "Knowing you have $4,180 helps very little. What you need to know is how much of it already belongs to something and how much is genuinely left.",
+        "gaugeLabel": "Available against the total balance",
+        "buffer": "Buffer minimum",
+        "surface": "Current surface",
+        "readout": "Safe to spend",
+        "basis": "of {liquid} across accounts, with {committed} already committed"
+      },
+      "claims": {
+        "title": "What claims that money",
+        "item": "Item",
+        "amount": "Amount",
+        "rent": "Rent, due on the 1st",
+        "card": "Card minimum payment",
+        "electricity": "Electricity, due on the 14th",
+        "taxReserve": "Estimated tax reserve"
+      },
+      "refusals": {
+        "title": "What this product refuses to do",
+        "detail": "Almost everything below is a decision not to do something that would have been easier.",
+        "duplicates": {
+          "claim": "It will not import the same transaction twice",
+          "detail": "Every movement carries a fingerprint computed from the account, the date, the amount and the normalized description. Upload the same statement again and nothing happens."
+        },
+        "transfers": {
+          "claim": "Paying your card is not an expense",
+          "detail": "Moving money between your own accounts is not spending. Counting it would double every purchase already on the card and make a disciplined month look catastrophic."
+        },
+        "ai": {
+          "claim": "AI never decides a balance",
+          "detail": "It explains and it classifies; it does not compute. Every figure comes from your records, and the system rejects any answer citing a number it was not given."
+        },
+        "tax": {
+          "claim": "We never say “your tax bill”",
+          "detail": "We say estimated tax reserve, with the version of the rules that produced it. Panama's rules live in the database with their source, and nothing is shown until somebody qualified has reviewed them."
+        }
+      },
+      "who": {
+        "title": "Who it is for",
+        "detail": "The same engine, three different situations.",
+        "couples": {
+          "title": "Couples and families",
+          "detail": "Finances managed together without losing what belongs to each person. You decide what gets shared."
+        },
+        "independents": {
+          "title": "Independent professionals",
+          "detail": "Income arrives in full and feels available. The tax reserve sets aside what was never yours, from the day it lands."
+        },
+        "accountants": {
+          "title": "Accountants",
+          "detail": "Explicit, scoped, revocable access. An accountant never gains access automatically."
+        }
+      },
+      "pricing": {
+        "title": "Pricing",
+        "detail": "A free plan that genuinely works, and paid plans when your situation asks for them.",
+        "from": "From {price} a month on {plan}.",
+        "link": "See every plan"
+      },
+      "faq": {
+        "title": "Questions"
+      },
+      "close": {
+        "title": "Your money is complicated. Your financial system shouldn't be."
+      }
+    },
+    "pricing": {
+      "title": "Pricing",
+      "detail": "The same limits the product enforces. This table is read from the database, not from a list maintained separately.",
+      "columns": {
+        "plan": "Plan",
+        "price": "Price"
+      },
+      "entitlements": {
+        "household_members": "Members",
+        "transactions_per_month": "Transactions a month",
+        "document_imports": "Imports a month",
+        "rules": "Rules",
+        "goals": "Goals",
+        "tax_engine": "Tax module",
+        "ai_usage": "Assistant requests"
+      },
+      "notIncluded": "—",
+      "unlimited": "Unlimited",
+      "free": "Free",
+      "perMonth": "{price} / month",
+      "empty": {
+        "title": "The plan catalogue is not loaded yet",
+        "body": "Prices are read from the database. With no active plans, this page invents none."
+      },
+      "notes": {
+        "title": "Before you decide",
+        "provisional": "These figures are provisional: final pricing is not decided and this is not an offer.",
+        "freeTier": "The free plan is not a trial. If a subscription lapses your account returns to it, and your history stays yours.",
+        "noLockIn": "You can export everything inside as CSV and JSON, at any time, without asking."
+      },
+      "cta": "Build my financial system"
+    },
+    "blog": {
+      "title": "Writing",
+      "detail": "About money decisions, and about how this is built.",
+      "empty": {
+        "title": "We haven't published anything yet",
+        "body": "When there is something worth reading it will appear here. An empty list beats three filler articles."
+      }
+    },
+    "changelog": {
+      "title": "Changelog",
+      "detail": "What changed, and when.",
+      "empty": {
+        "title": "No entries yet",
+        "body": "What gets published here is what changed for someone using the product, not every commit."
+      }
+    },
+    "legal": {
+      "version": "Version {version}",
+      "unreviewedBadge": "Unreviewed",
+      "unreviewed": "This text is a draft and has not been reviewed by a lawyer. It is published so you can see what it says today, not as a settled document.",
+      "missing": {
+        "title": "This document is not published yet",
+        "body": "We would rather show nothing than show a legal text nobody wrote."
+      }
+    }
+  },
   "auth": {
     "fields": {
       "email": "Email",
