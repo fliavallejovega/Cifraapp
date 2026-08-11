@@ -80,19 +80,19 @@ Engine packages are created in the phase that first needs them, each with its
 first test. Empty packages are deferred work wearing the costume of
 architecture. Built so far:
 
-| Package              | Phase | Holds                                                          |
-| -------------------- | ----- | -------------------------------------------------------------- |
-| `transaction-engine` | 4–5   | Parsers, normalization, fingerprints, duplicates, transfers    |
-| `category-engine`    | 6     | Merchant normalization, classification, learning from rules    |
-| `budget-engine`      | 7     | Budget state, recurrence detection, safe-to-spend, forecasting |
-| `debt-engine`        | 8     | Daily interest, payoff simulation, avalanche/snowball ordering |
-| `rule-engine`        | 9     | The `WHEN`/`THEN` language, validation, evaluation             |
-| `allocation-engine`  | 10    | The priority ladder that decides where the next dollar goes    |
-| `ai`                 | 11    | Provider abstraction, versioned prompts, guardrails, cost      |
-| `scenario-engine`    | 11    | Deterministic "what if" projections over a position snapshot   |
-| `tax-engine`         | 12    | Versioned sourced rules, brackets, reserve, expense classes    |
-| `reporting`          | 13    | Statements, reconciliation, monthly close, health, exports     |
-| `billing`            | 14    | Plan catalogue, entitlements, proration, idempotent webhooks   |
+| Package              | Phase | Holds                                                           |
+| -------------------- | ----- | --------------------------------------------------------------- |
+| `transaction-engine` | 4–5   | Parsers, normalization, fingerprints, duplicates, transfers     |
+| `category-engine`    | 6     | Merchant normalization, classification, learning from rules     |
+| `budget-engine`      | 7     | Budget state, recurrence detection, safe-to-spend, forecasting  |
+| `debt-engine`        | 8     | Daily interest, payoff simulation, avalanche/snowball ordering  |
+| `rule-engine`        | 9     | The `WHEN`/`THEN` language, validation, evaluation              |
+| `allocation-engine`  | 10    | The priority ladder that decides where the next dollar goes     |
+| `ai`                 | 11    | Provider abstraction, versioned prompts, guardrails, cost       |
+| `scenario-engine`    | 11    | Deterministic "what if" projections over a position snapshot    |
+| `tax-engine`         | 12    | Versioned sourced rules, brackets, reserve, expense classes     |
+| `reporting`          | 13    | Statements, reconciliation, monthly close, health, exports      |
+| `billing`            | 14    | Plan catalogue, entitlements, proration, idempotent webhooks    |
 | `ledger`             | 15    | Chart of accounts, journal entries, trial balance, SaaS metrics |
 
 ## Dependency direction

@@ -74,6 +74,7 @@ session-level locks DDL requires.
 | `20260811120000_reporting.sql`       | `app.accounting_periods` with the closed-month trigger, `app.reconciliations`, `app.report_exports`                                  |
 | `20260811130000_billing.sql`         | `platform.plans`, `plan_entitlements`, `subscriptions`, `billing_events` (unique event id), `invoices`, `app.usage_counters`         |
 | `20260811140000_ledger.sql`          | `platform.ledger_accounts`, `journal_entries`, `journal_lines`, with debits = credits enforced by a deferred trigger                 |
+| `20260811150000_cms.sql`             | `platform.content_pages`, `media_assets` (alt text required), `faqs`, `testimonials`, `redirects`, `legal_documents`                 |
 
 The applied generation is recorded in `platform.schema_version` and reported by
 `GET /api/health`, so a deployment talking to the wrong database is visible

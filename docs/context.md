@@ -1502,10 +1502,34 @@ trial conversion, activation, DAU/WAU/MAU, retention, paid conversion.
 
 ---
 
-## PHASE 16 — CMS
+## PHASE 16 — CMS ⚠ MODEL COMPLETE, NO EDITOR
 
 **Goal:** marketing content is data, not code.
 **Depends on:** Phase 15.
+
+**Built.** Schema version 15: `platform.content_pages` (pages, posts, features,
+comparisons, case studies, changelog and legal, one table because they differ in
+meaning and not in shape), `content_authors`, `content_categories`, `faqs`,
+`redirects`, `media_assets` — where **`alt` is `not null`**, because a nullable
+column is how alt text ends up empty on everything uploaded on a deadline — and
+`platform.legal_documents` with `app.legal_acceptances`, versioned, because "the
+user accepted the terms" is not a fact unless it says which terms. RLS exposes
+only published rows, so a draft cannot reach the site even if a route asks for
+it by slug. `apps/web/src/server/repositories/content.ts` reads it;
+`apps/web/src/lib/seo.ts` builds metadata with canonical URLs and `hreflang`
+alternates, and emits `Article` and `SoftwareApplication` structured data only
+when the underlying facts exist.
+
+**`platform.testimonials` ships empty and a check constraint stops it being
+published without a recorded consent.** `aggregateRating` appears nowhere. Both
+are deliberate: a placeholder quote on a financial product's landing page is a
+lie with a face on it.
+
+**Not built.** No editor — content is written with SQL until the admin platform
+in Phase 20 provides one. No media upload pipeline (the R2 client exists for
+documents and is not wired to `media_assets`), no scheduled publishing job, no
+preview of drafts, and no content seeded yet; the landing page in Phase 17 seeds
+its own.
 
 Landing page, pricing, FAQs, blog, articles, authors, categories, SEO metadata,
 redirects, legal pages, changelog, testimonials, case studies, feature pages,
