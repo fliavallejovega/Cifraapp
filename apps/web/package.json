@@ -22,6 +22,7 @@
     "@app/database": "workspace:*",
     "@app/debt-engine": "workspace:*",
     "@app/domain": "workspace:*",
+    "@app/reporting": "workspace:*",
     "@app/rule-engine": "workspace:*",
     "@app/scenario-engine": "workspace:*",
     "@app/tax-engine": "workspace:*",

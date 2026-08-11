@@ -100,6 +100,7 @@
       }
     },
     "planLink": "See what to do with this money",
+    "reportsLink": "See the statements",
     "scopeNote": "Available here deducts the obligations recorded for the next 30 days. The full calculation — minimum debt payments, estimated tax reserve and buffer — is in the plan."
   },
   "plan": {
@@ -195,6 +196,80 @@
       }
     },
     "scopeNote": "The plan is computed from the accounts, obligations, debts and goals you have recorded today. The tax reserve is an estimate from the rate you configured, not a calculation of tax owed."
+  },
+  "reports": {
+    "title": "Statements",
+    "detail": "{start} to {end}. Every figure comes from your transactions; nothing is summarized or estimated.",
+    "signOut": "Sign out",
+    "empty": {
+      "title": "Nothing to report yet",
+      "body": "Statements are computed from your transactions. Import a bank statement and these fill themselves in."
+    },
+    "netWorth": {
+      "title": "Net worth",
+      "label": "Net worth",
+      "detail": "{assets} in assets, {liabilities} in liabilities."
+    },
+    "income": {
+      "title": "Income and expenses",
+      "detail": "For the period. Movements between your own accounts do not count as spending.",
+      "net": "Result for the period",
+      "transfersExcluded": "{count} movements between your own accounts were excluded. A card payment is not an expense: that spending is already in the purchases.",
+      "columns": {
+        "category": "Category",
+        "transactions": "Transactions",
+        "amount": "Amount"
+      }
+    },
+    "cashFlow": {
+      "title": "Cash flow",
+      "detail": "What the period opened with, what came in, what left, and what it closed with.",
+      "opening": "Opening balance",
+      "inflows": "Inflows",
+      "outflows": "Outflows",
+      "closing": "Closing balance",
+      "columns": {
+        "line": "Line",
+        "amount": "Amount"
+      }
+    },
+    "health": {
+      "title": "Financial health",
+      "detail": "Each component shows the figure it comes from. If you disagree with it, you can see exactly what with.",
+      "partial": "Partial",
+      "notACreditScore": "This score is ours and measures only what you see above. It is not a credit score and no lender uses it.",
+      "columns": {
+        "component": "Component",
+        "figure": "Figure",
+        "score": "Score"
+      },
+      "components": {
+        "emergencyFund": "Emergency fund",
+        "debtUtilization": "Credit utilization",
+        "punctuality": "Payment punctuality",
+        "savingsRate": "Savings rate",
+        "cashFlow": "Cash flow",
+        "goalProgress": "Goal progress",
+        "taxReadiness": "Tax reserve"
+      },
+      "units": {
+        "emergencyFund": "{value} months",
+        "debtUtilization": "{value}%",
+        "punctuality": "{value}%",
+        "savingsRate": "{value}%",
+        "cashFlow": "{value}%",
+        "goalProgress": "{value}%",
+        "taxReadiness": "{value}%"
+      }
+    },
+    "export": {
+      "title": "Export",
+      "detail": "The same rows you see here, in a file. Amounts are unformatted so a spreadsheet reads them as numbers.",
+      "transactionsCsv": "Transactions for the period (CSV)",
+      "incomeCsv": "Income and expenses (CSV)",
+      "incomeJson": "Income and expenses (JSON)"
+    },
+    "scopeNote": "Statements are computed on demand from your transactions and never stored as a copy. A correction to an old movement moves every later balance with it."
   },
   "errors": {
     "notFoundTitle": "We couldn't find this page",

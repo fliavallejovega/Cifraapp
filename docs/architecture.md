@@ -91,8 +91,9 @@ architecture. Built so far:
 | `ai`                 | 11    | Provider abstraction, versioned prompts, guardrails, cost      |
 | `scenario-engine`    | 11    | Deterministic "what if" projections over a position snapshot   |
 | `tax-engine`         | 12    | Versioned sourced rules, brackets, reserve, expense classes    |
+| `reporting`          | 13    | Statements, reconciliation, monthly close, health, exports     |
 
-Still to come: `reporting`, `billing`, `ledger`.
+Still to come: `billing`, `ledger`.
 
 ## Dependency direction
 

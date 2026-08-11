@@ -187,9 +187,17 @@ export default async function OverviewPage({ params }: { params: Promise<{ local
 
       {!position.isEmpty && (
         <Section title="" className="mt-16">
-          <Link href="/plan" className="text-sm underline underline-offset-4 hover:no-underline">
-            {t('planLink')}
-          </Link>
+          <div className="flex flex-wrap gap-x-8 gap-y-2">
+            <Link href="/plan" className="text-sm underline underline-offset-4 hover:no-underline">
+              {t('planLink')}
+            </Link>
+            <Link
+              href="/reports"
+              className="text-sm underline underline-offset-4 hover:no-underline"
+            >
+              {t('reportsLink')}
+            </Link>
+          </div>
         </Section>
       )}
 

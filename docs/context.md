@@ -17,7 +17,7 @@ status table.
 | **Engines complete**    | Phases 6–11 — category, budget, debt, rule, allocation, AI and scenario engines, all live on the database, with the plan screen; **no management UI** |
 | **Substantially built** | Phase 3 (schema and position repository done, no per-entity CRUD) · Phase 4 (CSV/OFX, R2 and review pipeline done, no row confirmation)               |
 | **Not started**         | Phases 12–21                                                                                                                                          |
-| **Tests**               | 340 unit and integration · 38 end-to-end · all passing                                                                                                |
+| **Tests**               | 369 unit and integration · 38 end-to-end · all passing                                                                                                |
 | **Gate**                | 20/20 tasks green: `lint`, `typecheck`, `test`, `build`                                                                                               |
 | **Commits**             | 14, working tree clean                                                                                                                                |
 
@@ -1354,10 +1354,30 @@ implemented **and reviewed**.
 
 ---
 
-## PHASE 13 — Reporting
+## PHASE 13 — Reporting ⚠ SUBSTANTIALLY BUILT
 
 **Goal:** deterministic financial statements.
 **Depends on:** Phase 12.
+
+**Built.** `@app/reporting` — income statement, net worth, cash flow, an
+operating statement for independents on a cash basis, reconciliation, the
+monthly-close checklist, the financial health score, and CSV/JSON export. Every
+statement starts by discarding transfers, which is the single rule separating a
+report a household believes from one they stop opening. Schema version 12 adds
+`app.accounting_periods` — with a **trigger that refuses any write into a closed
+month**, so a correction has to be a new entry in an open period —
+`app.reconciliations` (the difference is recorded, never adjusted away) and
+`app.report_exports`. `/[locale]/reports` renders the statements and the health
+score with every component's own figure beside it; `/api/reports/export` streams
+CSV and JSON without writing a copy to object storage.
+
+**Not built.** PDF and XLSX export — both need a dependency this build does not
+carry, and a PDF that "must not look like a database dump" is a design job, not a
+serializer. No period picker (the page shows the current month), no close or
+reconciliation UI, no accountant-facing statement pack. Two health components
+report null for every household: punctuality, because obligations do not yet
+record whether they were paid on time, and tax readiness, because no published
+tax rule set exists.
 
 Balance Sheet, Income Statement, Cash Flow, Net Worth, Debt, Budget, Goal, Tax
 Summary, Household Health.

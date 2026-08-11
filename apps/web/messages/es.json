@@ -100,6 +100,7 @@
       }
     },
     "planLink": "Ver qué hacer con este dinero",
+    "reportsLink": "Ver los estados",
     "scopeNote": "Por ahora el disponible descuenta las obligaciones registradas de los próximos 30 días. El cálculo completo — pagos mínimos de deuda, reserva fiscal estimada y colchón — está en el plan."
   },
   "plan": {
@@ -195,6 +196,80 @@
       }
     },
     "scopeNote": "El plan se calcula con las cuentas, obligaciones, deudas y metas que tienes registradas hoy. La reserva fiscal es una estimación a partir de la tasa que configuraste, no un cálculo del impuesto que debes."
+  },
+  "reports": {
+    "title": "Estados",
+    "detail": "Del {start} al {end}. Todo sale de tus transacciones; nada está resumido ni estimado.",
+    "signOut": "Cerrar sesión",
+    "empty": {
+      "title": "Todavía no hay nada que reportar",
+      "body": "Los estados se calculan a partir de tus transacciones. Importa un estado de cuenta y aparecen solos."
+    },
+    "netWorth": {
+      "title": "Patrimonio",
+      "label": "Patrimonio neto",
+      "detail": "{assets} en activos, {liabilities} en pasivos."
+    },
+    "income": {
+      "title": "Ingresos y gastos",
+      "detail": "Del período. Las transferencias entre tus propias cuentas no cuentan como gasto.",
+      "net": "Resultado del período",
+      "transfersExcluded": "Se excluyeron {count} movimientos entre tus propias cuentas. El pago de una tarjeta no es un gasto: ese gasto ya está en las compras.",
+      "columns": {
+        "category": "Categoría",
+        "transactions": "Movimientos",
+        "amount": "Monto"
+      }
+    },
+    "cashFlow": {
+      "title": "Flujo de caja",
+      "detail": "Con qué abriste el período, qué entró, qué salió y con qué cerraste.",
+      "opening": "Saldo inicial",
+      "inflows": "Entradas",
+      "outflows": "Salidas",
+      "closing": "Saldo final",
+      "columns": {
+        "line": "Línea",
+        "amount": "Monto"
+      }
+    },
+    "health": {
+      "title": "Salud financiera",
+      "detail": "Cada componente muestra la cifra de la que sale. Si no estás de acuerdo, puedes ver exactamente con qué.",
+      "partial": "Parcial",
+      "notACreditScore": "Este puntaje es nuestro y solo mide lo que ves arriba. No es un score crediticio ni lo usa ningún banco.",
+      "columns": {
+        "component": "Componente",
+        "figure": "Cifra",
+        "score": "Puntaje"
+      },
+      "components": {
+        "emergencyFund": "Fondo de emergencia",
+        "debtUtilization": "Uso del crédito",
+        "punctuality": "Puntualidad de pago",
+        "savingsRate": "Tasa de ahorro",
+        "cashFlow": "Flujo de caja",
+        "goalProgress": "Avance de metas",
+        "taxReadiness": "Reserva fiscal"
+      },
+      "units": {
+        "emergencyFund": "{value} meses",
+        "debtUtilization": "{value}%",
+        "punctuality": "{value}%",
+        "savingsRate": "{value}%",
+        "cashFlow": "{value}%",
+        "goalProgress": "{value}%",
+        "taxReadiness": "{value}%"
+      }
+    },
+    "export": {
+      "title": "Exportar",
+      "detail": "Las mismas filas que ves aquí, en un archivo. Los montos van sin formato para que una hoja de cálculo los lea como números.",
+      "transactionsCsv": "Movimientos del período (CSV)",
+      "incomeCsv": "Ingresos y gastos (CSV)",
+      "incomeJson": "Ingresos y gastos (JSON)"
+    },
+    "scopeNote": "Los estados se calculan al momento a partir de tus transacciones, nunca se guardan como copia. Una corrección en un movimiento antiguo mueve todos los saldos posteriores."
   },
   "errors": {
     "notFoundTitle": "No encontramos esta página",
