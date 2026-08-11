@@ -2,6 +2,7 @@ export * from './ai.js';
 export * from './allocation.js';
 export * from './app.js';
 export * from './audit.js';
+export * from './billing.js';
 export * from './categorization.js';
 export * from './documents.js';
 export * from './financial.js';

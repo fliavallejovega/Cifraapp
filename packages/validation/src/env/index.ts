@@ -50,6 +50,7 @@ export function getServerEnv(): ServerEnv {
       SUPABASE_SERVICE_ROLE_KEY: '',
       AI_PROVIDER: 'none',
       AI_MONTHLY_BUDGET: '0',
+      BILLING_PROVIDER: 'none',
     };
     return cachedServerEnv;
   }

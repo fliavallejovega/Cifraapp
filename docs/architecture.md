@@ -92,8 +92,9 @@ architecture. Built so far:
 | `scenario-engine`    | 11    | Deterministic "what if" projections over a position snapshot   |
 | `tax-engine`         | 12    | Versioned sourced rules, brackets, reserve, expense classes    |
 | `reporting`          | 13    | Statements, reconciliation, monthly close, health, exports     |
+| `billing`            | 14    | Plan catalogue, entitlements, proration, idempotent webhooks   |
 
-Still to come: `billing`, `ledger`.
+Still to come: `ledger`.
 
 ## Dependency direction
 

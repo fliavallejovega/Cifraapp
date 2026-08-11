@@ -17,6 +17,7 @@
   "dependencies": {
     "@app/ai": "workspace:*",
     "@app/allocation-engine": "workspace:*",
+    "@app/billing": "workspace:*",
     "@app/budget-engine": "workspace:*",
     "@app/category-engine": "workspace:*",
     "@app/database": "workspace:*",

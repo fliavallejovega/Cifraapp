@@ -49,6 +49,18 @@ export const serverEnvSchema = z.object({
     .string()
     .regex(/^\d+(\.\d{1,4})?$/, 'AI_MONTHLY_BUDGET must be an amount like "5.00".')
     .default('0'),
+
+  /**
+   * Billing, off unless a processor is named.
+   *
+   * With no processor every household is on the free plan's entitlements and the
+   * product works. That is a supported state, not a broken one — and the webhook
+   * endpoint refuses everything rather than trusting an unsigned payload.
+   */
+  BILLING_PROVIDER: z.enum(['stripe', 'none']).default('none'),
+  STRIPE_SECRET_KEY: z.string().optional(),
+  /** Without this, the webhook endpoint is a public URL that grants subscriptions. */
+  STRIPE_WEBHOOK_SECRET: z.string().optional(),
 });
 
 /**

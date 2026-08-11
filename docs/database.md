@@ -72,6 +72,7 @@ session-level locks DDL requires.
 | `20260811100000_ai.sql`              | `platform.ai_models` (pricing), `app.ai_invocations`, `ai_budgets`, `ai_cache`, `app.scenarios`                                      |
 | `20260811110000_tax.sql`             | `platform.tax_rule_sets`, `platform.tax_rules`, `app.tax_profiles`, `tax_estimates`, `expense_classifications`                       |
 | `20260811120000_reporting.sql`       | `app.accounting_periods` with the closed-month trigger, `app.reconciliations`, `app.report_exports`                                  |
+| `20260811130000_billing.sql`         | `platform.plans`, `plan_entitlements`, `subscriptions`, `billing_events` (unique event id), `invoices`, `app.usage_counters`         |
 
 The applied generation is recorded in `platform.schema_version` and reported by
 `GET /api/health`, so a deployment talking to the wrong database is visible

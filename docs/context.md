@@ -17,7 +17,7 @@ status table.
 | **Engines complete**    | Phases 6–11 — category, budget, debt, rule, allocation, AI and scenario engines, all live on the database, with the plan screen; **no management UI** |
 | **Substantially built** | Phase 3 (schema and position repository done, no per-entity CRUD) · Phase 4 (CSV/OFX, R2 and review pipeline done, no row confirmation)               |
 | **Not started**         | Phases 12–21                                                                                                                                          |
-| **Tests**               | 369 unit and integration · 38 end-to-end · all passing                                                                                                |
+| **Tests**               | 394 unit and integration · 38 end-to-end · all passing                                                                                                |
 | **Gate**                | 20/20 tasks green: `lint`, `typecheck`, `test`, `build`                                                                                               |
 | **Commits**             | 14, working tree clean                                                                                                                                |
 
@@ -1401,10 +1401,32 @@ are protected; corrections create adjustment history.
 
 ---
 
-## PHASE 14 — Billing
+## PHASE 14 — Billing ✅ ENGINE COMPLETE
 
 **Goal:** subscriptions that never double-charge.
 **Depends on:** Phase 13.
+
+**Built.** `@app/billing` — a `BillingProvider` seam with a Stripe adapter and a
+null implementation; entitlement resolution with per-household overrides in both
+directions; proration through `Money.allocate`, so a mid-period plan change
+loses nothing to rounding; and webhook processing that claims the provider's
+event id before acting. Stripe's signature is verified in constant time with a
+timestamp tolerance, so a captured request cannot be replayed. Schema version 13
+adds `platform.plans` and `plan_entitlements` (**pricing is rows, never a
+constant**), `platform.subscriptions` — readable by the household, writable only
+by the service role, because a tenant who can update their own plan code has the
+product for free — `platform.billing_events` with a unique `(provider,
+event_id)`, `platform.invoices` and `app.usage_counters`.
+`apps/web/src/server/entitlements.ts` answers "may this household do X" without
+anyone naming a plan; `/api/billing/webhook` verifies, claims, then acts.
+
+**Not built.** No Stripe account exists, so no checkout has ever been created and
+the adapter's network paths are untested against the real API — the signature,
+event mapping and idempotency logic are covered, the HTTP calls are not. No
+pricing page, no upgrade or cancel UI, no invoice list, no trial or grace
+expiry job, and nothing yet increments `app.usage_counters`. Final pricing
+remains an open decision; the seeded figures are the specification's and are not
+a commercial commitment.
 
 Plans: FREE, PLUS $9.99, COUPLE $17.99, PRO $29.99, FAMILY $39.99,
 ACCOUNTANT/WHITE-LABEL. **Pricing lives in the database/CMS, not in components.**
