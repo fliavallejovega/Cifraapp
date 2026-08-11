@@ -70,6 +70,7 @@ session-level locks DDL requires.
 | `20260807070000_rules.sql`           | Stored rules: conditions, actions, priority, effective window                                                                        |
 | `20260807080000_allocation.sql`      | Allocation plans and lines, `claim_kind` and `plan_outcome` enums                                                                    |
 | `20260811100000_ai.sql`              | `platform.ai_models` (pricing), `app.ai_invocations`, `ai_budgets`, `ai_cache`, `app.scenarios`                                      |
+| `20260811110000_tax.sql`             | `platform.tax_rule_sets`, `platform.tax_rules`, `app.tax_profiles`, `tax_estimates`, `expense_classifications`                       |
 
 The applied generation is recorded in `platform.schema_version` and reported by
 `GET /api/health`, so a deployment talking to the wrong database is visible

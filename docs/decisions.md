@@ -210,3 +210,47 @@ resolves to `any`, which defeats the strict-type rules the repository runs on.
 
 **Consequence.** Revisit in Phase 1, when the app's routing settles. The
 deprecated call is functional and correctly opts pages into static rendering.
+
+---
+
+## ADR-012 — AI output is structured, grounded, and checked against the facts
+
+**Status:** Accepted · Phase 11
+
+A model asked to explain a plan will eventually write "that leaves you about
+$1,400" when the figure is $1,340. It reads fluently, it is wrong, and nothing
+downstream catches it — the number is prose, not a field.
+
+**Decision.** Three mechanisms, all in `@app/ai`, none optional. Output shapes
+are declared once and used twice: as the JSON Schema sent to the provider and as
+the validator run over what comes back. Every call carries the grounding it may
+reason from. Every generated string is checked, and an answer citing a figure the
+grounding did not contain is rejected rather than shown.
+
+**Consequence.** The copilot fails closed. A screen that would have shown an AI
+paragraph shows the deterministic explanation it always had, and the failure is
+logged with its prompt version. Prompt revisions are new versions, never edits,
+so two of them can be compared on real logs.
+
+---
+
+## ADR-013 — Tax rules live in the database, versioned, sourced and reviewed
+
+**Status:** Accepted · Phase 12
+
+A tax rule is a fact about the world on a date, published by an authority, and it
+changes. Encoding one in TypeScript makes it a fact about a deployment instead:
+undated, unsourced, and wrong the moment the law moves.
+
+**Decision.** Rules are rows in `platform.tax_rule_sets` and
+`platform.tax_rules`, each carrying jurisdiction, fiscal year, version, effective
+window, source, source URL and source reference. A set reaches `published` only
+with a named reviewer and a review date — enforced by a check constraint, not by
+process. Row-level security makes unpublished sets invisible to households, and
+every stored calculation records the rule set version that produced it.
+
+**Consequence.** Rules update without a deployment. The Panama 2026 set ships as
+a **draft**, because its figures were transcribed rather than verified against a
+primary DGI publication; `is_supported` for `PA` stays false and no household
+sees a tax figure until someone qualified publishes a set. Making a tax screen
+work is never a reason to change a status.

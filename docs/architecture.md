@@ -90,8 +90,9 @@ architecture. Built so far:
 | `allocation-engine`  | 10    | The priority ladder that decides where the next dollar goes    |
 | `ai`                 | 11    | Provider abstraction, versioned prompts, guardrails, cost      |
 | `scenario-engine`    | 11    | Deterministic "what if" projections over a position snapshot   |
+| `tax-engine`         | 12    | Versioned sourced rules, brackets, reserve, expense classes    |
 
-Still to come: `tax-engine`, `reporting`, `billing`, `ledger`.
+Still to come: `reporting`, `billing`, `ledger`.
 
 ## Dependency direction
 

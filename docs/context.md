@@ -17,7 +17,7 @@ status table.
 | **Engines complete**    | Phases 6–11 — category, budget, debt, rule, allocation, AI and scenario engines, all live on the database, with the plan screen; **no management UI** |
 | **Substantially built** | Phase 3 (schema and position repository done, no per-entity CRUD) · Phase 4 (CSV/OFX, R2 and review pipeline done, no row confirmation)               |
 | **Not started**         | Phases 12–21                                                                                                                                          |
-| **Tests**               | 312 unit and integration · 38 end-to-end · all passing                                                                                                |
+| **Tests**               | 340 unit and integration · 38 end-to-end · all passing                                                                                                |
 | **Gate**                | 20/20 tasks green: `lint`, `typecheck`, `test`, `build`                                                                                               |
 | **Commits**             | 14, working tree clean                                                                                                                                |
 
@@ -1270,10 +1270,41 @@ savings, goal, net worth and runway impact.
 
 ---
 
-## PHASE 12 — Panama tax engine
+## PHASE 12 — Panama tax engine ✅ ENGINE COMPLETE, RULES UNREVIEWED
 
 **Goal:** versioned, sourced tax estimates.
 **Depends on:** Phase 11. **Highest legal risk in the project.**
+
+**Built.** `@app/tax-engine` — rule sets carrying jurisdiction, fiscal year,
+version, effective window and provenance; progressive bracket arithmetic whose
+lines always sum to the total; deductions that count only when a rule backs them;
+a reserve proportional to income actually received; and expense classification
+that never reaches `BUSINESS` on inference alone. `validateRuleSet` refuses to
+publish a rule without a named reviewer and catches a gap between bands, which
+would silently exempt a slice of income. Schema version 11 adds
+`platform.tax_rule_sets` and `tax_rules` — with a check constraint making
+publication impossible without `reviewed_by` and `reviewed_at` — plus
+`app.tax_profiles`, `tax_estimates` and `expense_classifications`.
+
+**Deliberately not done: the Panama figures are not verified.** The 2026 set
+ships as a `draft`. Its brackets were transcribed from the commonly cited text of
+Código Fiscal artículo 700 and **not checked against a primary DGI
+publication**; the ITBMS rate and the filing deadline carry the same caveat; and
+personal deductions are absent entirely, because a deduction with an unverified
+cap lowers a reserve a household is relying on. RLS makes unpublished sets
+invisible, `mayPresent()` returns false, `is_supported` for `PA` stays false, and
+`estimateTaxReserve` returns null for every household in this build. The plan
+screen therefore still uses the household's own configured rate, which is honest
+about being their setting rather than a tax calculation.
+
+**Publishing is not a status change.** It is a qualified person reading the
+primary source, confirming each figure, and putting their name and the date on
+it. A test asserts the shipped set is still a draft, so flipping it to make a
+screen work fails the build.
+
+**Also not built.** No tax onboarding UI (status, RUC, activity, accounting
+method are asked nowhere yet), no expense-classification review screen, no ITBMS
+return support, no admin rule editor — that belongs to Phase 20.
 
 ### Architecture
 

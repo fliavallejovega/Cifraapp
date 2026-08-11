@@ -24,6 +24,7 @@
     "@app/domain": "workspace:*",
     "@app/rule-engine": "workspace:*",
     "@app/scenario-engine": "workspace:*",
+    "@app/tax-engine": "workspace:*",
     "@app/transaction-engine": "workspace:*",
     "@app/ui": "workspace:*",
     "@app/validation": "workspace:*",
