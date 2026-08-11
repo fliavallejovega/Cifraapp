@@ -427,6 +427,53 @@
     },
     "scopeNote": "Statements are computed on demand from your transactions and never stored as a copy. A correction to an old movement moves every later balance with it."
   },
+  "accountant": {
+    "title": "Accountant portal",
+    "signOut": "Sign out",
+    "scopes": {
+      "read": "Read only",
+      "comment": "Read and notes",
+      "classify": "Can classify"
+    },
+    "clients": {
+      "title": "Your clients",
+      "detail": "Every household that granted you access, with what needs attention today.",
+      "neverClosed": "None",
+      "empty": {
+        "title": "Nobody has granted you access yet",
+        "body": "An accountant never gains access automatically. When a household grants it, they appear here with the scope they chose."
+      },
+      "columns": {
+        "household": "Household",
+        "scope": "Scope",
+        "uncategorized": "Uncategorized",
+        "requests": "Requests",
+        "lastClose": "Last close"
+      }
+    },
+    "client": {
+      "back": "Back to your clients",
+      "grantedOn": "Access granted on {date} · {scope}",
+      "expires": "Expires",
+      "revocable": "This access can be revoked at any time and without notice. When that happens, this page stops existing for you on the next request.",
+      "attention": {
+        "title": "What needs attention",
+        "detail": "What the household left outstanding, not a task list of your own.",
+        "uncategorized": "Uncategorized transactions",
+        "openRequests": "Open requests",
+        "lastClose": "Last closed month"
+      },
+      "notes": {
+        "title": "Notes",
+        "detail": "Visible to the household. This is not a private space.",
+        "empty": {
+          "title": "No notes",
+          "body": "A note about a specific transaction is more useful attached to it than loose in a list."
+        }
+      }
+    },
+    "scopeNote": "You only see what each household granted: their accounts, movements, documents and tax situation. Never who their members are, what plan they pay for, or what they asked the assistant."
+  },
   "errors": {
     "notFoundTitle": "We couldn't find this page",
     "notFoundBody": "The link may be broken, or the page may have moved.",

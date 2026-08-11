@@ -1597,9 +1597,36 @@ list.
 
 ---
 
-## PHASE 18 — Accountant portal
+## PHASE 18 — Accountant portal ✅ BUILT
 
 **Depends on:** Phase 17.
+
+**Built.** Schema version 17 adds `app.accountant_grants` — explicit, scoped
+(`read` / `comment` / `classify`), optionally self-expiring, revocable without a
+reason — plus `accountant_notes` and `accountant_requests`.
+`app.has_accountant_access(household, scope)` is `security definer` so an
+accountant cannot enumerate other people's grants, and requires three things at
+once: the grant exists, is not revoked, and has not expired.
+
+**The migration deliberately does not widen `app.is_household_member()`.** Doing
+so would hand every accountant a member's rights across every table in one edit,
+including writes wherever a policy is `for all`. Instead each table a grant
+reaches gets its own additional `select` policy — accounts, transactions,
+categories, obligations, debts, documents, tax profiles and estimates, expense
+classifications, accounting periods, reconciliations. What is **absent** is the
+point: profiles, household members, AI invocations, scenarios and subscriptions.
+What a household pays, who lives in it, and what they asked an assistant are not
+an accountant's business. `classify` is the only write a grant can carry.
+
+`/[locale]/accountant` lists clients with what needs attention;
+`/[locale]/accountant/[householdId]` shows one. A revoked grant produces a 404 on
+the very next request, because the lookup is a query the database answers under
+the policies rather than a membership the page cached.
+
+**Not built.** No invitation flow — a grant has to be inserted with SQL, since
+there is no member-facing screen to create, scope or revoke one, and no email to
+send. No document sharing UI, no request thread, no note composer, and no
+accountant-facing report pack.
 
 Client list, client health, pending reviews, tax status, documents, reports,
 permissions, notes, requests.

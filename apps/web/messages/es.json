@@ -427,6 +427,53 @@
     },
     "scopeNote": "Los estados se calculan al momento a partir de tus transacciones, nunca se guardan como copia. Una corrección en un movimiento antiguo mueve todos los saldos posteriores."
   },
+  "accountant": {
+    "title": "Portal del contador",
+    "signOut": "Salir",
+    "scopes": {
+      "read": "Solo lectura",
+      "comment": "Lectura y notas",
+      "classify": "Puede clasificar"
+    },
+    "clients": {
+      "title": "Tus clientes",
+      "detail": "Cada hogar que te concedió acceso, con lo que hoy necesita atención.",
+      "neverClosed": "Ninguno",
+      "empty": {
+        "title": "Todavía nadie te ha dado acceso",
+        "body": "Un contador nunca obtiene acceso automáticamente. Cuando un hogar te lo conceda, aparecerá aquí con el alcance que haya elegido."
+      },
+      "columns": {
+        "household": "Hogar",
+        "scope": "Alcance",
+        "uncategorized": "Sin categorizar",
+        "requests": "Solicitudes",
+        "lastClose": "Último cierre"
+      }
+    },
+    "client": {
+      "back": "Volver a tus clientes",
+      "grantedOn": "Acceso concedido el {date} · {scope}",
+      "expires": "Vence",
+      "revocable": "Este acceso puede revocarse en cualquier momento y sin aviso. Cuando eso pase, esta página deja de existir para ti en la siguiente petición.",
+      "attention": {
+        "title": "Qué necesita atención",
+        "detail": "Lo que el hogar dejó pendiente, no una lista de tareas tuya.",
+        "uncategorized": "Transacciones sin categorizar",
+        "openRequests": "Solicitudes abiertas",
+        "lastClose": "Último mes cerrado"
+      },
+      "notes": {
+        "title": "Notas",
+        "detail": "Visibles para el hogar. No es un espacio privado.",
+        "empty": {
+          "title": "Sin notas",
+          "body": "Una nota sobre una transacción concreta es más útil pegada a ella que suelta en una lista."
+        }
+      }
+    },
+    "scopeNote": "Solo ves lo que cada hogar te concedió: sus cuentas, movimientos, documentos y su situación fiscal. Nunca quiénes son sus miembros, qué plan pagan ni qué le preguntaron al asistente."
+  },
   "errors": {
     "notFoundTitle": "No encontramos esta página",
     "notFoundBody": "El enlace puede estar roto o la página pudo haberse movido.",

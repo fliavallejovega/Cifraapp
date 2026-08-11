@@ -1,3 +1,4 @@
+export * from './accountant.js';
 export * from './ai.js';
 export * from './allocation.js';
 export * from './app.js';
