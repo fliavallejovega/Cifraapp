@@ -8,7 +8,7 @@ before it is stable.
 | ----- | ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
 | 0     | Repository foundation: monorepo, strict types, migrations, money primitives, i18n, tests, CI   | **Complete**                                                                                                    |
 | 1     | Design system: visual identity, typography, color, motion, components, `DESIGN.md`             | **Complete**                                                                                                    |
-| 2     | Auth and multi-tenancy: users, households, memberships, organizations, RLS, audit log          | **Complete** — no MFA, magic link, OAuth, invitation sending or household switcher                              |
+| 2     | Auth and multi-tenancy: users, households, memberships, organizations, RLS, audit log          | **Complete** — password recovery included; no MFA, magic link, OAuth, invitation sending or household switcher  |
 | 3     | Core financial data model: accounts, transactions, categories, merchants, budgets, goals, debt | **Partial** — schema, RLS and position repository done; **no per-entity CRUD**                                  |
 | 4     | Import engine: CSV, XLSX, OFX, PDF, document storage, parsing, normalization                   | **Partial** — CSV/OFX, R2 and review pipeline done; **no row confirmation**, no XLSX/PDF, no background jobs    |
 | 5     | Duplicate and transfer engine: fingerprints, matching, credit-card payment detection           | **Complete**                                                                                                    |
@@ -53,18 +53,16 @@ schema version 20, with row-level security enabled _and forced_ on every one —
 asserted by `security-audit.test.ts` over the whole schema rather than a list of
 known tables.
 
-### The two things that block everything else
+The live Supabase project is **migrated to version 20** and the end-to-end suite
+passes against it: 48 public specs green, 10 skipped because
+`E2E_EMAIL`/`E2E_PASSWORD` are unset.
 
-1. **The live Supabase project is still at schema version 9.** Everything from
-   Phase 11 onward exists only as migrations applied locally. Until
-   `pnpm db:migrate` runs against the project, the marketing site, the pricing
-   page and the copilot fail there — they query tables that do not exist yet.
-   The end-to-end suite cannot run for the same reason.
+### The one thing that blocks everything else
 
-2. **Account and transaction CRUD still does not exist** (Phase 3's remainder),
-   and neither does import row confirmation (Phase 4's). Nothing can be entered
-   through the product; the test account was inserted with SQL. Every engine
-   above reads rows the product cannot create.
+**Account and transaction CRUD still does not exist** (Phase 3's remainder), and
+neither does import row confirmation (Phase 4's). Nothing can be entered through
+the product; the test account was inserted with SQL. Every engine above reads
+rows the product cannot create.
 
 ### Then, in order
 

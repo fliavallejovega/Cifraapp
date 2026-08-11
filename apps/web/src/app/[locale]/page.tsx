@@ -62,8 +62,13 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
   // eslint-disable-next-line @typescript-eslint/no-deprecated
   setRequestLocale(locale);
 
+  // The session decides whether this page renders at all; the content decides
+  // what it says. They do not depend on each other, so they travel together —
+  // an anonymous visit is three round trips either way, and doing them in
+  // sequence is three latencies instead of one.
+  const [session, plans, faqs] = await Promise.all([loadSession(), listPlans(), listFaqs(locale)]);
+
   // A signed-in person never sees marketing. They came to look at their money.
-  const session = await loadSession();
   if (session) {
     redirect(`/${locale}${session.activeHouseholdId ? '/overview' : '/welcome'}`);
   }
@@ -74,8 +79,6 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
 
   const moneyLocale = locale === 'en' ? 'en-US' : 'es-PA';
   const money = (value: Money) => formatMoney(value, { locale: moneyLocale });
-
-  const [plans, faqs] = await Promise.all([listPlans(), listFaqs(locale)]);
   const cheapestPaid = plans.find((plan) => plan.price.isPositive());
 
   // Demonstration figures. Authored to be internally consistent — the claims

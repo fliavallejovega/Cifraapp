@@ -179,6 +179,7 @@
       "title": "Entra a tu sistema",
       "detail": "Tus cuentas, tus reglas y tu plan de asignación.",
       "submit": "Entrar",
+      "forgotPassword": "¿Olvidaste tu contraseña?",
       "noAccount": "¿Aún no tienes cuenta?",
       "createOne": "Crear una"
     },
@@ -189,6 +190,22 @@
       "haveAccount": "¿Ya tienes cuenta?",
       "signInInstead": "Entrar",
       "checkYourEmail": "Te enviamos un correo para confirmar tu dirección. Ábrelo para terminar de crear tu cuenta."
+    },
+    "forgot": {
+      "title": "Recuperar tu contraseña",
+      "detail": "Te enviamos un enlace para que elijas una nueva. Vence en una hora.",
+      "submit": "Enviar el enlace",
+      "sent": "Si esa dirección tiene una cuenta, el enlace ya va en camino. Revisa tu correo, incluido el spam.",
+      "backToSignIn": "Volver a entrar"
+    },
+    "reset": {
+      "title": "Elige una contraseña nueva",
+      "detail": "Al guardarla cerramos las demás sesiones abiertas en tu cuenta.",
+      "submit": "Guardar y entrar",
+      "checking": "Verificando el enlace…",
+      "expiredTitle": "Ese enlace ya no sirve",
+      "expiredBody": "Los enlaces de recuperación vencen en una hora y solo se pueden usar una vez. Pide uno nuevo.",
+      "requestAgain": "Pedir otro enlace"
     },
     "errors": {
       "title": "No pudimos continuar",

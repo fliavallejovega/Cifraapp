@@ -7,6 +7,8 @@ import { Money, type CurrencyCode } from '@app/domain';
 import { getServerEnv } from '@app/validation/env';
 import { asc, eq } from 'drizzle-orm';
 
+import { cachedPublicRead } from '../public-cache';
+
 /**
  * The plan catalogue, for the pricing page.
  *
@@ -27,6 +29,10 @@ export interface PublicPlan {
 }
 
 export async function listPlans(): Promise<readonly PublicPlan[]> {
+  return cachedPublicRead('plans', readPlans);
+}
+
+async function readPlans(): Promise<readonly PublicPlan[]> {
   const db = getDb(getServerEnv().DATABASE_URL);
 
   const [planRows, entitlementRows] = await Promise.all([

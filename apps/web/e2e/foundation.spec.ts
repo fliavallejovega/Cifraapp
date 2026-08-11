@@ -143,11 +143,20 @@ test('the page never scrolls horizontally', async ({ page }) => {
   expect(overflows).toBe(false);
 });
 
-test('the landing page exposes exactly one primary action', async ({ page }) => {
-  // The gauge moved behind authentication with real data; its accessible
-  // reading is asserted in auth.spec.ts. What the public shell owes a visitor
-  // is a clear offer and one thing to do about it.
+test('the landing page offers one action, however many times it asks', async ({ page }) => {
+  // The marketing page repeats its call to action — once in the hero, once at
+  // the close — which is ordinary and intended. The property that matters is
+  // that every primary action leads to the *same* place: a visitor deciding
+  // whether to trust a financial product should never be choosing between
+  // competing offers.
   await page.goto('/es');
 
-  await expect(page.getByRole('link', { name: /Crear mi sistema/i })).toBeVisible();
+  const actions = page.getByRole('link', { name: /Crear mi sistema/i });
+  await expect(actions.first()).toBeVisible();
+
+  const destinations = await actions.evaluateAll((links) =>
+    [...new Set(links.map((link) => (link as HTMLAnchorElement).getAttribute('href')))].sort(),
+  );
+
+  expect(destinations).toEqual(['/es/sign-up']);
 });

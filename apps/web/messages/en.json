@@ -179,6 +179,7 @@
       "title": "Sign in to your system",
       "detail": "Your accounts, your rules, and your allocation plan.",
       "submit": "Sign in",
+      "forgotPassword": "Forgot your password?",
       "noAccount": "No account yet?",
       "createOne": "Create one"
     },
@@ -189,6 +190,22 @@
       "haveAccount": "Already have an account?",
       "signInInstead": "Sign in",
       "checkYourEmail": "We sent you an email to confirm your address. Open it to finish creating your account."
+    },
+    "forgot": {
+      "title": "Recover your password",
+      "detail": "We'll send you a link to choose a new one. It expires in an hour.",
+      "submit": "Send the link",
+      "sent": "If that address has an account, the link is on its way. Check your email, including spam.",
+      "backToSignIn": "Back to sign in"
+    },
+    "reset": {
+      "title": "Choose a new password",
+      "detail": "Saving it ends every other session open on your account.",
+      "submit": "Save and sign in",
+      "checking": "Checking the link…",
+      "expiredTitle": "That link no longer works",
+      "expiredBody": "Recovery links expire after an hour and can only be used once. Request a new one.",
+      "requestAgain": "Request another link"
     },
     "errors": {
       "title": "We couldn't continue",

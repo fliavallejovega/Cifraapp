@@ -39,7 +39,9 @@ test.describe('guards', () => {
     await page.goto('/es');
 
     await expect(page.getByRole('heading', { level: 1 })).toContainText('sistema');
-    await expect(page.getByRole('link', { name: /Crear mi sistema/i })).toBeVisible();
+    // `first()` because the page repeats its call to action at the close.
+    // `foundation.spec.ts` asserts that every repetition leads to one place.
+    await expect(page.getByRole('link', { name: /Crear mi sistema/i }).first()).toBeVisible();
   });
 
   test('the sign-in form is reachable and labelled', async ({ page }) => {

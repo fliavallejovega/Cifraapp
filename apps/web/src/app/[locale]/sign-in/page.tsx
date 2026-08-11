@@ -60,6 +60,12 @@ export default async function SignInPage({
         }}
       />
 
+      <p className="mt-6 text-sm">
+        <Link href="/forgot-password" className="underline underline-offset-4">
+          {t('signIn.forgotPassword')}
+        </Link>
+      </p>
+
       <p className="mt-8 text-sm text-[color:var(--color-ink-secondary)]">
         {t('signIn.noAccount')}{' '}
         <Link href="/sign-up" className="underline underline-offset-4">

@@ -2,10 +2,10 @@ import 'server-only';
 
 import { getAdminDb, type Database } from '@app/database';
 import { adminUsers, profiles } from '@app/database/schema';
-import { getClientEnv, getServerEnv } from '@app/validation/env';
-import { createServerClient } from '@supabase/ssr';
+import { getServerEnv } from '@app/validation/env';
 import { and, eq, isNull } from 'drizzle-orm';
-import { cookies } from 'next/headers';
+
+import { createRequestClient } from './supabase';
 
 /**
  * Who is allowed in here.
@@ -36,25 +36,7 @@ export function adminDb(): Database {
 }
 
 async function currentUserId(): Promise<string | null> {
-  const env = getClientEnv();
-  const cookieStore = await cookies();
-
-  const supabase = createServerClient(
-    env.NEXT_PUBLIC_SUPABASE_URL,
-    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll() {
-          // This application never refreshes a session. An administrator whose
-          // token expired signs in again, which is the correct amount of friction
-          // for a surface that can read the company's books.
-        },
-      },
-    },
-  );
+  const supabase = await createRequestClient();
 
   // `getUser()` rather than `getSession()`: the session comes from a cookie the
   // browser controls, and this is the one place where trusting it would be
@@ -63,19 +45,26 @@ async function currentUserId(): Promise<string | null> {
   return error ? null : (data.user?.id ?? null);
 }
 
+/** The administrator for a profile id, or null. Used right after sign-in when cookies are not yet readable. */
+export async function loadAdminSessionForProfileId(
+  profileId: string,
+): Promise<AdminSession | null> {
+  const [row] = await adminDb()
+    .select({ profileId: adminUsers.profileId, role: adminUsers.role, email: profiles.email })
+    .from(adminUsers)
+    .innerJoin(profiles, eq(profiles.id, adminUsers.profileId))
+    .where(and(eq(adminUsers.profileId, profileId), isNull(adminUsers.disabledAt)))
+    .limit(1);
+
+  return row ? { profileId: row.profileId, email: row.email, role: row.role } : null;
+}
+
 /** The administrator making this request, or null. Null is an ordinary answer. */
 export async function loadAdminSession(): Promise<AdminSession | null> {
   const userId = await currentUserId();
   if (!userId) return null;
 
-  const [row] = await adminDb()
-    .select({ profileId: adminUsers.profileId, role: adminUsers.role, email: profiles.email })
-    .from(adminUsers)
-    .innerJoin(profiles, eq(profiles.id, adminUsers.profileId))
-    .where(and(eq(adminUsers.profileId, userId), isNull(adminUsers.disabledAt)))
-    .limit(1);
-
-  return row ? { profileId: row.profileId, email: row.email, role: row.role } : null;
+  return loadAdminSessionForProfileId(userId);
 }
 
 /**

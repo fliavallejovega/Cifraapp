@@ -1,6 +1,8 @@
 import { Rule } from '@app/ui';
 import Link from 'next/link';
 
+import { signOut } from '@/server/auth-actions';
+
 /**
  * Navigation, and the only chrome this application has.
  *
@@ -37,7 +39,19 @@ export function AdminNav({ current, email }: { current: AdminSectionKey; email?:
           ))}
         </nav>
 
-        {email && <span className="text-xs text-[color:var(--color-ink-tertiary)]">{email}</span>}
+        {email && (
+          <div className="flex items-baseline gap-4">
+            <span className="text-xs text-[color:var(--color-ink-tertiary)]">{email}</span>
+            <form action={signOut}>
+              <button
+                type="submit"
+                className="text-xs text-[color:var(--color-ink-secondary)] underline underline-offset-4"
+              >
+                Sign out
+              </button>
+            </form>
+          </div>
+        )}
       </div>
 
       <Rule className="mt-5" />

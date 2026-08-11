@@ -13,6 +13,8 @@ import {
 import { getServerEnv } from '@app/validation/env';
 import { and, asc, desc, eq } from 'drizzle-orm';
 
+import { cachedPublicRead } from '../public-cache';
+
 /**
  * Marketing content, read with the anonymous role.
  *
@@ -57,6 +59,14 @@ export async function loadPage(
   slug: string,
   locale: string,
 ): Promise<ContentPage | null> {
+  return cachedPublicRead(`page:${kind}:${slug}:${locale}`, () => readPage(kind, slug, locale));
+}
+
+async function readPage(
+  kind: ContentKind,
+  slug: string,
+  locale: string,
+): Promise<ContentPage | null> {
   const rows = await database()
     .select({
       slug: contentPages.slug,
@@ -95,27 +105,31 @@ export async function listPages(
   locale: string,
   limit = 50,
 ): Promise<readonly Pick<ContentPage, 'slug' | 'title' | 'excerpt' | 'publishedAt'>[]> {
-  return database()
-    .select({
-      slug: contentPages.slug,
-      title: contentPages.title,
-      excerpt: contentPages.excerpt,
-      publishedAt: contentPages.publishedAt,
-    })
-    .from(contentPages)
-    .where(and(eq(contentPages.kind, kind), eq(contentPages.locale, locale)))
-    .orderBy(desc(contentPages.publishedAt), asc(contentPages.sortOrder))
-    .limit(limit);
+  return cachedPublicRead(`pages:${kind}:${locale}:${String(limit)}`, () =>
+    database()
+      .select({
+        slug: contentPages.slug,
+        title: contentPages.title,
+        excerpt: contentPages.excerpt,
+        publishedAt: contentPages.publishedAt,
+      })
+      .from(contentPages)
+      .where(and(eq(contentPages.kind, kind), eq(contentPages.locale, locale)))
+      .orderBy(desc(contentPages.publishedAt), asc(contentPages.sortOrder))
+      .limit(limit),
+  );
 }
 
 export async function listFaqs(
   locale: string,
 ): Promise<readonly { question: string; answer: string }[]> {
-  return database()
-    .select({ question: faqs.question, answer: faqs.answer })
-    .from(faqs)
-    .where(eq(faqs.locale, locale))
-    .orderBy(asc(faqs.sortOrder));
+  return cachedPublicRead(`faqs:${locale}`, () =>
+    database()
+      .select({ question: faqs.question, answer: faqs.answer })
+      .from(faqs)
+      .where(eq(faqs.locale, locale))
+      .orderBy(asc(faqs.sortOrder)),
+  );
 }
 
 /**
@@ -139,6 +153,13 @@ export async function listTestimonials(
 }
 
 export async function loadLegalDocument(
+  kind: 'terms' | 'privacy' | 'tax_disclaimer' | 'cookies',
+  locale: string,
+): Promise<{ title: string; body: string; version: string; reviewedAt: Date | null } | null> {
+  return cachedPublicRead(`legal:${kind}:${locale}`, () => readLegalDocument(kind, locale));
+}
+
+async function readLegalDocument(
   kind: 'terms' | 'privacy' | 'tax_disclaimer' | 'cookies',
   locale: string,
 ): Promise<{ title: string; body: string; version: string; reviewedAt: Date | null } | null> {

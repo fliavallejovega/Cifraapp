@@ -11,15 +11,15 @@ status table.
 
 ## Status
 
-|                         |                                                                                                                                         |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| **Complete**            | Phase 0 (foundation) · Phase 1 (design system) · Phase 2 (auth and tenancy) · Phase 5 (duplicate and transfer engine)                   |
-| **Engines complete**    | Phases 6–15 — category, budget, debt, rule, allocation, AI, scenario, tax, reporting, billing and ledger engines; **no management UI**  |
-| **Substantially built** | Phase 3 (schema and position repository done, no per-entity CRUD) · Phase 4 (CSV/OFX, R2 and review pipeline done, no row confirmation) |
-| **Not started**         | Phases 12–21                                                                                                                            |
-| **Tests**               | 431 unit and integration · 38 end-to-end · all passing                                                                                  |
-| **Gate**                | 20/20 tasks green: `lint`, `typecheck`, `test`, `build`                                                                                 |
-| **Commits**             | 14, working tree clean                                                                                                                  |
+|                         |                                                                                                                                          |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| **Complete**            | Phase 0 (foundation) · Phase 1 (design system) · Phase 2 (auth, tenancy and password recovery) · Phase 5 (duplicate and transfer engine) |
+| **Engines complete**    | Phases 6–15 — category, budget, debt, rule, allocation, AI, scenario, tax, reporting, billing and ledger engines; **no management UI**   |
+| **Substantially built** | Phase 3 (schema and position repository done, no per-entity CRUD) · Phase 4 (CSV/OFX, R2 and review pipeline done, no row confirmation)  |
+| **Not started**         | Phases 12–21                                                                                                                             |
+| **Tests**               | 431 unit and integration · 38 end-to-end · all passing                                                                                   |
+| **Gate**                | 20/20 tasks green: `lint`, `typecheck`, `test`, `build`                                                                                  |
+| **Commits**             | 14, working tree clean                                                                                                                   |
 
 Live infrastructure is connected and exercised by the end-to-end suite. This is
 not a repository that merely compiles; it signs a user in, creates their
