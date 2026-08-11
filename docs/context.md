@@ -1636,9 +1636,34 @@ scoped and revocable.
 
 ---
 
-## PHASE 19 — White label
+## PHASE 19 — White label ⚠ MODEL BUILT
 
 **Depends on:** Phase 18.
+
+**Built.** Schema version 18 adds `platform.organization_branding`: display
+name, logo, favicon, **one** colour, a unique lowercased custom domain with a
+verification timestamp, support and from-name for email, optional terms and
+privacy URLs, an onboarding override and a default plan.
+`app.branding_for_household()` is `security definer` and returns presentation
+fields only, so a household can render its firm's name without reading the
+firm's row — which carries a support address, a domain and a default plan that
+are the firm's business, not its clients'. Branding resolves **per household**
+rather than per domain: a person with households under two firms would otherwise
+see whichever domain they happened to type.
+
+Three constraints carry the intent. An unverified domain is never served, or
+anyone who can point DNS at the platform could claim another firm's customers.
+The palette is a single token, because the design system carries meaning in its
+neutrals and reserves one signal colour for a crossed threshold — a firm with a
+full palette could make a shortfall look like a suggestion. And branding covers
+presentation only: the copy register, the tax disclaimers and the refusal to
+call an estimate a bill are not brandable, because a household reading a
+rebranded screen is entitled to the same honesty as one reading ours.
+
+**Not built.** No admin screen to create or edit branding, no domain
+verification flow or DNS automation, no per-organization email sending, no
+custom onboarding renderer, and nothing yet applies `brandingStyle()` in the
+application shell — the resolver exists and no screen calls it.
 
 Custom logo, custom domain, primary color, favicon, email branding, support
 email, privacy policy, terms, custom onboarding, custom plan.
