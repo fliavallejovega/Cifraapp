@@ -17,7 +17,7 @@ status table.
 | **Engines complete**    | Phases 6–11 — category, budget, debt, rule, allocation, AI and scenario engines, all live on the database, with the plan screen; **no management UI** |
 | **Substantially built** | Phase 3 (schema and position repository done, no per-entity CRUD) · Phase 4 (CSV/OFX, R2 and review pipeline done, no row confirmation)               |
 | **Not started**         | Phases 12–21                                                                                                                                          |
-| **Tests**               | 394 unit and integration · 38 end-to-end · all passing                                                                                                |
+| **Tests**               | 414 unit and integration · 38 end-to-end · all passing                                                                                                |
 | **Gate**                | 20/20 tasks green: `lint`, `typecheck`, `test`, `build`                                                                                               |
 | **Commits**             | 14, working tree clean                                                                                                                                |
 
@@ -1446,10 +1446,34 @@ Warn before hard limits.
 
 ---
 
-## PHASE 15 — Internal SaaS accounting
+## PHASE 15 — Internal SaaS accounting ✅ ENGINE COMPLETE
 
 **Goal:** the company's own real double-entry ledger.
 **Depends on:** Phase 14.
+
+**Built.** `@app/ledger` — a fifteen-account chart, entry construction that
+refuses anything unbalanced, negative or posted to an unknown account, per
+account balances reported on each account's normal side, a trial balance, and
+the posting rules for a payment, a refund, deferred billing, revenue
+recognition, a processor payout and vendor spend. Refunds go to a **contra
+revenue** account so gross revenue and the amount refunded stay separately
+visible. SaaS metrics — MRR, ARR, ARPU, new/expansion/contraction/churned
+movement, net and gross retention, logo churn, LTV — decompose so that opening +
+new + expansion − contraction − churn equals closing exactly.
+
+Schema version 14 adds `platform.ledger_accounts`, `journal_entries` and
+`journal_lines`. **Debits equal credits is a deferred constraint trigger**, not a
+convention: it runs at commit, because an entry is written with its lines inside
+one transaction and is legitimately half-written before then. A second trigger
+catches an entry committed with no lines at all, which the first cannot see.
+There is **no `balance` column anywhere** and no `authenticated` grant — the
+company's books are not customer data.
+
+**Not built.** Nothing posts to the ledger yet: the billing webhook updates
+subscription status and does not write journal entries, because no processor is
+configured and posting fabricated entries would corrupt the first real month. No
+revenue-recognition job, no payout reconciliation, no metrics dashboard (that is
+Phase 20), and no period close on the company's own books.
 
 ```
 platform.ledger_accounts

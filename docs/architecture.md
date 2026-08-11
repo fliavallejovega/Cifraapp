@@ -93,8 +93,7 @@ architecture. Built so far:
 | `tax-engine`         | 12    | Versioned sourced rules, brackets, reserve, expense classes    |
 | `reporting`          | 13    | Statements, reconciliation, monthly close, health, exports     |
 | `billing`            | 14    | Plan catalogue, entitlements, proration, idempotent webhooks   |
-
-Still to come: `ledger`.
+| `ledger`             | 15    | Chart of accounts, journal entries, trial balance, SaaS metrics |
 
 ## Dependency direction
 
