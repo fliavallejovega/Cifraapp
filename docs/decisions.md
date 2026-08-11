@@ -254,3 +254,23 @@ a **draft**, because its figures were transcribed rather than verified against a
 primary DGI publication; `is_supported` for `PA` stays false and no household
 sees a tax figure until someone qualified publishes a set. Making a tax screen
 work is never a reason to change a status.
+
+---
+
+## ADR-014 — The admin application is English-only
+
+**Status:** Accepted · Phase 20
+
+Every user-visible string in this product goes through `messages/{es,en}.json`,
+and Spanish is written first. The admin application breaks that rule.
+
+**Decision.** `apps/admin` hardcodes its labels in English and disables the i18n
+lint rule for its own `.tsx` files, scoped to that application and nothing else.
+
+**Consequence.** The rule exists so customer-facing copy stays bilingual and
+editable by someone who is not a developer. The admin console has neither
+property: it is internal, it is read by people who work on the product, and
+routing its labels through a two-language catalogue would double the maintenance
+of copy no customer will ever see. If the console is ever opened to
+non-English-speaking staff, this decision is the thing to revisit — not the
+lint rule.

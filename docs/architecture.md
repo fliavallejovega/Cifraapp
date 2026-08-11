@@ -62,6 +62,7 @@ domains, with an explicit link — never as one shared row.
 ```
 apps/
   web/                Next.js 16 application (marketing + product + API routes)
+  admin/              Internal console — separate deployment, service-role reads
 
 packages/
   config/             tsconfig bases, ESLint flat configs, shared tooling

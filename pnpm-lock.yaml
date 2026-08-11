@@ -24,6 +24,76 @@ importers:
         specifier: 6.0.3
         version: 6.0.3
 
+  apps/admin:
+    dependencies:
+      '@app/ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
+      '@app/billing':
+        specifier: workspace:*
+        version: link:../../packages/billing
+      '@app/database':
+        specifier: workspace:*
+        version: link:../../packages/database
+      '@app/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
+      '@app/ledger':
+        specifier: workspace:*
+        version: link:../../packages/ledger
+      '@app/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      '@app/validation':
+        specifier: workspace:*
+        version: link:../../packages/validation
+      '@supabase/ssr':
+        specifier: 0.12.4
+        version: 0.12.4(@supabase/supabase-js@2.112.2)
+      '@supabase/supabase-js':
+        specifier: 2.112.2
+        version: 2.112.2
+      drizzle-orm:
+        specifier: 0.45.2
+        version: 0.45.2(postgres@3.4.9)
+      next:
+        specifier: 16.3.0
+        version: 16.3.0(@playwright/test@1.62.1)(@types/node@26.1.2)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      react:
+        specifier: 19.2.8
+        version: 19.2.8
+      react-dom:
+        specifier: 19.2.8
+        version: 19.2.8(react@19.2.8)
+    devDependencies:
+      '@app/config':
+        specifier: workspace:*
+        version: link:../../packages/config
+      '@tailwindcss/postcss':
+        specifier: 4.3.3
+        version: 4.3.3
+      '@types/node':
+        specifier: 26.1.2
+        version: 26.1.2
+      '@types/react':
+        specifier: 19.2.18
+        version: 19.2.18
+      '@types/react-dom':
+        specifier: 19.2.4
+        version: 19.2.4(@types/react@19.2.18)
+      eslint:
+        specifier: 10.8.0
+        version: 10.8.0(jiti@2.7.0)
+      server-only:
+        specifier: 0.0.1
+        version: 0.0.1
+      tailwindcss:
+        specifier: 4.3.3
+        version: 4.3.3
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+
   apps/web:
     dependencies:
       '@app/ai':
@@ -2685,6 +2755,9 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
+  server-only@0.0.1:
+    resolution: {integrity: sha512-qepMx2JxAa5jjfzxG79yPPq+8BuFToHd1hm7kI+Z4zAq1ftQiP7HcxMhDDItrbtwVeLg/cY2JnKnrcFkmiswNA==}
+
   sharp@0.35.3:
     resolution: {integrity: sha512-ej0zVHuZGHCiABXcNxeYhpRnPNPAcvbG8RMdBAhDAxLKkCRVSpK3Iyu7qbqw3JMzoj0REeM6f3tJLtVwl0023Q==}
     engines: {node: '>=20.9.0'}
@@ -4609,6 +4682,8 @@ snapshots:
   scheduler@0.27.0: {}
 
   semver@7.8.5: {}
+
+  server-only@0.0.1: {}
 
   sharp@0.35.3(@types/node@26.1.2):
     dependencies:

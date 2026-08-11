@@ -1,0 +1,18 @@
+@import 'tailwindcss';
+@import '@app/ui/styles.css';
+
+/* Tailwind cannot see class names inside a workspace package unless told where
+   to look. Without this, every utility used in @app/ui is dropped. */
+@source '../../../../packages/ui/src';
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    background-color: var(--color-ground);
+    color: var(--color-ink);
+  }
+}

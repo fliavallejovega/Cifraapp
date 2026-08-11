@@ -26,7 +26,7 @@ before it is stable.
 | 17    | Landing page                                                                                   | **Built** — 15 routes, content-driven, no fake testimonials or logos; **product name still provisional**        |
 | 18    | Accountant portal                                                                              | **Built** — explicit scoped revocable grants, client list and detail; **no invitation flow, no grant UI**       |
 | 19    | White label                                                                                    | **Model built** — branding, verified domains, per-household resolution; **no admin UI, no domain automation**   |
-| 20    | Admin platform                                                                                 | Pending                                                                                                         |
+| 20    | Admin platform                                                                                 | **Built** — separate app, roles, metrics, flags; **read-only, no support or CMS tooling**                       |
 | 21    | Hardening: security review, RLS audit, performance, accessibility, load testing                | Pending                                                                                                         |
 
 ## Priority if scope must be cut

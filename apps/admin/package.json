@@ -1,0 +1,40 @@
+{
+  "name": "@app/admin",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --port 3001",
+    "build": "next build",
+    "start": "next start",
+    "clean": "rm -rf .next .turbo",
+    "typecheck": "tsc -p tsconfig.json",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@app/ai": "workspace:*",
+    "@app/billing": "workspace:*",
+    "@app/database": "workspace:*",
+    "@app/domain": "workspace:*",
+    "@app/ledger": "workspace:*",
+    "@app/ui": "workspace:*",
+    "@app/validation": "workspace:*",
+    "@supabase/ssr": "0.12.4",
+    "@supabase/supabase-js": "2.112.2",
+    "drizzle-orm": "0.45.2",
+    "next": "16.3.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@app/config": "workspace:*",
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/node": "26.1.2",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.4",
+    "eslint": "10.8.0",
+    "server-only": "0.0.1",
+    "tailwindcss": "4.3.3",
+    "typescript": "6.0.3"
+  }
+}

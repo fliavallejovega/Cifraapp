@@ -17,7 +17,7 @@ status table.
 | **Engines complete**    | Phases 6–11 — category, budget, debt, rule, allocation, AI and scenario engines, all live on the database, with the plan screen; **no management UI** |
 | **Substantially built** | Phase 3 (schema and position repository done, no per-entity CRUD) · Phase 4 (CSV/OFX, R2 and review pipeline done, no row confirmation)               |
 | **Not started**         | Phases 12–21                                                                                                                                          |
-| **Tests**               | 414 unit and integration · 38 end-to-end · all passing                                                                                                |
+| **Tests**               | 422 unit and integration · 38 end-to-end · all passing                                                                                                |
 | **Gate**                | 20/20 tasks green: `lint`, `typecheck`, `test`, `build`                                                                                               |
 | **Commits**             | 14, working tree clean                                                                                                                                |
 
@@ -1672,9 +1672,40 @@ Architecture: `platform → organization → clients → households`.
 
 ---
 
-## PHASE 20 — Admin platform
+## PHASE 20 — Admin platform ✅ BUILT
 
 **Depends on:** Phase 19.
+
+**Built.** `apps/admin` — a **separate Next application** on port 3001, with its
+own stricter headers (`no-store` on everything, `noindex` on every response) and
+no customer-facing routes at all. Schema version 19 adds
+`platform.admin_users` with five narrow roles, `feature_flags` and
+`feature_flag_overrides` scoped global → organization → household → user,
+`support_tickets`, and `audit.admin_actions` — append-only and not readable by
+the administrators it records.
+
+Authorization is the application's own responsibility, because every table it
+reads is service-role only. `requireAdmin()` is the entire boundary and returns
+a **404 rather than a 403**: confirming that an admin console exists at a URL
+somebody guessed is free reconnaissance. Roles have no hierarchy beyond
+`super_admin` — support is not a lesser finance, and modelling them as levels is
+how a support tool ends up able to issue refunds.
+
+Three screens: Overview (product counts, MRR and ledger-recognized revenue side
+by side so a disagreement is visible), Households (aggregates only — nothing on
+it reveals what a household spends money on), and Feature flags (read-only).
+Flag precedence is resolved by a pure function in
+`apps/web/src/server/flag-resolution.ts` with eight tests.
+
+**Not built.** Everything is read-only. Toggling a flag, resolving a ticket or
+issuing a refund all need `audit.admin_actions` written first — with the before
+and after — and shipping the button before that exists is how an incident ends
+up with no explanation. No CMS editor, no organization management, no
+tax-reviewer workflow, no admin sign-in page (an administrator authenticates
+with the same Supabase project and must already hold a row), and no MRR movement
+because nothing snapshots a previous period yet.
+
+The admin console is English-only by decision, recorded as **ADR-014**.
 
 Separate application. Sections: Overview, Users, Households, Organizations,
 Subscriptions, Revenue, Ledger, Transactions, Documents, Rules, CMS, Feature
