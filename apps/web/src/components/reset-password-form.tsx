@@ -13,16 +13,13 @@ import { getBrowserClient } from '@/lib/supabase-browser';
  * you get depends on where the reset was started rather than on anything the
  * person did:
  *
- *   **`?code=`** — a reset requested through this product. `/auth/callback`
- *   exchanges it for a session before this page renders, so there is nothing
- *   left to do here but ask for the password.
+ *   **`#access_token=…&type=recovery`** — the normal path after requesting a
+ *   reset here. Tokens sit in the URL fragment (never sent to a server), so
+ *   only this component can install the session and strip the fragment.
  *
- *   **`#access_token=…&type=recovery`** — a reset triggered from the Supabase
- *   dashboard, or by an older email template. The tokens sit in the URL
- *   fragment, which is never sent to a server, so only this component can see
- *   them. It installs the session and strips the fragment immediately: a
- *   recovery token sitting in the address bar ends up in a screenshot, a
- *   bookmark, or a shoulder.
+ *   **`?code=`** — older PKCE recovery emails, or links that still route through
+ *   `/auth/callback`. Exchanged here when the PKCE verifier cookie from the same
+ *   browser is still present.
  *
  * Without this component the second shape is a dead end — the browser lands on a
  * page that reads the session server-side, finds none, and shows marketing.
@@ -58,6 +55,20 @@ export function ResetPasswordForm({
     const supabase = getBrowserClient();
 
     async function establish() {
+      const query = new URLSearchParams(window.location.search);
+      const code = query.get('code');
+
+      // PKCE recovery emails (older or misconfigured) land with ?code= on this
+      // page. Exchange here when the verifier cookie from the same browser exists.
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        window.history.replaceState(null, '', window.location.pathname);
+        if (!error) {
+          setPhase('ready');
+          return;
+        }
+      }
+
       const fragment = new URLSearchParams(window.location.hash.replace(/^#/, ''));
 
       // Supabase reports an expired or already-used link in the fragment too,
@@ -86,8 +97,12 @@ export function ResetPasswordForm({
         }
       }
 
-      const { data } = await supabase.auth.getSession();
-      setPhase(data.session ? 'ready' : 'expired');
+      const { data, error } = await supabase.auth.getSession();
+      if (error || !data.session) {
+        setPhase('expired');
+        return;
+      }
+      setPhase('ready');
     }
 
     void establish();

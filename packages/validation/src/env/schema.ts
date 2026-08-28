@@ -61,6 +61,13 @@ export const serverEnvSchema = z.object({
   STRIPE_SECRET_KEY: z.string().optional(),
   /** Without this, the webhook endpoint is a public URL that grants subscriptions. */
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
+
+  /**
+   * Shared secret for Vercel Cron invocations. Vercel sends
+   * `Authorization: Bearer <CRON_SECRET>`; without it, the keep-alive route
+   * refuses every caller.
+   */
+  CRON_SECRET: z.string().min(16).optional(),
 });
 
 /**
@@ -70,7 +77,7 @@ export const serverEnvSchema = z.object({
 export const clientEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.url('NEXT_PUBLIC_SUPABASE_URL must be a URL.'),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1, 'NEXT_PUBLIC_SUPABASE_ANON_KEY is required.'),
-  NEXT_PUBLIC_APP_URL: z.url('NEXT_PUBLIC_APP_URL must be a URL.').default('http://localhost:3000'),
+  NEXT_PUBLIC_APP_URL: z.url('NEXT_PUBLIC_APP_URL must be a URL.'),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;

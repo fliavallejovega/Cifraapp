@@ -196,6 +196,7 @@
       "detail": "Te enviamos un enlace para que elijas una nueva. Vence en una hora.",
       "submit": "Enviar el enlace",
       "sent": "Si esa dirección tiene una cuenta, el enlace ya va en camino. Revisa tu correo, incluido el spam.",
+      "rateLimited": "No podemos enviar otro correo ahora. Espera hasta una hora o usa un enlace de recuperación que ya haya llegado (revisa spam).",
       "backToSignIn": "Volver a entrar"
     },
     "reset": {

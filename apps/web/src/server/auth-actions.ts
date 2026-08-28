@@ -1,9 +1,9 @@
 'use server';
 
-import { getClientEnv } from '@app/validation/env';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 
+import { requestAuthCallbackUrl } from '@/server/app-origin';
 import { createHousehold, loadSession } from './session';
 import { createRequestClient } from './supabase';
 
@@ -70,7 +70,8 @@ export async function signUp(_previous: ActionResult, formData: FormData): Promi
     return { error: issue?.path[0] === 'password' ? 'passwordTooShort' : 'invalidEmail' };
   }
 
-  const env = getClientEnv();
+  const locale = formData.get('locale');
+  const signUpLocale = typeof locale === 'string' ? locale : 'es';
   const supabase = await createRequestClient();
 
   const { data, error } = await supabase.auth.signUp({
@@ -78,7 +79,7 @@ export async function signUp(_previous: ActionResult, formData: FormData): Promi
     password: parsed.data.password,
     options: {
       data: parsed.data.displayName ? { display_name: parsed.data.displayName } : {},
-      emailRedirectTo: `${env.NEXT_PUBLIC_APP_URL}/auth/callback`,
+      emailRedirectTo: await requestAuthCallbackUrl(`/${signUpLocale}/overview`),
     },
   });
 
@@ -93,8 +94,7 @@ export async function signUp(_previous: ActionResult, formData: FormData): Promi
     return { notice: 'checkYourEmail' };
   }
 
-  const locale = formData.get('locale');
-  redirect(`/${typeof locale === 'string' ? locale : 'es'}/welcome`);
+  redirect(`/${signUpLocale}/welcome`);
 }
 
 export async function signOut(formData: FormData): Promise<void> {

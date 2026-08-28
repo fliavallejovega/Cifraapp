@@ -54,6 +54,20 @@ function localeOf(pathname: string): string {
 }
 
 export default async function proxy(request: NextRequest) {
+  const code = request.nextUrl.searchParams.get('code');
+
+  // Supabase sometimes lands PKCE codes on Site URL root instead of /auth/callback
+  // when the dashboard Site URL still points at localhost during migration.
+  if (code && request.nextUrl.pathname !== '/auth/callback') {
+    const url = request.nextUrl.clone();
+    url.pathname = '/auth/callback';
+    if (!url.searchParams.has('next')) {
+      const locale = localeOf(request.nextUrl.pathname);
+      url.searchParams.set('next', `/${locale}/reset-password`);
+    }
+    return NextResponse.redirect(url);
+  }
+
   const response = intlMiddleware(request);
   const env = getClientEnv();
 

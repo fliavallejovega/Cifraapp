@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { ForgotPasswordForm } from '@/components/forgot-password-form';
 import { Link } from '@/i18n/navigation';
+import { requestAppOrigin } from '@/server/app-origin';
 
 export default async function ForgotPasswordPage({
   params,
@@ -15,6 +16,8 @@ export default async function ForgotPasswordPage({
 
   const t = await getTranslations('auth');
   const common = await getTranslations('common');
+  const origin = await requestAppOrigin();
+  const redirectTo = `${origin}/${locale}/reset-password`;
 
   return (
     <Page className="max-w-sm">
@@ -32,11 +35,12 @@ export default async function ForgotPasswordPage({
       </header>
 
       <ForgotPasswordForm
-        locale={locale}
+        redirectTo={redirectTo}
         labels={{
           email: t('fields.email'),
           submit: t('forgot.submit'),
           sent: t('forgot.sent'),
+          rateLimited: t('forgot.rateLimited'),
           errorTitle: t('errors.title'),
           errorBody: t('errors.generic'),
         }}

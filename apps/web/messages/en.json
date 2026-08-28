@@ -196,6 +196,7 @@
       "detail": "We'll send you a link to choose a new one. It expires in an hour.",
       "submit": "Send the link",
       "sent": "If that address has an account, the link is on its way. Check your email, including spam.",
+      "rateLimited": "We can't send another email right now. Wait up to an hour, or use a recovery link that already arrived in your inbox (check spam).",
       "backToSignIn": "Back to sign in"
     },
     "reset": {

@@ -1,0 +1,55 @@
+---
+description: Pipeline Git — usar pime-git funnel (cuenta, firma SSH, push) en lugar de git directo
+alwaysApply: true
+---
+
+# Pime Git — pipeline para Cursor
+
+En este Mac, **nunca** uses `git commit`, `git push` ni `git pull` a pelo en proyectos bajo `~/Documents/Websites` (ni en repos mapeados en `~/.pime-git/config.json`).
+
+Usa **Pime Git** como embudo: aplica la cuenta correcta por proyecto, firma SSH de commits y valida SSH/origin antes de subir.
+
+**Gestión visual:** `npm run pime-git:web` → pestaña **Proyecto activo** (lista de proyectos, commits, estado, pull/push). Se actualiza sola cada 20s.
+
+**Al importar/clonar con Pime Git** (`bulk`, portal web o `pull`), cada repo recibe automáticamente:
+- Mapeo a la cuenta GitHub usada en la importación
+- Hooks `pre-commit` / `pre-push`
+- Regla Cursor en `.cursor/rules/pime-git-pipeline.mdc` dentro del proyecto
+
+## Comandos obligatorios (desde la raíz del repo o con ruta)
+
+| Acción | Comando |
+|--------|---------|
+| Verificar antes de commit/push | `pime-git verify` |
+| Aplicar cuenta al repo | `pime-git apply` |
+| Commit firmado | `pime-git commit -m "mensaje"` |
+| Push | `pime-git push` |
+| Pull | `pime-git pull` |
+| Otro git | `pime-git git -- <args>` |
+
+Proyecto importado con Pime Git ya tiene mapeo, hooks y regla Cursor. Solo verificar:
+
+```bash
+pime-git verify
+```
+
+## Flujo para Cursor (agente)
+
+1. Repo **importado con Pime Git**: `pime-git verify` basta antes del primer commit.
+2. Repo **nuevo manual**: `pime-git map` + `pime-git verify`.
+3. **Commit**: solo `pime-git commit -m "..."` (no `git commit`).
+4. Antes de **push**: `pime-git verify` — si falla, `pime-git apply` y reintentar.
+5. **Push**: solo `pime-git push` (no `git push`).
+6. Para ver estado/commits del proyecto: portal web, no comandos extra.
+
+## Si verify falla
+
+- Sin mapeo → importar de nuevo desde el portal o `pime-git map "<ruta>" <cuenta>`
+- Email/firma/origin incorrectos → `pime-git apply`
+- SSH → portal web → Config → Probar SSH
+
+## Emergencia (solo si el usuario lo pide explícito)
+
+`pime-git push --no-verify` o `pime-git commit -m "..." --no-verify`
+
+Config: `~/.pime-git/config.json` · Portal: `npm run pime-git:web`
