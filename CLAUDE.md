@@ -27,6 +27,41 @@ pnpm db:reset         # Development only; refuses production
 Without database credentials, prefix commands with `SKIP_ENV_VALIDATION=true`.
 Integration tests skip and say so.
 
+## Git and deploy (Pime Git — mandatory)
+
+This repository is mapped to the **fliavallejovega** GitHub account (not
+`javidavo05` / `pime`). SSH, `origin`, and commit identity are managed by
+**Pime Git**. Never use bare `git commit`, `git push`, or `git pull` on this Mac.
+
+| Item | Value |
+| ---- | ----- |
+| GitHub account | `fliavallejovega` |
+| Repository | `https://github.com/fliavallejovega/Cifraapp` |
+| SSH remote | `git@github.com-fliavallejovega:fliavallejovega/Cifraapp.git` |
+| Vercel project | `cifraapp` |
+| Production URL | `https://norte-web-three.vercel.app` |
+
+**Every commit and production deploy** goes through Pime Git → GitHub (SSH).
+Vercel is connected to the repo; a push to `main` triggers the production
+deploy. Do not bypass this with direct `git` or assume another account.
+
+```bash
+pime-git verify
+pime-git git -- add -A                    # stage (or selective paths)
+pime-git git -- commit -m "type(scope): summary"
+pime-git push                             # → GitHub → Vercel production
+```
+
+Before the first commit in a session: `pime-git verify`. If it fails:
+`pime-git apply` and retry. Mapping: `pime-git map "<repo path>" fliavallejovega`.
+
+**Manual Vercel CLI** (`npx vercel deploy --prod --yes`) is only for when the
+user explicitly asks or Git deploy is broken — normal path is `pime-git push`.
+
+Portal: `npm run pime-git:web` · Config: `~/.pime-git/config.json`
+
+See `.cursor/rules/pime-git-pipeline.mdc` for the full funnel rules.
+
 ## Non-negotiable rules
 
 **Money is never a `number`.** Use `Money` from `@app/domain`. Columns are

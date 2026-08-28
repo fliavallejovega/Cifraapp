@@ -1,55 +1,60 @@
 ---
-description: Pipeline Git — usar pime-git funnel (cuenta, firma SSH, push) en lugar de git directo
+description: Pipeline Git y deploy — Pime Git (fliavallejovega + SSH) obligatorio en este repo
 alwaysApply: true
 ---
 
-# Pime Git — pipeline para Cursor
+# Pime Git — pipeline para Cursor (Cifraapp)
 
-En este Mac, **nunca** uses `git commit`, `git push` ni `git pull` a pelo en proyectos bajo `~/Documents/Websites` (ni en repos mapeados en `~/.pime-git/config.json`).
+En este Mac, **nunca** uses `git commit`, `git push` ni `git pull` a pelo en este
+repositorio ni en otros bajo `~/Documents/Websites`.
 
-Usa **Pime Git** como embudo: aplica la cuenta correcta por proyecto, firma SSH de commits y valida SSH/origin antes de subir.
+Usa **Pime Git** como embudo: cuenta GitHub correcta, SSH, `origin` y validación
+antes de subir. **Todo commit y todo deploy a producción** pasa por aquí.
 
-**Gestión visual:** `npm run pime-git:web` → pestaña **Proyecto activo** (lista de proyectos, commits, estado, pull/push). Se actualiza sola cada 20s.
+## Este proyecto
 
-**Al importar/clonar con Pime Git** (`bulk`, portal web o `pull`), cada repo recibe automáticamente:
-- Mapeo a la cuenta GitHub usada en la importación
-- Hooks `pre-commit` / `pre-push`
-- Regla Cursor en `.cursor/rules/pime-git-pipeline.mdc` dentro del proyecto
+| | |
+| --- | --- |
+| Cuenta Pime Git | `fliavallejovega` (Cifraapp) — **no** usar `pime` / `javidavo05` |
+| GitHub | `fliavallejovega/Cifraapp` |
+| Origin SSH | `git@github.com-fliavallejovega:fliavallejovega/Cifraapp.git` |
+| Rama producción | `main` |
+| Vercel | proyecto `cifraapp` → https://norte-web-three.vercel.app |
+| Deploy | `pime-git push` a `main` → GitHub → Vercel (repo conectado) |
 
-## Comandos obligatorios (desde la raíz del repo o con ruta)
+**Gestión visual:** `npm run pime-git:web` → pestaña **Proyecto activo**.
+
+## Comandos obligatorios
 
 | Acción | Comando |
 |--------|---------|
 | Verificar antes de commit/push | `pime-git verify` |
-| Aplicar cuenta al repo | `pime-git apply` |
-| Commit firmado | `pime-git commit -m "mensaje"` |
-| Push | `pime-git push` |
+| Aplicar cuenta + SSH al repo | `pime-git apply` |
+| Stage | `pime-git git -- add …` |
+| Commit | `pime-git git -- commit -m "mensaje"` |
+| Push (y deploy prod vía Git) | `pime-git push` |
 | Pull | `pime-git pull` |
 | Otro git | `pime-git git -- <args>` |
 
-Proyecto importado con Pime Git ya tiene mapeo, hooks y regla Cursor. Solo verificar:
-
-```bash
-pime-git verify
-```
+`pime-git commit -m` no parsea `-m` en esta CLI; usar **`pime-git git -- commit -m`**.
 
 ## Flujo para Cursor (agente)
 
-1. Repo **importado con Pime Git**: `pime-git verify` basta antes del primer commit.
-2. Repo **nuevo manual**: `pime-git map` + `pime-git verify`.
-3. **Commit**: solo `pime-git commit -m "..."` (no `git commit`).
-4. Antes de **push**: `pime-git verify` — si falla, `pime-git apply` y reintentar.
-5. **Push**: solo `pime-git push` (no `git push`).
-6. Para ver estado/commits del proyecto: portal web, no comandos extra.
+1. `pime-git verify` — si falla, `pime-git apply` y reintentar.
+2. Implementar → `pime-git git -- add …` → `pime-git git -- commit -m "type(scope): …"`.
+3. **Deploy a producción:** `pime-git push` (no `git push`). Vercel despliega desde GitHub.
+4. **No** usar `git commit` / `git push` / `git pull` directos.
+5. **No** usar otra cuenta GitHub para este repo.
+6. `npx vercel deploy --prod --yes` solo si el usuario lo pide explícito o Git deploy falla.
 
 ## Si verify falla
 
-- Sin mapeo → importar de nuevo desde el portal o `pime-git map "<ruta>" <cuenta>`
-- Email/firma/origin incorrectos → `pime-git apply`
-- SSH → portal web → Config → Probar SSH
+- Sin mapeo → `pime-git map "<ruta del repo>" fliavallejovega`
+- Email/origin incorrectos → `pime-git apply`
+- SSH → portal web → Config → Probar SSH, o `pime-git doctor`
 
 ## Emergencia (solo si el usuario lo pide explícito)
 
-`pime-git push --no-verify` o `pime-git commit -m "..." --no-verify`
+`pime-git push --no-verify` o commit con `--no-verify` en el funnel.
 
 Config: `~/.pime-git/config.json` · Portal: `npm run pime-git:web`
