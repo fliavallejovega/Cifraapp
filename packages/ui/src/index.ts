@@ -1,6 +1,7 @@
 export { cn, type ClassValue } from './utils/cn';
 
 export { Button, type ButtonProps, type ButtonSize, type ButtonVariant } from './components/button';
+export { Card, Stat, type CardProps, type CardTone, type StatProps } from './components/card';
 export {
   Field,
   Input,

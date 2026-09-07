@@ -84,7 +84,7 @@ export function AccountsManager({
           {accounts.map((account) => (
             <li
               key={account.id}
-              className="border-t border-[color:var(--color-rule)] last:border-b"
+              className="border-b border-[color:var(--color-rule)] last:border-b-0"
             >
               {editing === account.id ? (
                 <div className="py-6">

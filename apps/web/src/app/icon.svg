@@ -1,7 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <!-- The mark on ink, so the tab reads at 16px the way the badge reads on the
-       page. Ground and ink are the token values, resolved: an SVG file cannot
-       reach a CSS custom property. -->
-  <rect width="32" height="32" rx="6" fill="#2b2f33"/>
-  <path d="M10 22V10h2.6l6.8 8.2V10H22v12h-2.6L12.6 13.8V22z" fill="#f9fafb"/>
+  <!-- The monogram at favicon scale: deep-ink tile, brass N. Token values
+       resolved — an SVG file cannot reach a CSS custom property. -->
+  <rect width="32" height="32" rx="7" fill="#151d2e"/>
+  <path d="M10 22.5V9.5h2.4l7.2 8.9V9.5H22v13h-2.4l-7.2-8.9v8.9z" fill="#c19a3d"/>
 </svg>

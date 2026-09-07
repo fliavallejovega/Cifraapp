@@ -32,7 +32,7 @@ export function Ledger({ caption, children, className }: LedgerProps) {
 export function LedgerHead({ children }: { readonly children: ReactNode }) {
   return (
     <thead>
-      <tr className="border-b border-[color:var(--color-rule-strong)]">{children}</tr>
+      <tr className="border-b border-[color:var(--color-rule)]">{children}</tr>
     </thead>
   );
 }
@@ -48,7 +48,7 @@ export function LedgerColumn({ children, align = 'start', className }: LedgerCol
     <th
       scope="col"
       className={cn(
-        'gradation-label pb-2 font-normal uppercase',
+        'px-3 pt-4 pb-2.5 text-xs font-medium tracking-(--tracking-label) text-[color:var(--color-ink-tertiary)] uppercase first:pl-0 last:pr-0',
         align === 'end' ? 'text-right' : 'text-left',
         className,
       )}
@@ -73,7 +73,7 @@ export function LedgerRow({ children, muted, className }: LedgerRowProps) {
   return (
     <tr
       className={cn(
-        'border-b border-[color:var(--color-rule)]',
+        'border-b border-[color:var(--color-rule)] last:border-b-0',
         'transition-colors duration-(--duration-quick) ease-(--ease-settle)',
         'hover:bg-[color:var(--color-ground-sunk)]',
         muted && 'opacity-55',
@@ -97,7 +97,7 @@ export function LedgerCell({ children, align = 'start', secondary, className }: 
   return (
     <td
       className={cn(
-        'py-3 align-baseline',
+        'px-3 py-3.5 align-baseline first:pl-0 last:pr-0',
         align === 'end' ? 'text-right' : 'text-left',
         secondary && 'text-[color:var(--color-ink-secondary)]',
         className,

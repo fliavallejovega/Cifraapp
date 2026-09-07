@@ -214,16 +214,17 @@ function RowList({
   readonly onToggle: ((id: string) => void) | null;
 }) {
   return (
-    <ul className="flex flex-col">
+    <ul className="flex flex-col overflow-hidden rounded-(--radius-lg) border border-[color:var(--color-surface-border)] bg-[color:var(--color-surface)] shadow-(--shadow-card)">
       {rows.map((row) => {
         const locked = row.verdict === 'rejected' || row.alreadyFiled || onToggle === null;
         const checked = row.alreadyFiled || selected.has(row.id);
 
         return (
-          <li key={row.id} className="border-t border-[color:var(--color-rule)] last:border-b">
+          <li key={row.id} className="border-b border-[color:var(--color-rule)] last:border-b-0">
             <label
               className={[
-                'flex items-start gap-3 py-4',
+                'flex items-start gap-3 px-4 py-4 transition-colors duration-(--duration-quick) sm:px-5',
+                'has-checked:bg-[color:var(--color-brand-sunk)]/40',
                 locked ? 'cursor-default opacity-70' : 'cursor-pointer',
               ].join(' ')}
             >

@@ -127,7 +127,8 @@ export function Gauge({
       ? 'var(--color-negative)'
       : tone === 'caution'
         ? 'var(--color-caution)'
-        : 'var(--color-ink)';
+        : // Falls back to ink on paper; the panel scope remaps it to brass.
+          'var(--color-gauge-level, var(--color-ink))';
 
   const belowBuffer = thresholds.find(
     (threshold) => threshold.kind === 'buffer' && value.scaledUnits < threshold.at.scaledUnits,
@@ -143,7 +144,7 @@ export function Gauge({
         aria-valuemax={Number(max.toCurrencyString())}
         aria-valuetext={`${formatMoney(value, { locale })} — ${label}`}
         className={cn(
-          'relative w-full overflow-hidden',
+          'relative w-full overflow-hidden rounded-(--radius-xs)',
           'border-y border-[color:var(--color-rule-strong)]',
           'bg-[color:var(--color-ground-sunk)]',
           isFull ? 'h-12' : 'h-6',

@@ -248,7 +248,9 @@
     },
     "stats": {
       "liquid": "Liquid",
-      "committed": "Committed"
+      "committed": "Committed",
+      "liquidDetail": "The sum of your liquid accounts: current, savings, cash and wallets.",
+      "committedDetail": "Obligations over the next 30 days that already have an owner."
     },
     "empty": {
       "title": "Give your money somewhere to live.",
@@ -601,7 +603,10 @@
     "accounts": "Accounts",
     "documents": "Import",
     "plan": "Plan",
-    "reports": "Statements"
+    "reports": "Statements",
+    "closeMenu": "Close the menu",
+    "backToPage": "Back to the page",
+    "householdLabel": "Your household"
   },
   "accounts": {
     "title": "Your accounts",
@@ -610,7 +615,8 @@
     "summary": {
       "liquid": "Available in accounts",
       "liquidDetail": "The sum of your current, savings, cash and wallet accounts.",
-      "owed": "What you owe"
+      "owed": "What you owe",
+      "owedDetail": "Cards, loans and mortgages, held positive."
     },
     "empty": {
       "title": "Start with one account.",

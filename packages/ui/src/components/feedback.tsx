@@ -21,11 +21,13 @@ export function EmptyState({ title, body, action, className }: EmptyStateProps) 
   return (
     <div
       className={cn(
-        'flex flex-col items-start gap-3 border-t border-[color:var(--color-rule)] py-12',
+        // A quiet recessed region with a dashed hairline: visibly a place where
+        // something will live, not a section that failed to render.
+        'flex flex-col items-start gap-3 rounded-(--radius-lg) border border-dashed border-[color:var(--color-rule-strong)] bg-[color:var(--color-ground-sunk)] px-6 py-10 sm:px-8',
         className,
       )}
     >
-      <p className="text-lg text-[color:var(--color-ink)]">{title}</p>
+      <p className="text-lg font-medium text-[color:var(--color-ink)]">{title}</p>
       {body && (
         <p className="max-w-[60ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]">
           {body}
@@ -78,9 +80,7 @@ export function Problem({ title, body, action, className }: ProblemProps) {
     <div
       role="alert"
       className={cn(
-        // A 1px rule, not a thick accent bar — the mark identifies the region
-        // without becoming the loudest thing on the page.
-        'flex flex-col items-start gap-2 border-l border-[color:var(--color-negative)] bg-[color:var(--color-negative-sunk)] px-4 py-3',
+        'flex flex-col items-start gap-2 rounded-(--radius-md) border border-[color:var(--color-negative)]/25 bg-[color:var(--color-negative-sunk)] px-4 py-3',
         className,
       )}
     >

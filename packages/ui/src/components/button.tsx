@@ -25,13 +25,17 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const VARIANTS: Record<ButtonVariant, string> = {
+  /* Deep ink with a contact shadow: the action reads as a solid object. The
+     hover brightens toward the panel-raised tone instead of thinning to
+     transparency — a primary action never looks like it is fading away. */
   primary:
-    'bg-[color:var(--color-ink)] text-[color:var(--color-ink-inverse)] hover:opacity-88 active:opacity-80',
+    'bg-[color:var(--color-panel)] text-[color:var(--color-panel-ink)] shadow-(--shadow-card) hover:bg-[color:var(--color-panel-raised)] active:bg-[color:var(--color-panel)]',
   secondary:
-    'border border-[color:var(--color-rule-strong)] text-[color:var(--color-ink)] hover:bg-[color:var(--color-ground-sunk)]',
-  ghost: 'text-[color:var(--color-ink-secondary)] hover:text-[color:var(--color-ink)]',
+    'border border-[color:var(--color-surface-border)] bg-[color:var(--color-surface)] text-[color:var(--color-ink)] shadow-(--shadow-card) hover:bg-[color:var(--color-ground-sunk)]',
+  ghost:
+    'text-[color:var(--color-ink-secondary)] hover:bg-[color:var(--color-ground-sunk)] hover:text-[color:var(--color-ink)]',
   destructive:
-    'bg-[color:var(--color-negative)] text-[color:var(--color-ink-inverse)] hover:opacity-88 active:opacity-80',
+    'bg-[color:var(--color-negative)] text-[color:var(--color-ink-inverse)] shadow-(--shadow-card) hover:opacity-90 active:opacity-84',
 };
 
 const SIZES: Record<ButtonSize, string> = {
@@ -55,7 +59,7 @@ export function Button({
       disabled={disabled ?? loading}
       aria-busy={loading || undefined}
       className={cn(
-        'inline-flex items-center justify-center rounded-(--radius-sm) font-medium whitespace-nowrap',
+        'inline-flex items-center justify-center rounded-(--radius-md) font-medium whitespace-nowrap',
         'transition-[opacity,background-color,transform] duration-(--duration-tap) ease-(--ease-settle)',
         'active:scale-[0.985]',
         'disabled:pointer-events-none disabled:opacity-45',

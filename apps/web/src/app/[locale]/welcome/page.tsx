@@ -1,10 +1,10 @@
 import { getCurrency, type CurrencyCode } from '@app/domain';
-import { Page } from '@app/ui';
 import { householdSettings } from '@app/database/schema';
 import { eq } from 'drizzle-orm';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 
+import { AuthScreen } from '@/components/auth-screen';
 import { HouseholdForm } from '@/components/household-form';
 import { SetupQuestionnaire } from '@/components/setup-questionnaire';
 import { SkipSetupButton } from '@/components/skip-setup-button';
@@ -53,19 +53,7 @@ export default async function WelcomePage({ params }: { params: Promise<{ locale
   const t = await getTranslations('setup');
 
   return (
-    <Page className="max-w-2xl">
-      <header className="mb-10">
-        <h1
-          className="text-3xl font-medium text-balance"
-          style={{ letterSpacing: 'var(--tracking-display)', lineHeight: 1.1 }}
-        >
-          {t('title')}
-        </h1>
-        <p className="mt-3 max-w-[56ch] text-pretty text-[color:var(--color-ink-secondary)]">
-          {t('detail')}
-        </p>
-      </header>
-
+    <AuthScreen title={t('title')} detail={t('detail')} wide>
       <SetupQuestionnaire
         locale={locale}
         currencySymbol={getCurrency(currency).symbol}
@@ -75,7 +63,7 @@ export default async function WelcomePage({ params }: { params: Promise<{ locale
       <div className="mt-10 border-t border-[color:var(--color-rule)] pt-6">
         <SkipSetupButton locale={locale} label={t('skipAll')} hint={t('skipAllHint')} />
       </div>
-    </Page>
+    </AuthScreen>
   );
 }
 
@@ -83,17 +71,7 @@ async function HouseholdStep({ locale }: { locale: string }) {
   const t = await getTranslations('onboarding');
 
   return (
-    <Page className="max-w-md">
-      <header className="mb-10">
-        <h1
-          className="text-3xl font-medium text-balance"
-          style={{ letterSpacing: 'var(--tracking-display)', lineHeight: 1.1 }}
-        >
-          {t('title')}
-        </h1>
-        <p className="mt-3 text-pretty text-[color:var(--color-ink-secondary)]">{t('detail')}</p>
-      </header>
-
+    <AuthScreen title={t('title')} detail={t('detail')}>
       <HouseholdForm
         locale={locale}
         labels={{
@@ -110,7 +88,7 @@ async function HouseholdStep({ locale }: { locale: string }) {
           },
         }}
       />
-    </Page>
+    </AuthScreen>
   );
 }
 

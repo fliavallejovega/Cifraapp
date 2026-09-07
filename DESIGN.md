@@ -16,12 +16,13 @@ metric card, a big figure over a small label with three supporting stats — bec
 that arrangement can only report a quantity, and the whole product exists to show
 a quantity _in relation to_ what is already spoken for.
 
-**OWN-WORLD.** Panama's defining machine is a system for holding, measuring and
-releasing a resource under control. Its visual language is gauges: engraved
-gradations, major and minor ticks, named threshold marks, a defined surface line,
-and read-outs in tabular figures. The palette is paper-white ground, graphite
-ink, and a single reserved signal used only where a threshold is crossed.
-Hairlines are gradations, not card borders. There are no cards.
+**OWN-WORLD.** A private bank's reading room. The world is deep ink and warm
+ivory — the ledger on the desk, the panel behind it — with one metal in the
+whole building: brass, spent only where the eye should land first. The gauge
+survives from the first direction because it is the product's argument in
+visual form; it now reads in brass against ink. Structure is surfaces on a
+desk: a document sits ON the paper, held by a hairline and a soft offset
+shadow, never printed into it.
 
 **STORY.** A person opens the product and, within one screen, knows what is
 actually theirs to spend, what has already been claimed and by what, and what the
@@ -34,10 +35,20 @@ surface. The figure sits as a read-out beneath the scale, not on top of it.
 Below the fold line, the claims against it, itemized with dates, each showing the
 gradation it consumes.
 
-**FORM.** Instrument gauge. Chosen from the audience's own world rather than
-from the fintech catalogue, and pinned by the user against three alternatives.
+**FORM.** Private-bank console. One piece of chrome with two postures: the
+fixed ink column on a desk, and the same column as the drawer beneath the page
+on a phone — revealed by sliding the page aside, never covered by an overlay.
 Light-first, from the use scene: a person reviewing a statement at a desk in
-daylight.
+daylight. Installable: the product ships as a PWA whose OS chrome tints to the
+panel ink.
+
+**REVISED, deliberately.** The first system (v1, "instrument face") was pure
+paper-and-graphite with no cards, no chrome and no accent. It was coherent and
+it read as unfinished — the user's words: básico, sin vida. This revision keeps
+its spine (the gauge, tabular money, hairline discipline, one accent spent
+rarely) and overturns three refusals on purpose: cards exist, a brand hue
+exists (brass), and the product has navigation chrome. Each reversal is listed
+below next to the refusal it replaces.
 
 ---
 
@@ -45,9 +56,10 @@ daylight.
 
 These are the category's defaults. Each was available and rejected.
 
-- **Cards as page structure.** Same-size rounded rectangles holding icon +
-  heading + text. Nested cards especially. Structure comes from gradation rules
-  and space.
+- **Cards as decoration.** v2 admits cards as real surfaces — a statement, a
+  reading, a form — held by a hairline and a soft offset shadow. What stays
+  refused: nested cards, same-size icon+heading+text grids, and a card around
+  anything whose only job is to be scanned as a column.
 - **The hero-metric template.** Big number, small label, supporting stats,
   accent color.
 - **Progress rings and sparklines as ornament.** A gauge is content here; a ring
@@ -56,7 +68,8 @@ These are the category's defaults. Each was available and rejected.
   it is not applied everywhere.
 - **Gradient text, glass, blur as decoration.** Blur belongs to a specific
   effect — a scroll edge where floating chrome overlaps content — never as
-  surface flavor.
+  surface flavor. The one gradient that exists is the panel's own ink-on-ink
+  fade, invisible as a gradient and felt as depth.
 - **Colored `border-left` accents** on rows, callouts and alerts.
 - **Emoji, AI sparkles, robot iconography.**
 - **Color as the only carrier of state.** Every status is also a word.
@@ -67,30 +80,46 @@ These are the category's defaults. Each was available and rejected.
 
 Light is the default, from the use scene. Dark is fully designed, not derived.
 
-Strategy: **restrained** — neutrals carry the surface, one signal color appears
-only where a threshold is crossed or a value is negative. Semantic hue is never
-the only signal.
+Strategy: **two worlds, one metal.** Warm ivory carries the paper world; deep
+navy ink carries the panel world (sidebar, drawer, the one hero card per
+screen); brass is the only brand hue and is spent, not sprayed: the wordmark,
+the active destination, the headline reading, a threshold. Semantic hue is
+never the only signal.
 
 ```
---ink              graphite, primary text
+--ink              deep navy ink, primary text
 --ink-secondary    supporting text, still ≥4.5:1
 --ink-tertiary     scale labels, ≥4.5:1 on ground
---ink-faint        gradation hairlines only, never text
---ground           the paper
---ground-sunk      recessed regions (the chamber below the surface line)
+--ground           warm ivory paper
+--ground-sunk      recessed regions (the chamber, quiet strips)
 --ground-raised    floating chrome only
+--surface          a card's face; --surface-border its hairline
 --rule             hairline gradations
 --rule-strong      major gradations and threshold marks
---signal           the single reserved accent — threshold crossed
+--brand            brass — wordmark, active mark, the headline reading
+--brand-strong     brass with more ink, for text-sized uses
+--brand-sunk       the faint brass wash behind a selected row
+--panel            the ink world; --panel-raised, --panel-ink,
+                   --panel-ink-secondary, --panel-rule complete it
+--signal           threshold crossed
 --negative         outflow / deficit
 --positive         inflow / surplus
 --caution          approaching a threshold
 ```
 
+**The panel scope.** Components read colors from tokens, so the panel remaps
+the tokens (`panel-scope`) instead of teaching every component a dark variant.
+An Amount, a Gauge or a Status dropped onto the panel is correct without
+knowing where it is; the gauge's level turns brass there via
+`--color-gauge-level`.
+
 Rules:
 
 1. `--signal` may not be used decoratively. If it appears, a threshold was
    crossed, and the interface also says so in words.
+1a. `--brand` is rationed: at most the wordmark, one active mark per posture,
+   and one headline reading per screen. Brass on every button is no longer
+   brass.
 2. Secondary text on a tinted surface is tinted from that hue, never gray.
 3. Contrast floor: 4.5:1 body and placeholder, 3:1 large text and meaningful
    graphics. Verified, not assumed.
@@ -170,9 +199,19 @@ The system's signature device, and the reason the direction exists.
 Base unit 4px, expressed in `rem`. Tight within a group, generous between
 groups, more space above a heading than below it.
 
-Structure comes from **gradation rules and space**, not from boxes. A row of
-data is separated by a hairline, not enclosed in a container. Where a region must
-recede, it recedes by ground tone, not by a border and a shadow.
+Structure comes from **surfaces on paper**. A screen is: its header, at most
+one ink panel carrying the headline reading, cards for its documents, and space
+between them. Inside a card the old law still rules — rows are separated by
+hairlines, never enclosed again; a card inside a card is the failure mode that
+made v1 ban cards outright. Where a region must recede, it recedes by ground
+tone (`sunk`), not by another border.
+
+**Chrome.** One piece of furniture, two postures. Desktop: the fixed ink
+column — monogram and wordmark, the five destinations with their icons, the
+household and the way out at the foot. Phone: the same column is the drawer
+beneath the page (`cajón revelado`): the page slides aside, shrinks and rounds
+to reveal it; the visible strip of page is the way back. Icons are one set,
+outline, 1.5px, drawn in-house — never a mixed family.
 
 Elevation is reserved for things that genuinely float over content — a sheet, a
 command menu, a toast. Shadows carry an offset and a soft blur; a zero-offset

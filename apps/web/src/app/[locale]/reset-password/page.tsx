@@ -1,5 +1,6 @@
-import { Page } from '@app/ui';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
+
+import { AuthScreen } from '@/components/auth-screen';
 
 import { ResetPasswordForm } from '@/components/reset-password-form';
 
@@ -20,23 +21,9 @@ export default async function ResetPasswordPage({
   setRequestLocale(locale);
 
   const t = await getTranslations('auth');
-  const common = await getTranslations('common');
 
   return (
-    <Page className="max-w-sm">
-      <header className="mb-10">
-        <span className="gradation-label uppercase">{common('appName')}</span>
-        <h1
-          className="mt-6 text-2xl font-medium"
-          style={{ letterSpacing: 'var(--tracking-title)' }}
-        >
-          {t('reset.title')}
-        </h1>
-        <p className="mt-2 text-sm text-pretty text-[color:var(--color-ink-secondary)]">
-          {t('reset.detail')}
-        </p>
-      </header>
-
+    <AuthScreen title={t('reset.title')} detail={t('reset.detail')}>
       <ResetPasswordForm
         locale={locale}
         labels={{
@@ -52,6 +39,6 @@ export default async function ResetPasswordPage({
           tooShort: t('errors.passwordTooShort'),
         }}
       />
-    </Page>
+    </AuthScreen>
   );
 }

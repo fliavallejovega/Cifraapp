@@ -1,14 +1,29 @@
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 
+import { PwaRegister } from '@/components/pwa-register';
 import { RecoveryRedirect } from '@/components/recovery-redirect';
 import { routing } from '@/i18n/routing';
 
 import { archivo, chivoMono } from '../fonts';
 import '../globals.css';
+
+/**
+ * The OS chrome tints to the panel ink, so the installed app opens looking
+ * like its own sidebar. One value: the panel is the same deep ink in both
+ * themes.
+ */
+export const viewport: Viewport = {
+  themeColor: '#151d2e',
+  width: 'device-width',
+  initialScale: 1,
+  // The drawer gesture owns the horizontal axis on a phone; pinch-zoom stays
+  // available because text scaling is an accessibility path, not a luxury.
+  viewportFit: 'cover',
+};
 
 export function generateStaticParams(): { locale: string }[] {
   return routing.locales.map((locale) => ({ locale }));
@@ -32,6 +47,14 @@ export async function generateMetadata({
     // search index is a bad week, and an account page that is accidentally in
     // one is a breach.
     robots: { index: false, follow: false },
+    appleWebApp: {
+      capable: true,
+      title: t('appName'),
+      statusBarStyle: 'black-translucent',
+    },
+    icons: {
+      apple: '/icons/apple-touch-icon.png',
+    },
   };
 }
 
@@ -62,6 +85,7 @@ export default async function LocaleLayout({
     <html lang={locale} className={`${archivo.variable} ${chivoMono.variable}`}>
       <body className="min-h-dvh antialiased">
         <NextIntlClientProvider>
+          <PwaRegister />
           {/* A recovery link can land on any page. This makes every one of them
               know what to do with it. */}
           <RecoveryRedirect locale={locale} />

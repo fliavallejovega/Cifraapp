@@ -3,7 +3,6 @@ import { Page, PageHeader } from '@app/ui';
 import { getFormatter, getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
-import { AppNav } from '@/components/app-nav';
 import { ImportReview, type ReviewRow } from '@/components/import-review';
 import { Link } from '@/i18n/navigation';
 import { loadImportReview } from '@/server/repositories/import-review';
@@ -55,8 +54,6 @@ export default async function ImportReviewPage({
 
   return (
     <Page>
-      <AppNav locale={locale} householdName={household?.name ?? ''} />
-
       <PageHeader
         title={review.fileName}
         detail={t('review.detail', {

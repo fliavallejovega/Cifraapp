@@ -1,9 +1,8 @@
 import { formatMoney, getCurrency, type CurrencyCode } from '@app/domain';
-import { Page, PageHeader, Readout, Section } from '@app/ui';
+import { Card, Page, PageHeader, Section, Stat } from '@app/ui';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { AccountsManager, type AccountRowView } from '@/components/accounts-manager';
-import { AppNav } from '@/components/app-nav';
 import { ACCOUNT_TYPE_GROUPS, ACCOUNT_TYPES, loadAccounts } from '@/server/repositories/accounts';
 import { requireHousehold } from '@/server/session';
 
@@ -51,78 +50,76 @@ export default async function AccountsPage({ params }: { params: Promise<{ local
 
   return (
     <Page>
-      <AppNav locale={locale} householdName={household?.name ?? ''} />
-
       <PageHeader title={t('title')} detail={t('detail')} />
 
       {/* Only once there is something to summarize. Two zeroes above an empty
           list would be a measurement of nothing. */}
       {!view.isEmpty && (
-        <div className="mt-10 flex flex-wrap items-end gap-x-16 gap-y-6">
-          <Readout
-            value={view.liquid}
-            label={t('summary.liquid')}
-            detail={t('summary.liquidDetail')}
-            locale={moneyLocale}
-          />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Card>
+            <Stat label={t('summary.liquid')} detail={t('summary.liquidDetail')}>
+              {formatMoney(view.liquid, { locale: moneyLocale })}
+            </Stat>
+          </Card>
           {!view.liabilities.isZero() && (
-            <div className="flex flex-col gap-1">
-              <span className="gradation-label uppercase">{t('summary.owed')}</span>
-              <span className="readout text-lg text-[color:var(--color-ink)]">
+            <Card>
+              <Stat label={t('summary.owed')} detail={t('summary.owedDetail')}>
                 {formatMoney(view.liabilities, { locale: moneyLocale })}
-              </span>
-            </div>
+              </Stat>
+            </Card>
           )}
         </div>
       )}
 
       <Section title={t('list.title')} detail={t('list.detail')} className="mt-12">
-        <AccountsManager
-          locale={locale}
-          currencySymbol={getCurrency(currency).symbol}
-          accounts={rows}
-          groups={ACCOUNT_TYPE_GROUPS.map((group) => ({ key: group.key, types: group.types }))}
-          labels={{
-            form: {
-              name: t('form.name'),
-              nameHint: t('form.nameHint'),
-              type: t('form.type'),
-              balance: t('form.balance'),
-              balanceHintAsset: t('form.balanceHintAsset'),
-              balanceHintDebt: t('form.balanceHintDebt'),
-              mask: t('form.mask'),
-              maskHint: t('form.maskHint'),
-              submitCreate: t('form.submitCreate'),
-              submitUpdate: t('form.submitUpdate'),
+        <Card>
+          <AccountsManager
+            locale={locale}
+            currencySymbol={getCurrency(currency).symbol}
+            accounts={rows}
+            groups={ACCOUNT_TYPE_GROUPS.map((group) => ({ key: group.key, types: group.types }))}
+            labels={{
+              form: {
+                name: t('form.name'),
+                nameHint: t('form.nameHint'),
+                type: t('form.type'),
+                balance: t('form.balance'),
+                balanceHintAsset: t('form.balanceHintAsset'),
+                balanceHintDebt: t('form.balanceHintDebt'),
+                mask: t('form.mask'),
+                maskHint: t('form.maskHint'),
+                submitCreate: t('form.submitCreate'),
+                submitUpdate: t('form.submitUpdate'),
+                cancel: t('form.cancel'),
+                errorTitle: t('errors.title'),
+                errors: errorLabels(t),
+                types: typeLabels,
+                groups: {
+                  liquid: t('groups.liquid'),
+                  debt: t('groups.debt'),
+                  other: t('groups.other'),
+                },
+              },
+              addAction: t('list.add'),
+              addTitle: t('list.addTitle'),
+              edit: t('list.edit'),
+              archive: t('list.archive'),
+              restore: t('list.restore'),
+              archiveConfirm: t('list.archiveConfirm'),
+              archiveConfirmYes: t('list.archiveConfirmYes'),
               cancel: t('form.cancel'),
+              archivedBadge: t('list.archivedBadge'),
+              movements: raw('list.movements'),
+              noMovements: t('list.noMovements'),
+              maskPrefix: t('list.maskPrefix'),
+              emptyTitle: t('empty.title'),
+              emptyBody: t('empty.body'),
               errorTitle: t('errors.title'),
               errors: errorLabels(t),
               types: typeLabels,
-              groups: {
-                liquid: t('groups.liquid'),
-                debt: t('groups.debt'),
-                other: t('groups.other'),
-              },
-            },
-            addAction: t('list.add'),
-            addTitle: t('list.addTitle'),
-            edit: t('list.edit'),
-            archive: t('list.archive'),
-            restore: t('list.restore'),
-            archiveConfirm: t('list.archiveConfirm'),
-            archiveConfirmYes: t('list.archiveConfirmYes'),
-            cancel: t('form.cancel'),
-            archivedBadge: t('list.archivedBadge'),
-            movements: raw('list.movements'),
-            noMovements: t('list.noMovements'),
-            maskPrefix: t('list.maskPrefix'),
-            emptyTitle: t('empty.title'),
-            emptyBody: t('empty.body'),
-            errorTitle: t('errors.title'),
-            errors: errorLabels(t),
-            types: typeLabels,
-          }}
-        />
+            }}
+          />
+        </Card>
       </Section>
 
       <p className="mt-12 max-w-[62ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]">

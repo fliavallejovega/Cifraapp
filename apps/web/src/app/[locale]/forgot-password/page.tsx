@@ -1,5 +1,6 @@
-import { Page } from '@app/ui';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
+
+import { AuthScreen } from '@/components/auth-screen';
 
 import { ForgotPasswordForm } from '@/components/forgot-password-form';
 import { Link } from '@/i18n/navigation';
@@ -15,25 +16,11 @@ export default async function ForgotPasswordPage({
   setRequestLocale(locale);
 
   const t = await getTranslations('auth');
-  const common = await getTranslations('common');
   const origin = await requestAppOrigin();
   const redirectTo = `${origin}/${locale}/reset-password`;
 
   return (
-    <Page className="max-w-sm">
-      <header className="mb-10">
-        <span className="gradation-label uppercase">{common('appName')}</span>
-        <h1
-          className="mt-6 text-2xl font-medium"
-          style={{ letterSpacing: 'var(--tracking-title)' }}
-        >
-          {t('forgot.title')}
-        </h1>
-        <p className="mt-2 text-sm text-pretty text-[color:var(--color-ink-secondary)]">
-          {t('forgot.detail')}
-        </p>
-      </header>
-
+    <AuthScreen title={t('forgot.title')} detail={t('forgot.detail')}>
       <ForgotPasswordForm
         redirectTo={redirectTo}
         labels={{
@@ -51,6 +38,6 @@ export default async function ForgotPasswordPage({
           {t('forgot.backToSignIn')}
         </Link>
       </p>
-    </Page>
+    </AuthScreen>
   );
 }

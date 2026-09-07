@@ -10,16 +10,15 @@ import {
   LedgerColumn,
   LedgerHead,
   LedgerRow,
+  Card,
   Page,
   PageHeader,
-  Readout,
   Rule,
   Section,
   Status,
 } from '@app/ui';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
-import { AppNav } from '@/components/app-nav';
 import { Link } from '@/i18n/navigation';
 import { explainPlan } from '@/server/repositories/copilot';
 import { loadPlan } from '@/server/repositories/plan';
@@ -76,8 +75,6 @@ export default async function PlanPage({ params }: { params: Promise<{ locale: s
   const money = (value: Parameters<typeof formatMoney>[0]) =>
     formatMoney(value, { locale: moneyLocale });
 
-  const householdName =
-    session.households.find((household) => household.id === session.activeHouseholdId)?.name ?? '';
 
   /** Renders an engine explanation through the catalogue. The engine has no language. */
   const explain = (explanation: LineExplanation): string => {
@@ -96,8 +93,6 @@ export default async function PlanPage({ params }: { params: Promise<{ locale: s
 
   return (
     <Page>
-      <AppNav locale={locale} householdName={householdName} />
-
       <PageHeader title={t('title')} detail={t('detail')} />
 
       {view.isEmpty ? (
@@ -117,18 +112,28 @@ export default async function PlanPage({ params }: { params: Promise<{ locale: s
               {t('safeToSpend.title')}
             </h2>
 
-            <Readout
-              value={view.safeToSpend.safeToSpend}
-              label={t('safeToSpend.label')}
-              detail={t('basis', { incoming: money(view.plan.incoming) })}
-              locale={moneyLocale}
-            />
-
-            {view.safeToSpend.isShortfall && (
-              <p className="mt-4 text-sm text-[color:var(--color-ink-secondary)]">
-                {t('safeToSpend.shortfall', { amount: money(view.safeToSpend.shortfall) })}
+            <Card tone="panel" padding="lg">
+              <p className="text-xs font-medium tracking-(--tracking-label) text-[color:var(--color-panel-ink-secondary)] uppercase">
+                {t('safeToSpend.label')}
               </p>
-            )}
+              <p className="mt-2" style={{ color: 'var(--color-brand)' }}>
+                <Amount
+                  value={view.safeToSpend.safeToSpend}
+                  locale={moneyLocale}
+                  tone="plain"
+                  size="readout"
+                />
+              </p>
+              <p className="mt-3 text-sm text-[color:var(--color-panel-ink-secondary)]">
+                {t('basis', { incoming: money(view.plan.incoming) })}
+              </p>
+
+              {view.safeToSpend.isShortfall && (
+                <p className="mt-4 text-sm text-[color:var(--color-caution)]">
+                  {t('safeToSpend.shortfall', { amount: money(view.safeToSpend.shortfall) })}
+                </p>
+              )}
+            </Card>
           </section>
 
           <Section
@@ -139,40 +144,42 @@ export default async function PlanPage({ params }: { params: Promise<{ locale: s
             {claimed.length === 0 ? (
               <EmptyState title={t('safeToSpend.emptyTitle')} body={t('safeToSpend.emptyBody')} />
             ) : (
-              <Ledger caption={t('safeToSpend.title')}>
-                <LedgerHead>
-                  <LedgerColumn>{t('safeToSpend.columns.claim')}</LedgerColumn>
-                  <LedgerColumn align="end">{t('safeToSpend.columns.claimed')}</LedgerColumn>
-                  <LedgerColumn align="end">{t('safeToSpend.columns.covered')}</LedgerColumn>
-                </LedgerHead>
-                <LedgerBody>
-                  {claimed.map((deduction) => (
-                    <LedgerRow key={deduction.kind}>
-                      <LedgerCell>{t(`safeToSpend.kinds.${deduction.kind}`)}</LedgerCell>
-                      <LedgerCell align="end">
-                        <Amount
-                          value={deduction.claimed.negate()}
-                          locale={moneyLocale}
-                          size="sm"
-                          tone="plain"
-                        />
-                      </LedgerCell>
-                      <LedgerCell align="end">
-                        {deduction.uncovered.isPositive() ? (
-                          <Status tone="caution">{money(deduction.covered)}</Status>
-                        ) : (
+              <Card padding="none" className="overflow-hidden px-5 sm:px-6">
+                <Ledger caption={t('safeToSpend.title')}>
+                  <LedgerHead>
+                    <LedgerColumn>{t('safeToSpend.columns.claim')}</LedgerColumn>
+                    <LedgerColumn align="end">{t('safeToSpend.columns.claimed')}</LedgerColumn>
+                    <LedgerColumn align="end">{t('safeToSpend.columns.covered')}</LedgerColumn>
+                  </LedgerHead>
+                  <LedgerBody>
+                    {claimed.map((deduction) => (
+                      <LedgerRow key={deduction.kind}>
+                        <LedgerCell>{t(`safeToSpend.kinds.${deduction.kind}`)}</LedgerCell>
+                        <LedgerCell align="end">
                           <Amount
-                            value={deduction.covered.negate()}
+                            value={deduction.claimed.negate()}
                             locale={moneyLocale}
                             size="sm"
                             tone="plain"
                           />
-                        )}
-                      </LedgerCell>
-                    </LedgerRow>
-                  ))}
-                </LedgerBody>
-              </Ledger>
+                        </LedgerCell>
+                        <LedgerCell align="end">
+                          {deduction.uncovered.isPositive() ? (
+                            <Status tone="caution">{money(deduction.covered)}</Status>
+                          ) : (
+                            <Amount
+                              value={deduction.covered.negate()}
+                              locale={moneyLocale}
+                              size="sm"
+                              tone="plain"
+                            />
+                          )}
+                        </LedgerCell>
+                      </LedgerRow>
+                    ))}
+                  </LedgerBody>
+                </Ledger>
+              </Card>
             )}
           </Section>
 
@@ -180,70 +187,74 @@ export default async function PlanPage({ params }: { params: Promise<{ locale: s
             {view.plan.lines.length === 0 ? (
               <EmptyState title={t('lines.emptyTitle')} body={t('lines.emptyBody')} />
             ) : (
-              <>
-                <Ledger caption={t('lines.title')}>
-                  <LedgerHead>
-                    <LedgerColumn>{t('lines.columns.item')}</LedgerColumn>
-                    <LedgerColumn>{t('lines.columns.reason')}</LedgerColumn>
-                    <LedgerColumn align="end">{t('lines.columns.requested')}</LedgerColumn>
-                    <LedgerColumn align="end">{t('lines.columns.allocated')}</LedgerColumn>
-                  </LedgerHead>
-                  <LedgerBody>
-                    {view.plan.lines.map((line) => (
-                      <LedgerRow key={line.claimId}>
-                        <LedgerCell>{lineLabel(line)}</LedgerCell>
-                        <LedgerCell secondary>{explain(line.explanation)}</LedgerCell>
-                        <LedgerCell align="end">
-                          <Amount
-                            value={line.requested}
-                            locale={moneyLocale}
-                            size="sm"
-                            tone="plain"
-                          />
-                        </LedgerCell>
-                        <LedgerCell align="end">
-                          <Amount
-                            value={line.allocated}
-                            locale={moneyLocale}
-                            size="sm"
-                            tone="plain"
-                          />
-                        </LedgerCell>
-                      </LedgerRow>
-                    ))}
-                  </LedgerBody>
-                </Ledger>
+              <Card padding="none" className="overflow-hidden">
+                <div className="px-5 sm:px-6">
+                  <Ledger caption={t('lines.title')}>
+                    <LedgerHead>
+                      <LedgerColumn>{t('lines.columns.item')}</LedgerColumn>
+                      <LedgerColumn>{t('lines.columns.reason')}</LedgerColumn>
+                      <LedgerColumn align="end">{t('lines.columns.requested')}</LedgerColumn>
+                      <LedgerColumn align="end">{t('lines.columns.allocated')}</LedgerColumn>
+                    </LedgerHead>
+                    <LedgerBody>
+                      {view.plan.lines.map((line) => (
+                        <LedgerRow key={line.claimId}>
+                          <LedgerCell>{lineLabel(line)}</LedgerCell>
+                          <LedgerCell secondary>{explain(line.explanation)}</LedgerCell>
+                          <LedgerCell align="end">
+                            <Amount
+                              value={line.requested}
+                              locale={moneyLocale}
+                              size="sm"
+                              tone="plain"
+                            />
+                          </LedgerCell>
+                          <LedgerCell align="end">
+                            <Amount
+                              value={line.allocated}
+                              locale={moneyLocale}
+                              size="sm"
+                              tone="plain"
+                            />
+                          </LedgerCell>
+                        </LedgerRow>
+                      ))}
+                    </LedgerBody>
+                  </Ledger>
+                </div>
 
-                <div className="mt-4 flex items-baseline justify-between">
-                  <span className="text-sm text-[color:var(--color-ink-secondary)]">
+                <div className="flex items-baseline justify-between border-t border-[color:var(--color-rule)] bg-[color:var(--color-ground-sunk)] px-5 py-3.5 sm:px-6">
+                  <span className="text-sm font-medium text-[color:var(--color-ink-secondary)]">
                     {t('lines.unallocated')}
                   </span>
                   <Amount value={view.plan.unallocated} locale={moneyLocale} tone="plain" />
                 </div>
-              </>
+              </Card>
             )}
           </Section>
 
           {narrative.state === 'answered' && (
             <Section title={t('copilot.title')} detail={t('copilot.detail')} className="mt-16">
-              <p className="max-w-[62ch] text-pretty">{narrative.summary}</p>
+              <Card tone="sunk">
+                <p className="max-w-[62ch] text-pretty">{narrative.summary}</p>
 
-              {narrative.cautions.length > 0 && (
-                <ul className="mt-4 space-y-2">
-                  {narrative.cautions.map((caution) => (
-                    <li
-                      key={caution}
-                      className="max-w-[62ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]"
-                    >
-                      {caution}
-                    </li>
-                  ))}
-                </ul>
-              )}
+                {narrative.cautions.length > 0 && (
+                  <ul className="mt-4 space-y-2">
+                    {narrative.cautions.map((caution) => (
+                      <li
+                        key={caution}
+                        className="max-w-[62ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]"
+                      >
+                        {caution}
+                      </li>
+                    ))}
+                  </ul>
+                )}
 
-              <p className="mt-6 max-w-[62ch] text-xs text-pretty text-[color:var(--color-ink-tertiary)]">
-                {t('copilot.disclaimer')}
-              </p>
+                <p className="mt-6 max-w-[62ch] text-xs text-pretty text-[color:var(--color-ink-tertiary)]">
+                  {t('copilot.disclaimer')}
+                </p>
+              </Card>
             </Section>
           )}
 
@@ -255,14 +266,21 @@ export default async function PlanPage({ params }: { params: Promise<{ locale: s
 
           {view.debtOrder.length > 0 && (
             <Section title={t('debtOrder.title')} detail={t('debtOrder.detail')} className="mt-16">
-              <ol className="space-y-2">
-                {view.debtOrder.map((entry, index) => (
-                  <li key={entry.id} className="flex gap-4 text-sm">
-                    <span className="gradation-label tabular">{index + 1}</span>
-                    <span>{entry.name}</span>
-                  </li>
-                ))}
-              </ol>
+              <Card padding="none">
+                <ol>
+                  {view.debtOrder.map((entry, index) => (
+                    <li
+                      key={entry.id}
+                      className="flex items-center gap-4 border-b border-[color:var(--color-rule)] px-5 py-3.5 text-sm last:border-b-0 sm:px-6"
+                    >
+                      <span className="readout flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[color:var(--color-brand-sunk)] text-xs text-[color:var(--color-brand-strong)]">
+                        {index + 1}
+                      </span>
+                      <span className="font-medium">{entry.name}</span>
+                    </li>
+                  ))}
+                </ol>
+              </Card>
             </Section>
           )}
 

@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import '@app/ui/styles.css';
+@import '../components/cajon/cajon.css';
 
 /* Tailwind cannot see class names inside a workspace package unless told where
    to look. Without this, every utility used in @app/ui is dropped from the
@@ -21,7 +22,7 @@
   /* A keystroke in this product eventually moves money. The focus ring is not
      optional and is never removed. */
   :focus-visible {
-    outline: 2px solid var(--color-ink);
+    outline: 2px solid var(--color-brand-strong);
     outline-offset: 2px;
     border-radius: var(--radius-xs);
   }

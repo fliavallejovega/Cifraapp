@@ -17,7 +17,7 @@ export interface PageProps {
 
 export function Page({ children, className }: PageProps) {
   return (
-    <div className={cn('mx-auto w-full max-w-5xl px-5 py-10 sm:px-8 sm:py-14', className)}>
+    <div className={cn('mx-auto w-full max-w-5xl px-5 py-8 sm:px-10 sm:py-12', className)}>
       {children}
     </div>
   );

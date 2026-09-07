@@ -42,6 +42,25 @@
   --color-rule: var(--c-rule);
   --color-rule-strong: var(--c-rule-strong);
 
+  /* --- Surfaces -------------------------------------------------------------
+   * A card is a real object in this system now: white over warm ivory, held by
+   * a hairline and a soft, offset shadow. The panel is the inverse world — the
+   * deep-ink chrome the navigation lives on — with its own text scale, because
+   * ivory text on navy needs different steps than navy text on ivory.
+   */
+  --color-surface: var(--c-surface);
+  --color-surface-border: var(--c-surface-border);
+
+  --color-brand: var(--c-brand);
+  --color-brand-strong: var(--c-brand-strong);
+  --color-brand-sunk: var(--c-brand-sunk);
+
+  --color-panel: var(--c-panel);
+  --color-panel-raised: var(--c-panel-raised);
+  --color-panel-ink: var(--c-panel-ink);
+  --color-panel-ink-secondary: var(--c-panel-ink-secondary);
+  --color-panel-rule: var(--c-panel-rule);
+
   /* --- Semantic ------------------------------------------------------------
    * Color carries financial meaning and nothing else. There is no brand accent:
    * the primary action is solid ink. If a hue appears, it means something about
@@ -64,10 +83,11 @@
   /* --- Radius --------------------------------------------------------------
    * Small. A level has a straight surface line, not a rounded cap.
    */
-  --radius-xs: 0.125rem;
-  --radius-sm: 0.25rem;
-  --radius-md: 0.375rem;
-  --radius-lg: 0.5rem;
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.875rem;
+  --radius-xl: 1.25rem;
 
   /* --- Elevation -----------------------------------------------------------
    * Reserved for things that genuinely float over content. Every shadow carries
@@ -75,6 +95,10 @@
    */
   --shadow-sheet: 0 1px 2px var(--c-shadow-near), 0 16px 40px -8px var(--c-shadow-far);
   --shadow-popover: 0 1px 2px var(--c-shadow-near), 0 8px 24px -6px var(--c-shadow-far);
+  /* Cards sit just above the paper: a contact line plus a soft, offset bloom.
+     Never a zero-offset halo. */
+  --shadow-card: 0 1px 1px var(--c-shadow-near), 0 8px 24px -12px var(--c-shadow-far);
+  --shadow-card-hover: 0 1px 2px var(--c-shadow-near), 0 16px 40px -16px var(--c-shadow-far);
 
   /* --- Motion --------------------------------------------------------------
    * Springs, because springs can be interrupted. These CSS curves cover
@@ -131,19 +155,36 @@
 :root {
   color-scheme: light;
 
-  /* Paper, not cream. A hair cool rather than warm, so it reads as an
-     instrument face rather than a book page. */
-  --c-ground: oklch(98.8% 0.0015 250);
-  --c-ground-sunk: oklch(96.4% 0.003 250);
-  --c-ground-raised: oklch(100% 0 0);
+  /* Warm ivory, not clinical white: the ground of paper money and old ledgers.
+     The warmth is what the previous palette lacked — it read as a lab bench. */
+  --c-ground: oklch(97.6% 0.005 84);
+  --c-ground-sunk: oklch(95.2% 0.007 84);
+  --c-ground-raised: oklch(99.4% 0.002 84);
 
-  --c-ink: oklch(24% 0.008 250);
-  --c-ink-secondary: oklch(45% 0.007 250);
-  --c-ink-tertiary: oklch(55.5% 0.006 250);
-  --c-ink-inverse: oklch(98.8% 0.0015 250);
+  --c-surface: oklch(99.4% 0.002 84);
+  --c-surface-border: oklch(91% 0.008 84);
 
-  --c-rule: oklch(90.5% 0.004 250);
-  --c-rule-strong: oklch(70% 0.006 250);
+  /* Deep ink with a navy cast — gravitas without going black. */
+  --c-ink: oklch(23% 0.028 258);
+  --c-ink-secondary: oklch(44% 0.02 258);
+  --c-ink-tertiary: oklch(55% 0.016 258);
+  --c-ink-inverse: oklch(97.6% 0.005 84);
+
+  --c-rule: oklch(91% 0.008 84);
+  --c-rule-strong: oklch(72% 0.012 84);
+
+  /* Brass. The one brand hue, spent on the few places that deserve it:
+     the active mark, the wordmark, a threshold. */
+  --c-brand: oklch(66% 0.115 78);
+  --c-brand-strong: oklch(55% 0.115 74);
+  --c-brand-sunk: oklch(94.5% 0.03 84);
+
+  /* The panel: the deep-ink chrome the navigation lives on. */
+  --c-panel: oklch(21.5% 0.033 258);
+  --c-panel-raised: oklch(26% 0.036 258);
+  --c-panel-ink: oklch(96% 0.006 84);
+  --c-panel-ink-secondary: oklch(72% 0.016 84);
+  --c-panel-rule: oklch(32% 0.03 258);
 
   --c-positive: oklch(46% 0.115 158);
   --c-negative: oklch(50% 0.175 25);
@@ -154,8 +195,8 @@
   --c-negative-sunk: oklch(95.5% 0.03 25);
   --c-caution-sunk: oklch(95.5% 0.04 70);
 
-  --c-shadow-near: oklch(24% 0.008 250 / 0.06);
-  --c-shadow-far: oklch(24% 0.008 250 / 0.14);
+  --c-shadow-near: oklch(23% 0.028 258 / 0.07);
+  --c-shadow-far: oklch(23% 0.028 258 / 0.16);
 }
 
 /* ---------------------------------------------------------------------------
@@ -167,17 +208,30 @@
   :root {
     color-scheme: dark;
 
-    --c-ground: oklch(17.5% 0.005 250);
-    --c-ground-sunk: oklch(14% 0.005 250);
-    --c-ground-raised: oklch(22% 0.006 250);
+    --c-ground: oklch(16.5% 0.022 258);
+    --c-ground-sunk: oklch(13.5% 0.02 258);
+    --c-ground-raised: oklch(21% 0.026 258);
 
-    --c-ink: oklch(95% 0.003 250);
-    --c-ink-secondary: oklch(74% 0.005 250);
-    --c-ink-tertiary: oklch(62% 0.006 250);
-    --c-ink-inverse: oklch(17.5% 0.005 250);
+    --c-surface: oklch(21% 0.026 258);
+    --c-surface-border: oklch(29% 0.026 258);
 
-    --c-rule: oklch(28% 0.006 250);
-    --c-rule-strong: oklch(46% 0.008 250);
+    --c-ink: oklch(95% 0.006 84);
+    --c-ink-secondary: oklch(74% 0.012 84);
+    --c-ink-tertiary: oklch(62% 0.012 84);
+    --c-ink-inverse: oklch(16.5% 0.022 258);
+
+    --c-rule: oklch(27% 0.024 258);
+    --c-rule-strong: oklch(45% 0.022 258);
+
+    --c-brand: oklch(76% 0.115 82);
+    --c-brand-strong: oklch(84% 0.1 84);
+    --c-brand-sunk: oklch(27% 0.045 82);
+
+    --c-panel: oklch(13.5% 0.02 258);
+    --c-panel-raised: oklch(19% 0.024 258);
+    --c-panel-ink: oklch(96% 0.006 84);
+    --c-panel-ink-secondary: oklch(72% 0.016 84);
+    --c-panel-rule: oklch(26% 0.024 258);
 
     --c-positive: oklch(74% 0.15 158);
     --c-negative: oklch(70% 0.16 25);
@@ -198,17 +252,36 @@
 :root[data-theme='light'] {
   color-scheme: light;
 
-  --c-ground: oklch(98.8% 0.0015 250);
-  --c-ground-sunk: oklch(96.4% 0.003 250);
-  --c-ground-raised: oklch(100% 0 0);
+  /* Warm ivory, not clinical white: the ground of paper money and old ledgers.
+     The warmth is what the previous palette lacked — it read as a lab bench. */
+  --c-ground: oklch(97.6% 0.005 84);
+  --c-ground-sunk: oklch(95.2% 0.007 84);
+  --c-ground-raised: oklch(99.4% 0.002 84);
 
-  --c-ink: oklch(24% 0.008 250);
-  --c-ink-secondary: oklch(45% 0.007 250);
-  --c-ink-tertiary: oklch(55.5% 0.006 250);
-  --c-ink-inverse: oklch(98.8% 0.0015 250);
+  --c-surface: oklch(99.4% 0.002 84);
+  --c-surface-border: oklch(91% 0.008 84);
 
-  --c-rule: oklch(90.5% 0.004 250);
-  --c-rule-strong: oklch(70% 0.006 250);
+  /* Deep ink with a navy cast — gravitas without going black. */
+  --c-ink: oklch(23% 0.028 258);
+  --c-ink-secondary: oklch(44% 0.02 258);
+  --c-ink-tertiary: oklch(55% 0.016 258);
+  --c-ink-inverse: oklch(97.6% 0.005 84);
+
+  --c-rule: oklch(91% 0.008 84);
+  --c-rule-strong: oklch(72% 0.012 84);
+
+  /* Brass. The one brand hue, spent on the few places that deserve it:
+     the active mark, the wordmark, a threshold. */
+  --c-brand: oklch(66% 0.115 78);
+  --c-brand-strong: oklch(55% 0.115 74);
+  --c-brand-sunk: oklch(94.5% 0.03 84);
+
+  /* The panel: the deep-ink chrome the navigation lives on. */
+  --c-panel: oklch(21.5% 0.033 258);
+  --c-panel-raised: oklch(26% 0.036 258);
+  --c-panel-ink: oklch(96% 0.006 84);
+  --c-panel-ink-secondary: oklch(72% 0.016 84);
+  --c-panel-rule: oklch(32% 0.03 258);
 
   --c-positive: oklch(46% 0.115 158);
   --c-negative: oklch(50% 0.175 25);
@@ -219,24 +292,37 @@
   --c-negative-sunk: oklch(95.5% 0.03 25);
   --c-caution-sunk: oklch(95.5% 0.04 70);
 
-  --c-shadow-near: oklch(24% 0.008 250 / 0.06);
-  --c-shadow-far: oklch(24% 0.008 250 / 0.14);
+  --c-shadow-near: oklch(23% 0.028 258 / 0.07);
+  --c-shadow-far: oklch(23% 0.028 258 / 0.16);
 }
 
 :root[data-theme='dark'] {
   color-scheme: dark;
 
-  --c-ground: oklch(17.5% 0.005 250);
-  --c-ground-sunk: oklch(14% 0.005 250);
-  --c-ground-raised: oklch(22% 0.006 250);
+  --c-ground: oklch(16.5% 0.022 258);
+  --c-ground-sunk: oklch(13.5% 0.02 258);
+  --c-ground-raised: oklch(21% 0.026 258);
 
-  --c-ink: oklch(95% 0.003 250);
-  --c-ink-secondary: oklch(74% 0.005 250);
-  --c-ink-tertiary: oklch(62% 0.006 250);
-  --c-ink-inverse: oklch(17.5% 0.005 250);
+  --c-surface: oklch(21% 0.026 258);
+  --c-surface-border: oklch(29% 0.026 258);
 
-  --c-rule: oklch(28% 0.006 250);
-  --c-rule-strong: oklch(46% 0.008 250);
+  --c-ink: oklch(95% 0.006 84);
+  --c-ink-secondary: oklch(74% 0.012 84);
+  --c-ink-tertiary: oklch(62% 0.012 84);
+  --c-ink-inverse: oklch(16.5% 0.022 258);
+
+  --c-rule: oklch(27% 0.024 258);
+  --c-rule-strong: oklch(45% 0.022 258);
+
+  --c-brand: oklch(76% 0.115 82);
+  --c-brand-strong: oklch(84% 0.1 84);
+  --c-brand-sunk: oklch(27% 0.045 82);
+
+  --c-panel: oklch(13.5% 0.02 258);
+  --c-panel-raised: oklch(19% 0.024 258);
+  --c-panel-ink: oklch(96% 0.006 84);
+  --c-panel-ink-secondary: oklch(72% 0.016 84);
+  --c-panel-rule: oklch(26% 0.024 258);
 
   --c-positive: oklch(74% 0.15 158);
   --c-negative: oklch(70% 0.16 25);
@@ -298,6 +384,28 @@
   font-feature-settings:
     'tnum' 1,
     'lnum' 1;
+}
+
+/* -----------------------------------------------------------------------------
+ * The panel scope.
+ *
+ * One surface per screen lives on deep ink — the hero card, the sidebar. Every
+ * component reads its colors from tokens, so instead of teaching each one a
+ * "dark variant", the panel remaps the tokens for everything inside it. An
+ * Amount, a Gauge or a Status dropped onto the panel is correct without
+ * knowing where it is.
+ * -------------------------------------------------------------------------- */
+@utility panel-scope {
+  --color-ink: var(--color-panel-ink);
+  --color-ink-secondary: var(--color-panel-ink-secondary);
+  --color-ink-tertiary: var(--color-panel-ink-secondary);
+  --color-ground-sunk: oklch(100% 0 0 / 0.08);
+  --color-rule: oklch(100% 0 0 / 0.14);
+  --color-rule-strong: oklch(100% 0 0 / 0.3);
+  --color-surface-border: var(--color-panel-rule);
+  /* The level reads in brass against the ink — the one place the brand hue
+     carries a quantity. */
+  --color-gauge-level: var(--color-brand);
 }
 
 /* Gradation labels along a scale. */

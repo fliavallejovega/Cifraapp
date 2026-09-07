@@ -1,0 +1,333 @@
+/* =============================================================================
+   Cajón revelado — el menú de teléfono que no se superpone, se REVELA.
+
+   Vendorizado y tematizado: los colores salen de los tokens del sistema en vez
+   de valores propios, así el cajón cambia de tema cuando el producto cambia.
+   El menú vive sobre el panel de tinta profunda con el acento de latón — el
+   mismo mundo que la columna de escritorio, porque son el mismo mueble.
+
+   Las cuatro decisiones no obvias del original se conservan tal cual:
+
+   1. `overflow-x: clip` y no `hidden`: la página apartada sobresale por la
+      derecha y sin recortar el documento se ensancha (medido: innerWidth de
+      390 → 627). `hidden` crearía un contenedor de scroll y rompería cualquier
+      `position: sticky` interior.
+   2. El menú no entra: siempre estuvo debajo. Su `visibility` se apaga con
+      retraso para no desaparecer a mitad del gesto de vuelta.
+   3. Lo que se desplaza es la LISTA, no el menú: si no, el botón de cerrar se
+      va hacia arriba al bajar por las últimas secciones.
+   4. No es un `<dialog>` — un diálogo no puede transformar a su contenedor —
+      así que Escape, `inert`, el foco y la franja de vuelta están a mano.
+   ========================================================================== */
+
+:root {
+  --cajon-sale: cubic-bezier(0.16, 1, 0.3, 1);
+  --cajon-rapido: 130ms;
+  --cajon-medio: 280ms;
+
+  /* Desplazamiento de la página Y ancho del menú: el MISMO valor, o el menú
+     queda cortado o sobra franja. */
+  --cajon-ancho: min(78vw, 20rem);
+  --cajon-escala: 0.9;
+  --cajon-radio: var(--radius-xl);
+  --cajon-sombra: var(--shadow-sheet);
+
+  --cajon-corte: 768px;
+}
+
+.cajon {
+  position: relative;
+  min-height: 100dvh;
+  overflow-x: clip;
+}
+
+/* -----------------------------------------------------------------------------
+   El menú: debajo, quieto, a pantalla completa
+   ----------------------------------------------------------------------------- */
+
+.cajon > .cajon-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  display: flex;
+  flex-direction: column;
+  width: var(--cajon-ancho);
+  background-color: var(--color-panel);
+  overflow: hidden;
+  visibility: hidden;
+  transition: visibility 0s linear var(--cajon-medio);
+}
+
+.cajon[data-abierto='true'] > .cajon-menu {
+  visibility: visible;
+  transition-delay: 0s;
+}
+
+.cajon-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: max(1.25rem, env(safe-area-inset-top)) 1.25rem 0.75rem;
+}
+
+/* La marca en el menú: el rótulo de latón sobre tinta. */
+.cajon-titulo {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-brand);
+}
+
+.cajon-cerrar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem; /* 44 px: el mínimo de un objetivo de dedo. */
+  height: 2.75rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-panel-ink-secondary);
+  cursor: pointer;
+  transition:
+    background-color var(--cajon-rapido) var(--cajon-sale),
+    color var(--cajon-rapido) var(--cajon-sale);
+}
+
+.cajon-cerrar:hover {
+  background-color: oklch(100% 0 0 / 0.08);
+  color: var(--color-panel-ink);
+}
+
+.cajon-lista {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 0.625rem 1rem;
+}
+
+.cajon[data-abierto='true'] .cajon-lista > * {
+  animation: cajon-llega var(--cajon-medio) var(--cajon-sale) both;
+  animation-delay: var(--cajon-retraso, 0ms);
+}
+
+@keyframes cajon-llega {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   Los grupos y las entradas
+   ----------------------------------------------------------------------------- */
+
+.cajon-grupo {
+  display: grid;
+  gap: 0.125rem;
+}
+
+.cajon-grupo-titulo {
+  margin: 0;
+  padding: 0.75rem 1rem 0.25rem;
+  color: var(--color-panel-ink-secondary);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.cajon-grupo ul {
+  display: grid;
+  gap: 0.125rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cajon-entrada {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 2.75rem;
+  padding: 0.625rem 0.875rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--color-panel-ink-secondary);
+  text-decoration: none;
+  transition:
+    background-color var(--cajon-rapido) var(--cajon-sale),
+    color var(--cajon-rapido) var(--cajon-sale);
+}
+
+.cajon-entrada:hover {
+  background-color: oklch(100% 0 0 / 0.08);
+  color: var(--color-panel-ink);
+}
+
+/* La entrada activa lleva el latón: la única mancha de marca del menú. */
+.cajon-entrada[aria-current='page'] {
+  background-color: var(--color-panel-raised);
+  color: var(--color-brand);
+  font-weight: 600;
+  box-shadow: inset 2px 0 0 var(--color-brand);
+}
+
+.cajon-entrada svg,
+.cajon-entrada img {
+  flex: none;
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+/* El pie: el hogar y el cierre de sesión, fijos bajo la lista. */
+.cajon-pie {
+  border-top: 1px solid var(--color-panel-rule);
+  padding: 0.875rem 1rem calc(0.875rem + env(safe-area-inset-bottom));
+}
+
+/* -----------------------------------------------------------------------------
+   La página: lo que de verdad se mueve
+   ----------------------------------------------------------------------------- */
+
+.cajon-lienzo {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  /* Opaco a propósito: transparente dejaría ver el menú a través de la página
+     mientras se aparta, y el efecto se deshace. */
+  background-color: var(--color-ground);
+  transform-origin: left center;
+  transition:
+    transform var(--cajon-medio) var(--cajon-sale),
+    border-radius var(--cajon-medio) var(--cajon-sale),
+    box-shadow var(--cajon-medio) var(--cajon-sale);
+}
+
+@media (max-width: 767px) {
+  .cajon[data-abierto='true'] .cajon-lienzo {
+    transform: translate3d(var(--cajon-ancho), 0, 0) scale(var(--cajon-escala));
+    border-radius: var(--cajon-radio);
+    box-shadow: var(--cajon-sombra);
+    overflow: hidden;
+  }
+}
+
+/* La barra de teléfono que abre el cajón. Solo existe por debajo del corte. */
+.cajon-barra {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: calc(0.75rem + env(safe-area-inset-top)) 1rem 0.75rem;
+  border-bottom: 1px solid var(--color-rule);
+  background-color: var(--color-surface);
+}
+
+.cajon-abrir {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 2.75rem;
+  min-height: 2.75rem;
+  border: 1px solid var(--color-surface-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+  color: var(--color-ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.cajon-marca {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-ink);
+}
+
+.cajon-donde-estoy {
+  min-width: 0;
+  margin-left: auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-ink-secondary);
+}
+
+.cajon-solo-lectores {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* -----------------------------------------------------------------------------
+   La franja de vuelta
+   ----------------------------------------------------------------------------- */
+
+.cajon-volver {
+  position: fixed;
+  /* Solo desde el borde del menú hacia la derecha. El original cubría la
+     pantalla entera con `inset: 0`, y con z-index 2 quedaba también SOBRE el
+     menú (z 0): cada toque en una entrada lo interceptaba la franja y el menú
+     no navegaba. Acotado, la página apartada —que está inerte— sigue siendo
+     toda ella el camino de vuelta, y el menú vuelve a ser tocable. */
+  inset: 0 0 0 var(--cajon-ancho);
+  z-index: 2;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+/* -----------------------------------------------------------------------------
+   Escritorio: el cajón desaparece y manda la columna
+   ----------------------------------------------------------------------------- */
+
+@media (min-width: 768px) {
+  .cajon > .cajon-menu,
+  .cajon-barra,
+  .cajon-volver {
+    display: none;
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   Menos movimiento: se quita el ESCALADO —que es lo que marea— y se conserva el
+   desplazamiento, que es lo que explica dónde fue la página.
+   ----------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .cajon-lienzo,
+  .cajon[data-abierto='true'] .cajon-lista > * {
+    transition-duration: 0.01ms;
+    animation-duration: 0.01ms;
+    animation-delay: 0ms;
+  }
+
+  @media (max-width: 767px) {
+    .cajon[data-abierto='true'] .cajon-lienzo {
+      transform: translate3d(var(--cajon-ancho), 0, 0);
+    }
+  }
+}

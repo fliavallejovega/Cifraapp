@@ -61,7 +61,8 @@ export function Field({ label, hint, error, required, children, className }: Fie
 }
 
 const CONTROL_BASE = cn(
-  'w-full rounded-(--radius-sm) border bg-[color:var(--color-ground-raised)] px-3 text-[color:var(--color-ink)]',
+  'w-full rounded-(--radius-sm) border bg-[color:var(--color-surface)] px-3 text-[color:var(--color-ink)]',
+  'shadow-[inset_0_1px_2px_var(--c-shadow-near)]',
   'placeholder:text-[color:var(--color-ink-tertiary)]',
   'transition-[border-color,box-shadow] duration-(--duration-quick) ease-(--ease-settle)',
   'focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[color:var(--color-ink)]',
@@ -84,7 +85,7 @@ export function Input({ invalid, numeric, className, ...props }: InputProps) {
         numeric && 'readout text-right',
         invalid
           ? 'border-[color:var(--color-negative)]'
-          : 'border-[color:var(--color-rule-strong)]',
+          : 'border-[color:var(--color-surface-border)] hover:border-[color:var(--color-rule-strong)]',
         className,
       )}
       {...props}
@@ -105,7 +106,7 @@ export function Select({ invalid, className, children, ...props }: SelectProps) 
         'h-10 appearance-none pr-8',
         invalid
           ? 'border-[color:var(--color-negative)]'
-          : 'border-[color:var(--color-rule-strong)]',
+          : 'border-[color:var(--color-surface-border)] hover:border-[color:var(--color-rule-strong)]',
         className,
       )}
       {...props}

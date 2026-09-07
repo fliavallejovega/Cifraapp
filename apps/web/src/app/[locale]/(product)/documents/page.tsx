@@ -1,5 +1,6 @@
 import {
   Amount,
+  Card,
   Ledger,
   LedgerBody,
   LedgerCell,
@@ -17,7 +18,6 @@ import { Money } from '@app/domain';
 import { desc, eq } from 'drizzle-orm';
 import { getFormatter, getTranslations, setRequestLocale } from 'next-intl/server';
 
-import { AppNav } from '@/components/app-nav';
 import { ImportForm } from '@/components/import-form';
 import { Link } from '@/i18n/navigation';
 import { hasActiveAccount } from '@/server/repositories/accounts';
@@ -63,13 +63,9 @@ export default async function DocumentsPage({ params }: { params: Promise<{ loca
   );
 
   const hasAccount = await hasActiveAccount(session, session.activeHouseholdId);
-  const householdName =
-    session.households.find((entry) => entry.id === session.activeHouseholdId)?.name ?? '';
 
   return (
     <Page>
-      <AppNav locale={locale} householdName={householdName} />
-
       <PageHeader title={t('title')} detail={t('detail')} />
 
       {/* An import needs an account to file against. Saying so here, before the
@@ -89,27 +85,29 @@ export default async function DocumentsPage({ params }: { params: Promise<{ loca
         </div>
       )}
 
-      <ImportForm
-        locale={locale}
-        labels={{
-          file: t('form.file'),
-          fileHint: t('form.fileHint'),
-          submit: t('form.submit'),
-          errorTitle: t('form.errorTitle'),
-          summaryHeading: t('form.summaryHeading'),
-          summaryDetail: raw('form.summaryDetail'),
-          reviewLink: t('form.reviewLink'),
-          errors: {
-            tooLarge: t('form.errors.tooLarge'),
-            unsupportedType: t('form.errors.unsupportedType'),
-            alreadyImported: t('form.errors.alreadyImported'),
-            unreadable: t('form.errors.unreadable'),
-            storageUnavailable: t('form.errors.storageUnavailable'),
-            noAccount: t('form.errors.noAccount'),
-            generic: t('form.errors.generic'),
-          },
-        }}
-      />
+      <Card padding="lg">
+        <ImportForm
+          locale={locale}
+          labels={{
+            file: t('form.file'),
+            fileHint: t('form.fileHint'),
+            submit: t('form.submit'),
+            errorTitle: t('form.errorTitle'),
+            summaryHeading: t('form.summaryHeading'),
+            summaryDetail: raw('form.summaryDetail'),
+            reviewLink: t('form.reviewLink'),
+            errors: {
+              tooLarge: t('form.errors.tooLarge'),
+              unsupportedType: t('form.errors.unsupportedType'),
+              alreadyImported: t('form.errors.alreadyImported'),
+              unreadable: t('form.errors.unreadable'),
+              storageUnavailable: t('form.errors.storageUnavailable'),
+              noAccount: t('form.errors.noAccount'),
+              generic: t('form.errors.generic'),
+            },
+          }}
+        />
+      </Card>
 
       <Section title={t('history.title')} className="mt-14">
         {runs.length === 0 ? (
@@ -117,51 +115,53 @@ export default async function DocumentsPage({ params }: { params: Promise<{ loca
             {t('history.empty')}
           </p>
         ) : (
-          <Ledger caption={t('history.title')}>
-            <LedgerHead>
-              <LedgerColumn>{t('history.columns.file')}</LedgerColumn>
-              <LedgerColumn>{t('history.columns.when')}</LedgerColumn>
-              <LedgerColumn align="end">{t('history.columns.found')}</LedgerColumn>
-              <LedgerColumn align="end">{t('history.columns.new')}</LedgerColumn>
-              <LedgerColumn align="end">{t('history.columns.duplicate')}</LedgerColumn>
-              <LedgerColumn align="end">{t('history.columns.review')}</LedgerColumn>
-              <LedgerColumn>{t('history.columns.status')}</LedgerColumn>
-            </LedgerHead>
-            <LedgerBody>
-              {runs.map((run) => (
-                <LedgerRow key={run.id}>
-                  <LedgerCell>
-                    <Link
-                      href={`/documents/${run.id}`}
-                      className="underline underline-offset-4 hover:no-underline"
-                    >
-                      {run.fileName}
-                    </Link>
-                  </LedgerCell>
-                  <LedgerCell secondary className="tabular">
-                    {format.dateTime(run.startedAt, { dateStyle: 'medium' })}
-                  </LedgerCell>
-                  <LedgerCell align="end" className="tabular">
-                    {run.found}
-                  </LedgerCell>
-                  <LedgerCell align="end" className="tabular">
-                    {run.created}
-                  </LedgerCell>
-                  <LedgerCell align="end" className="tabular">
-                    {run.duplicate}
-                  </LedgerCell>
-                  <LedgerCell align="end" className="tabular">
-                    {run.review}
-                  </LedgerCell>
-                  <LedgerCell>
-                    <Status tone={run.review > 0 ? 'caution' : 'neutral'}>
-                      {t(`history.statuses.${run.status}`)}
-                    </Status>
-                  </LedgerCell>
-                </LedgerRow>
-              ))}
-            </LedgerBody>
-          </Ledger>
+          <Card padding="none" className="overflow-hidden px-5 sm:px-6">
+            <Ledger caption={t('history.title')}>
+              <LedgerHead>
+                <LedgerColumn>{t('history.columns.file')}</LedgerColumn>
+                <LedgerColumn>{t('history.columns.when')}</LedgerColumn>
+                <LedgerColumn align="end">{t('history.columns.found')}</LedgerColumn>
+                <LedgerColumn align="end">{t('history.columns.new')}</LedgerColumn>
+                <LedgerColumn align="end">{t('history.columns.duplicate')}</LedgerColumn>
+                <LedgerColumn align="end">{t('history.columns.review')}</LedgerColumn>
+                <LedgerColumn>{t('history.columns.status')}</LedgerColumn>
+              </LedgerHead>
+              <LedgerBody>
+                {runs.map((run) => (
+                  <LedgerRow key={run.id}>
+                    <LedgerCell>
+                      <Link
+                        href={`/documents/${run.id}`}
+                        className="underline underline-offset-4 hover:no-underline"
+                      >
+                        {run.fileName}
+                      </Link>
+                    </LedgerCell>
+                    <LedgerCell secondary className="tabular">
+                      {format.dateTime(run.startedAt, { dateStyle: 'medium' })}
+                    </LedgerCell>
+                    <LedgerCell align="end" className="tabular">
+                      {run.found}
+                    </LedgerCell>
+                    <LedgerCell align="end" className="tabular">
+                      {run.created}
+                    </LedgerCell>
+                    <LedgerCell align="end" className="tabular">
+                      {run.duplicate}
+                    </LedgerCell>
+                    <LedgerCell align="end" className="tabular">
+                      {run.review}
+                    </LedgerCell>
+                    <LedgerCell>
+                      <Status tone={run.review > 0 ? 'caution' : 'neutral'}>
+                        {t(`history.statuses.${run.status}`)}
+                      </Status>
+                    </LedgerCell>
+                  </LedgerRow>
+                ))}
+              </LedgerBody>
+            </Ledger>
+          </Card>
         )}
       </Section>
 

@@ -248,7 +248,9 @@
     },
     "stats": {
       "liquid": "Líquido",
-      "committed": "Comprometido"
+      "committed": "Comprometido",
+      "liquidDetail": "Suma de tus cuentas líquidas: corrientes, ahorros, efectivo y billeteras.",
+      "committedDetail": "Obligaciones de los próximos 30 días que ya tienen dueño."
     },
     "empty": {
       "title": "Dale a tu dinero un lugar donde vivir.",
@@ -601,7 +603,10 @@
     "accounts": "Cuentas",
     "documents": "Importar",
     "plan": "Plan",
-    "reports": "Estados"
+    "reports": "Estados",
+    "closeMenu": "Cerrar el menú",
+    "backToPage": "Volver a la página",
+    "householdLabel": "Tu hogar"
   },
   "accounts": {
     "title": "Tus cuentas",
@@ -610,7 +615,8 @@
     "summary": {
       "liquid": "Disponible en cuentas",
       "liquidDetail": "Suma de tus cuentas corrientes, ahorros, efectivo y billeteras.",
-      "owed": "Lo que debes"
+      "owed": "Lo que debes",
+      "owedDetail": "Tarjetas, préstamos e hipotecas, en positivo."
     },
     "empty": {
       "title": "Empieza por una cuenta.",
