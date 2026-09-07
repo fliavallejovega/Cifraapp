@@ -1778,8 +1778,8 @@ that will not be patched upstream — is resolved by a pinned override in
 `pnpm-workspace.yaml`. The admin application gained a `not-found` that says
 nothing and an error boundary that shows only a digest.
 
-**All 20 migrations apply cleanly from an empty database**, producing 75 tables
-across the three schemas at schema version 20, verified in this session.
+**All 22 migrations apply cleanly from an empty database**, producing 75 tables
+across the three schemas at schema version 22, verified in this session.
 
 ### Not done, and what it would take
 

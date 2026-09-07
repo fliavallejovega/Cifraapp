@@ -19,7 +19,8 @@ import {
 } from '@app/ui';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
-import { SignOutButton } from '@/components/sign-out-button';
+import { AppNav } from '@/components/app-nav';
+import { Link } from '@/i18n/navigation';
 import { explainPlan } from '@/server/repositories/copilot';
 import { loadPlan } from '@/server/repositories/plan';
 import { requireHousehold } from '@/server/session';
@@ -50,8 +51,28 @@ export default async function PlanPage({ params }: { params: Promise<{ locale: s
   );
 
   const t = await getTranslations('plan');
-  const common = await getTranslations('common');
   const moneyLocale = locale === 'en' ? 'en-US' : 'es-PA';
+
+  // Two claims are synthetic: the household never named them, the repository
+  // invented them from a setting. They arrived with English placeholder labels
+  // and rendered "Buffer" in the middle of a Spanish plan. Every other line is
+  // named by the person who created the obligation, debt or goal, so only these
+  // two need translating.
+  const SYNTHETIC_LABELS: Record<string, string> = {
+    buffer: t('safeToSpend.kinds.buffer'),
+    'tax-reserve': t('safeToSpend.kinds.tax_reserve'),
+  };
+  const lineLabel = (line: { claimId: string; label: string }): string =>
+    SYNTHETIC_LABELS[line.claimId] ?? line.label;
+
+  const SYNTHETIC_LABEL_BY_ENGLISH: Record<string, string> = {
+    Buffer: t('safeToSpend.kinds.buffer'),
+    'Tax reserve': t('safeToSpend.kinds.tax_reserve'),
+  };
+
+  // A deduction of zero is not a claim on this money, and listing it would pad
+  // the ladder with lines that mean nothing.
+  const claimed = view.safeToSpend.deductions.filter((deduction) => deduction.claimed.isPositive());
   const money = (value: Parameters<typeof formatMoney>[0]) =>
     formatMoney(value, { locale: moneyLocale });
 
@@ -60,7 +81,14 @@ export default async function PlanPage({ params }: { params: Promise<{ locale: s
 
   /** Renders an engine explanation through the catalogue. The engine has no language. */
   const explain = (explanation: LineExplanation): string => {
-    const sentence = t(`reason.${explanation.key}`, explanation.values);
+    // The reason interpolates the same label the row shows, so a synthetic
+    // claim would otherwise read "Asigna 500.00 a Buffer porque…" in Spanish.
+    const label = explanation.values['label'];
+    const values =
+      typeof label === 'string' && label in SYNTHETIC_LABEL_BY_ENGLISH
+        ? { ...explanation.values, label: SYNTHETIC_LABEL_BY_ENGLISH[label] ?? label }
+        : explanation.values;
+    const sentence = t(`reason.${explanation.key}`, values);
     return explanation.partialOf
       ? `${sentence} ${t('reason.partial', { requested: explanation.partialOf })}`
       : sentence;
@@ -68,13 +96,7 @@ export default async function PlanPage({ params }: { params: Promise<{ locale: s
 
   return (
     <Page>
-      <header className="mb-14 flex items-baseline justify-between gap-6">
-        <div className="flex items-baseline gap-3">
-          <span className="gradation-label uppercase">{common('appName')}</span>
-          <span className="text-sm text-[color:var(--color-ink-secondary)]">{householdName}</span>
-        </div>
-        <SignOutButton locale={locale} label={t('signOut')} />
-      </header>
+      <AppNav locale={locale} householdName={householdName} />
 
       <PageHeader title={t('title')} detail={t('detail')} />
 
@@ -82,7 +104,11 @@ export default async function PlanPage({ params }: { params: Promise<{ locale: s
         <EmptyState
           title={t('empty.title')}
           body={t('empty.body')}
-          action={<Button size="lg">{t('empty.action')}</Button>}
+          action={
+            <Link href="/accounts">
+              <Button size="lg">{t('empty.action')}</Button>
+            </Link>
+          }
         />
       ) : (
         <>
@@ -110,16 +136,17 @@ export default async function PlanPage({ params }: { params: Promise<{ locale: s
             detail={t('safeToSpend.detail')}
             className="mt-16"
           >
-            <Ledger caption={t('safeToSpend.title')}>
-              <LedgerHead>
-                <LedgerColumn>{t('safeToSpend.columns.claim')}</LedgerColumn>
-                <LedgerColumn align="end">{t('safeToSpend.columns.claimed')}</LedgerColumn>
-                <LedgerColumn align="end">{t('safeToSpend.columns.covered')}</LedgerColumn>
-              </LedgerHead>
-              <LedgerBody>
-                {view.safeToSpend.deductions
-                  .filter((deduction) => deduction.claimed.isPositive())
-                  .map((deduction) => (
+            {claimed.length === 0 ? (
+              <EmptyState title={t('safeToSpend.emptyTitle')} body={t('safeToSpend.emptyBody')} />
+            ) : (
+              <Ledger caption={t('safeToSpend.title')}>
+                <LedgerHead>
+                  <LedgerColumn>{t('safeToSpend.columns.claim')}</LedgerColumn>
+                  <LedgerColumn align="end">{t('safeToSpend.columns.claimed')}</LedgerColumn>
+                  <LedgerColumn align="end">{t('safeToSpend.columns.covered')}</LedgerColumn>
+                </LedgerHead>
+                <LedgerBody>
+                  {claimed.map((deduction) => (
                     <LedgerRow key={deduction.kind}>
                       <LedgerCell>{t(`safeToSpend.kinds.${deduction.kind}`)}</LedgerCell>
                       <LedgerCell align="end">
@@ -144,8 +171,9 @@ export default async function PlanPage({ params }: { params: Promise<{ locale: s
                       </LedgerCell>
                     </LedgerRow>
                   ))}
-              </LedgerBody>
-            </Ledger>
+                </LedgerBody>
+              </Ledger>
+            )}
           </Section>
 
           <Section title={t('lines.title')} detail={t('lines.detail')} className="mt-16">
@@ -163,7 +191,7 @@ export default async function PlanPage({ params }: { params: Promise<{ locale: s
                   <LedgerBody>
                     {view.plan.lines.map((line) => (
                       <LedgerRow key={line.claimId}>
-                        <LedgerCell>{line.label}</LedgerCell>
+                        <LedgerCell>{lineLabel(line)}</LedgerCell>
                         <LedgerCell secondary>{explain(line.explanation)}</LedgerCell>
                         <LedgerCell align="end">
                           <Amount

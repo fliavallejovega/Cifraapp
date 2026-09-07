@@ -17,7 +17,7 @@ import {
 } from '@app/ui';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
-import { SignOutButton } from '@/components/sign-out-button';
+import { AppNav } from '@/components/app-nav';
 import { loadReport } from '@/server/repositories/reports';
 import { requireHousehold } from '@/server/session';
 
@@ -38,8 +38,13 @@ export default async function ReportsPage({ params }: { params: Promise<{ locale
   const view = await loadReport(session, session.activeHouseholdId);
 
   const t = await getTranslations('reports');
-  const common = await getTranslations('common');
   const moneyLocale = locale === 'en' ? 'en-US' : 'es-PA';
+
+  const lineLabel = (line: { key: string; label: string }): string =>
+    line.key === 'uncategorized' ? t('income.uncategorized') : line.label;
+
+  // Column headings over nothing are not an empty state.
+  const hasIncomeLines = view.income.incomeLines.length > 0 || view.income.expenseLines.length > 0;
   const money = (value: Parameters<typeof formatMoney>[0]) =>
     formatMoney(value, { locale: moneyLocale });
 
@@ -48,13 +53,7 @@ export default async function ReportsPage({ params }: { params: Promise<{ locale
 
   return (
     <Page>
-      <header className="mb-14 flex items-baseline justify-between gap-6">
-        <div className="flex items-baseline gap-3">
-          <span className="gradation-label uppercase">{common('appName')}</span>
-          <span className="text-sm text-[color:var(--color-ink-secondary)]">{householdName}</span>
-        </div>
-        <SignOutButton locale={locale} label={t('signOut')} />
-      </header>
+      <AppNav locale={locale} householdName={householdName} />
 
       <PageHeader
         title={t('title')}
@@ -82,38 +81,42 @@ export default async function ReportsPage({ params }: { params: Promise<{ locale
           </section>
 
           <Section title={t('income.title')} detail={t('income.detail')} className="mt-16">
-            <Ledger caption={t('income.title')}>
-              <LedgerHead>
-                <LedgerColumn>{t('income.columns.category')}</LedgerColumn>
-                <LedgerColumn align="end">{t('income.columns.transactions')}</LedgerColumn>
-                <LedgerColumn align="end">{t('income.columns.amount')}</LedgerColumn>
-              </LedgerHead>
-              <LedgerBody>
-                {view.income.incomeLines.map((line) => (
-                  <LedgerRow key={`income-${line.key}`}>
-                    <LedgerCell>{line.label}</LedgerCell>
-                    <LedgerCell align="end">{line.count}</LedgerCell>
-                    <LedgerCell align="end">
-                      <Amount value={line.amount} locale={moneyLocale} size="sm" tone="plain" />
-                    </LedgerCell>
-                  </LedgerRow>
-                ))}
-                {view.income.expenseLines.map((line) => (
-                  <LedgerRow key={`expense-${line.key}`}>
-                    <LedgerCell>{line.label}</LedgerCell>
-                    <LedgerCell align="end">{line.count}</LedgerCell>
-                    <LedgerCell align="end">
-                      <Amount
-                        value={line.amount.negate()}
-                        locale={moneyLocale}
-                        size="sm"
-                        tone="plain"
-                      />
-                    </LedgerCell>
-                  </LedgerRow>
-                ))}
-              </LedgerBody>
-            </Ledger>
+            {hasIncomeLines ? (
+              <Ledger caption={t('income.title')}>
+                <LedgerHead>
+                  <LedgerColumn>{t('income.columns.category')}</LedgerColumn>
+                  <LedgerColumn align="end">{t('income.columns.transactions')}</LedgerColumn>
+                  <LedgerColumn align="end">{t('income.columns.amount')}</LedgerColumn>
+                </LedgerHead>
+                <LedgerBody>
+                  {view.income.incomeLines.map((line) => (
+                    <LedgerRow key={`income-${line.key}`}>
+                      <LedgerCell>{lineLabel(line)}</LedgerCell>
+                      <LedgerCell align="end">{line.count}</LedgerCell>
+                      <LedgerCell align="end">
+                        <Amount value={line.amount} locale={moneyLocale} size="sm" tone="plain" />
+                      </LedgerCell>
+                    </LedgerRow>
+                  ))}
+                  {view.income.expenseLines.map((line) => (
+                    <LedgerRow key={`expense-${line.key}`}>
+                      <LedgerCell>{lineLabel(line)}</LedgerCell>
+                      <LedgerCell align="end">{line.count}</LedgerCell>
+                      <LedgerCell align="end">
+                        <Amount
+                          value={line.amount.negate()}
+                          locale={moneyLocale}
+                          size="sm"
+                          tone="plain"
+                        />
+                      </LedgerCell>
+                    </LedgerRow>
+                  ))}
+                </LedgerBody>
+              </Ledger>
+            ) : (
+              <EmptyState title={t('income.emptyTitle')} body={t('income.emptyBody')} />
+            )}
 
             <div className="mt-4 flex items-baseline justify-between">
               <span className="text-sm text-[color:var(--color-ink-secondary)]">

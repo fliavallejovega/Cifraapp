@@ -33,13 +33,13 @@ This repository is mapped to the **fliavallejovega** GitHub account (not
 `javidavo05` / `pime`). SSH, `origin`, and commit identity are managed by
 **Pime Git**. Never use bare `git commit`, `git push`, or `git pull` on this Mac.
 
-| Item | Value |
-| ---- | ----- |
-| GitHub account | `fliavallejovega` |
-| Repository | `https://github.com/fliavallejovega/Cifraapp` |
-| SSH remote | `git@github.com-fliavallejovega:fliavallejovega/Cifraapp.git` |
-| Vercel project | `cifraapp` |
-| Production URL | `https://norte-web-three.vercel.app` |
+| Item           | Value                                                         |
+| -------------- | ------------------------------------------------------------- |
+| GitHub account | `fliavallejovega`                                             |
+| Repository     | `https://github.com/fliavallejovega/Cifraapp`                 |
+| SSH remote     | `git@github.com-fliavallejovega:fliavallejovega/Cifraapp.git` |
+| Vercel project | `cifraapp`                                                    |
+| Production URL | `https://norte-web-three.vercel.app`                          |
 
 **Every commit and production deploy** goes through Pime Git → GitHub (SSH).
 Vercel is connected to the repo; a push to `main` triggers the production

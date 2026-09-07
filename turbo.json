@@ -32,6 +32,11 @@
       "outputs": ["playwright-report/**", "test-results/**"]
     },
     "dev": {
+      // The compiled packages are real Node ESM on disk, not sources the Next
+      // bundler can reach into. Without this a clean checkout starts the dev
+      // server against a `dist` that does not exist yet and every import of
+      // `@app/validation/env` fails.
+      "dependsOn": ["^build"],
       "cache": false,
       "persistent": true
     },

@@ -9,8 +9,8 @@ before it is stable.
 | 0     | Repository foundation: monorepo, strict types, migrations, money primitives, i18n, tests, CI   | **Complete**                                                                                                    |
 | 1     | Design system: visual identity, typography, color, motion, components, `DESIGN.md`             | **Complete**                                                                                                    |
 | 2     | Auth and multi-tenancy: users, households, memberships, organizations, RLS, audit log          | **Complete** — password recovery included; no MFA, magic link, OAuth, invitation sending or household switcher  |
-| 3     | Core financial data model: accounts, transactions, categories, merchants, budgets, goals, debt | **Partial** — schema, RLS and position repository done; **no per-entity CRUD**                                  |
-| 4     | Import engine: CSV, XLSX, OFX, PDF, document storage, parsing, normalization                   | **Partial** — CSV/OFX, R2 and review pipeline done; **no row confirmation**, no XLSX/PDF, no background jobs    |
+| 3     | Core financial data model: accounts, transactions, categories, merchants, budgets, goals, debt | **Substantially built** — account CRUD is live; obligations, debts and goals are created by the setup questionnaire; no edit screens for those three yet |
+| 4     | Import engine: CSV, XLSX, OFX, PDF, document storage, parsing, normalization                   | **Substantially built** — CSV/OFX, R2, review pipeline and **row confirmation** are live end to end; no XLSX, no PDF, no OCR, no background jobs |
 | 5     | Duplicate and transfer engine: fingerprints, matching, credit-card payment detection           | **Complete**                                                                                                    |
 | 6     | Category and learning engine: merchant normalization, user rules, confidence, review           | **Engine complete** — live on the database; no rule-management UI, nothing to classify until transactions exist |
 | 7     | Budgets and recurring expenses: automatic suggestions, safe-to-spend, projections              | **Engine complete** — safe-to-spend is on screen; no budget UI, no cron, no notifications                       |
@@ -47,29 +47,54 @@ valuable; nothing after that is worth compromising the data integrity layer for.
 3, 4, 13, 16, 19, 20 and 21 are partly built, and the table above says exactly
 where each stops.
 
-431 unit and integration tests, all passing. **20 migrations apply cleanly from
+439 unit and integration tests, all passing. **22 migrations apply cleanly from
 an empty database**, producing 75 tables across `app`, `platform` and `audit` at
-schema version 20, with row-level security enabled _and forced_ on every one —
+schema version 22, with row-level security enabled _and forced_ on every one —
 asserted by `security-audit.test.ts` over the whole schema rather than a list of
 known tables.
 
-The live Supabase project is **migrated to version 20** and the end-to-end suite
-passes against it: 48 public specs green, 10 skipped because
+The live Supabase project is **migrated to version 22**. The two additions are
+small and both came out of building the setup questionnaire: member counts and a
+completion stamp on `household_settings`, and a check constraint on
+`recurring_series` that now distinguishes a series the engine detected (three
+occurrences, as before) from one a person declared (none).
+
+The end-to-end suite passes: 48 public specs green, 10 skipped because
 `E2E_EMAIL`/`E2E_PASSWORD` are unset.
 
-### The one thing that blocks everything else
+### The golden flow runs
 
-**Account and transaction CRUD still does not exist** (Phase 3's remainder), and
-neither does import row confirmation (Phase 4's). Nothing can be entered through
-the product; the test account was inserted with SQL. Every engine above reads
-rows the product cannot create.
+**Account and transaction CRUD exists**, and so does import row confirmation.
+The flow the whole system was built for now runs end to end for the first time:
+
+    sign up → household → setup questionnaire → accounts → import → review →
+    confirm → transactions → position, plan and statements
+
+Confirmed rows become `app.transactions` carrying the import and the document
+they came from, and every engine downstream reads them. A household that
+answers the questionnaire has a real allocation plan before it has imported
+anything, because obligations, debts, goals, a buffer and a household size all
+have a screen that creates them.
+
+Two things found while proving it, both fixed and both worth remembering:
+
+- `.gitignore` matched `documents/` anywhere, which included
+  `apps/web/src/app/[locale]/documents/`. The import screen had **never been
+  committed** and was not in production. Source trees are now excluded from
+  that rule explicitly.
+- A figure typed as `3,200` was parsed as `3.20`, so a $3,200 card entered the
+  database as a $3.20 one and every plan built on it was wrong without failing.
+  `normalizeTypedAmount` now reads a lone separator with three digits behind it
+  as grouping, and `amount.test.ts` holds the rule.
 
 ### Then, in order
 
-3. **The management surfaces** each engine waits for: debt, goal and budget CRUD,
-   the visual rule builder, category and recurring-series review, accept/modify
-   on a plan, tax onboarding, expense-classification review, and the accountant
-   invitation flow. Each is a screen over a table that already exists.
+3. **The management surfaces** still missing: edit and delete for debts, goals
+   and obligations after setup, budget CRUD, the visual rule builder, category
+   and recurring-series review, accept/modify on a plan, tax onboarding,
+   expense-classification review, and the accountant invitation flow. Each is a
+   screen over a table that already exists and, for three of them, over rows the
+   questionnaire already creates.
 4. **Cross-cutting work** the engines assume: background jobs, notifications,
    cron, and the jobs that post to the ledger and expire trials.
 5. **What Phase 21 could not measure**: end-to-end, accessibility, performance

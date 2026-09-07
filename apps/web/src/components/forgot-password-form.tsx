@@ -4,7 +4,6 @@ import { Button, Field, Input, Problem } from '@app/ui';
 import type { AuthError } from '@supabase/supabase-js';
 import { useState } from 'react';
 
-import { getBrowserClient } from '@/lib/supabase-browser';
 import { getRecoveryClient } from '@/lib/supabase-recovery';
 
 /**
@@ -97,9 +96,7 @@ export function ForgotPasswordForm({
       }}
       className="flex flex-col gap-5"
     >
-      {state === 'rateLimited' && (
-        <Problem title={labels.errorTitle} body={labels.rateLimited} />
-      )}
+      {state === 'rateLimited' && <Problem title={labels.errorTitle} body={labels.rateLimited} />}
 
       {state === 'failed' && <Problem title={labels.errorTitle} body={labels.errorBody} />}
 

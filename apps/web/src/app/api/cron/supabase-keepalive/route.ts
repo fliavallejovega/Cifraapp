@@ -38,7 +38,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     return NextResponse.json({ status: 'error', detail: 'database_unreachable' }, { status: 503 });
   }
 
-  let authApiOk = false;
+  let authApiOk: boolean;
   try {
     const clientEnv = getClientEnv();
     const response = await fetch(`${clientEnv.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/health`, {

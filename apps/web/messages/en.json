@@ -237,7 +237,6 @@
   },
   "overview": {
     "title": "Your position",
-    "signOut": "Sign out",
     "gauge": {
       "label": "Safe to spend",
       "buffer": "Buffer minimum",
@@ -275,12 +274,12 @@
     },
     "planLink": "See what to do with this money",
     "reportsLink": "See the statements",
-    "scopeNote": "Available here deducts the obligations recorded for the next 30 days. The full calculation — minimum debt payments, estimated tax reserve and buffer — is in the plan."
+    "scopeNote": "Available here deducts the obligations recorded for the next 30 days. The full calculation — minimum debt payments, estimated tax reserve and buffer — is in the plan.",
+    "importLink": "Import a statement"
   },
   "plan": {
     "title": "What to do with this money",
     "detail": "A concrete plan for the money you have available right now, line by line, with the reason for each.",
-    "signOut": "Sign out",
     "basis": "This plan allocates {incoming} of liquid balance. When new money arrives, the same calculation runs against that income.",
     "empty": {
       "title": "There is nothing to allocate yet.",
@@ -304,7 +303,9 @@
         "tax_reserve": "Estimated tax reserve",
         "goals": "Goal contributions",
         "buffer": "Minimum buffer"
-      }
+      },
+      "emptyTitle": "Nothing claims this money yet.",
+      "emptyBody": "Once you record an obligation, a debt or a goal, it shows up here and lowers what stays free."
     },
     "lines": {
       "title": "The allocation",
@@ -374,7 +375,6 @@
   "reports": {
     "title": "Statements",
     "detail": "{start} to {end}. Every figure comes from your transactions; nothing is summarized or estimated.",
-    "signOut": "Sign out",
     "empty": {
       "title": "Nothing to report yet",
       "body": "Statements are computed from your transactions. Import a bank statement and these fill themselves in."
@@ -393,7 +393,10 @@
         "category": "Category",
         "transactions": "Transactions",
         "amount": "Amount"
-      }
+      },
+      "emptyTitle": "No movements in this period.",
+      "emptyBody": "Import a statement and confirm its lines. Income and spending group themselves by category.",
+      "uncategorized": "Not categorised yet"
     },
     "cashFlow": {
       "title": "Cash flow",
@@ -516,7 +519,10 @@
         "storageUnavailable": "We couldn't store the file. Please try again in a moment.",
         "noAccount": "Add an account for these transactions to belong to first.",
         "generic": "Something went wrong. Please try again."
-      }
+      },
+      "summaryHeading": "We read the file",
+      "summaryDetail": "{found} lines read · {new} new · {duplicate} already there · {review} for you to check",
+      "reviewLink": "Review the lines and confirm"
     },
     "history": {
       "title": "Earlier imports",
@@ -540,6 +546,235 @@
         "discarded": "Discarded"
       }
     },
-    "note": "Analyzing a file does not create transactions yet. Every line gets a verdict and you confirm before anything enters your records."
+    "note": "Analyzing a file does not create transactions yet. Every line gets a verdict and you confirm before anything enters your records.",
+    "noAccount": {
+      "title": "The account these belong to is missing",
+      "body": "A movement has to live in an account. Create yours and come back; it takes under a minute.",
+      "action": "Create my first account"
+    },
+    "review": {
+      "detail": "From {account}, read on {when}. Tick what you want filed.",
+      "back": "Back to imports",
+      "counts": "{new} new · {duplicate} possible duplicates · {review} to check · {rejected} we could not read",
+      "columnDescription": "Description",
+      "selectAll": "Tick all",
+      "clearAll": "Untick all",
+      "confirm": "File {count} movements",
+      "confirmOne": "File 1 movement",
+      "nothingSelected": "Nothing is ticked",
+      "discard": "Discard this import",
+      "discardConfirm": "It closes without filing anything. The file is kept.",
+      "discardConfirmYes": "Yes, discard",
+      "cancel": "Cancel",
+      "filed": "Filed {count} movements. They count in your statements now.",
+      "alreadyFiled": "Already filed",
+      "settled": "Every line in this file has already been filed.",
+      "unreadableLine": "Line {line} of the file",
+      "signalLabel": "Matches on:",
+      "errorTitle": "We could not file these",
+      "scopeNote": "Only what you tick is filed. A filed line keeps its origin: you can trace it back to the file it came from.",
+      "verdicts": {
+        "new": "New",
+        "duplicate": "Possible duplicate",
+        "review": "Check",
+        "rejected": "Could not read"
+      },
+      "hints": {
+        "new": "We found nothing like it in your records.",
+        "duplicate": "It looks like a movement you already have.",
+        "review": "It resembles something you have, but not enough for us to decide for you.",
+        "rejected": "The line had no readable date or amount."
+      },
+      "errors": {
+        "notFound": "We could not find this import.",
+        "nothingSelected": "Tick at least one line before filing.",
+        "nothingFiled": "Nothing you ticked was still waiting to be filed.",
+        "signInRequired": "Your session expired. Sign in again.",
+        "generic": "Something went wrong. Try again."
+      }
+    }
+  },
+  "nav": {
+    "label": "Sections",
+    "signOut": "Sign out",
+    "overview": "Your position",
+    "accounts": "Accounts",
+    "documents": "Import",
+    "plan": "Plan",
+    "reports": "Statements"
+  },
+  "accounts": {
+    "title": "Your accounts",
+    "detail": "Where your money lives and what you owe. Everything else in the system is calculated from this.",
+    "scopeNote": "The balance is the one you state: what your bank says today. The movements you import are the detail of how it got there, and they do not change this number on their own.",
+    "summary": {
+      "liquid": "Available in accounts",
+      "liquidDetail": "The sum of your current, savings, cash and wallet accounts.",
+      "owed": "What you owe"
+    },
+    "empty": {
+      "title": "Start with one account.",
+      "body": "The account your pay lands in is usually the first. With its balance we can already tell you what is committed and what is left."
+    },
+    "list": {
+      "title": "Accounts on record",
+      "detail": "You can adjust a balance whenever you check it against your bank.",
+      "add": "Add another account",
+      "addTitle": "New account",
+      "edit": "Edit",
+      "archive": "Archive",
+      "restore": "Reactivate",
+      "archiveConfirm": "It stops counting in your position. Its movements are kept.",
+      "archiveConfirmYes": "Yes, archive",
+      "archivedBadge": "Archived",
+      "movements": "{count} movements",
+      "noMovements": "no movements yet",
+      "maskPrefix": "····"
+    },
+    "form": {
+      "name": "Account name",
+      "nameHint": "However you recognise it. For example, \"Banco General current\".",
+      "type": "Type",
+      "balance": "Today's balance",
+      "balanceHintAsset": "What you have in that account right now.",
+      "balanceHintDebt": "What you owe, as a positive number. No minus sign.",
+      "mask": "Last 4 digits",
+      "maskHint": "Optional, to recognise it. We never store the full number.",
+      "submitCreate": "Add this account",
+      "submitUpdate": "Save the changes",
+      "cancel": "Cancel"
+    },
+    "groups": {
+      "liquid": "Where you hold money",
+      "debt": "Where you owe money",
+      "other": "Other"
+    },
+    "types": {
+      "checking": "Current account",
+      "savings": "Savings account",
+      "cash": "Cash",
+      "digital_wallet": "Digital wallet",
+      "credit_card": "Credit card",
+      "loan": "Loan",
+      "mortgage": "Mortgage",
+      "investment": "Investment",
+      "business": "Business account",
+      "tax_reserve": "Tax reserve",
+      "other_asset": "Other asset",
+      "other_liability": "Other liability"
+    },
+    "errors": {
+      "title": "We could not save the account",
+      "nameRequired": "Write a name you will recognise the account by.",
+      "balanceInvalid": "Write the balance as a number. For example, 1250.40",
+      "maskInvalid": "Digits only in the last four numbers.",
+      "typeInvalid": "Choose an account type from the list.",
+      "createFailed": "We could not create the account. Try again in a moment.",
+      "notFound": "We could not find this account.",
+      "signInRequired": "Your session expired. Sign in again.",
+      "generic": "Something went wrong. Try again."
+    }
+  },
+  "setup": {
+    "title": "Tell us how you live",
+    "detail": "Six short questions. With them we build your first plan today, without waiting for you to import a statement. You can skip any of them and come back later.",
+    "skipAll": "I would rather look around and fill this in later",
+    "skipAllHint": "Without these the plan has nothing to allocate yet.",
+    "progress": "Step {step} of {total}",
+    "next": "Continue",
+    "back": "Back",
+    "skipStep": "I have none of these",
+    "finish": "Build my plan",
+    "remove": "Remove",
+    "amount": "Amount",
+    "errorTitle": "We could not save your answers",
+    "error": {
+      "invalid": "Check the amounts: they go as numbers, for example 1250.40",
+      "saveFailed": "We could not save. Try again in a moment.",
+      "signInRequired": "Your session expired. Sign in again.",
+      "dependentsExceedMembers": "More people cannot depend on the income than live in the house.",
+      "generic": "Something went wrong. Try again."
+    },
+    "household": {
+      "title": "How many people live on this money?",
+      "detail": "A thousand dollars left over does not mean the same for one person as for a family of five. It is the number that gives everything else its meaning.",
+      "members": "People in the house",
+      "membersHint": "Counting yourself.",
+      "dependents": "Of those, how many earn nothing?",
+      "dependentsHint": "Children, relatives in your care.",
+      "next": "Continue to income"
+    },
+    "income": {
+      "title": "What comes in, and how often?",
+      "detail": "Salaries, fees, rent. If you work for yourself and the amount moves, mark it as approximate: the plan treats it differently.",
+      "name": "Where it comes from",
+      "namePlaceholder": "Salary, client, rent…",
+      "frequency": "How often",
+      "approximate": "The amount is approximate",
+      "approximateHint": "Tick it if it changes month to month. We will not use this figure as if it were fixed.",
+      "add": "Add another income",
+      "next": "Continue to what you hold"
+    },
+    "savings": {
+      "title": "What do you have today?",
+      "detail": "Your account balances and your savings. It is the starting point the plan allocates from.",
+      "name": "Account name",
+      "namePlaceholder": "Banco General current, savings…",
+      "type": "Type",
+      "balance": "Today's balance",
+      "add": "Add another account",
+      "next": "Continue to commitments"
+    },
+    "commitments": {
+      "title": "What do you have to pay every month?",
+      "detail": "Rent, power, water, school, internet. This is what turns a balance into \"what is actually left\".",
+      "name": "What you pay",
+      "namePlaceholder": "Rent, power, school…",
+      "dueDay": "Day of the month",
+      "dueDayHint": "The day it falls due.",
+      "essential": "It is essential",
+      "essentialHint": "What you would pay even in a bad month. The plan covers it first.",
+      "add": "Add another commitment",
+      "next": "Continue to debts"
+    },
+    "debts": {
+      "title": "Do you owe anything?",
+      "detail": "Cards, loans, a mortgage. With the rate we can tell you which to attack first and what that order saves you.",
+      "name": "Who you owe",
+      "namePlaceholder": "Visa Banco General, car loan…",
+      "balance": "How much you owe",
+      "apr": "Annual rate",
+      "aprHint": "It is on your statement. If you do not know it, leave it blank and add it later.",
+      "minimum": "Minimum payment",
+      "minimumHint": "The least you have to pay each month.",
+      "add": "Add another debt",
+      "next": "Continue to your goals"
+    },
+    "goals": {
+      "title": "What is all this for?",
+      "detail": "An emergency fund, a trip, a deposit on a house. Without a goal, the money left over has nowhere to go.",
+      "name": "What you want to reach",
+      "namePlaceholder": "Emergency fund, trip, deposit…",
+      "target": "How much you need",
+      "date": "By when",
+      "dateHint": "Optional. With a date, the plan works out how much to set aside each month.",
+      "add": "Add another goal",
+      "buffer": "Minimum buffer",
+      "bufferHint": "The balance you never want to go below. The plan protects it before anything optional."
+    },
+    "frequency": {
+      "weekly": "Every week",
+      "biweekly": "Every two weeks",
+      "semimonthly": "Twice a month",
+      "monthly": "Every month",
+      "quarterly": "Every three months",
+      "annual": "Once a year"
+    },
+    "accountType": {
+      "checking": "Current account",
+      "savings": "Savings account",
+      "cash": "Cash",
+      "digital_wallet": "Digital wallet"
+    }
   }
 }

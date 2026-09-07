@@ -19,7 +19,7 @@ import {
 import { formatMoney, Money } from '@app/domain';
 import { getFormatter, getTranslations, setRequestLocale } from 'next-intl/server';
 
-import { SignOutButton } from '@/components/sign-out-button';
+import { AppNav } from '@/components/app-nav';
 import { Link } from '@/i18n/navigation';
 import { loadPosition } from '@/server/repositories/position';
 import { requireHousehold } from '@/server/session';
@@ -42,7 +42,6 @@ export default async function OverviewPage({ params }: { params: Promise<{ local
   const position = await loadPosition(session, session.activeHouseholdId);
 
   const t = await getTranslations('overview');
-  const common = await getTranslations('common');
   const format = await getFormatter();
   const moneyLocale = locale === 'en' ? 'en-US' : 'es-PA';
 
@@ -59,13 +58,7 @@ export default async function OverviewPage({ params }: { params: Promise<{ local
 
   return (
     <Page>
-      <header className="mb-14 flex items-baseline justify-between gap-6">
-        <div className="flex items-baseline gap-3">
-          <span className="gradation-label uppercase">{common('appName')}</span>
-          <span className="text-sm text-[color:var(--color-ink-secondary)]">{householdName}</span>
-        </div>
-        <SignOutButton locale={locale} label={t('signOut')} />
-      </header>
+      <AppNav locale={locale} householdName={householdName} />
 
       <section aria-labelledby="level-heading">
         <h1 id="level-heading" className="sr-only">
@@ -76,7 +69,11 @@ export default async function OverviewPage({ params }: { params: Promise<{ local
           <EmptyState
             title={t('empty.title')}
             body={t('empty.body')}
-            action={<Button size="lg">{t('empty.action')}</Button>}
+            action={
+              <Link href="/accounts">
+                <Button size="lg">{t('empty.action')}</Button>
+              </Link>
+            }
           />
         ) : (
           <>
@@ -192,10 +189,10 @@ export default async function OverviewPage({ params }: { params: Promise<{ local
               {t('planLink')}
             </Link>
             <Link
-              href="/reports"
+              href="/documents"
               className="text-sm underline underline-offset-4 hover:no-underline"
             >
-              {t('reportsLink')}
+              {t('importLink')}
             </Link>
           </div>
         </Section>

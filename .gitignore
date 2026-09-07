@@ -33,6 +33,23 @@ receipts/
 statements/
 exports/
 fixtures/pii/
+
+# ...but never the application's own source. The rules above exist to catch a
+# folder of real bank statements dropped into the working tree. `documents/`
+# also matched `apps/web/src/app/[locale]/documents/` — the import screen — and
+# silently kept that entire feature out of version control and therefore out of
+# production, with no error anywhere to say so. A rule that hides source code
+# costs more than the accident it prevents, so the source trees are excluded
+# from it explicitly. The directory itself has to be un-ignored, not just the
+# files in it: git does not descend into an ignored directory.
+!apps/*/src/**/documents/
+!apps/*/src/**/receipts/
+!apps/*/src/**/statements/
+!apps/*/src/**/exports/
+!packages/*/src/**/documents/
+!packages/*/src/**/receipts/
+!packages/*/src/**/statements/
+!packages/*/src/**/exports/
 *.ofx
 *.qfx
 # Bank statements / spreadsheets. Test fixtures live in fixtures/synthetic/ and are

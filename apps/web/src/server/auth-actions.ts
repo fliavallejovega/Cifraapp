@@ -130,6 +130,10 @@ export async function createFirstHousehold(
     return { error: 'householdCreateFailed' };
   }
 
+  // Back to `/welcome`, which now has a second half: the household exists and
+  // the questionnaire that gives it its figures has not been answered yet.
+  // Sending them to the position here would land them on an empty gauge with
+  // nothing to explain it.
   const locale = formData.get('locale');
-  redirect(`/${typeof locale === 'string' ? locale : 'es'}/overview`);
+  redirect(`/${typeof locale === 'string' ? locale : 'es'}/welcome`);
 }

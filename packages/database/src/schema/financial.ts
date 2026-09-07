@@ -437,6 +437,12 @@ export const householdSettings = appSchema.table('household_settings', {
   bufferMinimum: money('buffer_minimum').notNull().default('0'),
   debtStrategy: debtStrategy('debt_strategy').notNull().default('avalanche'),
   taxReserveRate: numeric('tax_reserve_rate', { precision: 5, scale: 2, mode: 'string' }),
+  /** People the income has to cover. Stated during setup, never inferred. */
+  memberCount: smallint('member_count'),
+  /** How many of those do not earn. A subset of `memberCount`. */
+  dependentCount: smallint('dependent_count'),
+  /** Null until the setup questionnaire is answered, so it is asked once. */
+  onboardingCompletedAt: timestamp('onboarding_completed_at', { withTimezone: true }),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 

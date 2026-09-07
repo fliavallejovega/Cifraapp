@@ -237,7 +237,6 @@
   },
   "overview": {
     "title": "Tu posición",
-    "signOut": "Salir",
     "gauge": {
       "label": "Disponible para gastar",
       "buffer": "Colchón mínimo",
@@ -275,12 +274,12 @@
     },
     "planLink": "Ver qué hacer con este dinero",
     "reportsLink": "Ver los estados",
-    "scopeNote": "Por ahora el disponible descuenta las obligaciones registradas de los próximos 30 días. El cálculo completo — pagos mínimos de deuda, reserva fiscal estimada y colchón — está en el plan."
+    "scopeNote": "Por ahora el disponible descuenta las obligaciones registradas de los próximos 30 días. El cálculo completo — pagos mínimos de deuda, reserva fiscal estimada y colchón — está en el plan.",
+    "importLink": "Importar un estado de cuenta"
   },
   "plan": {
     "title": "Qué hacer con este dinero",
     "detail": "Un plan concreto para el dinero que tienes disponible ahora mismo, línea por línea y con el porqué de cada una.",
-    "signOut": "Salir",
     "basis": "Este plan reparte {incoming} de saldo líquido. Cuando entre dinero nuevo, el mismo cálculo corre sobre ese ingreso.",
     "empty": {
       "title": "Todavía no hay nada que repartir.",
@@ -304,7 +303,9 @@
         "tax_reserve": "Reserva fiscal estimada",
         "goals": "Aportes a metas",
         "buffer": "Colchón mínimo"
-      }
+      },
+      "emptyTitle": "Nada reclama este dinero todavía.",
+      "emptyBody": "Cuando registres una obligación, una deuda o una meta, aparecerá aquí y bajará lo que queda libre."
     },
     "lines": {
       "title": "El reparto",
@@ -374,7 +375,6 @@
   "reports": {
     "title": "Estados",
     "detail": "Del {start} al {end}. Todo sale de tus transacciones; nada está resumido ni estimado.",
-    "signOut": "Cerrar sesión",
     "empty": {
       "title": "Todavía no hay nada que reportar",
       "body": "Los estados se calculan a partir de tus transacciones. Importa un estado de cuenta y aparecen solos."
@@ -393,7 +393,10 @@
         "category": "Categoría",
         "transactions": "Movimientos",
         "amount": "Monto"
-      }
+      },
+      "emptyTitle": "Sin movimientos en este período.",
+      "emptyBody": "Importa un estado de cuenta y confirma sus líneas. Los ingresos y gastos se agrupan solos por categoría.",
+      "uncategorized": "Sin categoría todavía"
     },
     "cashFlow": {
       "title": "Flujo de caja",
@@ -516,7 +519,10 @@
         "storageUnavailable": "No pudimos guardar el archivo. Intenta de nuevo en un momento.",
         "noAccount": "Primero agrega una cuenta a la que pertenezcan estos movimientos.",
         "generic": "Algo no salió bien. Intenta de nuevo."
-      }
+      },
+      "summaryHeading": "Analizamos el archivo",
+      "summaryDetail": "{found} líneas leídas · {new} nuevas · {duplicate} ya estaban · {review} para que las revises",
+      "reviewLink": "Revisar las líneas y confirmar"
     },
     "history": {
       "title": "Importaciones anteriores",
@@ -540,6 +546,235 @@
         "discarded": "Descartado"
       }
     },
-    "note": "Analizar un archivo no crea movimientos todavía. Cada línea recibe un veredicto y tú confirmas antes de que algo entre a tus registros."
+    "note": "Analizar un archivo no crea movimientos todavía. Cada línea recibe un veredicto y tú confirmas antes de que algo entre a tus registros.",
+    "noAccount": {
+      "title": "Falta la cuenta a la que pertenecen",
+      "body": "Un movimiento tiene que vivir en una cuenta. Crea la tuya y vuelve; toma menos de un minuto.",
+      "action": "Crear mi primera cuenta"
+    },
+    "review": {
+      "detail": "De {account}, analizado el {when}. Marca lo que quieres registrar.",
+      "back": "Volver a importaciones",
+      "counts": "{new} nuevas · {duplicate} posibles duplicadas · {review} por revisar · {rejected} que no pudimos leer",
+      "columnDescription": "Descripción",
+      "selectAll": "Marcar todas",
+      "clearAll": "Desmarcar todas",
+      "confirm": "Registrar {count} movimientos",
+      "confirmOne": "Registrar 1 movimiento",
+      "nothingSelected": "No hay nada marcado",
+      "discard": "Descartar esta importación",
+      "discardConfirm": "Se cierra sin registrar nada. El archivo queda guardado.",
+      "discardConfirmYes": "Sí, descartar",
+      "cancel": "Cancelar",
+      "filed": "Registramos {count} movimientos. Ya cuentan en tus estados.",
+      "alreadyFiled": "Ya registrada",
+      "settled": "Todas las líneas de este archivo ya están registradas.",
+      "unreadableLine": "Línea {line} del archivo",
+      "signalLabel": "Coincide en:",
+      "errorTitle": "No pudimos registrar",
+      "scopeNote": "Solo se registra lo que marques. Una línea registrada queda con su origen: puedes rastrearla hasta el archivo del que salió.",
+      "verdicts": {
+        "new": "Nueva",
+        "duplicate": "Posible duplicada",
+        "review": "Revisar",
+        "rejected": "No se pudo leer"
+      },
+      "hints": {
+        "new": "No encontramos nada parecido en tus registros.",
+        "duplicate": "Se parece a un movimiento que ya tienes.",
+        "review": "Se parece a algo que ya tienes, pero no lo suficiente para decidirlo por ti.",
+        "rejected": "La línea no tenía fecha o monto legibles."
+      },
+      "errors": {
+        "notFound": "No encontramos esta importación.",
+        "nothingSelected": "Marca al menos una línea antes de registrar.",
+        "nothingFiled": "No quedaba nada por registrar de lo que marcaste.",
+        "signInRequired": "Tu sesión venció. Vuelve a entrar.",
+        "generic": "Algo no salió bien. Intenta de nuevo."
+      }
+    }
+  },
+  "nav": {
+    "label": "Secciones",
+    "signOut": "Cerrar sesión",
+    "overview": "Tu posición",
+    "accounts": "Cuentas",
+    "documents": "Importar",
+    "plan": "Plan",
+    "reports": "Estados"
+  },
+  "accounts": {
+    "title": "Tus cuentas",
+    "detail": "Dónde vive tu dinero y cuánto debes. Todo lo demás del sistema se calcula sobre esto.",
+    "scopeNote": "El saldo es el que tú declaras: lo que dice tu banco hoy. Los movimientos que importes son el detalle de cómo llegó ahí, y no cambian este número por su cuenta.",
+    "summary": {
+      "liquid": "Disponible en cuentas",
+      "liquidDetail": "Suma de tus cuentas corrientes, ahorros, efectivo y billeteras.",
+      "owed": "Lo que debes"
+    },
+    "empty": {
+      "title": "Empieza por una cuenta.",
+      "body": "La cuenta donde te cae el sueldo suele ser la primera. Con su saldo ya podemos decirte qué está comprometido y qué te queda."
+    },
+    "list": {
+      "title": "Cuentas registradas",
+      "detail": "Puedes ajustar un saldo cuando lo revises contra tu banco.",
+      "add": "Agregar otra cuenta",
+      "addTitle": "Nueva cuenta",
+      "edit": "Editar",
+      "archive": "Archivar",
+      "restore": "Reactivar",
+      "archiveConfirm": "Deja de contar en tu posición. Sus movimientos se conservan.",
+      "archiveConfirmYes": "Sí, archivar",
+      "archivedBadge": "Archivada",
+      "movements": "{count} movimientos",
+      "noMovements": "sin movimientos todavía",
+      "maskPrefix": "····"
+    },
+    "form": {
+      "name": "Nombre de la cuenta",
+      "nameHint": "Como la reconoces tú. Por ejemplo, «Banco General corriente».",
+      "type": "Tipo",
+      "balance": "Saldo de hoy",
+      "balanceHintAsset": "Lo que tienes ahora en esa cuenta.",
+      "balanceHintDebt": "Lo que debes, en positivo. No pongas el signo menos.",
+      "mask": "Últimos 4 dígitos",
+      "maskHint": "Opcional, para reconocerla. Nunca guardamos el número completo.",
+      "submitCreate": "Agregar esta cuenta",
+      "submitUpdate": "Guardar los cambios",
+      "cancel": "Cancelar"
+    },
+    "groups": {
+      "liquid": "Donde tienes dinero",
+      "debt": "Donde debes dinero",
+      "other": "Otras"
+    },
+    "types": {
+      "checking": "Cuenta corriente",
+      "savings": "Cuenta de ahorros",
+      "cash": "Efectivo",
+      "digital_wallet": "Billetera digital",
+      "credit_card": "Tarjeta de crédito",
+      "loan": "Préstamo",
+      "mortgage": "Hipoteca",
+      "investment": "Inversión",
+      "business": "Cuenta del negocio",
+      "tax_reserve": "Reserva fiscal",
+      "other_asset": "Otro activo",
+      "other_liability": "Otro pasivo"
+    },
+    "errors": {
+      "title": "No pudimos guardar la cuenta",
+      "nameRequired": "Escribe un nombre para reconocer la cuenta.",
+      "balanceInvalid": "Escribe el saldo como número. Por ejemplo, 1250.40",
+      "maskInvalid": "Solo dígitos en los últimos cuatro números.",
+      "typeInvalid": "Elige un tipo de cuenta de la lista.",
+      "createFailed": "No pudimos crear la cuenta. Intenta de nuevo en un momento.",
+      "notFound": "No encontramos esta cuenta.",
+      "signInRequired": "Tu sesión venció. Vuelve a entrar.",
+      "generic": "Algo no salió bien. Intenta de nuevo."
+    }
+  },
+  "setup": {
+    "title": "Cuéntanos cómo vives",
+    "detail": "Seis preguntas cortas. Con ellas armamos tu primer plan hoy mismo, sin esperar a que importes un estado de cuenta. Puedes saltarte cualquiera y volver después.",
+    "skipAll": "Prefiero mirar primero y llenar esto después",
+    "skipAllHint": "Sin estos datos el plan no puede repartir nada todavía.",
+    "progress": "Paso {step} de {total}",
+    "next": "Continuar",
+    "back": "Atrás",
+    "skipStep": "No tengo de esto",
+    "finish": "Crear mi plan",
+    "remove": "Quitar",
+    "amount": "Monto",
+    "errorTitle": "No pudimos guardar tus respuestas",
+    "error": {
+      "invalid": "Revisa los montos: van como número, por ejemplo 1250.40",
+      "saveFailed": "No pudimos guardar. Intenta de nuevo en un momento.",
+      "signInRequired": "Tu sesión venció. Vuelve a entrar.",
+      "dependentsExceedMembers": "No pueden depender más personas de las que viven en la casa.",
+      "generic": "Algo no salió bien. Intenta de nuevo."
+    },
+    "household": {
+      "title": "¿Cuántos viven de este dinero?",
+      "detail": "Mil dólares libres no significan lo mismo para una persona que para una familia de cinco. Es el número que le da sentido a todo lo demás.",
+      "members": "Personas en la casa",
+      "membersHint": "Contándote a ti.",
+      "dependents": "De ellas, ¿cuántas no generan ingreso?",
+      "dependentsHint": "Hijos, familiares a cargo.",
+      "next": "Continuar a los ingresos"
+    },
+    "income": {
+      "title": "¿Qué entra, y cada cuánto?",
+      "detail": "Sueldos, honorarios, alquileres. Si trabajas por tu cuenta y el monto cambia, márcalo como aproximado: el plan lo trata distinto.",
+      "name": "De dónde viene",
+      "namePlaceholder": "Sueldo, cliente, alquiler…",
+      "frequency": "Cada cuánto",
+      "approximate": "El monto es aproximado",
+      "approximateHint": "Márcalo si cambia de mes a mes. No usaremos esta cifra como si fuera fija.",
+      "add": "Agregar otro ingreso",
+      "next": "Continuar a lo que ya tienes"
+    },
+    "savings": {
+      "title": "¿Qué tienes hoy?",
+      "detail": "Los saldos de tus cuentas y tus ahorros. Es el punto de partida del que el plan reparte.",
+      "name": "Nombre de la cuenta",
+      "namePlaceholder": "Banco General corriente, ahorros…",
+      "type": "Tipo",
+      "balance": "Saldo de hoy",
+      "add": "Agregar otra cuenta",
+      "next": "Continuar a los compromisos"
+    },
+    "commitments": {
+      "title": "¿Qué tienes que pagar todos los meses?",
+      "detail": "Alquiler, luz, agua, colegio, internet. Esto es lo que convierte un saldo en «lo que de verdad te queda».",
+      "name": "Qué pagas",
+      "namePlaceholder": "Alquiler, luz, colegio…",
+      "dueDay": "Día del mes",
+      "dueDayHint": "El día en que vence.",
+      "essential": "Es indispensable",
+      "essentialHint": "Lo que pagarías incluso en un mes malo. El plan lo cubre primero.",
+      "add": "Agregar otro compromiso",
+      "next": "Continuar a las deudas"
+    },
+    "debts": {
+      "title": "¿Debes algo?",
+      "detail": "Tarjetas, préstamos, hipoteca. Con la tasa podemos decirte cuál atacar primero y cuánto te ahorra hacerlo en ese orden.",
+      "name": "A quién le debes",
+      "namePlaceholder": "Visa Banco General, préstamo de auto…",
+      "balance": "Cuánto debes",
+      "apr": "Tasa anual",
+      "aprHint": "Está en tu estado de cuenta. Si no la sabes, déjala en blanco y agrégala después.",
+      "minimum": "Pago mínimo",
+      "minimumHint": "Lo mínimo que tienes que pagar al mes.",
+      "add": "Agregar otra deuda",
+      "next": "Continuar a tus metas"
+    },
+    "goals": {
+      "title": "¿Para qué es todo esto?",
+      "detail": "Un fondo de emergencia, un viaje, la inicial de una casa. Sin una meta, el dinero que sobra no tiene a dónde ir.",
+      "name": "Qué quieres lograr",
+      "namePlaceholder": "Fondo de emergencia, viaje, inicial…",
+      "target": "Cuánto necesitas",
+      "date": "Para cuándo",
+      "dateHint": "Opcional. Con fecha, el plan calcula cuánto apartar al mes.",
+      "add": "Agregar otra meta",
+      "buffer": "Colchón mínimo",
+      "bufferHint": "El saldo por debajo del cual no quieres bajar nunca. El plan lo protege antes que cualquier gasto opcional."
+    },
+    "frequency": {
+      "weekly": "Cada semana",
+      "biweekly": "Cada dos semanas",
+      "semimonthly": "Quincenal",
+      "monthly": "Cada mes",
+      "quarterly": "Cada tres meses",
+      "annual": "Una vez al año"
+    },
+    "accountType": {
+      "checking": "Cuenta corriente",
+      "savings": "Cuenta de ahorros",
+      "cash": "Efectivo",
+      "digital_wallet": "Billetera digital"
+    }
   }
 }
