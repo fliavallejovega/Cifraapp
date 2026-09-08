@@ -226,6 +226,37 @@ async function checkCopy() {
 }
 
 // ---------------------------------------------------------------------------
+// Disk
+// ---------------------------------------------------------------------------
+
+/**
+ * Whether this checkout is quietly filling the disk.
+ *
+ * It did: 5.9 GB in a working week, because turbo was caching the dev server's
+ * own scratch directory inside every cached build. The glob is fixed, but the
+ * reason nobody noticed for a week is that nothing was looking — so this looks,
+ * on every preflight, and names the command that reclaims it.
+ *
+ * Read-only, like everything else here. `pnpm disk:prune` is the thing that
+ * deletes, and a person runs it.
+ */
+async function checkDisk() {
+  await attempt('Disk', 'rebuildable caches are not filling the disk', async () => {
+    // Nonzero exit is how the script says «too much», so a rejection here is
+    // an answer rather than a failure.
+    const { stdout } = await run('node', [join(ROOT, 'scripts/disk.mjs'), '--json'], {
+      cwd: ROOT,
+    }).catch((error) => ({ stdout: error.stdout ?? '{}' }));
+    const measured = JSON.parse(stdout || '{}');
+    return {
+      ok: measured.overLimit !== true,
+      detail: `${measured.readable ?? 'unknown'} of rebuildable cache`,
+      fix: 'pnpm disk:prune',
+    };
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Vercel
 // ---------------------------------------------------------------------------
 
@@ -425,6 +456,7 @@ const credentials = await readCredentials();
 await checkGit();
 await checkToolchain();
 await checkCopy();
+await checkDisk();
 if (!QUICK) {
   await checkVercel(credentials);
   await checkDatabase();

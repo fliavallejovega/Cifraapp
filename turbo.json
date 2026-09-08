@@ -6,7 +6,12 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", ".next/**", "!.next/cache/**"],
+      // `.next/dev` is the dev server's own scratch directory, and it is not a
+      // build output — but it lives under `.next`, so the glob above swept it
+      // into every cached build. Each entry carried ~380 MB of somebody else's
+      // dev cache, and ten builds in a day cost 4 GB of disk. Excluding it is
+      // not an optimisation; caching it was a bug.
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**", "!.next/dev/**"],
       "env": ["NEXT_PUBLIC_*", "DATABASE_URL", "DIRECT_URL", "SUPABASE_SERVICE_ROLE_KEY", "APP_ENV"]
     },
     "typecheck": {
