@@ -109,7 +109,10 @@ export function productStructuredData(input: {
   description: string;
   url: string;
   lowestPrice: string;
+  /** When present, the offer is a range and is emitted as one. */
+  highestPrice?: string;
   currency: string;
+  inLanguage?: string;
 }): string {
   return JSON.stringify({
     '@context': 'https://schema.org',
@@ -117,13 +120,22 @@ export function productStructuredData(input: {
     name: input.name,
     description: input.description,
     applicationCategory: 'FinanceApplication',
+    applicationSubCategory: 'Personal finance',
     operatingSystem: 'Web',
     url: input.url,
-    offers: {
-      '@type': 'Offer',
-      price: input.lowestPrice,
-      priceCurrency: input.currency,
-    },
+    ...(input.inLanguage ? { inLanguage: input.inLanguage } : {}),
+    offers: input.highestPrice
+      ? {
+          '@type': 'AggregateOffer',
+          lowPrice: input.lowestPrice,
+          highPrice: input.highestPrice,
+          priceCurrency: input.currency,
+        }
+      : {
+          '@type': 'Offer',
+          price: input.lowestPrice,
+          priceCurrency: input.currency,
+        },
   });
 }
 
@@ -144,3 +156,101 @@ export function breadcrumbStructuredData(
     })),
   });
 }
+
+/**
+ * Metadata for the home page.
+ *
+ * The one page that has to be found by somebody who has never heard the name,
+ * so its title leads with what it is — a family finance app — and the name
+ * follows. Canonical and `hreflang` are emitted so the Spanish and English
+ * pages are read as one page in two languages rather than as two competitors.
+ */
+export function landingMetadata(input: {
+  readonly locale: string;
+  readonly siteName: string;
+  readonly title: string;
+  readonly description: string;
+  readonly keywords: readonly string[];
+}): Metadata {
+  const base = getClientEnv().NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
+  const url = `${base}/${input.locale}`;
+  const title = `${input.title} · ${input.siteName}`;
+
+  return {
+    title,
+    description: input.description,
+    keywords: [...input.keywords],
+    applicationName: input.siteName,
+    category: 'finance',
+    robots: publicRobots(),
+    alternates: {
+      canonical: url,
+      languages: {
+        ...Object.fromEntries(LOCALES.map((entry) => [entry, `${base}/${entry}`])),
+        'x-default': `${base}/es`,
+      },
+    },
+    openGraph: {
+      type: 'website',
+      title,
+      description: input.description,
+      url,
+      siteName: input.siteName,
+      locale: input.locale === 'en' ? 'en_US' : 'es_PA',
+      alternateLocale: input.locale === 'en' ? ['es_PA'] : ['en_US'],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description: input.description,
+    },
+  };
+}
+
+/**
+ * `FAQPage` for the questions on the home page.
+ *
+ * The questions and answers are the ones the page shows, read from the same
+ * rows; structured data that says something the page does not is the kind of
+ * mismatch search engines demote.
+ */
+export function faqStructuredData(
+  faqs: readonly { question: string; answer: string }[],
+): string | null {
+  if (faqs.length === 0) return null;
+
+  return JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((faq) => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: { '@type': 'Answer', text: faq.answer },
+    })),
+  });
+}
+
+/** The absolute address of a public path, for structured data. */
+export function absoluteUrl(path: string): string {
+  const base = getClientEnv().NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
+  return `${base}${path}`;
+}
+
+/** Every public route, in every language. The sitemap and robots file read this. */
+export const PUBLIC_PATHS = [
+  '',
+  '/features',
+  '/couples',
+  '/independents',
+  '/accountants',
+  '/pricing',
+  '/security',
+  '/about',
+  '/blog',
+  '/changelog',
+  '/contact',
+  '/terms',
+  '/privacy',
+] as const;
+
+export { LOCALES as SITE_LOCALES };

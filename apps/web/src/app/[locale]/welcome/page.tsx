@@ -98,6 +98,11 @@ async function HouseholdStep({ locale }: { locale: string }) {
  */
 function labels(read: (key: string) => string): Record<string, string> {
   const keys = [
+    'draft.notice',
+    'draft.account',
+    'draft.rent',
+    'draft.minimums',
+    'draft.other',
     'progress',
     'next',
     'back',

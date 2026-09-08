@@ -11,8 +11,10 @@ import {
   Rule,
 } from '@app/ui';
 import { households, subscriptions, transactions } from '@app/database/schema';
+import { getClientEnv } from '@app/validation/env';
 import { count, desc, eq, isNull, sql } from 'drizzle-orm';
 
+import { NewHouseholdForm } from '@/components/new-household-form';
 import { AdminNav } from '@/components/shell';
 import { adminDb } from '@/server/admin-session';
 import { requireAdmin } from '@/server/guard';
@@ -30,6 +32,9 @@ export const dynamic = 'force-dynamic';
  * The counts are aggregates. Opening a household's actual rows is a separate
  * action that does not exist yet, and when it does it should be logged in
  * `audit.admin_actions` before the first row is read.
+ *
+ * Creating one is the console's first write, and it is logged before anything
+ * else: see `household-actions.ts`.
  */
 export default async function HouseholdsPage() {
   const session = await requireAdmin();
@@ -46,6 +51,12 @@ export default async function HouseholdsPage() {
       transactions: sql<number>`(
         select count(*)::int from app.transactions t
          where t.household_id = ${households.id} and t.deleted_at is null
+      )`,
+      owner: sql<string | null>`(
+        select p.email from app.household_members m
+          join app.profiles p on p.id = m.user_id
+         where m.household_id = ${households.id} and m.role = 'owner' and m.status = 'active'
+         order by m.joined_at limit 1
       )`,
     })
     .from(households)
@@ -68,15 +79,20 @@ export default async function HouseholdsPage() {
         detail={`The 200 most recent. ${String(total?.value ?? 0)} transactions across the platform.`}
       />
 
+      <div className="mb-12">
+        <NewHouseholdForm productUrl={getClientEnv().NEXT_PUBLIC_APP_URL} />
+      </div>
+
       {rows.length === 0 ? (
         <EmptyState
           title="No households yet"
-          body="A household is created when somebody signs up and names one."
+          body="A household is created when somebody signs up and names one, or from the form above."
         />
       ) : (
         <Ledger caption="Households">
           <LedgerHead>
             <LedgerColumn>Household</LedgerColumn>
+            <LedgerColumn>Owner</LedgerColumn>
             <LedgerColumn>Plan</LedgerColumn>
             <LedgerColumn>Status</LedgerColumn>
             <LedgerColumn align="end">Transactions</LedgerColumn>
@@ -86,6 +102,7 @@ export default async function HouseholdsPage() {
             {rows.map((row) => (
               <LedgerRow key={row.id}>
                 <LedgerCell>{row.name}</LedgerCell>
+                <LedgerCell secondary>{row.owner ?? '—'}</LedgerCell>
                 <LedgerCell secondary>{row.plan ?? 'FREE'}</LedgerCell>
                 <LedgerCell secondary>{row.status ?? 'none'}</LedgerCell>
                 <LedgerCell align="end">{row.transactions}</LedgerCell>

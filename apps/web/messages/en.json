@@ -6,10 +6,15 @@
     "retry": "Try again"
   },
   "landing": {
-    "headline": "Your life's financial system.",
-    "subheadline": "Know what you have. Know what is coming. Know exactly what your next dollar should do.",
-    "primaryCta": "Build my financial system",
+    "headline": "Your family’s finances, with one clear answer: what the next dollar should do.",
+    "subheadline": "Cifrapp brings together your household’s accounts, bills, debts and goals, works out what is actually left, and builds a plan of action every month. A family finance app made for Panama.",
+    "seoTitle": "Family finance app: know what to do with your money",
+    "seoDescription": "Cifrapp is the finance app for families: it gathers accounts, bills, debts and goals, works out what is truly available and gives you a plan of action every month. Free to start. Built for Panama.",
+    "keywords": "family finance app, family budget, household budget, personal finance Panama, family expense tracking, debt payoff plan, family savings, tax reserve for freelancers Panama",
+    "primaryCta": "Start for free",
     "secondaryCta": "I already have an account",
+    "tryCta": "Try it with my numbers",
+    "proof": "Free with up to {transactions} movements a month · No bank connection · Export everything, any time",
     "switchLanguage": "Español"
   },
   "marketing": {
@@ -28,7 +33,8 @@
       "changelog": "Changelog",
       "terms": "Terms",
       "privacy": "Privacy",
-      "signIn": "Sign in"
+      "signIn": "Sign in",
+      "start": "Start for free"
     },
     "footer": {
       "product": "Product",
@@ -43,42 +49,109 @@
     },
     "home": {
       "secondaryCta": "See how it works",
-      "mechanism": {
-        "title": "Money is a level, not a number",
-        "detail": "Knowing you have $4,180 helps very little. What you need to know is how much of it already belongs to something and how much is genuinely left.",
-        "gaugeLabel": "Available against the total balance",
-        "buffer": "Buffer minimum",
-        "surface": "Current surface",
-        "readout": "Safe to spend",
-        "basis": "of {liquid} across accounts, with {committed} already committed"
+      "try": {
+        "title": "Try it now with your numbers",
+        "detail": "No account and nothing saved. Enter what you have and what you must pay this month, and see what is actually left.",
+        "balance": "What you have in accounts",
+        "rent": "Rent or mortgage",
+        "minimums": "Card and loan minimums",
+        "other": "Other payments this month",
+        "otherHint": "Power, water, internet, school, insurance.",
+        "buffer": "Buffer you will not touch",
+        "gaugeLabel": "Available over what you have",
+        "bufferMark": "Buffer",
+        "surfaceMark": "Available",
+        "available": "Actually available",
+        "availableDetail": "of {balance} in accounts, with {committed} already committed and a {buffer} buffer",
+        "short": "{amount} short of covering the month",
+        "shortDetail": "Cifrapp tells you before the first due date, not after.",
+        "orderTitle": "The order it gets covered in",
+        "covered": "Covered",
+        "partial": "{amount} of it",
+        "pending": "Not covered",
+        "free": "Free for expensive debt and goals",
+        "cta": "Save these numbers and build my plan",
+        "ctaHint": "When you create your account, the setup assistant starts with these figures already filled in."
       },
-      "claims": {
-        "title": "What claims that money",
-        "item": "Item",
-        "amount": "Amount",
-        "rent": "Rent, due on the 1st",
-        "card": "Card minimum payment",
-        "electricity": "Electricity, due on the 14th",
-        "taxReserve": "Estimated tax reserve"
-      },
-      "refusals": {
-        "title": "What this product refuses to do",
-        "detail": "Almost everything below is a decision not to do something that would have been easier.",
-        "duplicates": {
-          "claim": "It will not import the same transaction twice",
-          "detail": "Every movement carries a fingerprint computed from the account, the date, the amount and the normalized description. Upload the same statement again and nothing happens."
+      "capabilities": {
+        "title": "Everything it does for your family",
+        "detail": "Six things done today in your head, on a sheet, or not at all. Demonstration figures, consistent with each other.",
+        "import": {
+          "title": "Upload the statement and duplicate nothing",
+          "detail": "PDF, CSV, XLSX or OFX, as your bank hands it over. Every movement gets a fingerprint: upload the same file twice and the second does not go in. Transfers between your own accounts do not count as spending.",
+          "caption": "Four lines of a statement, imported",
+          "movement": "Movement",
+          "result": "What happened",
+          "cardPayment": "CARD PAYMENT",
+          "transfer": "Transfer · not spending",
+          "grocery": "SUPER 99 VIA ESPAÑA",
+          "groceryCategory": "Groceries",
+          "ride": "UBER *TRIP",
+          "rideCategory": "Transport",
+          "duplicate": "Already there · skipped",
+          "high": "High confidence"
         },
-        "transfers": {
-          "claim": "Paying your card is not an expense",
-          "detail": "Moving money between your own accounts is not spending. Counting it would double every purchase already on the card and make a disciplined month look catastrophic."
+        "plan": {
+          "title": "A plan of action every month, line by line",
+          "detail": "When the salary lands, the plan says where every dollar goes and in what order: overdue, due soon, minimums, tax reserve, buffer, expensive debt, goals. If you disagree with the order, you change it.",
+          "caption": "A {income} salary on the 15th, allocated",
+          "line": "Line",
+          "why": "Why it is here",
+          "rent": "Rent",
+          "rentWhy": "Due on the 1st · essential",
+          "card": "Card, minimum payment",
+          "cardWhy": "Avoids late fees and extra interest",
+          "electricity": "Electricity",
+          "electricityWhy": "Due on the 14th",
+          "tax": "Estimated tax reserve",
+          "taxWhy": "It was never yours",
+          "debt": "Card, extra payment",
+          "debtWhy": "The most expensive debt",
+          "goal": "Emergency fund",
+          "goalWhy": "What remains goes to the first goal",
+          "total": "The whole salary has a destination"
         },
-        "ai": {
-          "claim": "AI never decides a balance",
-          "detail": "It explains and it classifies; it does not compute. Every figure comes from your records, and the system rejects any answer citing a number it was not given."
+        "debts": {
+          "title": "Get out of debt with the strategy that saves the most",
+          "detail": "Compare avalanche against snowball with your real debts, and see in how many months you are free and how much interest you save.",
+          "caption": "Three debts, {extra} extra a month",
+          "strategy": "Strategy",
+          "months": "Free in",
+          "interest": "Total interest",
+          "monthsValue": "{months} months",
+          "avalanche": "Avalanche · most expensive first",
+          "snowball": "Snowball · smallest first",
+          "minimums": "Minimums only",
+          "saving": "With {extra} extra a month: {months} months sooner and {interest} less interest than paying minimums only."
         },
         "tax": {
-          "claim": "We never say “your tax bill”",
-          "detail": "We say estimated tax reserve, with the version of the rules that produced it. Panama's rules live in the database with their source, and nothing is shown until somebody qualified has reviewed them."
+          "title": "If you are self-employed, the tax reserve sets itself aside",
+          "detail": "Every income sets aside the percentage you choose, from the day it arrives. It is called an estimate because it is one: your accountant has the last word, and it is always named that way here.",
+          "caption": "One invoice, collected",
+          "invoice": "Invoice collected",
+          "reserve": "Estimated tax reserve",
+          "reserveWhy": "{rate} · a rate you set",
+          "yours": "What is actually yours"
+        },
+        "goals": {
+          "title": "Goals with a number: how much to set aside each month",
+          "detail": "For every goal, how much you would have to save a month, and what changes if you take on more risk. Modelled with assumptions you can edit. We do not tell you what to invest in: that is regulated advice, and we do not give it.",
+          "caption": "A {target} goal in {months} months, with {current} already saved",
+          "level": "Risk level",
+          "monthly": "Per month",
+          "cash": "Cash",
+          "conservative": "Conservative",
+          "balanced": "Balanced",
+          "growth": "Growth",
+          "note": "At each level’s expected assumption. A level whose horizon is too short is flagged, whatever the arithmetic says."
+        },
+        "chat": {
+          "title": "Ask in your own words and get an answer with your figures",
+          "detail": "The assistant knows your case and answers with the numbers in your records. It rejects any answer that mentions a figure that did not come from there.",
+          "caption": "A conversation",
+          "question": "Can I pay off the card in full this month?",
+          "answer": "Not without dipping below the buffer. You have {available} available and the card owes {card}. If you pay the {minimum} minimum and add {extra}, you stay above the buffer and the card drops to {remaining}.",
+          "grounded": "Every figure in this answer came from your records"
         }
       },
       "who": {
@@ -86,28 +159,59 @@
         "detail": "The same engine, three different situations.",
         "couples": {
           "title": "Couples and families",
-          "detail": "Finances managed together without losing what belongs to each person. You decide what gets shared."
+          "detail": "Finances managed together without losing what belongs to each person. Each person decides what to share and what not to."
         },
         "independents": {
           "title": "Independent professionals",
-          "detail": "Income arrives in full and feels available. The tax reserve sets aside what was never yours, from the day it lands."
+          "detail": "Income arrives whole and feels available. The tax reserve sets aside what was never yours, from the day it lands."
         },
         "accountants": {
           "title": "Accountants",
-          "detail": "Explicit, scoped, revocable access. An accountant never gains access automatically."
+          "detail": "Explicit access, scoped and revocable. An accountant never gets access automatically."
         }
       },
       "pricing": {
-        "title": "Pricing",
-        "detail": "A free plan that genuinely works, and paid plans when your situation asks for them.",
-        "from": "From {price} a month on {plan}.",
-        "link": "See every plan"
+        "title": "Plans",
+        "detail": "A free plan that is genuinely useful. Prices and limits come from the database: they are the same ones the product enforces.",
+        "free": "Free",
+        "perMonth": "{price} / month",
+        "members": "{count, plural, =1 {1 person} other {# people}}",
+        "membersUnlimited": "Unlimited people",
+        "ai": "{count} assistant queries a month",
+        "aiNone": "No assistant",
+        "tax": "Tax module for the self-employed",
+        "imports": "{count} imports a month",
+        "importsUnlimited": "Unlimited imports",
+        "choose": "Choose {plan}",
+        "chooseFree": "Start for free",
+        "link": "Compare every limit"
+      },
+      "refusals": {
+        "title": "What this product refuses to do",
+        "detail": "Almost everything below is a decision not to do something that would have been easier.",
+        "duplicates": {
+          "claim": "It never imports the same transaction twice",
+          "detail": "Every movement has a fingerprint computed from the account, the date, the amount and the normalized description. Upload the same statement again and nothing happens."
+        },
+        "transfers": {
+          "claim": "Your card payment does not count as spending",
+          "detail": "Moving money between your own accounts is not spending. Counting it would double every purchase already on the card and make a disciplined month look like a disaster."
+        },
+        "ai": {
+          "claim": "AI never decides a balance",
+          "detail": "It explains and classifies; it does not compute. Every figure comes from your records, and the system rejects any answer that mentions a number we did not give it."
+        },
+        "tax": {
+          "claim": "We never say “your tax”",
+          "detail": "We say estimated tax reserve, with the version of the rules that produced it. Panama’s rules live in the database, with their source, and are not shown until somebody qualified has reviewed them."
+        }
       },
       "faq": {
-        "title": "Questions"
+        "title": "Frequently asked questions"
       },
       "close": {
-        "title": "Your money is complicated. Your financial system shouldn't be."
+        "title": "Your family deserves to know what to do with its money, not just how much it has.",
+        "detail": "Start for free, with this month’s numbers. If you ever leave, you take everything with you."
       }
     },
     "pricing": {
@@ -651,7 +755,8 @@
       "light": "Light",
       "dark": "Dark"
     },
-    "investments": "Investing"
+    "investments": "Investing",
+    "console": "SaaS console"
   },
   "accounts": {
     "title": "Your accounts",
@@ -836,6 +941,13 @@
       "savings": "Savings account",
       "cash": "Cash",
       "digital_wallet": "Digital wallet"
+    },
+    "draft": {
+      "notice": "We loaded the figures you tried on the home page. Fix whatever does not fit.",
+      "account": "Main account",
+      "rent": "Rent or mortgage",
+      "minimums": "Card and loan minimums",
+      "other": "Other payments this month"
     }
   },
   "records": {

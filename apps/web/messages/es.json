@@ -6,10 +6,15 @@
     "retry": "Reintentar"
   },
   "landing": {
-    "headline": "El sistema financiero de tu vida.",
-    "subheadline": "Sabes cuánto tienes. Sabes qué viene. Sabes exactamente qué debe hacer tu próximo dólar.",
-    "primaryCta": "Crear mi sistema financiero",
+    "headline": "Las finanzas de tu familia, con una respuesta clara: qué hacer con el próximo dólar.",
+    "subheadline": "Cifrapp reúne las cuentas, los pagos, las deudas y las metas de tu hogar, calcula cuánto queda de verdad y arma un plan de acción cada mes. Una app de finanzas familiares hecha para Panamá.",
+    "seoTitle": "App de finanzas familiares: sabe qué hacer con tu dinero",
+    "seoDescription": "Cifrapp es la app de finanzas para la familia: junta cuentas, pagos, deudas y metas, calcula cuánto queda disponible de verdad y te da un plan de acción cada mes. Gratis para empezar. Hecha para Panamá.",
+    "keywords": "finanzas familiares, app de finanzas para la familia, presupuesto familiar, finanzas personales Panamá, control de gastos familiar, plan de pago de deudas, ahorro familiar, reserva fiscal independientes Panamá",
+    "primaryCta": "Empezar gratis",
     "secondaryCta": "Ya tengo cuenta",
+    "tryCta": "Probar con mis números",
+    "proof": "Gratis con hasta {transactions} movimientos al mes · Sin conectar tu banco · Exportas todo cuando quieras",
     "switchLanguage": "English"
   },
   "marketing": {
@@ -28,7 +33,8 @@
       "changelog": "Novedades",
       "terms": "Términos",
       "privacy": "Privacidad",
-      "signIn": "Entrar"
+      "signIn": "Entrar",
+      "start": "Empezar gratis"
     },
     "footer": {
       "product": "Producto",
@@ -43,23 +49,142 @@
     },
     "home": {
       "secondaryCta": "Ver cómo funciona",
-      "mechanism": {
-        "title": "El dinero es un nivel, no un número",
-        "detail": "Saber que tienes $4,180 sirve de poco. Lo que necesitas saber es cuánto de eso ya tiene dueño y cuánto queda de verdad.",
-        "gaugeLabel": "Disponible sobre el saldo total",
-        "buffer": "Colchón mínimo",
-        "surface": "Superficie actual",
-        "readout": "Disponible para gastar",
-        "basis": "de {liquid} en cuentas, con {committed} ya comprometido"
+      "try": {
+        "title": "Pruébalo ahora con tus números",
+        "detail": "Sin cuenta y sin guardar nada. Escribe lo que tienes y lo que debes pagar este mes, y mira cuánto queda de verdad.",
+        "balance": "Lo que tienes en cuentas",
+        "rent": "Alquiler o hipoteca",
+        "minimums": "Mínimos de tarjetas y préstamos",
+        "other": "Otros pagos del mes",
+        "otherHint": "Luz, agua, internet, colegio, seguro.",
+        "buffer": "Colchón que no quieres tocar",
+        "gaugeLabel": "Disponible sobre lo que tienes",
+        "bufferMark": "Colchón",
+        "surfaceMark": "Disponible",
+        "available": "Disponible de verdad",
+        "availableDetail": "de {balance} en cuentas, con {committed} ya comprometido y {buffer} de colchón",
+        "short": "Faltan {amount} para cubrir el mes",
+        "shortDetail": "Cifrapp te lo dice antes del primer vencimiento, no después.",
+        "orderTitle": "En qué orden se cubre",
+        "covered": "Cubierto",
+        "partial": "Alcanza {amount}",
+        "pending": "No alcanza",
+        "free": "Libre para deuda cara y metas",
+        "cta": "Guardar estos números y armar mi plan",
+        "ctaHint": "Al crear tu cuenta, el asistente de inicio arranca con estas cifras ya cargadas."
       },
-      "claims": {
-        "title": "Qué reclama ese dinero",
-        "item": "Concepto",
-        "amount": "Monto",
-        "rent": "Alquiler, vence el 1",
-        "card": "Pago mínimo de la tarjeta",
-        "electricity": "Electricidad, vence el 14",
-        "taxReserve": "Reserva fiscal estimada"
+      "capabilities": {
+        "title": "Todo lo que hace por tu familia",
+        "detail": "Seis cosas que hoy se hacen de cabeza, en una hoja, o no se hacen. Las cifras son de demostración y son coherentes entre sí.",
+        "import": {
+          "title": "Sube el estado de cuenta y no duplicas nada",
+          "detail": "PDF, CSV, XLSX u OFX, como lo entrega tu banco. Cada movimiento recibe una huella: si subes el mismo archivo dos veces, la segunda no entra. Los traspasos entre tus propias cuentas no cuentan como gasto.",
+          "caption": "Cuatro líneas de un estado de cuenta, importadas",
+          "movement": "Movimiento",
+          "result": "Qué pasó",
+          "cardPayment": "PAGO TARJETA",
+          "transfer": "Traspaso · no es gasto",
+          "grocery": "SUPER 99 VIA ESPAÑA",
+          "groceryCategory": "Supermercado",
+          "ride": "UBER *TRIP",
+          "rideCategory": "Transporte",
+          "duplicate": "Ya estaba · omitido",
+          "high": "Alta confianza"
+        },
+        "plan": {
+          "title": "Un plan de acción cada mes, línea por línea",
+          "detail": "Cuando entra el sueldo, el plan dice a dónde va cada dólar y en qué orden: lo vencido, lo próximo, los mínimos, la reserva fiscal, el colchón, la deuda cara y las metas. Si no estás de acuerdo con el orden, lo cambias.",
+          "caption": "Sueldo de {income} el día 15, repartido",
+          "line": "Línea",
+          "why": "Por qué está aquí",
+          "rent": "Alquiler",
+          "rentWhy": "Vence el 1 · esencial",
+          "card": "Tarjeta, pago mínimo",
+          "cardWhy": "Evita mora e interés adicional",
+          "electricity": "Electricidad",
+          "electricityWhy": "Vence el 14",
+          "tax": "Reserva fiscal estimada",
+          "taxWhy": "Nunca fue tuyo",
+          "debt": "Tarjeta, abono extra",
+          "debtWhy": "La deuda más cara",
+          "goal": "Fondo de emergencia",
+          "goalWhy": "Lo que queda va a la primera meta",
+          "total": "Todo el sueldo tiene destino"
+        },
+        "debts": {
+          "title": "Sal de las deudas con la estrategia que más ahorra",
+          "detail": "Compara avalancha contra bola de nieve con tus deudas reales, y ve en cuántos meses quedas libre y cuánto interés te ahorras.",
+          "caption": "Tres deudas, {extra} extra al mes",
+          "strategy": "Estrategia",
+          "months": "Libre en",
+          "interest": "Interés total",
+          "monthsValue": "{months} meses",
+          "avalanche": "Avalancha · la más cara primero",
+          "snowball": "Bola de nieve · la más chica primero",
+          "minimums": "Solo mínimos",
+          "saving": "Con {extra} extra al mes: {months} meses menos y {interest} menos de interés que pagando solo mínimos."
+        },
+        "tax": {
+          "title": "Si eres independiente, la reserva fiscal se aparta sola",
+          "detail": "Cada ingreso aparta el porcentaje que tú fijas, desde el día que entra. Se llama estimación porque lo es: tu contador tiene la última palabra, y aquí siempre se dice así.",
+          "caption": "Una factura cobrada",
+          "invoice": "Factura cobrada",
+          "reserve": "Reserva fiscal estimada",
+          "reserveWhy": "{rate} · tasa que tú fijas",
+          "yours": "Lo que sí es tuyo"
+        },
+        "goals": {
+          "title": "Metas con un número: cuánto apartar cada mes",
+          "detail": "Para cada meta, cuánto tendrías que ahorrar al mes, y qué cambia si asumes más riesgo. Se modela con supuestos que puedes editar. No te decimos en qué invertir: eso es asesoría regulada, y no la damos.",
+          "caption": "Meta de {target} en {months} meses, con {current} ya ahorrados",
+          "level": "Nivel de riesgo",
+          "monthly": "Al mes",
+          "cash": "Efectivo",
+          "conservative": "Conservador",
+          "balanced": "Balanceado",
+          "growth": "Crecimiento",
+          "note": "Con el supuesto esperado de cada nivel. Un nivel cuyo horizonte es demasiado corto se marca, diga lo que diga la aritmética."
+        },
+        "chat": {
+          "title": "Pregunta en tu idioma y recibe una respuesta con tus cifras",
+          "detail": "El asistente conoce tu caso y responde con los números de tus registros. Rechaza cualquier respuesta que mencione una cifra que no salió de ahí.",
+          "caption": "Una conversación",
+          "question": "¿Puedo pagar la tarjeta completa este mes?",
+          "answer": "No sin bajar del colchón. Tienes {available} disponibles y la tarjeta debe {card}. Si pagas el mínimo de {minimum} y abonas {extra} más, sigues sobre el colchón y la tarjeta baja a {remaining}.",
+          "grounded": "Cada cifra de esta respuesta salió de tus registros"
+        }
+      },
+      "who": {
+        "title": "Para quién es",
+        "detail": "El mismo motor, tres situaciones distintas.",
+        "couples": {
+          "title": "Parejas y familias",
+          "detail": "Las finanzas que se administran juntas sin perder lo que es de cada quien. Cada persona decide qué comparte y qué no."
+        },
+        "independents": {
+          "title": "Profesionales independientes",
+          "detail": "El ingreso llega completo y se siente disponible. La reserva fiscal aparta lo que nunca fue tuyo, desde el día que entra."
+        },
+        "accountants": {
+          "title": "Contadores",
+          "detail": "Acceso explícito, con alcance y revocable. Un contador nunca obtiene acceso automáticamente."
+        }
+      },
+      "pricing": {
+        "title": "Planes",
+        "detail": "Un plan gratuito que sirve de verdad. Los precios y los límites salen de la base de datos: son los mismos que aplica el producto.",
+        "free": "Gratis",
+        "perMonth": "{price} / mes",
+        "members": "{count, plural, =1 {1 persona} other {# personas}}",
+        "membersUnlimited": "Personas sin límite",
+        "ai": "{count} consultas al asistente al mes",
+        "aiNone": "Sin asistente",
+        "tax": "Módulo fiscal para independientes",
+        "imports": "{count} importaciones al mes",
+        "importsUnlimited": "Importaciones sin límite",
+        "choose": "Elegir {plan}",
+        "chooseFree": "Empezar gratis",
+        "link": "Comparar todos los límites"
       },
       "refusals": {
         "title": "Lo que este producto se niega a hacer",
@@ -81,33 +206,12 @@
           "detail": "Decimos reserva fiscal estimada, con la versión de las reglas que la produjo. Las reglas de Panamá viven en la base de datos, con su fuente, y no se muestran hasta que alguien calificado las revisa."
         }
       },
-      "who": {
-        "title": "Para quién es",
-        "detail": "El mismo motor, tres situaciones distintas.",
-        "couples": {
-          "title": "Parejas y familias",
-          "detail": "Finanzas que se administran juntas sin perder lo que es de cada quien. Tú decides qué se comparte."
-        },
-        "independents": {
-          "title": "Profesionales independientes",
-          "detail": "El ingreso llega completo y se siente disponible. La reserva fiscal aparta lo que nunca fue tuyo, desde el día que entra."
-        },
-        "accountants": {
-          "title": "Contadores",
-          "detail": "Acceso explícito, con alcance y revocable. Un contador nunca obtiene acceso automáticamente."
-        }
-      },
-      "pricing": {
-        "title": "Precios",
-        "detail": "Un plan gratuito que sirve de verdad, y planes pagos cuando tu situación lo pide.",
-        "from": "Desde {price} al mes con {plan}.",
-        "link": "Ver todos los planes"
-      },
       "faq": {
-        "title": "Preguntas"
+        "title": "Preguntas frecuentes"
       },
       "close": {
-        "title": "Tu dinero es complicado. Tu sistema financiero no debería serlo."
+        "title": "Tu familia merece saber qué hacer con su dinero, no solo cuánto tiene.",
+        "detail": "Empieza gratis, con tus números de este mes. Si un día te vas, te llevas todo."
       }
     },
     "pricing": {
@@ -651,7 +755,8 @@
       "light": "Claro",
       "dark": "Oscuro"
     },
-    "investments": "Inversiones"
+    "investments": "Inversiones",
+    "console": "Consola SaaS"
   },
   "accounts": {
     "title": "Tus cuentas",
@@ -836,6 +941,13 @@
       "savings": "Cuenta de ahorros",
       "cash": "Efectivo",
       "digital_wallet": "Billetera digital"
+    },
+    "draft": {
+      "notice": "Cargamos las cifras que probaste en la página de inicio. Corrige lo que no encaje.",
+      "account": "Cuenta principal",
+      "rent": "Alquiler o hipoteca",
+      "minimums": "Mínimos de tarjetas y préstamos",
+      "other": "Otros pagos del mes"
     }
   },
   "records": {

@@ -1,3 +1,4 @@
+import { getClientEnv } from '@app/validation/env';
 import type { ReactNode } from 'react';
 
 import { AppShell } from '@/components/app-shell';
@@ -29,7 +30,11 @@ export default async function ProductLayout({
     session?.households.find((household) => household.id === session.activeHouseholdId)?.name ?? '';
 
   return (
-    <AppShell locale={locale} householdName={householdName}>
+    <AppShell
+      locale={locale}
+      householdName={householdName}
+      consoleUrl={session?.isPlatformAdmin ? (getClientEnv().NEXT_PUBLIC_ADMIN_URL ?? null) : null}
+    >
       {children}
     </AppShell>
   );

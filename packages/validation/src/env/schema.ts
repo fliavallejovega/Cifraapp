@@ -78,6 +78,8 @@ export const clientEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.url('NEXT_PUBLIC_SUPABASE_URL must be a URL.'),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1, 'NEXT_PUBLIC_SUPABASE_ANON_KEY is required.'),
   NEXT_PUBLIC_APP_URL: z.url('NEXT_PUBLIC_APP_URL must be a URL.'),
+  /** Where the administrative console lives. Absent means no link is shown. */
+  NEXT_PUBLIC_ADMIN_URL: z.url('NEXT_PUBLIC_ADMIN_URL must be a URL.').optional(),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;

@@ -36,6 +36,13 @@ export interface Session {
     timeZone: string;
   }[];
   readonly activeHouseholdId: string | null;
+  /**
+   * Whether this person also holds a seat in the administrative console. Read
+   * in the same statement as the profile, so it costs no round trip, and used
+   * for exactly one thing: showing the door. The console checks again on its
+   * own side; this flag opens nothing.
+   */
+  readonly isPlatformAdmin: boolean;
 }
 
 function database(): Database {
@@ -81,12 +88,14 @@ export const loadSession = cache(async (): Promise<Session | null> => {
         email: profiles.email,
         displayName: profiles.displayName,
         locale: profiles.locale,
+        isPlatformAdmin: sql<boolean>`platform.is_admin()`,
       })
       .from(profiles)
       .where(eq(profiles.id, user.id))
       .limit(1);
 
     if (!profile) return null;
+    const { isPlatformAdmin, ...profileRow } = profile;
 
     const memberships = await tx
       .select({
@@ -108,9 +117,10 @@ export const loadSession = cache(async (): Promise<Session | null> => {
 
     return {
       user,
-      profile,
+      profile: profileRow,
       households: memberships,
       activeHouseholdId: chooseHousehold(memberships, await preferredHouseholdId()),
+      isPlatformAdmin,
     };
   });
 });

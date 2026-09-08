@@ -1,4 +1,4 @@
-import { Rule } from '@app/ui';
+import { Button, Rule } from '@app/ui';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 
@@ -56,6 +56,9 @@ export async function SiteHeader({ locale }: { locale: string }) {
           </Link>
           <Link href="/sign-in" className="text-sm underline underline-offset-4">
             {t('nav.signIn')}
+          </Link>
+          <Link href="/sign-up">
+            <Button size="sm">{t('nav.start')}</Button>
           </Link>
         </div>
       </div>

@@ -64,10 +64,13 @@ const DESTINATIONS = [
 export async function AppShell({
   locale,
   householdName,
+  consoleUrl,
   children,
 }: {
   readonly locale: string;
   readonly householdName: string;
+  /** The administrative console, for the few people who hold a seat there. */
+  readonly consoleUrl: string | null;
   readonly children: ReactNode;
 }) {
   const t = await getTranslations('nav');
@@ -84,6 +87,7 @@ export async function AppShell({
     <ShellChrome
       destinations={destinations}
       householdName={householdName}
+      consoleUrl={consoleUrl}
       labels={{
         brand: common('appName'),
         menu: t('label'),
@@ -92,6 +96,7 @@ export async function AppShell({
         household: t('householdLabel'),
         collapse: t('collapse'),
         expand: t('expand'),
+        console: t('console'),
         theme: {
           legend: t('theme.legend'),
           system: t('theme.system'),

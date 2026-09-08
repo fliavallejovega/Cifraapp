@@ -101,6 +101,8 @@ export interface ShellDestination {
 export interface ShellChromeProps {
   readonly destinations: readonly ShellDestination[];
   readonly householdName: string;
+  /** Present only for a platform administrator with a console to go to. */
+  readonly consoleUrl: string | null;
   readonly labels: {
     readonly brand: string;
     readonly menu: string;
@@ -109,6 +111,7 @@ export interface ShellChromeProps {
     readonly household: string;
     readonly collapse: string;
     readonly expand: string;
+    readonly console: string;
     readonly theme: ThemeSwitchLabels;
   };
   /** The sign-out form, built on the server around its action. */
@@ -160,6 +163,7 @@ function I18nLink({ href, children, ...rest }: PropiedadesDeEnlace) {
 export function ShellChrome({
   destinations,
   householdName,
+  consoleUrl,
   labels,
   signOut,
   children,
@@ -169,6 +173,16 @@ export function ShellChrome({
 
   const footer = (
     <div className="flex flex-col gap-4">
+      {consoleUrl && (
+        // A plain anchor: the console is another application on another
+        // origin, and the product's router has no business prefetching it.
+        <a
+          href={consoleUrl}
+          className="block rounded-(--radius-sm) text-xs text-[color:var(--color-panel-ink-secondary)] underline underline-offset-4 transition-opacity duration-(--duration-quick) hover:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-brand)]"
+        >
+          {labels.console}
+        </a>
+      )}
       <ThemeSwitch labels={labels.theme} />
       <div className="flex min-w-0 items-center justify-between gap-3">
         {/* The household's name is the switcher. A person who belongs to two —

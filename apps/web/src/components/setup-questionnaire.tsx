@@ -1,8 +1,9 @@
 'use client';
 
-import { Button, Field, Input, Problem, Select } from '@app/ui';
-import { useActionState, useState, type ReactNode } from 'react';
+import { Button, Field, Input, Problem, Select, Status } from '@app/ui';
+import { useActionState, useEffect, useState, type ReactNode } from 'react';
 
+import { LANDING_DRAFT_KEY, type LandingDraft } from '@/components/marketing/try-it';
 import { completeSetup, type SetupResult } from '@/server/onboarding-actions';
 
 /**
@@ -100,6 +101,55 @@ export function SetupQuestionnaire({ locale, currencySymbol, t }: SetupQuestionn
     { name: '', targetAmount: '', targetDate: '' },
   ]);
 
+  // The figures a person tried on the home page, if they came from there. Read
+  // once, on the first render in the browser, and then removed: they have
+  // become this form's state, and a second visit should not resurrect them.
+  const [fromDraft, setFromDraft] = useState(false);
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(LANDING_DRAFT_KEY);
+      if (!raw) return;
+      window.localStorage.removeItem(LANDING_DRAFT_KEY);
+      const draft = JSON.parse(raw) as Partial<LandingDraft>;
+      const has = (value: unknown): value is string =>
+        typeof value === 'string' && value.trim() !== '' && value.trim() !== '0';
+
+      if (has(draft.balance)) {
+        setAccountRows([
+          { name: copy('draft.account'), accountType: 'checking', balance: draft.balance },
+        ]);
+      }
+      if (has(draft.buffer)) setBufferMinimum(draft.buffer);
+
+      const rows: CommitmentRow[] = [];
+      if (has(draft.rent)) {
+        rows.push({ name: copy('draft.rent'), amount: draft.rent, dueDay: '1', isEssential: true });
+      }
+      if (has(draft.minimums)) {
+        rows.push({
+          name: copy('draft.minimums'),
+          amount: draft.minimums,
+          dueDay: '5',
+          isEssential: true,
+        });
+      }
+      if (has(draft.other)) {
+        rows.push({
+          name: copy('draft.other'),
+          amount: draft.other,
+          dueDay: '15',
+          isEssential: true,
+        });
+      }
+      if (rows.length > 0) setCommitments(rows);
+
+      setFromDraft(true);
+    } catch {
+      // Storage unavailable or unreadable. The form opens as it always did.
+    }
+    // Runs once; `copy` is stable for the life of the page.
+  }, []);
+
   const step: Step = STEPS[index] ?? 'household';
   const isLast = index === STEPS.length - 1;
 
@@ -133,6 +183,8 @@ export function SetupQuestionnaire({ locale, currencySymbol, t }: SetupQuestionn
       <input type="hidden" name="payload" value={JSON.stringify(payload)} />
 
       <Progress index={index} total={STEPS.length} label={copy('progress') ?? ''} />
+
+      {fromDraft && <Status tone="neutral">{copy('draft.notice')}</Status>}
 
       {state.error && (
         <Problem
