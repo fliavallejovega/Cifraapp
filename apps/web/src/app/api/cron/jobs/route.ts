@@ -15,6 +15,18 @@ import { runQueuedJobs } from '@/server/jobs';
  * closed the tab before the work started, is picked up here.
  *
  * Not public. Only Vercel Cron, with the matching bearer secret, may invoke it.
+ *
+ * **It runs once a day, and that is a platform limit rather than a design.**
+ * Vercel's Hobby plan accepts a cron only at daily frequency; a `*​/5 * * * *`
+ * schedule is rejected at deploy time and takes the entire deployment down with
+ * it, which is exactly how it was discovered. On a plan that allows it, every
+ * five minutes is the right setting and only `vercel.json` has to change.
+ *
+ * A daily sweep is still the correct *fallback*, because it is not the primary
+ * path: an import runs itself the moment its response is flushed, and the
+ * progress screen nudges the queue on every poll. This exists for the job whose
+ * invocation was killed and whose uploader closed the tab — and that job waits
+ * hours rather than minutes until the plan changes.
  */
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
