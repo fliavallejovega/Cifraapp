@@ -80,3 +80,8 @@ pnpm-debug.log*
 
 # Pime Git preflight state — derived, regenerated on every run.
 .pime/preflight.json
+
+# Pime Git — declaración versionada; el resto es estado derivado y tokens.
+.pime/*
+!.pime/project.json
+.claude/settings.local.json
