@@ -302,7 +302,9 @@
       "email": "Email",
       "password": "Password",
       "passwordHint": "At least 8 characters.",
-      "displayName": "What we should call you"
+      "displayName": "What we should call you",
+      "showPassword": "Show the password",
+      "hidePassword": "Hide the password"
     },
     "signIn": {
       "title": "Sign in to your system",

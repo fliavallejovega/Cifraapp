@@ -5,9 +5,11 @@ export { Card, Stat, type CardProps, type CardTone, type StatProps } from './com
 export {
   Field,
   Input,
+  PasswordInput,
   Select,
   type FieldProps,
   type InputProps,
+  type PasswordInputProps,
   type SelectProps,
 } from './components/field';
 export {

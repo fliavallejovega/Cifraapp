@@ -46,6 +46,8 @@ export default async function SignInPage({
           email: t('fields.email'),
           password: t('fields.password'),
           passwordHint: t('fields.passwordHint'),
+          showPassword: t('fields.showPassword'),
+          hidePassword: t('fields.hidePassword'),
           submit: t('signIn.submit'),
           errorTitle: t('errors.title'),
           errors: {

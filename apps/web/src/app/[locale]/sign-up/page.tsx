@@ -33,6 +33,8 @@ export default async function SignUpPage({ params }: { params: Promise<{ locale:
           email: t('fields.email'),
           password: t('fields.password'),
           passwordHint: t('fields.passwordHint'),
+          showPassword: t('fields.showPassword'),
+          hidePassword: t('fields.hidePassword'),
           displayName: t('fields.displayName'),
           submit: t('signUp.submit'),
           errorTitle: t('errors.title'),

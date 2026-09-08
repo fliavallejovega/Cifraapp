@@ -302,7 +302,9 @@
       "email": "Correo",
       "password": "Contraseña",
       "passwordHint": "Mínimo 8 caracteres.",
-      "displayName": "Cómo te llamamos"
+      "displayName": "Cómo te llamamos",
+      "showPassword": "Mostrar la contraseña",
+      "hidePassword": "Ocultar la contraseña"
     },
     "signIn": {
       "title": "Entra a tu sistema",

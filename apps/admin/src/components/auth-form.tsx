@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Field, Input, Problem } from '@app/ui';
+import { Button, Field, Input, PasswordInput, Problem } from '@app/ui';
 import { useActionState } from 'react';
 
 import type { ActionResult } from '@/server/auth-actions';
@@ -41,14 +41,15 @@ export function AuthForm({
 
       <Field label="Password" required>
         {({ id, describedBy }) => (
-          <Input
+          <PasswordInput
             id={id}
             name="password"
-            type="password"
             autoComplete="current-password"
             required
             minLength={8}
             aria-describedby={describedBy}
+            showLabel="Show the password"
+            hideLabel="Hide the password"
           />
         )}
       </Field>

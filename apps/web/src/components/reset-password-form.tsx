@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Field, Input, Problem } from '@app/ui';
+import { Button, Field, PasswordInput, Problem } from '@app/ui';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -28,6 +28,8 @@ import { getBrowserClient } from '@/lib/supabase-browser';
 export interface ResetPasswordLabels {
   readonly password: string;
   readonly passwordHint: string;
+  readonly showPassword: string;
+  readonly hidePassword: string;
   readonly submit: string;
   readonly checking: string;
   readonly expiredTitle: string;
@@ -167,14 +169,15 @@ export function ResetPasswordForm({
 
       <Field label={labels.password} hint={labels.passwordHint} required>
         {({ id, describedBy }) => (
-          <Input
+          <PasswordInput
             id={id}
             name="password"
-            type="password"
             autoComplete="new-password"
             required
             minLength={8}
             aria-describedby={describedBy}
+            showLabel={labels.showPassword}
+            hideLabel={labels.hidePassword}
           />
         )}
       </Field>

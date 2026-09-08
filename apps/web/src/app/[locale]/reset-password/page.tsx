@@ -29,6 +29,8 @@ export default async function ResetPasswordPage({
         labels={{
           password: t('fields.password'),
           passwordHint: t('fields.passwordHint'),
+          showPassword: t('fields.showPassword'),
+          hidePassword: t('fields.hidePassword'),
           submit: t('reset.submit'),
           checking: t('reset.checking'),
           expiredTitle: t('reset.expiredTitle'),

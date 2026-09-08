@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Field, Input, Problem } from '@app/ui';
+import { Button, Field, Input, PasswordInput, Problem } from '@app/ui';
 import { useActionState } from 'react';
 
 import type { ActionResult } from '@/server/auth-actions';
@@ -21,6 +21,8 @@ export interface AuthFormLabels {
   readonly email: string;
   readonly password: string;
   readonly passwordHint: string;
+  readonly showPassword: string;
+  readonly hidePassword: string;
   readonly displayName?: string;
   readonly submit: string;
   readonly errorTitle: string;
@@ -90,14 +92,15 @@ export function AuthForm({ action, labels, locale, next, withDisplayName }: Auth
 
       <Field label={labels.password} hint={labels.passwordHint} required>
         {({ id, describedBy }) => (
-          <Input
+          <PasswordInput
             id={id}
             name="password"
-            type="password"
             autoComplete={withDisplayName ? 'new-password' : 'current-password'}
             required
             minLength={8}
             aria-describedby={describedBy}
+            showLabel={labels.showPassword}
+            hideLabel={labels.hidePassword}
           />
         )}
       </Field>
