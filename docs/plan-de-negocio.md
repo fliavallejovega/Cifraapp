@@ -19,8 +19,8 @@ este orden — no se reescribe para que parezca que siempre estuvo bien.
 
 | Capa                   | Al escribirlo             | Hoy                                                      |
 | ---------------------- | ------------------------- | -------------------------------------------------------- |
-| Base de datos          | 75 tablas, 22 migraciones | 82 tablas, 26 migraciones                                |
-| Motores de cálculo     | 439 pruebas               | 460 pruebas, todas con superficie de producto            |
+| Base de datos          | 75 tablas, 22 migraciones | 83 tablas, 26 migraciones                                |
+| Motores de cálculo     | 439 pruebas               | 467 pruebas, todas con superficie de producto            |
 | Superficie de producto | 6 de 43                   | **43 de 43**                                             |
 | Inteligencia (IA)      | apagada                   | consejo, alertas y chat construidos; **sigue sin clave** |
 | Monetización           | sin Stripe                | pantalla de suscripción construida; **sigue sin Stripe** |

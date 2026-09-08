@@ -181,8 +181,10 @@ export async function loadMovements(
           total: count(),
           inflow: sql<string>`coalesce(sum(${transactions.amount})
             filter (where ${transactions.direction} = 'inflow'), 0)::text`,
-          outflow: sql<string>`coalesce(sum(${transactions.amount})
-            filter (where ${transactions.direction} = 'outflow'), 0)::text`,
+          // Outflows are stored negative; the summary reads «went out», so it
+          // wants the magnitude rather than the sign.
+          outflow: sql<string>`abs(coalesce(sum(${transactions.amount})
+            filter (where ${transactions.direction} = 'outflow'), 0))::text`,
         })
         .from(transactions)
         .where(where),

@@ -475,8 +475,10 @@ export async function loadGoalContributions(
   const [row] = await queryAsUser(session, (tx) =>
     tx
       .select({
-        total: sql<string>`coalesce(sum(case when ${transactions.direction} = 'inflow'
-          then ${transactions.amount} else -${transactions.amount} end), 0)::text`,
+        // The column already carries the sign — an outflow is stored
+        // negative — so the net movement is the plain sum. Re-signing it here
+        // would count every withdrawal as a contribution.
+        total: sql<string>`coalesce(sum(${transactions.amount}), 0)::text`,
       })
       .from(transactions)
       .where(

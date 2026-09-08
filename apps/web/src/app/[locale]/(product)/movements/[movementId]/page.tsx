@@ -106,8 +106,10 @@ export default async function MovementPage({
           </dl>
 
           <div className="shrink-0 text-right">
+            {/* The column constrains the sign to match the direction, so
+                the amount is shown as stored. */}
             <Amount
-              value={movement.direction === 'outflow' ? movement.amount.negate() : movement.amount}
+              value={movement.amount}
               locale={context.moneyLocale}
               tone="directional"
               size="lg"

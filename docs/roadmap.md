@@ -57,8 +57,8 @@ Phases 0–2, 5, 17 and 18 are complete; 3, 4, 6–15 are complete as engines _a
 as product; 16, 19, 20 and 21 are partly built, and the table above says exactly
 where each stops.
 
-460 unit and integration tests, all passing. **26 migrations apply cleanly from
-an empty database**, producing 82 tables across `app`, `platform` and `audit` at
+467 unit and integration tests, all passing. **26 migrations apply cleanly from
+an empty database**, producing 83 tables across `app`, `platform` and `audit` at
 schema version 26, with row-level security enabled _and forced_ on every one —
 asserted by `security-audit.test.ts` over the whole schema rather than a list of
 known tables.

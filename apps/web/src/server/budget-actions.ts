@@ -342,7 +342,8 @@ export async function buildSuggestedBudget(
         with monthly as (
           select category_id,
                  to_char(transaction_date, 'YYYY-MM') as month,
-                 sum(amount) as total
+                 -- Outflows are stored negative; a budget line is a magnitude.
+                 abs(sum(amount)) as total
             from app.transactions
            where household_id = ${householdId}
              and direction = 'outflow'

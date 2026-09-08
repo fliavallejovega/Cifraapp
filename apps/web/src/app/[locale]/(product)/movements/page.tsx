@@ -269,8 +269,11 @@ export default async function MovementsPage({
                             )}
                           </LedgerCell>
                           <LedgerCell align="end">
+                            {/* The stored amount already carries its sign —
+                                the column constrains it — so it is rendered as
+                                it is rather than signed a second time. */}
                             <Amount
-                              value={row.direction === 'outflow' ? row.amount.negate() : row.amount}
+                              value={row.amount}
                               locale={context.moneyLocale}
                               tone="directional"
                               size="sm"

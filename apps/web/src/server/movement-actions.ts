@@ -351,7 +351,11 @@ export async function createManualMovement(
 
     if (!account) return null;
 
-    const amount = Money.fromDecimalString(parsed.data.amount, currency);
+    // The column's own constraint: an outflow is negative and an inflow is
+    // positive, always. Storing a magnitude with a direction beside it would
+    // let the two disagree, and a month's net cash flow would quietly reverse.
+    const magnitude = Money.fromDecimalString(parsed.data.amount, currency).abs();
+    const amount = parsed.data.direction === 'outflow' ? magnitude.negate() : magnitude;
 
     const [row] = await tx
       .insert(transactions)
@@ -360,13 +364,16 @@ export async function createManualMovement(
         accountId: parsed.data.accountId,
         ownerId: session.user.id,
         transactionDate: parsed.data.transactionDate,
-        amount: parsed.data.amount,
+        amount: amount.toDecimalString(),
         currency,
         direction: parsed.data.direction,
         descriptionOriginal: parsed.data.description,
         descriptionNormalized: normalized,
         status: 'posted',
         source: 'user',
+        // Fingerprinted on the signed amount, exactly as the import pipeline
+        // does — otherwise the same charge recorded by hand and then imported
+        // would hash differently and the duplicate engine would never see it.
         fingerprint: computeFingerprint({
           accountId: parsed.data.accountId,
           // Validated against the `YYYY-MM-DD` shape by the schema above, which
@@ -394,10 +401,8 @@ export async function createManualMovement(
     await tx
       .update(accounts)
       .set({
-        currentBalance:
-          parsed.data.direction === 'inflow'
-            ? sql`${accounts.currentBalance} + ${parsed.data.amount}::numeric`
-            : sql`${accounts.currentBalance} - ${parsed.data.amount}::numeric`,
+        // The amount already carries its sign, so the balance simply adds it.
+        currentBalance: sql`${accounts.currentBalance} + ${amount.toDecimalString()}::numeric`,
         updatedAt: new Date(),
       })
       .where(eq(accounts.id, parsed.data.accountId));
@@ -469,14 +474,12 @@ export async function removeMovement(
       .set({ deletedAt: new Date(), updatedAt: new Date() })
       .where(eq(transactions.id, id.data));
 
-    // The balance it moved when it was recorded moves back.
+    // The balance it moved when it was recorded moves back. The stored amount
+    // carries its sign, so undoing it is a subtraction whichever way it went.
     await tx
       .update(accounts)
       .set({
-        currentBalance:
-          existing.direction === 'inflow'
-            ? sql`${accounts.currentBalance} - ${existing.amount}::numeric`
-            : sql`${accounts.currentBalance} + ${existing.amount}::numeric`,
+        currentBalance: sql`${accounts.currentBalance} - ${existing.amount}::numeric`,
         updatedAt: new Date(),
       })
       .where(eq(accounts.id, existing.accountId));

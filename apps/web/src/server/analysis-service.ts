@@ -133,12 +133,9 @@ registerJobHandler(TRANSFER_SCAN_JOB, async (job, report) => {
     accountId: row.accountId,
     accountType: row.accountType,
     transactionDate: row.transactionDate as PlainDate,
-    // The engine reads the sign, and the column stores magnitude plus a
-    // direction. Handing it the unsigned figure would pair two outflows.
-    amount:
-      row.direction === 'outflow'
-        ? Money.fromDecimalString(row.amount, currency).abs().negate()
-        : Money.fromDecimalString(row.amount, currency).abs(),
+    // The column constrains the sign to match the direction, so what is
+    // stored is already what the engine reads.
+    amount: Money.fromDecimalString(row.amount, currency),
     descriptionNormalized: row.descriptionNormalized,
   }));
 
@@ -221,10 +218,7 @@ registerJobHandler(DUPLICATE_SCAN_JOB, async (job, report) => {
   const proposals: (typeof duplicateCandidates.$inferInsert)[] = [];
 
   for (const row of rows) {
-    const signed =
-      row.direction === 'outflow'
-        ? Money.fromDecimalString(row.amount, currency).abs().negate()
-        : Money.fromDecimalString(row.amount, currency).abs();
+    const signed = Money.fromDecimalString(row.amount, currency);
 
     const candidate: CandidateTransaction = {
       transactionDate: row.transactionDate as PlainDate,

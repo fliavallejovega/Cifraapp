@@ -57,10 +57,7 @@ export default async function CategoryReviewPage({
     id: movement.id,
     title: movement.description,
     subtitle: `${formatPlainDate(movement.date, locale)} · ${movement.accountName}`,
-    amount: formatMoney(
-      movement.direction === 'outflow' ? movement.amount.negate() : movement.amount,
-      { locale: context.moneyLocale },
-    ),
+    amount: formatMoney(movement.amount, { locale: context.moneyLocale }),
     facts: [
       {
         label: movement.categoryName

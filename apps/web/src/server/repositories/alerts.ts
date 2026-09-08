@@ -249,7 +249,9 @@ async function spikeAlerts(
       with monthly as (
         select t.category_id,
                to_char(t.transaction_date, 'YYYY-MM') as month,
-               sum(t.amount) as total
+               -- Outflows are stored negative. Comparing them as stored would
+               -- rank a bigger spend as a smaller number and invert the test.
+               abs(sum(t.amount)) as total
           from app.transactions t
          where t.household_id = ${householdId}
            and t.direction = 'outflow'

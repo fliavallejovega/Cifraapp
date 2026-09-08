@@ -430,9 +430,13 @@ export async function loadMerchants(
           select count(*)::int from app.transactions t
           where t.merchant_id = ${merchants.id} and t.deleted_at is null
         )`,
+        // What was spent here, as a magnitude. Netting a refund against the
+        // purchases would answer a different question than «how much does this
+        // merchant cost us», which is the one the screen asks.
         total: sql<string>`(
-          select coalesce(sum(t.amount), 0)::text from app.transactions t
-          where t.merchant_id = ${merchants.id} and t.deleted_at is null
+          select abs(coalesce(sum(t.amount), 0))::text from app.transactions t
+          where t.merchant_id = ${merchants.id}
+            and t.direction = 'outflow' and t.deleted_at is null
         )`,
       })
       .from(merchants)
