@@ -158,9 +158,11 @@ export function TryIt({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-1">
         {fields.map((field) => (
           <Field key={field.key} label={field.label} {...(field.hint ? { hint: field.hint } : {})}>
-            {(props) => (
+            {({ id, describedBy, invalid }) => (
               <Input
-                {...props}
+                id={id}
+                aria-describedby={describedBy}
+                invalid={invalid}
                 numeric
                 inputMode="decimal"
                 autoComplete="off"

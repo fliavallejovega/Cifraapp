@@ -71,9 +71,11 @@ export function NewHouseholdForm({ productUrl }: { readonly productUrl: string }
 
       <form action={action} className="mt-6 grid gap-4 sm:grid-cols-2">
         <Field label="Household name" required className="sm:col-span-2">
-          {(props) => (
+          {({ id, describedBy, invalid }) => (
             <Input
-              {...props}
+              id={id}
+              aria-describedby={describedBy}
+              invalid={invalid}
               name="name"
               required
               minLength={2}
@@ -84,14 +86,28 @@ export function NewHouseholdForm({ productUrl }: { readonly productUrl: string }
         </Field>
 
         <Field label="Owner email" required className="sm:col-span-2">
-          {(props) => (
-            <Input {...props} name="ownerEmail" type="email" required autoComplete="off" />
+          {({ id, describedBy, invalid }) => (
+            <Input
+              id={id}
+              aria-describedby={describedBy}
+              invalid={invalid}
+              name="ownerEmail"
+              type="email"
+              required
+              autoComplete="off"
+            />
           )}
         </Field>
 
         <Field label="Currency">
-          {(props) => (
-            <Select {...props} name="currency" defaultValue="USD">
+          {({ id, describedBy, invalid }) => (
+            <Select
+              id={id}
+              aria-describedby={describedBy}
+              invalid={invalid}
+              name="currency"
+              defaultValue="USD"
+            >
               <option value="USD">USD — US dollar</option>
               <option value="PAB">PAB — Balboa</option>
             </Select>
@@ -99,7 +115,15 @@ export function NewHouseholdForm({ productUrl }: { readonly productUrl: string }
         </Field>
 
         <Field label="Time zone">
-          {(props) => <Input {...props} name="timeZone" defaultValue="America/Panama" />}
+          {({ id, describedBy, invalid }) => (
+            <Input
+              id={id}
+              aria-describedby={describedBy}
+              invalid={invalid}
+              name="timeZone"
+              defaultValue="America/Panama"
+            />
+          )}
         </Field>
 
         <div className="sm:col-span-2">
