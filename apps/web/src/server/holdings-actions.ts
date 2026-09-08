@@ -1,12 +1,12 @@
 'use server';
 
 import { marketPrices } from '@app/database/schema';
-import { lookup } from '@app/market-data';
+import { lookup, search, type SearchScope } from '@app/market-data';
 import { getServerEnv } from '@app/validation/env';
 import { getPlatformDb } from '@app/database';
 
 /**
- * Looking a symbol up while somebody is typing it.
+ * Finding an instrument, and pricing the one that was chosen.
  *
  * Two things happen, and only one of them is for the person at the keyboard.
  * They get told whether the symbol is real, what it is called, and what it
@@ -81,5 +81,48 @@ export async function lookupSymbol(rawSymbol: string): Promise<SymbolLookup> {
     currency: quote.currency,
     kind: quote.kind,
     asOf: quote.asOf.toISOString(),
+  };
+}
+
+/**
+ * What the provider knows by this name.
+ *
+ * The reason this exists is a holding somebody nearly recorded by accident:
+ * they typed «BTC» meaning bitcoin, and `BTC` is a real ticker — the Grayscale
+ * Bitcoin Mini Trust, a fund on NYSE Arca. The old field found it, priced it,
+ * and would have stored a fund they do not own. Nothing failed, which is what
+ * made it dangerous. Searching turns the symbol from something typed into
+ * something chosen from a list where the coin and the fund named after it are
+ * two visibly different rows.
+ *
+ * Nothing is written here. A search is a question, and the quote is only
+ * recorded once somebody has picked the instrument they actually hold.
+ */
+export interface SymbolCandidate {
+  readonly symbol: string;
+  readonly name: string;
+  readonly kind: string;
+  readonly exchange: string | null;
+}
+
+export type SymbolSearch =
+  | { readonly ok: true; readonly candidates: readonly SymbolCandidate[] }
+  | { readonly ok: false; readonly reason: 'unavailable' | 'too-short' };
+
+const SCOPES: readonly SearchScope[] = ['all', 'equity', 'fund', 'crypto', 'bond', 'other'];
+
+export async function searchSymbols(term: string, rawScope: string): Promise<SymbolSearch> {
+  const scope = SCOPES.includes(rawScope as SearchScope) ? (rawScope as SearchScope) : 'all';
+  const result = await search(term, { scope, limit: 8 });
+  if (!result.ok) return { ok: false, reason: result.reason };
+
+  return {
+    ok: true,
+    candidates: result.candidates.map((candidate) => ({
+      symbol: candidate.symbol,
+      name: candidate.name,
+      kind: candidate.kind,
+      exchange: candidate.exchange,
+    })),
   };
 }

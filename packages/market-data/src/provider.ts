@@ -1,5 +1,6 @@
 import type { CurrencyCode } from '@app/domain';
 
+import { kindOfQuoteType } from './search.js';
 import type { HoldingKind, Quote } from './quote.js';
 
 /**
@@ -51,14 +52,13 @@ const asString = (value: unknown): string | null =>
 const asDecimal = (value: unknown): string | null =>
   typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value.toFixed(8) : null;
 
-function kindOf(instrumentType: string | null, symbol: string): HoldingKind {
-  if (instrumentType === 'CRYPTOCURRENCY') return 'crypto';
-  if (instrumentType === 'ETF') return 'etf';
-  if (instrumentType === 'EQUITY') return 'equity';
-  // A symbol quoted against a currency is how the provider names a coin, and
-  // it is the shape a person types when the instrument type is missing.
-  return /-(USD|USDT|EUR)$/i.test(symbol) ? 'crypto' : 'other';
-}
+/**
+ * The chart endpoint's `instrumentType`, read through the same table the
+ * search uses. One mapping, so a symbol cannot be a fund while it is being
+ * chosen and «other» once it is priced.
+ */
+const kindOf = (instrumentType: string | null, symbol: string): HoldingKind =>
+  kindOfQuoteType(instrumentType, symbol);
 
 /**
  * The current quote for one symbol.

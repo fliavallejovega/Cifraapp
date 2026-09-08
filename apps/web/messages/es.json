@@ -1014,7 +1014,7 @@
       "title": "Acciones, fondos y cripto",
       "detail": "Si tienes acciones o monedas, ponlas aquí. Buscamos el precio al momento y desde ahí llevamos cuánto valen y cuánto se mueven. Tú pones cuánto tienes; el precio lo pone el mercado, con su hora.",
       "symbol": "Símbolo",
-      "symbolHint": "Como cotiza: AAPL, VOO, BTC-USD. Lo verificamos al salir del campo.",
+      "symbolHint": "Escribe el nombre o el símbolo y elígelo de la lista. Así «BTC», que es un fondo, no se confunde con Bitcoin.",
       "quantity": "Cuánto tienes",
       "quantityHint": "Acciones o monedas. Admite decimales: 0.35 de bitcoin es válido.",
       "holder": "¿De quién es?",
@@ -1023,7 +1023,34 @@
       "checking": "Buscando el precio…",
       "quoted": "a {price} · valor {value}",
       "unknown": "No encontramos ese símbolo. Revisa cómo se escribe; por ejemplo BTC-USD, no BTC.",
-      "unavailable": "No pudimos consultar el precio ahora. Puedes seguir; lo intentamos otra vez más tarde."
+      "unavailable": "No pudimos consultar el precio ahora. Puedes seguir; lo intentamos otra vez más tarde.",
+      "searchPlaceholder": "Bitcoin, Apple, fondo de bonos…",
+      "searching": "Buscando…",
+      "searchRecent": "Lo último que buscaste",
+      "searchCommon": "Para empezar",
+      "searchEmpty": "No encontramos nada que se llame «{term}».",
+      "searchEmptyHint": "Prueba con el nombre completo —bitcoin, apple, vanguard— o quita el filtro de tipo.",
+      "searchAllTypes": "Buscar en todos los tipos",
+      "searchError": "No pudimos consultar el buscador ahora.",
+      "searchErrorHint": "Es un problema nuestro, no tuyo. Puedes reintentar o escribir el símbolo exacto y seguir.",
+      "searchRetry": "Reintentar",
+      "scopeLabel": "Tipo de inversión",
+      "scope": {
+        "all": "Todo",
+        "equity": "Acciones",
+        "fund": "Fondos y ETF",
+        "crypto": "Cripto",
+        "bond": "Bonos",
+        "other": "Otros"
+      },
+      "kind": {
+        "equity": "Acción",
+        "etf": "ETF",
+        "fund": "Fondo",
+        "crypto": "Criptomoneda",
+        "index": "Índice",
+        "other": "Otro"
+      }
     }
   },
   "records": {

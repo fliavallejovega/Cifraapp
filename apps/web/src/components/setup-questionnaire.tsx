@@ -11,7 +11,8 @@ import {
 } from 'react';
 
 import { LANDING_DRAFT_KEY, type LandingDraft } from '@/components/marketing/try-it';
-import { lookupSymbol } from '@/server/holdings-actions';
+import { KindIcon, SymbolSearch } from '@/components/symbol-search';
+import { lookupSymbol, type SymbolCandidate } from '@/server/holdings-actions';
 import { completeSetup, type SetupResult } from '@/server/onboarding-actions';
 
 /**
@@ -1239,6 +1240,20 @@ function HoldingsEditor({
     }
   };
 
+  /**
+   * A candidate picked from the list, then priced.
+   *
+   * The search says what the instrument *is*; only the quote endpoint says
+   * what it costs, and only that call records the price for the portfolio to
+   * read later. So choosing still runs the same lookup a typed symbol would —
+   * the difference is that the symbol it looks up is now the provider's own,
+   * not somebody's best guess at it.
+   */
+  const chose = async (at: number, candidate: SymbolCandidate) => {
+    update(at, { symbol: candidate.symbol, label: candidate.name, status: 'checking' });
+    await check(at, candidate.symbol);
+  };
+
   return (
     <section className="border-t border-[color:var(--color-rule)] pt-8">
       <h3 className="text-base font-medium">{copy('holdings.title')}</h3>
@@ -1254,16 +1269,23 @@ function HoldingsEditor({
           >
             <Field label={copy('holdings.symbol')} hint={copy('holdings.symbolHint')}>
               {({ id, describedBy }) => (
-                <Input
+                <SymbolSearch
                   id={id}
+                  describedBy={describedBy}
                   value={row.symbol}
-                  placeholder="AAPL · VOO · BTC-USD"
-                  aria-describedby={describedBy}
-                  onChange={(event) => {
-                    update(at, { symbol: event.target.value, status: 'idle', quoted: undefined });
+                  copy={copy}
+                  onType={(value) => {
+                    update(at, { symbol: value, status: 'idle', quoted: undefined });
                   }}
-                  onBlur={(event) => {
-                    void check(at, event.target.value);
+                  onChoose={(candidate) => {
+                    void chose(at, candidate);
+                  }}
+                  onCommit={(value) => {
+                    // Already priced, and priced from this exact symbol: the
+                    // list was used, and asking the provider twice for the
+                    // same answer is only a second way for it to fail.
+                    if (row.status === 'ok' && row.symbol === value) return;
+                    void check(at, value);
                   }}
                 />
               )}
@@ -1313,9 +1335,18 @@ function HoldingsEditor({
                 </p>
               )}
               {row.status === 'ok' && row.quoted && (
-                <p className="text-xs text-[color:var(--color-ink-secondary)]">
-                  <Status tone="positive">{row.quoted.name}</Status>{' '}
-                  <span className="tabular ml-2">
+                <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[color:var(--color-ink-secondary)]">
+                  <span
+                    aria-hidden
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-(--radius-xs) bg-[color:var(--color-ground-sunk)] text-[color:var(--color-ink-secondary)]"
+                  >
+                    <KindIcon kind={row.quoted.kind} />
+                  </span>
+                  <Status tone="positive">{row.quoted.name}</Status>
+                  <span className="text-[color:var(--color-ink-tertiary)]">
+                    {copy(`holdings.kind.${row.quoted.kind}`)}
+                  </span>
+                  <span className="tabular">
                     {copy('holdings.quoted')
                       .replace(
                         '{price}',

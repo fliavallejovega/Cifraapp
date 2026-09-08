@@ -410,3 +410,81 @@ export function IconInvestments() {
     </Icon>
   );
 }
+
+/**
+ * What kind of thing a holding is — the same six the market data package
+ * keeps, and no more.
+ *
+ * These sit beside a name in a list of search results, where the whole job is
+ * to make two rows that read almost alike look unlike each other at a glance:
+ * `BTC-USD`, the coin, above `BTC`, a fund named after the coin. So the shapes
+ * are chosen for how fast they separate, not for how well each one illustrates
+ * its noun — a single candle against a stack of them against a coin.
+ *
+ * There is no bond icon, because there is no bond kind: a fund holding debt is
+ * a fund, and it carries the fund's mark. Drawing a certificate for it would
+ * put a classification on screen that nobody stated.
+ */
+
+/** A share: one company's price, one candle. */
+export function IconEquity() {
+  return (
+    <Icon>
+      <path d="M10 3v3" />
+      <path d="M10 14v3" />
+      <rect x="7" y="6" width="6" height="8" rx="1" />
+    </Icon>
+  );
+}
+
+/** An ETF: many holdings in one wrapper, stacked. */
+export function IconEtf() {
+  return (
+    <Icon>
+      <path d="M10 3 3 6.5 10 10l7-3.5L10 3Z" />
+      <path d="M3 10.5 10 14l7-3.5" />
+      <path d="M3 14.5 10 18l7-3.5" />
+    </Icon>
+  );
+}
+
+/** A fund: money pooled from many hands, in slices. */
+export function IconFund() {
+  return (
+    <Icon>
+      <circle cx="10" cy="10" r="7" />
+      <path d="M10 3v7h7" />
+    </Icon>
+  );
+}
+
+/** A coin: the hexagon a chain is drawn with, and not a company. */
+export function IconCrypto() {
+  return (
+    <Icon>
+      <path d="M10 2.75 16.25 6.4v7.2L10 17.25 3.75 13.6V6.4Z" />
+      <circle cx="10" cy="10" r="2.5" />
+    </Icon>
+  );
+}
+
+/** An index: not a thing you can hold, a level that moves. */
+export function IconIndex() {
+  return (
+    <Icon>
+      <path d="M3 16.5h14" />
+      <path d="M4 13l3.5-4L11 11l5-6" />
+      <path d="M13 5h3v3" />
+    </Icon>
+  );
+}
+
+/** Anything else the market prices and this product will not mislabel. */
+export function IconOtherHolding() {
+  return (
+    <Icon>
+      <path d="M3.5 10.5 9.5 4.5a1.4 1.4 0 0 1 1-.4H15a1 1 0 0 1 1 1v4.5a1.4 1.4 0 0 1-.4 1l-6 6a1.4 1.4 0 0 1-2 0l-4.1-4.1a1.4 1.4 0 0 1 0-2Z" />
+      <circle cx="12.75" cy="7.25" r="1" />
+    </Icon>
+  );
+}

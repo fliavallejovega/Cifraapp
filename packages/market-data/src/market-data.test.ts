@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { lookup } from './provider.js';
 import { isStale, totalOf, valueOf, type Quote } from './quote.js';
+import { matchesScope, rankCandidates, readCandidates, search, type Candidate } from './search.js';
 
 /**
  * The arithmetic is tested exactly; the network is tested for shape.
@@ -104,6 +105,115 @@ describe('totalling a portfolio', () => {
 });
 
 /**
+ * The search, over a captured payload rather than the live index.
+ *
+ * These rows are the provider's real answer to «btc», trimmed to the fields
+ * this package reads. Pinning the payload rather than the network is what lets
+ * the test assert the thing that actually broke — that Bitcoin, not a fund
+ * named after Bitcoin, is what somebody typing «btc» is offered — without
+ * asserting anything about a market.
+ */
+const BTC_PAYLOAD = {
+  quotes: [
+    {
+      symbol: 'GBTC',
+      quoteType: 'ETF',
+      shortname: 'Grayscale Bitcoin Trust (BTC)',
+      exchDisp: 'NYSEArca',
+    },
+    {
+      symbol: 'BTC',
+      quoteType: 'ETF',
+      shortname: 'Grayscale Bitcoin Mini Trust ETF',
+      exchDisp: 'NYSEArca',
+    },
+    { symbol: 'BTC-USD', quoteType: 'CRYPTOCURRENCY', shortname: 'Bitcoin USD', exchDisp: 'CCC' },
+    {
+      symbol: 'BTC=F',
+      quoteType: 'FUTURE',
+      shortname: 'Bitcoin Futures,Sep-2026',
+      exchDisp: 'CME',
+    },
+    {
+      symbol: '0P0001QOCA.F',
+      quoteType: 'MUTUALFUND',
+      shortname: '0P0001QOCA.F',
+      exchDisp: 'Frankfurt',
+    },
+    {
+      symbol: 'BND',
+      quoteType: 'ETF',
+      longname: 'Vanguard Total Bond Market ETF',
+      exchDisp: 'NASDAQ',
+    },
+    { symbol: 'DELISTED', quoteType: 'EQUITY', shortname: 'Not priceable', isYahooFinance: false },
+  ],
+};
+
+const candidatesOf = (payload: unknown): readonly Candidate[] => readCandidates(payload);
+
+describe('finding an instrument by what it is called', () => {
+  it('names each candidate the way the provider classified it', () => {
+    const byKind = new Map(candidatesOf(BTC_PAYLOAD).map((one) => [one.symbol, one.kind]));
+    expect(byKind.get('BTC-USD')).toBe('crypto');
+    expect(byKind.get('BTC')).toBe('etf');
+    // A future is none of the five named types and is not called one.
+    expect(byKind.get('BTC=F')).toBe('other');
+  });
+
+  it('offers Bitcoin, not the fund named after it, to somebody who types «btc»', () => {
+    // The bug this exists for: `BTC` is the Grayscale Bitcoin Mini Trust, a
+    // real ETF, so the old field found it, priced it, and recorded a holding
+    // the household does not own — silently, because nothing failed.
+    const ranked = rankCandidates(candidatesOf(BTC_PAYLOAD), 'btc');
+    expect(ranked[0]?.symbol).toBe('BTC-USD');
+    expect(ranked[0]?.kind).toBe('crypto');
+    // And the fund is still there, one row down, for whoever did mean it.
+    expect(ranked.map((one) => one.symbol)).toContain('BTC');
+  });
+
+  it('leaves an exact ticker at the top when that is what was typed', () => {
+    const ranked = rankCandidates(candidatesOf(BTC_PAYLOAD), 'gbtc');
+    expect(ranked[0]?.symbol).toBe('GBTC');
+  });
+
+  it('drops rows a person could not choose on purpose', () => {
+    const symbols = candidatesOf(BTC_PAYLOAD).map((one) => one.symbol);
+    // A fund share class whose only name is its own code, and an instrument
+    // the quote endpoint cannot price — offering either is offering a holding
+    // that reads «no pudimos» forever.
+    expect(symbols).not.toContain('0P0001QOCA.F');
+    expect(symbols).not.toContain('DELISTED');
+  });
+
+  it('narrows by type without relabelling anything', () => {
+    const candidates = candidatesOf(BTC_PAYLOAD);
+    const crypto = candidates.filter((one) => matchesScope(one, 'crypto'));
+    expect(crypto.map((one) => one.symbol)).toEqual(['BTC-USD']);
+
+    // «Bonos» is a search scope, not a type: it keeps the funds whose own name
+    // says they hold debt, and that fund stays an ETF on the screen.
+    const debt = candidates.filter((one) => matchesScope(one, 'bond'));
+    expect(debt.map((one) => one.symbol)).toEqual(['BND']);
+    expect(debt[0]?.kind).toBe('etf');
+
+    // A bitcoin fund holds no debt and does not appear under it.
+    expect(
+      matchesScope(
+        { symbol: 'BTC', name: 'Grayscale Bitcoin Mini Trust ETF', kind: 'etf', exchange: null },
+        'bond',
+      ),
+    ).toBe(false);
+  });
+
+  it('refuses a term too short to mean anything, without asking the provider', async () => {
+    const result = await search('b');
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe('too-short');
+  });
+});
+
+/**
  * The live provider. Skipped without a network, because a unit test suite that
  * fails on a plane is a suite people learn to ignore.
  */
@@ -126,5 +236,34 @@ describeLive('the provider, against the real endpoint', () => {
   it('says «not found» for a symbol that is not one, rather than guessing', async () => {
     const result = await lookup('ZZZZNOTAREALTICKER');
     expect(result.ok).toBe(false);
+  });
+
+  it('offers Bitcoin first to somebody who types «btc», against the live index', async () => {
+    const result = await search('btc');
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.candidates[0]?.symbol).toBe('BTC-USD');
+    expect(result.candidates[0]?.kind).toBe('crypto');
+  });
+
+  it('separates a coin, a fund and a share into three different types', async () => {
+    const kinds = new Map<string, string>();
+    for (const term of ['bitcoin', 'vanguard total bond market', 'apple inc']) {
+      const result = await search(term);
+      expect(result.ok).toBe(true);
+      if (!result.ok) continue;
+      for (const one of result.candidates) kinds.set(one.symbol, one.kind);
+    }
+    expect(kinds.get('BTC-USD')).toBe('crypto');
+    expect(kinds.get('BND')).toBe('etf');
+    expect(kinds.get('AAPL')).toBe('equity');
+  });
+
+  it('finds what a person searched for by name, symbol unknown', async () => {
+    const result = await search('bitcoin', { scope: 'crypto' });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.candidates.length).toBeGreaterThan(0);
+    expect(result.candidates.every((one) => one.kind === 'crypto')).toBe(true);
   });
 });

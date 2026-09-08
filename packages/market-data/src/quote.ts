@@ -15,7 +15,16 @@ import { Money, type CurrencyCode } from '@app/domain';
  * only thing about markets this product will do.
  */
 
-export type HoldingKind = 'equity' | 'etf' | 'crypto' | 'other';
+/**
+ * What kind of thing a holding is, in the provider's terms rather than ours.
+ *
+ * Six, and deliberately not seven: there is no `bond`. No market data provider
+ * classifies a bond fund as a bond — it classifies it as a fund that holds
+ * debt — and a household that owns `BND` owns an ETF. Adding the word here
+ * would put a classification on a screen that nobody stated, which is the one
+ * thing this package is built not to do. Debt is searchable; it is not a type.
+ */
+export type HoldingKind = 'equity' | 'etf' | 'fund' | 'crypto' | 'index' | 'other';
 
 export interface Quote {
   /** As the provider names it: `AAPL`, `VOO`, `BTC-USD`. */

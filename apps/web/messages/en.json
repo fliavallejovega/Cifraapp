@@ -1014,7 +1014,7 @@
       "title": "Shares, funds and crypto",
       "detail": "If you hold shares or coins, put them here. We look the price up as you type and track what they are worth and how they move. You state how much you hold; the market states the price, with its time.",
       "symbol": "Symbol",
-      "symbolHint": "As it trades: AAPL, VOO, BTC-USD. We check it when you leave the field.",
+      "symbolHint": "Type the name or the symbol and pick it from the list. That way «BTC», which is a fund, is never mistaken for Bitcoin.",
       "quantity": "How much you hold",
       "quantityHint": "Shares or coins. Decimals are fine: 0.35 of a bitcoin is valid.",
       "holder": "Whose is it?",
@@ -1023,7 +1023,34 @@
       "checking": "Looking the price up…",
       "quoted": "at {price} · worth {value}",
       "unknown": "We could not find that symbol. Check the spelling — BTC-USD, for instance, rather than BTC.",
-      "unavailable": "We could not reach the price just now. You can carry on; we will try again later."
+      "unavailable": "We could not reach the price just now. You can carry on; we will try again later.",
+      "searchPlaceholder": "Bitcoin, Apple, bond fund…",
+      "searching": "Searching…",
+      "searchRecent": "What you looked up last",
+      "searchCommon": "To start with",
+      "searchEmpty": "We found nothing called «{term}».",
+      "searchEmptyHint": "Try the full name — bitcoin, apple, vanguard — or drop the type filter.",
+      "searchAllTypes": "Search every type",
+      "searchError": "We could not reach the search just now.",
+      "searchErrorHint": "That is our problem, not yours. Retry, or type the exact symbol and carry on.",
+      "searchRetry": "Retry",
+      "scopeLabel": "Kind of investment",
+      "scope": {
+        "all": "Everything",
+        "equity": "Shares",
+        "fund": "Funds and ETFs",
+        "crypto": "Crypto",
+        "bond": "Bonds",
+        "other": "Other"
+      },
+      "kind": {
+        "equity": "Share",
+        "etf": "ETF",
+        "fund": "Fund",
+        "crypto": "Cryptocurrency",
+        "index": "Index",
+        "other": "Other"
+      }
     }
   },
   "records": {
