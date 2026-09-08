@@ -154,8 +154,8 @@ export function TryIt({
   ];
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:gap-12">
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:gap-12">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-1">
         {fields.map((field) => (
           <Field key={field.key} label={field.label} {...(field.hint ? { hint: field.hint } : {})}>
             {(props) => (
@@ -174,7 +174,7 @@ export function TryIt({
         ))}
       </div>
 
-      <div className="flex flex-col gap-6">
+      <div className="flex min-w-0 flex-col gap-6">
         <Card tone="panel" padding="lg">
           <p className="text-xs font-medium tracking-(--tracking-label) text-[color:var(--color-panel-ink-secondary)] uppercase">
             {isShort
@@ -182,12 +182,7 @@ export function TryIt({
               : labels.available}
           </p>
           <div className="mt-3" aria-live="polite">
-            <Amount
-              value={figures.available}
-              locale={locale}
-              tone="plain"
-              size="readout"
-            />
+            <Amount value={figures.available} locale={locale} tone="plain" size="readout" />
           </div>
           <p className="mt-3 text-sm text-[color:var(--color-panel-ink-secondary)]">
             {isShort
@@ -226,11 +221,14 @@ export function TryIt({
           </p>
           <ol className="mt-3 divide-y divide-[color:var(--color-rule)]">
             {figures.order.map((row, index) => (
-              <li key={row.key} className="flex items-center gap-4 px-6 py-3">
-                <span className="gradation-label w-4 shrink-0">{index + 1}</span>
-                <span className="min-w-0 flex-1 truncate text-sm">{labels[row.key]}</span>
+              <li
+                key={row.key}
+                className="grid grid-cols-[1rem_minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 px-6 py-3 sm:grid-cols-[1rem_minmax(0,1fr)_auto_8rem]"
+              >
+                <span className="gradation-label">{index + 1}</span>
+                <span className="min-w-0 truncate text-sm">{labels[row.key]}</span>
                 <Amount value={row.amount} locale={locale} size="sm" tone="plain" />
-                <span className="w-28 shrink-0 text-right sm:w-32">
+                <span className="col-span-full pl-8 sm:col-span-1 sm:pl-0 sm:text-right">
                   <Status
                     tone={
                       row.state === 'covered'
@@ -249,11 +247,10 @@ export function TryIt({
                 </span>
               </li>
             ))}
-            <li className="flex items-center gap-4 px-6 py-3">
-              <span className="gradation-label w-4 shrink-0">{figures.order.length + 1}</span>
-              <span className="min-w-0 flex-1 truncate text-sm font-medium">{labels.free}</span>
+            <li className="grid grid-cols-[1rem_minmax(0,1fr)_auto] items-center gap-x-4 px-6 py-3 sm:grid-cols-[1rem_minmax(0,1fr)_auto_8rem]">
+              <span className="gradation-label">{figures.order.length + 1}</span>
+              <span className="min-w-0 truncate text-sm font-medium">{labels.free}</span>
               <Amount value={figures.free} locale={locale} size="sm" tone="plain" />
-              <span className="w-28 shrink-0 sm:w-32" />
             </li>
           </ol>
         </Card>

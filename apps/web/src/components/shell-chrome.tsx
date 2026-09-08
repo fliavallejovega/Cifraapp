@@ -177,7 +177,7 @@ export function ShellChrome({
         // A plain anchor: the console is another application on another
         // origin, and the product's router has no business prefetching it.
         <a
-          href={consoleUrl}
+          href={`${consoleUrl}/sign-in`}
           className="block rounded-(--radius-sm) text-xs text-[color:var(--color-panel-ink-secondary)] underline underline-offset-4 transition-opacity duration-(--duration-quick) hover:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-brand)]"
         >
           {labels.console}

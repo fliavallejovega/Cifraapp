@@ -212,6 +212,10 @@
       "close": {
         "title": "Your family deserves to know what to do with its money, not just how much it has.",
         "detail": "Start for free, with this month’s numbers. If you ever leave, you take everything with you."
+      },
+      "claims": {
+        "item": "Item",
+        "amount": "Amount"
       }
     },
     "pricing": {

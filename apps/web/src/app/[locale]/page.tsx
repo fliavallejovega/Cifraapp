@@ -716,7 +716,7 @@ function Capability({
   readonly children: ReactNode;
 }) {
   return (
-    <article className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:gap-12">
+    <article className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:gap-12">
       <div>
         <h3
           className="max-w-[24ch] text-2xl font-medium text-balance"
@@ -728,7 +728,11 @@ function Capability({
           {detail}
         </p>
       </div>
-      <div className="min-w-0">{children}</div>
+      {/* A three-column ledger at 360px scrolls inside its own frame; the
+          page itself never scrolls sideways. `relative` so the screen-reader
+          text inside a cell is clipped with the cell instead of escaping to
+          widen the page. */}
+      <div className="relative min-w-0 overflow-x-auto">{children}</div>
     </article>
   );
 }

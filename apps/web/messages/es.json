@@ -212,6 +212,10 @@
       "close": {
         "title": "Tu familia merece saber qué hacer con su dinero, no solo cuánto tiene.",
         "detail": "Empieza gratis, con tus números de este mes. Si un día te vas, te llevas todo."
+      },
+      "claims": {
+        "item": "Concepto",
+        "amount": "Monto"
       }
     },
     "pricing": {

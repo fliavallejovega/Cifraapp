@@ -1,6 +1,8 @@
 import { Page, PageHeader } from '@app/ui';
+import { redirect } from 'next/navigation';
 
 import { AuthForm } from '@/components/auth-form';
+import { loadAdminSession } from '@/server/admin-session';
 import { signIn } from '@/server/auth-actions';
 
 /**
@@ -11,7 +13,11 @@ import { signIn } from '@/server/auth-actions';
  * page; this route is the deliberate entry for people who already know where to
  * go.
  */
-export default function SignInPage() {
+export default async function SignInPage() {
+  // The door from the product lands here. Somebody already signed in as an
+  // administrator has nothing to type, so they go straight through.
+  if (await loadAdminSession()) redirect('/');
+
   return (
     <Page>
       <PageHeader
