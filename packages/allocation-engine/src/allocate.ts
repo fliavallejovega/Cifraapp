@@ -171,11 +171,35 @@ function splitProportionally(
   return awards;
 }
 
-/** Inside a tier: the household's own weight, then what is due soonest, then id. */
+/**
+ * Inside a tier: the household's own weight, then what missing it costs, then
+ * what is due soonest, then id.
+ *
+ * The penalty sits above the due date deliberately. When a tier is funded
+ * sequentially and the money runs out partway down it, the order *is* the
+ * decision about which bill goes unpaid — and «which is oldest» is a worse
+ * answer to that than «which one charges you for being late». A rent due in
+ * three days with a five percent charge outranks a subscription that was due
+ * last week and costs nothing to defer, because deferring the subscription is
+ * free and deferring the rent is not.
+ *
+ * It sits below the household's own weight, because a household that has
+ * explicitly ranked its bills has said something this engine does not get to
+ * overrule with arithmetic.
+ */
 function withinTier(a: Claim, b: Claim): number {
   const weightA = a.weight ?? Number.MAX_SAFE_INTEGER;
   const weightB = b.weight ?? Number.MAX_SAFE_INTEGER;
   if (weightA !== weightB) return weightA - weightB;
+
+  // Descending: the more expensive it is to miss, the earlier it is paid.
+  const penaltyA = a.missPenalty;
+  const penaltyB = b.missPenalty;
+  if (penaltyA && penaltyB && !penaltyA.equals(penaltyB)) {
+    return penaltyA.greaterThan(penaltyB) ? -1 : 1;
+  }
+  if (penaltyA?.isPositive() && !penaltyB?.isPositive()) return -1;
+  if (!penaltyA?.isPositive() && penaltyB?.isPositive()) return 1;
 
   if (a.dueDate && b.dueDate && a.dueDate !== b.dueDate) return a.dueDate < b.dueDate ? -1 : 1;
   if (a.dueDate && !b.dueDate) return -1;
@@ -207,17 +231,43 @@ function explain(claim: Claim, allocated: Money, today: PlainDate): LineExplanat
 
   switch (claim.kind) {
     case 'overdue_essential':
-      return {
-        key: 'overdueEssential',
-        values: { amount, label, due: String(claim.dueDate) },
-        ...partial,
-      };
+      // The penalty is cited when there is one, because «this went first» is a
+      // decision the household is entitled to see the reason for — and «it
+      // charges you $45 if you are late» is a reason, where «it is older» is
+      // barely one.
+      return claim.missPenalty?.isPositive()
+        ? {
+            key: 'overdueEssentialWithFee',
+            values: {
+              amount,
+              label,
+              due: String(claim.dueDate),
+              fee: claim.missPenalty.toCurrencyString(),
+            },
+            ...partial,
+          }
+        : {
+            key: 'overdueEssential',
+            values: { amount, label, due: String(claim.dueDate) },
+            ...partial,
+          };
     case 'upcoming_essential':
-      return {
-        key: 'upcomingEssential',
-        values: { amount, label, due: String(claim.dueDate) },
-        ...partial,
-      };
+      return claim.missPenalty?.isPositive()
+        ? {
+            key: 'upcomingEssentialWithFee',
+            values: {
+              amount,
+              label,
+              due: String(claim.dueDate),
+              fee: claim.missPenalty.toCurrencyString(),
+            },
+            ...partial,
+          }
+        : {
+            key: 'upcomingEssential',
+            values: { amount, label, due: String(claim.dueDate) },
+            ...partial,
+          };
     case 'debt_minimum':
       return { key: 'debtMinimum', values: { amount, label }, ...partial };
     case 'tax_reserve':

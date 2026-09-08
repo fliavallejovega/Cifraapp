@@ -467,7 +467,9 @@
     "reason": {
       "nothingLeft": "No queda nada para {label} de este dinero.",
       "overdueEssential": "Asigna {amount} a {label} porque venció el {due} y ya está atrasado.",
+      "overdueEssentialWithFee": "Asigna {amount} a {label} porque venció el {due} y todavía puedes evitar el recargo de {fee}.",
       "upcomingEssential": "Asigna {amount} a {label} porque vence el {due}.",
+      "upcomingEssentialWithFee": "Asigna {amount} a {label} porque vence el {due} y atrasarlo cuesta {fee}.",
       "debtMinimum": "Asigna {amount} a {label} para cubrir su pago mínimo.",
       "taxReserve": "Aparta {amount} como reserva fiscal estimada. Confírmalo con tu contador.",
       "emergencyFund": "Asigna {amount} a {label} porque el colchón va antes que lo opcional.",

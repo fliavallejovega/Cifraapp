@@ -30,6 +30,7 @@ import {
 import { and, eq, isNull } from 'drizzle-orm';
 
 import { queryAsUser, type Session } from '../session';
+import { penaltyStillAtStake } from './late-fee';
 
 /**
  * The allocation plan, on real rows.
@@ -99,6 +100,9 @@ export async function loadPlan(session: Session, householdId: string): Promise<P
             due: obligations.dueDate,
             amount: obligations.expectedAmount,
             isEssential: obligations.isEssential,
+            lateFeeAmount: obligations.lateFeeAmount,
+            lateFeeRate: obligations.lateFeeRate,
+            lateFeeAfterDays: obligations.lateFeeAfterDays,
           })
           .from(obligations)
           .where(
@@ -176,13 +180,17 @@ export async function loadPlan(session: Session, householdId: string): Promise<P
 
     const upcoming = obligationRows
       .filter((row) => row.due <= horizon)
-      .map((row) => ({
-        id: row.id,
-        name: row.name,
-        due: row.due as PlainDate,
-        amount: Money.fromDecimalString(row.amount, currency),
-        isEssential: row.isEssential,
-      }));
+      .map((row) => {
+        const amount = Money.fromDecimalString(row.amount, currency);
+        return {
+          id: row.id,
+          name: row.name,
+          due: row.due as PlainDate,
+          amount,
+          isEssential: row.isEssential,
+          missPenalty: penaltyStillAtStake(row, amount, row.due as PlainDate, today),
+        };
+      });
 
     const modelDebts: Debt[] = debtRows.map((row) => ({
       id: row.id,
@@ -330,7 +338,13 @@ function buildFacts(input: {
 function buildClaims(input: {
   currency: CurrencyCode;
   today: PlainDate;
-  obligations: readonly { id: string; name: string; due: PlainDate; amount: Money }[];
+  obligations: readonly {
+    id: string;
+    name: string;
+    due: PlainDate;
+    amount: Money;
+    missPenalty: Money | null;
+  }[];
   debts: readonly Debt[];
   ordered: readonly { debt: Debt; effectiveApr: string; position: number }[];
   taxReserve: Money;
@@ -353,6 +367,7 @@ function buildClaims(input: {
       target: `obligation:${obligation.id}`,
       requested: obligation.amount,
       dueDate: obligation.due,
+      missPenalty: obligation.missPenalty,
     });
   }
 

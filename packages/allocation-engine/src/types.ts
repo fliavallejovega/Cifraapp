@@ -83,6 +83,24 @@ export interface Claim {
   readonly apr?: string | null;
   /** Lower goes first inside its tier. Ties break on due date, then id. */
   readonly weight?: number | null;
+  /**
+   * What not paying this costs, in money, while that cost can still be avoided.
+   *
+   * Two bills in the same tier are not equally worth paying when there is only
+   * enough for one. A rent with a five percent late charge and a subscription
+   * with none are a forty-five dollar decision, and until this existed the
+   * engine broke that tie on the due date — which is to say, on nothing that
+   * costs anybody anything.
+   *
+   * «While it can still be avoided» is the whole of it. A charge already
+   * incurred is sunk: paying today does not undo it, so it must not push the
+   * bill up the queue. Whoever builds the claim decides that, because only they
+   * know the grace period; this field carries what is still at stake.
+   *
+   * Null or zero means nothing is known to be at stake, which is not the same
+   * as knowing there is no penalty. Neither ranks above the other.
+   */
+  readonly missPenalty?: Money | null;
 }
 
 /**

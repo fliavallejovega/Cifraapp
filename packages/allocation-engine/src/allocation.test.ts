@@ -393,3 +393,89 @@ describe('nothing to allocate', () => {
     expect(plan.fullyFunded).toBe(true);
   });
 });
+
+/**
+ * What a late fee is for: deciding which bill goes unpaid when only one can be.
+ *
+ * These are two bills in the same tier, funded sequentially, with enough money
+ * for one of them. Before the penalty existed the engine broke that tie on the
+ * due date — which decided a forty-five dollar question on the basis of nothing
+ * that costs anybody anything.
+ */
+describe('choosing which bill to miss', () => {
+  const cheapToMiss: Claim = {
+    id: 'streaming',
+    kind: 'upcoming_essential',
+    label: 'Internet',
+    target: 'obligation:internet',
+    requested: usd('60.00'),
+    // Due first, so due date alone would fund this one.
+    dueDate: toPlainDate('2026-08-20'),
+  };
+
+  const expensiveToMiss: Claim = {
+    id: 'rent-with-fee',
+    kind: 'upcoming_essential',
+    label: 'Rent',
+    target: 'obligation:rent',
+    requested: usd('900.00'),
+    dueDate: toPlainDate('2026-08-28'),
+    // Five percent of nine hundred, still avoidable.
+    missPenalty: usd('45.00'),
+  };
+
+  it('pays the one that charges for being late, not the one that is due first', () => {
+    const plan = buildAllocationPlan({
+      incoming: usd('900.00'),
+      claims: [cheapToMiss, expensiveToMiss],
+      order: DEFAULT_PRIORITY_ORDER,
+      today: TODAY,
+    });
+
+    const [first, second] = plan.lines;
+    expect(first?.claimId).toBe('rent-with-fee');
+    expect(first?.allocated.toDecimalString()).toBe('900.0000');
+    // And the cheap one is the one left short, which is the correct answer:
+    // deferring it costs nothing and deferring the rent costs forty-five.
+    expect(second?.claimId).toBe('streaming');
+    expect(second?.shortfall.toDecimalString()).toBe('60.0000');
+  });
+
+  it('says why it went first, so the order can be argued with', () => {
+    const plan = buildAllocationPlan({
+      incoming: usd('900.00'),
+      claims: [cheapToMiss, expensiveToMiss],
+      order: DEFAULT_PRIORITY_ORDER,
+      today: TODAY,
+    });
+
+    const rent = plan.lines.find((line) => line.claimId === 'rent-with-fee');
+    expect(rent?.explanation.key).toBe('upcomingEssentialWithFee');
+    expect(rent?.explanation.values['fee']).toBe('45.00');
+  });
+
+  it('falls back to the due date when neither charges anything', () => {
+    const plan = buildAllocationPlan({
+      incoming: usd('60.00'),
+      claims: [cheapToMiss, { ...expensiveToMiss, missPenalty: null }],
+      order: DEFAULT_PRIORITY_ORDER,
+      today: TODAY,
+    });
+    // The control: without the penalty the old rule applies and the earliest
+    // due date wins. Without this, the test above proves only that *something*
+    // reordered the tier, not that the penalty is what did it.
+    expect(plan.lines[0]?.claimId).toBe('streaming');
+  });
+
+  it('lets the household outrank the arithmetic', () => {
+    const plan = buildAllocationPlan({
+      incoming: usd('60.00'),
+      // A household that has ranked its bills has said something the engine
+      // does not get to overrule with a fee calculation.
+      claims: [{ ...cheapToMiss, weight: 1 }, expensiveToMiss],
+      order: DEFAULT_PRIORITY_ORDER,
+      today: TODAY,
+    });
+    expect(plan.lines[0]?.claimId).toBe('streaming');
+  });
+});

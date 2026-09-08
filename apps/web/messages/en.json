@@ -467,7 +467,9 @@
     "reason": {
       "nothingLeft": "Nothing left for {label} from this money.",
       "overdueEssential": "Allocate {amount} to {label} because it was due on {due} and is already late.",
+      "overdueEssentialWithFee": "Puts {amount} toward {label}: it was due on {due} and the {fee} late charge can still be avoided.",
       "upcomingEssential": "Allocate {amount} to {label} because it is due on {due}.",
+      "upcomingEssentialWithFee": "Puts {amount} toward {label}: it is due on {due} and paying it late costs {fee}.",
       "debtMinimum": "Allocate {amount} to {label} to cover its minimum payment.",
       "taxReserve": "Set aside {amount} as an estimated tax reserve. Confirm it with your accountant.",
       "emergencyFund": "Allocate {amount} to {label} because the buffer comes before anything optional.",
