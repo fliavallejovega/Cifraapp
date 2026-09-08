@@ -867,7 +867,11 @@
       "actionValueInvalid": "Revisa el valor de la acción.",
       "ruleInvalid": "La regla no es válida. Revisa la condición y la acción.",
       "nothingToAccept": "Todavía no hay un plan que aceptar.",
-      "alreadyStarted": "Ya empezó a procesarse y no se puede cancelar."
+      "alreadyStarted": "Ya empezó a procesarse y no se puede cancelar.",
+      "horizonInvalid": "Elige cuántos meses ver.",
+      "labelRequired": "Ponle nombre al cambio.",
+      "monthsInvalid": "Escribe un número de meses válido.",
+      "changeIsEmpty": "Un escenario sin costo ni ingreso es no hacer nada con otro nombre."
     }
   },
   "movements": {
@@ -2217,5 +2221,185 @@
       "empty": "No tienes ninguna cuenta de reserva fiscal. Crea una y mueve ahí lo que apartes: separar el dinero de verdad es lo que hace que la reserva funcione.",
       "create": "Crear una cuenta de reserva"
     }
+  },
+  "scenarios": {
+    "title": "Escenarios",
+    "detail": "«¿Y si me suben el sueldo?» «¿Y si cambio de casa?» Aritmética sobre tu posición de hoy, no una predicción.",
+    "list": {
+      "title": "Tus escenarios",
+      "detail": "Cada uno se recalcula con tus cifras actuales cada vez que abres esta pantalla."
+    },
+    "add": "Crear un escenario",
+    "addTitle": "Nuevo escenario",
+    "submitCreate": "Crear este escenario",
+    "submitUpdate": "Guardar los cambios",
+    "removeConfirm": "Se elimina el escenario. Tus cifras no cambian.",
+    "empty": {
+      "title": "Todavía no tienes escenarios.",
+      "body": "Empieza por el que te quita el sueño. «El alquiler sube $150» y «pierdo este contrato por seis meses» son los dos más comunes."
+    },
+    "form": {
+      "name": "¿Qué te estás preguntando?",
+      "nameHint": "En tus palabras. Por ejemplo, «mudarnos a San Francisco».",
+      "kind": "De qué se trata",
+      "horizon": "Ver hasta dentro de",
+      "horizonHint": "En meses.",
+      "label": "El cambio",
+      "labelHint": "Cómo lo llamas. Por ejemplo, «alquiler más caro».",
+      "starts": "Empieza dentro de",
+      "startsHint": "En meses. 0 es desde este mes.",
+      "duration": "Dura",
+      "durationHint": "En meses. Déjalo vacío si es para siempre.",
+      "oneTime": "Costo de una sola vez",
+      "monthlyExpense": "Gasto extra al mes",
+      "monthlyIncome": "Ingreso extra al mes"
+    },
+    "kinds": {
+      "vehicle_purchase": "Comprar un carro",
+      "marriage": "Casarse",
+      "child": "Un hijo",
+      "income_loss": "Perder un ingreso",
+      "bonus": "Un bono",
+      "debt_payoff": "Pagar una deuda",
+      "vacation": "Un viaje",
+      "move": "Mudarse",
+      "rent_increase": "Sube el alquiler",
+      "job_change": "Cambio de trabajo"
+    },
+    "result": {
+      "title": "Qué cambia",
+      "detail": "Contra no hacer nada, al final del horizonte.",
+      "liquid": "Dinero líquido",
+      "debt": "Deuda",
+      "netWorth": "Patrimonio",
+      "interest": "Intereses pagados",
+      "runway": "Meses de aguante",
+      "runwayShorter": "{count} meses menos de aguante",
+      "runwayLonger": "{count} meses más de aguante",
+      "runwaySame": "El aguante no cambia",
+      "shortfall": "Te quedas sin dinero líquido en {date}",
+      "noShortfall": "No te quedas sin dinero líquido dentro del horizonte",
+      "horizonNote": "«No te quedas sin dinero» no es tranquilidad: puede ser que el horizonte sea más corto que el problema."
+    },
+    "over": "En {count} meses"
+  },
+  "projection": {
+    "title": "Proyección",
+    "detail": "Cómo se ven los meses que vienen si no cambia nada. Es aritmética que puedes comprobar en papel, no un pronóstico.",
+    "horizon": {
+      "label": "Ver",
+      "12": "12 meses",
+      "24": "24 meses",
+      "60": "5 años",
+      "apply": "Ver"
+    },
+    "stats": {
+      "endingLiquid": "Dinero líquido al final",
+      "endingDebt": "Deuda al final",
+      "endingNetWorth": "Patrimonio al final",
+      "totalInterest": "Intereses en todo el periodo"
+    },
+    "runway": {
+      "title": "Aguante",
+      "months": "{count} meses hasta quedarte sin líquido",
+      "safe": "No te quedas sin líquido dentro del horizonte",
+      "note": "Que no aparezca aquí no significa que no pase: puede ser que el horizonte sea más corto que el problema."
+    },
+    "table": {
+      "title": "Mes a mes",
+      "month": "Mes",
+      "income": "Entra",
+      "expenses": "Gastos",
+      "debt": "Deuda pagada",
+      "net": "Neto",
+      "liquid": "Líquido"
+    },
+    "empty": {
+      "title": "Todavía no hay con qué proyectar.",
+      "body": "Hace falta al menos una cuenta con saldo y un ingreso registrado. Con eso podemos decirte cómo se ven los meses que vienen.",
+      "action": "Registrar mis ingresos"
+    },
+    "assumptions": {
+      "title": "Sobre qué está calculado",
+      "income": "Ingreso mensual: {amount}",
+      "expenses": "Compromisos mensuales: {amount}",
+      "debts": "{count} deudas con sus mínimos y sus tasas",
+      "note": "Sin compras nuevas, sin inflación y sin cambios de sueldo. Si algo de eso va a pasar, míralo en Escenarios."
+    }
+  },
+  "close": {
+    "title": "Cierre de mes",
+    "detail": "Sellar un mes es una promesa: las cifras que citaste de él no van a cambiar por debajo.",
+    "period": "Cerrando {start} — {end}",
+    "movements": "{count} movimientos en el periodo",
+    "checklist": {
+      "title": "Antes de cerrar",
+      "detail": "Dos de estas bloquean el cierre. Las otras se pueden cerrar sabiendo que quedan pendientes.",
+      "clear": "Nada pendiente",
+      "outstanding": "{count} pendientes",
+      "blocks": "Bloquea el cierre",
+      "steps": {
+        "uncategorized": "Movimientos sin rubro",
+        "duplicates": "Posibles repetidos sin resolver",
+        "transfers": "Transferencias sin confirmar",
+        "reconciliation": "Movimientos por revisar"
+      }
+    },
+    "action": {
+      "close": "Cerrar este mes",
+      "closed": "Mes cerrado.",
+      "blocked": "Todavía no se puede cerrar: hay pendientes que bloquean.",
+      "confirm": "Después de cerrar, corregir algo de este mes exige reabrirlo y dar una razón."
+    },
+    "history": {
+      "title": "Meses cerrados",
+      "empty": "Todavía no has cerrado ningún mes.",
+      "closedOn": "Cerrado el {date}",
+      "reopenedOn": "Reabierto el {date}",
+      "statuses": {
+        "open": "Abierto",
+        "closing": "Cerrando",
+        "closed": "Cerrado",
+        "reopened": "Reabierto"
+      }
+    },
+    "reopen": {
+      "title": "Reabrir",
+      "detail": "Hace falta una razón, y se guarda. Alguien va a preguntar por qué cambiaron las cifras que le diste.",
+      "reason": "¿Por qué lo reabres?",
+      "action": "Reabrir este mes",
+      "cancel": "Cancelar"
+    },
+    "errorTitle": "No se pudo cerrar",
+    "errors": {
+      "blockedByChecklist": "Hay pendientes que bloquean el cierre. Resuélvelos y vuelve.",
+      "reasonRequired": "Escribe por qué lo estás reabriendo.",
+      "notFound": "Ese periodo ya no existe.",
+      "signInRequired": "Tu sesión venció. Vuelve a entrar.",
+      "generic": "Algo falló. Vuelve a intentarlo."
+    }
+  },
+  "exports": {
+    "title": "Exportar",
+    "detail": "Las mismas cifras que ves en Estados, en el formato que necesite quien las va a leer.",
+    "period": "Del periodo {start} — {end}",
+    "kinds": {
+      "transactions": "Movimientos",
+      "transactionsDetail": "Cada movimiento del periodo, con su rubro y su cuenta.",
+      "income": "Estado de resultados",
+      "incomeDetail": "Lo que entró y lo que salió, agrupado por rubro."
+    },
+    "formats": {
+      "csv": "CSV",
+      "csvDetail": "Abre en cualquier hoja de cálculo. Los montos van sin formato, para que no se lean como texto.",
+      "xlsx": "Excel",
+      "xlsxDetail": "Con los tipos puestos: las fechas son fechas y los montos son números. Es lo que pide un contador.",
+      "pdf": "PDF",
+      "pdfDetail": "Un documento para mandar a un banco, un arrendador o tu contador.",
+      "json": "JSON",
+      "jsonDetail": "Para otro sistema. Va con la moneda y la fecha de generación."
+    },
+    "download": "Descargar",
+    "note": "Nada de esto se guarda en el servidor. Se genera y se envía: una exportación financiera guardada en un bucket es una segunda copia de lo más sensible que hay aquí, para la comodidad de una descarga que ya funcionó."
   }
 }

@@ -11,19 +11,68 @@ status table.
 
 ## Status
 
-|                         |                                                                                                                                          |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| **Complete**            | Phase 0 (foundation) · Phase 1 (design system) · Phase 2 (auth, tenancy and password recovery) · Phase 5 (duplicate and transfer engine) |
-| **Engines complete**    | Phases 6–15 — category, budget, debt, rule, allocation, AI, scenario, tax, reporting, billing and ledger engines; **no management UI**   |
-| **Substantially built** | Phase 3 (schema and position repository done, no per-entity CRUD) · Phase 4 (CSV/OFX, R2 and review pipeline done, no row confirmation)  |
-| **Not started**         | Phases 12–21                                                                                                                             |
-| **Tests**               | 431 unit and integration · 38 end-to-end · all passing                                                                                   |
-| **Gate**                | 20/20 tasks green: `lint`, `typecheck`, `test`, `build`                                                                                  |
-| **Commits**             | 14, working tree clean                                                                                                                   |
+|                          |                                                                                                                                             |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Complete**             | Phases 0–15 and 17–18. Every engine now has the product surface it was written for: **43 of 43 screens built**                              |
+| **Partly built**         | Phase 16 (CMS model, no editor) · 19 (white-label model, no admin UI) · 20 (admin app read-only) · 21 (security audit yes, load testing no) |
+| **Blocked on the world** | OCR needs a provider · billing needs a Stripe account · the copilot needs a key · the Panama tax rules need a qualified reviewer            |
+| **Tests**                | 470 unit and integration · 38 end-to-end · all passing                                                                                      |
+| **Gate**                 | 33/33 tasks green: `lint`, `typecheck`, `test`, `build`                                                                                     |
+| **Migrations**           | 26, schema version 26                                                                                                                       |
 
 Live infrastructure is connected and exercised by the end-to-end suite. This is
 not a repository that merely compiles; it signs a user in, creates their
 household, stores a statement in object storage, and refuses to import it twice.
+
+## What the product surface became
+
+The business plan of 7 September 2026 (`docs/plan-de-negocio.md`) found six
+screens against a model that needed forty-three, and named the missing
+thirty-seven in five phases. All five are built. What each one closed:
+
+**Phase 1 — the household became administrable.** Movements with search, filter
+and correction; income, debts, goals, commitments, categories, people and
+household settings. Before it, the setup questionnaire was the only door into
+those rows and there was no way back through it. Migration 23 added
+`household_people` — the six-year-old the income covers is not a membership —
+and `transaction_splits`, whose sum is held to the transaction's amount by a
+deferred constraint trigger.
+
+**Phase 2 — the data started entering on its own.** Migration 24 added
+`app.jobs`, a queue claimed with `for update skip locked`, because parsing a PDF
+inside a request is the rule the project forbids and the reason PDF import was
+impossible to ship. A PDF text-layer reader and an XLSX reader were written
+against `node:zlib` rather than pulled from npm; the CSV parser's column
+heuristics moved to `table.ts` and all three share them. Four scans — transfers,
+duplicates, recurrence, categorization — propose and never decide, each with its
+own review queue showing the confidence and the signals that fired.
+
+**Phase 3 — the system started recommending.** Budgets whose "left" column
+subtracts commitments still to be paid; advice; derived alerts that are never
+stored, with acknowledgements that expire at month end; the debt simulator that
+always runs both strategies; plan acceptance and tracking; the rule builder; and
+chat. Migration 25 added chat threads carrying the grounding each answer was
+given, and `alert_dismissals`.
+
+**Phase 4 — it can charge and be shared.** Subscription leading with usage
+rather than price, member invitations with a hashed token shown once, accountant
+grants with scope and expiry, the household switcher, notification preferences
+with a delivery log, the tax profile and the reserve. Migration 26 added
+notification preferences and deliveries.
+
+**Phase 5 — depth.** Scenarios compared against doing nothing, projection with
+its assumptions printed, month close with a blocking checklist and reopening
+that demands a reason, and exports in CSV, JSON, XLSX and PDF — the last two
+written by hand, tested by reading the bytes back rather than by snapshot.
+
+### What is still not true
+
+Four things are named on the screen that would use them rather than left as a
+blank that reads as a bug: OCR has no provider, so a scanned statement is
+refused by name; billing has no Stripe account, so the subscription screen
+offers no button; the copilot has no key, so advice keeps its figures and loses
+its paragraph; and the Panama tax rules are an unreviewed draft, so the reserve
+screen falls back to the household's own rate and says which one it is using.
 
 ## Read this before resuming
 

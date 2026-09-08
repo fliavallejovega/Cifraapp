@@ -867,7 +867,11 @@
       "actionValueInvalid": "Check the action value.",
       "ruleInvalid": "The rule is not valid. Check the condition and the action.",
       "nothingToAccept": "There is no plan to accept yet.",
-      "alreadyStarted": "It already started processing and cannot be cancelled."
+      "alreadyStarted": "It already started processing and cannot be cancelled.",
+      "horizonInvalid": "Choose how many months to look ahead.",
+      "labelRequired": "Give the change a name.",
+      "monthsInvalid": "Write a valid number of months.",
+      "changeIsEmpty": "A scenario with no cost and no income is doing nothing under another name."
     }
   },
   "movements": {
@@ -2217,5 +2221,185 @@
       "empty": "You have no tax reserve account. Create one and move what you set aside into it: separating the money for real is what makes the reserve work.",
       "create": "Create a reserve account"
     }
+  },
+  "scenarios": {
+    "title": "Scenarios",
+    "detail": "«What if I get a raise?» «What if we move?» Arithmetic on today's position, not a prediction.",
+    "list": {
+      "title": "Your scenarios",
+      "detail": "Each one is recomputed from your current figures every time you open this screen."
+    },
+    "add": "Create a scenario",
+    "addTitle": "New scenario",
+    "submitCreate": "Create this scenario",
+    "submitUpdate": "Save the changes",
+    "removeConfirm": "The scenario is removed. Your figures do not change.",
+    "empty": {
+      "title": "No scenarios yet.",
+      "body": "Start with the one that keeps you up. «Rent goes up $150» and «I lose this contract for six months» are the two most common."
+    },
+    "form": {
+      "name": "What are you asking?",
+      "nameHint": "In your words. For example, «moving to San Francisco».",
+      "kind": "What it is about",
+      "horizon": "Look ahead",
+      "horizonHint": "In months.",
+      "label": "The change",
+      "labelHint": "What you call it. For example, «higher rent».",
+      "starts": "Starts in",
+      "startsHint": "In months. 0 is from this month.",
+      "duration": "Lasts",
+      "durationHint": "In months. Leave it empty if it is permanent.",
+      "oneTime": "One-off cost",
+      "monthlyExpense": "Extra spending per month",
+      "monthlyIncome": "Extra income per month"
+    },
+    "kinds": {
+      "vehicle_purchase": "Buying a car",
+      "marriage": "Getting married",
+      "child": "A child",
+      "income_loss": "Losing an income",
+      "bonus": "A bonus",
+      "debt_payoff": "Paying off a debt",
+      "vacation": "A trip",
+      "move": "Moving",
+      "rent_increase": "Rent goes up",
+      "job_change": "Changing jobs"
+    },
+    "result": {
+      "title": "What changes",
+      "detail": "Against doing nothing, at the end of the horizon.",
+      "liquid": "Liquid money",
+      "debt": "Debt",
+      "netWorth": "Net worth",
+      "interest": "Interest paid",
+      "runway": "Months of runway",
+      "runwayShorter": "{count} months less runway",
+      "runwayLonger": "{count} months more runway",
+      "runwaySame": "Runway does not change",
+      "shortfall": "You run out of liquid money in {date}",
+      "noShortfall": "You do not run out of liquid money inside the horizon",
+      "horizonNote": "«You do not run out» is not reassurance: the horizon may simply be shorter than the problem."
+    },
+    "over": "Over {count} months"
+  },
+  "projection": {
+    "title": "Projection",
+    "detail": "How the months ahead look if nothing changes. Arithmetic you could check on paper, not a forecast.",
+    "horizon": {
+      "label": "Show",
+      "12": "12 months",
+      "24": "24 months",
+      "60": "5 years",
+      "apply": "Show"
+    },
+    "stats": {
+      "endingLiquid": "Liquid at the end",
+      "endingDebt": "Debt at the end",
+      "endingNetWorth": "Net worth at the end",
+      "totalInterest": "Interest over the whole period"
+    },
+    "runway": {
+      "title": "Runway",
+      "months": "{count} months before you run out of liquid",
+      "safe": "You do not run out of liquid inside the horizon",
+      "note": "Not appearing here does not mean it does not happen: the horizon may be shorter than the problem."
+    },
+    "table": {
+      "title": "Month by month",
+      "month": "Month",
+      "income": "In",
+      "expenses": "Spending",
+      "debt": "Debt paid",
+      "net": "Net",
+      "liquid": "Liquid"
+    },
+    "empty": {
+      "title": "There is nothing to project from yet.",
+      "body": "It takes at least one account with a balance and one recorded income. With those we can show how the months ahead look.",
+      "action": "Record my income"
+    },
+    "assumptions": {
+      "title": "What this is computed on",
+      "income": "Monthly income: {amount}",
+      "expenses": "Monthly commitments: {amount}",
+      "debts": "{count} debts with their minimums and rates",
+      "note": "No new purchases, no inflation, no salary changes. If any of those are coming, look at Scenarios."
+    }
+  },
+  "close": {
+    "title": "Month close",
+    "detail": "Sealing a month is a promise: the figures you quoted from it will not change underneath you.",
+    "period": "Closing {start} — {end}",
+    "movements": "{count} movements in the period",
+    "checklist": {
+      "title": "Before closing",
+      "detail": "Two of these block the close. The others can be closed over, knowingly.",
+      "clear": "Nothing outstanding",
+      "outstanding": "{count} outstanding",
+      "blocks": "Blocks the close",
+      "steps": {
+        "uncategorized": "Movements with no category",
+        "duplicates": "Unresolved possible repeats",
+        "transfers": "Unconfirmed transfers",
+        "reconciliation": "Movements needing review"
+      }
+    },
+    "action": {
+      "close": "Close this month",
+      "closed": "Month closed.",
+      "blocked": "It cannot be closed yet: something blocking is outstanding.",
+      "confirm": "After closing, correcting anything in this month requires reopening it and giving a reason."
+    },
+    "history": {
+      "title": "Closed months",
+      "empty": "You have not closed a month yet.",
+      "closedOn": "Closed on {date}",
+      "reopenedOn": "Reopened on {date}",
+      "statuses": {
+        "open": "Open",
+        "closing": "Closing",
+        "closed": "Closed",
+        "reopened": "Reopened"
+      }
+    },
+    "reopen": {
+      "title": "Reopen",
+      "detail": "A reason is required, and it is kept. Somebody will ask why the figures you gave them changed.",
+      "reason": "Why are you reopening it?",
+      "action": "Reopen this month",
+      "cancel": "Cancel"
+    },
+    "errorTitle": "Could not close",
+    "errors": {
+      "blockedByChecklist": "Something blocking is still outstanding. Resolve it and come back.",
+      "reasonRequired": "Write why you are reopening it.",
+      "notFound": "That period no longer exists.",
+      "signInRequired": "Your session expired. Sign in again.",
+      "generic": "Something failed. Try again."
+    }
+  },
+  "exports": {
+    "title": "Export",
+    "detail": "The same figures you see under Statements, in whatever format the person reading them needs.",
+    "period": "For the period {start} — {end}",
+    "kinds": {
+      "transactions": "Movements",
+      "transactionsDetail": "Every movement in the period, with its category and account.",
+      "income": "Income statement",
+      "incomeDetail": "What came in and what went out, grouped by category."
+    },
+    "formats": {
+      "csv": "CSV",
+      "csvDetail": "Opens in any spreadsheet. Amounts go unformatted, so they are not read as text.",
+      "xlsx": "Excel",
+      "xlsxDetail": "With the types set: dates are dates and amounts are numbers. This is what an accountant asks for.",
+      "pdf": "PDF",
+      "pdfDetail": "A document to send to a bank, a landlord or your accountant.",
+      "json": "JSON",
+      "jsonDetail": "For another system. Carries the currency and the time it was generated."
+    },
+    "download": "Download",
+    "note": "None of this is stored on the server. It is generated and sent: a financial export sitting in a bucket is a second copy of the most sensitive data here, kept for the convenience of a download that already worked."
   }
 }

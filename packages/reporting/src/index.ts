@@ -16,6 +16,10 @@ export {
 
 export { emergencyMonths, healthScore, type HealthInput } from './health.js';
 
+export { toPdf, type PdfColumn, type PdfTableSpec } from './pdf-writer.js';
+
+export { toXlsx, type CellValue, type SheetSpec } from './xlsx-writer.js';
+
 export { noDifference, reconcile, reconciliationCandidates } from './reconciliation.js';
 
 export {

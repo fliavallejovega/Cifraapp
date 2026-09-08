@@ -10,6 +10,46 @@ de negocio y la lista completa de lo que falta.
 
 ---
 
+## 0. Estado de ejecución
+
+**Este análisis está ejecutado. Las 37 pantallas que faltaban están
+construidas: 43 de 43.** El resto del documento se conserva tal como se
+escribió, porque es el registro de lo que se encontró y de por qué se decidió
+este orden — no se reescribe para que parezca que siempre estuvo bien.
+
+| Capa                   | Al escribirlo             | Hoy                                                      |
+| ---------------------- | ------------------------- | -------------------------------------------------------- |
+| Base de datos          | 75 tablas, 22 migraciones | 82 tablas, 26 migraciones                                |
+| Motores de cálculo     | 439 pruebas               | 470 pruebas, todas con superficie de producto            |
+| Superficie de producto | 6 de 43                   | **43 de 43**                                             |
+| Inteligencia (IA)      | apagada                   | consejo, alertas y chat construidos; **sigue sin clave** |
+| Monetización           | sin Stripe                | pantalla de suscripción construida; **sigue sin Stripe** |
+
+Las cinco fases se entregaron en el orden que este documento propuso:
+
+1. **Que el hogar se pueda administrar** — 12 pantallas. Movimientos con
+   búsqueda y corrección, ingresos, deudas, metas, compromisos, rubros,
+   personas y ajustes. Migración 23.
+2. **Que los datos entren solos** — 7 pantallas. Trabajos en segundo plano,
+   lectores de PDF y XLSX escritos sin dependencias, y cuatro colas de revisión
+   donde el motor propone y nunca decide. Migración 24.
+3. **Que el sistema aconseje** — 8 pantallas. Presupuestos, consejo, alertas,
+   simulador, seguimiento del plan, constructor de reglas y chat. Migración 25.
+4. **Que se pueda cobrar y compartir** — 7 pantallas. Suscripción, miembros,
+   contadores, selector de hogar, avisos, perfil fiscal y reserva. Migración 26.
+5. **Profundidad** — 4 pantallas. Escenarios, proyección, cierre de mes y
+   exportaciones en CSV, JSON, XLSX y PDF.
+
+**Lo que sigue sin ser cierto**, dicho en la pantalla que lo necesita y no
+escondido: el OCR necesita un proveedor, el cobro necesita una cuenta de
+Stripe, el copiloto necesita una clave, y las reglas fiscales de Panamá
+necesitan la revisión de un contador panameño antes de que una sola cifra
+derivada de ellas se le muestre a nadie. Los riesgos de la sección 8 —
+empezando por rotar las credenciales que se pegaron en un chat — siguen
+abiertos y no dependen de ninguna fase.
+
+---
+
 ## 1. Qué es el producto
 
 **Cifrapp es el sistema operativo financiero de un hogar.** No es una app de

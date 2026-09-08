@@ -4,30 +4,30 @@ Phases are sequential. Each one ends with lint, typecheck, tests and build
 green, documentation updated, and a report. Nothing starts before the phase
 before it is stable.
 
-| Phase | Scope                                                                                          | Status                                                                                                                                                   |
-| ----- | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0     | Repository foundation: monorepo, strict types, migrations, money primitives, i18n, tests, CI   | **Complete**                                                                                                                                             |
-| 1     | Design system: visual identity, typography, color, motion, components, `DESIGN.md`             | **Complete — v2**: private-bank console (ink/ivory/brass), sidebar + revealed drawer, cards, PWA                                                         |
-| 2     | Auth and multi-tenancy: users, households, memberships, organizations, RLS, audit log          | **Complete** — password recovery included; no MFA, magic link, OAuth, invitation sending or household switcher                                           |
-| 3     | Core financial data model: accounts, transactions, categories, merchants, budgets, goals, debt | **Substantially built** — account CRUD is live; obligations, debts and goals are created by the setup questionnaire; no edit screens for those three yet |
-| 4     | Import engine: CSV, XLSX, OFX, PDF, document storage, parsing, normalization                   | **Substantially built** — CSV/OFX, R2, review pipeline and **row confirmation** are live end to end; no XLSX, no PDF, no OCR, no background jobs         |
-| 5     | Duplicate and transfer engine: fingerprints, matching, credit-card payment detection           | **Complete**                                                                                                                                             |
-| 6     | Category and learning engine: merchant normalization, user rules, confidence, review           | **Engine complete** — live on the database; no rule-management UI, nothing to classify until transactions exist                                          |
-| 7     | Budgets and recurring expenses: automatic suggestions, safe-to-spend, projections              | **Engine complete** — safe-to-spend is on screen; no budget UI, no cron, no notifications                                                                |
-| 8     | Debt engine: avalanche, snowball, simulations, payoff timelines                                | **Engine complete** — ordering feeds the plan; no debt CRUD, no simulation UI                                                                            |
-| 9     | Rule engine: visual builder, conditions, actions, priorities, audit history                    | **Engine complete** — rules are read and evaluated; **no visual builder**                                                                                |
-| 10    | Allocation engine: obligation prioritization, tax reserve, goal and debt allocation            | **Engine complete** — the plan screen renders it; plans are not yet persisted or accepted                                                                |
-| 11    | AI copilot: provider abstraction, structured outputs, explanations                             | **Engine complete** — guardrails, cost control and the plan narrative are live; no keys configured, no chat UI                                           |
-| 12    | Panama tax engine: jurisdiction model, versioned rules, DGI sources, review workflow           | **Engine complete** — rules are versioned rows; the Panama set is an **unreviewed draft** and shows to nobody                                            |
-| 13    | Reporting: statements, net worth, PDF and XLSX export                                          | **Substantially built** — statements, reconciliation, close, health score and CSV/JSON; **no PDF, no XLSX**                                              |
-| 14    | Billing: plans, Stripe abstraction, entitlements, usage, webhooks                              | **Engine complete** — catalogue, entitlements and idempotent webhooks; **no Stripe account, no pricing UI**                                              |
-| 15    | Internal SaaS accounting: chart of accounts, double-entry ledger, reconciliation               | **Engine complete** — postings, trial balance and SaaS metrics; balance enforced by a database trigger                                                   |
-| 16    | CMS: content model, editor, blog, SEO, media                                                   | **Model complete** — pages, media with required alt, FAQs, redirects, versioned legal; **no editor** (Phase 20)                                          |
-| 17    | Landing page                                                                                   | **Built** — 15 routes, content-driven, no fake testimonials or logos; **product name still provisional**                                                 |
-| 18    | Accountant portal                                                                              | **Built** — explicit scoped revocable grants, client list and detail; **no invitation flow, no grant UI**                                                |
-| 19    | White label                                                                                    | **Model built** — branding, verified domains, per-household resolution; **no admin UI, no domain automation**                                            |
-| 20    | Admin platform                                                                                 | **Built** — separate app, roles, metrics, flags; **read-only, no support or CMS tooling**                                                                |
-| 21    | Hardening: security review, RLS audit, performance, accessibility, load testing                | **Partly done** — the security audit is a test and it found real drift; **no load testing, e2e not run**                                                 |
+| Phase | Scope                                                                                          | Status                                                                                                                                                 |
+| ----- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 0     | Repository foundation: monorepo, strict types, migrations, money primitives, i18n, tests, CI   | **Complete**                                                                                                                                           |
+| 1     | Design system: visual identity, typography, color, motion, components, `DESIGN.md`             | **Complete — v2**: private-bank console (ink/ivory/brass), sidebar + revealed drawer, cards, PWA                                                       |
+| 2     | Auth and multi-tenancy: users, households, memberships, organizations, RLS, audit log          | **Complete** — password recovery included; no MFA, magic link, OAuth, invitation sending or household switcher                                         |
+| 3     | Core financial data model: accounts, transactions, categories, merchants, budgets, goals, debt | **Complete** — every entity has a management screen: accounts, movements, income, debts, goals, commitments, categories, merchants, people             |
+| 4     | Import engine: CSV, XLSX, OFX, PDF, document storage, parsing, normalization                   | **Complete except OCR** — CSV, OFX, PDF text layer and XLSX all parse in a background job; a scan is refused by name rather than read as empty         |
+| 5     | Duplicate and transfer engine: fingerprints, matching, credit-card payment detection           | **Complete**                                                                                                                                           |
+| 6     | Category and learning engine: merchant normalization, user rules, confidence, review           | **Complete** — the scan classifies, merchants are created and named, and anything under the threshold goes to a review queue rather than being applied |
+| 7     | Budgets and recurring expenses: automatic suggestions, safe-to-spend, projections              | **Complete** — budgets with pace and commitments, suggestions from the household's own median, detected series queued for confirmation                 |
+| 8     | Debt engine: avalanche, snowball, simulations, payoff timelines                                | **Complete** — debt CRUD, per-debt payoff, and a simulator that always runs both strategies so the cost of the choice is visible                       |
+| 9     | Rule engine: visual builder, conditions, actions, priorities, audit history                    | **Complete** — the builder writes structured data only, and prints the whole fact catalogue so the sandbox is visible                                  |
+| 10    | Allocation engine: obligation prioritization, tax reserve, goal and debt allocation            | **Complete** — a plan can be accepted, is stored as it was seen, and is measured against what actually moved                                           |
+| 11    | AI copilot: provider abstraction, structured outputs, explanations                             | **Complete in product** — advice, alerts and chat with stored grounding; still **no provider key**, and every screen states that plainly               |
+| 12    | Panama tax engine: jurisdiction model, versioned rules, DGI sources, review workflow           | **Engine complete** — rules are versioned rows; the Panama set is an **unreviewed draft** and shows to nobody                                          |
+| 13    | Reporting: statements, net worth, PDF and XLSX export                                          | **Complete** — month close with its blocking checklist, and CSV, JSON, XLSX and PDF exports written without a dependency                               |
+| 14    | Billing: plans, Stripe abstraction, entitlements, usage, webhooks                              | **Complete in product** — subscription screen leading with usage against limits; still **no Stripe account**, and the screen says so                   |
+| 15    | Internal SaaS accounting: chart of accounts, double-entry ledger, reconciliation               | **Engine complete** — postings, trial balance and SaaS metrics; balance enforced by a database trigger                                                 |
+| 16    | CMS: content model, editor, blog, SEO, media                                                   | **Model complete** — pages, media with required alt, FAQs, redirects, versioned legal; **no editor** (Phase 20)                                        |
+| 17    | Landing page                                                                                   | **Built** — 15 routes, content-driven, no fake testimonials or logos; **product name still provisional**                                               |
+| 18    | Accountant portal                                                                              | **Complete** — grants can be handed out and revoked from the household side, with a scope and an expiry                                                |
+| 19    | White label                                                                                    | **Model built** — branding, verified domains, per-household resolution; **no admin UI, no domain automation**                                          |
+| 20    | Admin platform                                                                                 | **Built** — separate app, roles, metrics, flags; **read-only, no support or CMS tooling**                                                              |
+| 21    | Hardening: security review, RLS audit, performance, accessibility, load testing                | **Partly done** — the security audit is a test and it found real drift; **no load testing, e2e not run**                                               |
 
 ## Priority if scope must be cut
 
@@ -42,9 +42,19 @@ valuable; nothing after that is worth compromising the data integrity layer for.
 
 ## Where things stand
 
-**Every phase has been through once.** Phases 0–2, 5 and 17–18 are complete;
-6–15 are complete as engines with their databases and, in most cases, a screen;
-3, 4, 13, 16, 19, 20 and 21 are partly built, and the table above says exactly
+**The product surface is complete.** All 43 screens the business plan named are
+built — the twelve that made the household administrable, the seven that get
+data in on its own, the eight that make the system recommend, the seven that
+let it charge and be shared, and the four that give it depth.
+
+What remains is not a screen. OCR needs a provider; billing needs a Stripe
+account; the copilot needs a key; the Panama tax rules need a qualified reviewer
+before a single figure derived from them is shown to anybody. Each of those is
+named on the screen that would use it, rather than left as a blank that reads
+as a bug.
+
+Phases 0–2, 5, 17 and 18 are complete; 3, 4, 6–15 are complete as engines _and_
+as product; 16, 19, 20 and 21 are partly built, and the table above says exactly
 where each stops.
 
 439 unit and integration tests, all passing. **22 migrations apply cleanly from
