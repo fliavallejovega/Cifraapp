@@ -4,6 +4,7 @@ import createIntlMiddleware from 'next-intl/middleware';
 import { NextResponse, type NextRequest } from 'next/server';
 
 import { routing } from './i18n/routing';
+import { AUTH_SEGMENTS, PROTECTED_SEGMENTS } from './product-routes';
 
 /**
  * Runs before a request reaches a route. Next 16 calls this the proxy; it is
@@ -23,20 +24,6 @@ import { routing } from './i18n/routing';
  */
 
 const intlMiddleware = createIntlMiddleware(routing);
-
-/** Routes inside the product. Everything else is public. */
-const PROTECTED_SEGMENTS = [
-  '/overview',
-  '/welcome',
-  '/money',
-  '/transactions',
-  '/plan',
-  '/documents',
-  '/settings',
-];
-
-/** Routes a signed-in user has no reason to see. */
-const AUTH_SEGMENTS = ['/sign-in', '/sign-up'];
 
 function stripLocale(pathname: string): string {
   for (const locale of routing.locales) {
