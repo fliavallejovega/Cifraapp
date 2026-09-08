@@ -2552,7 +2552,10 @@
         "body": "Add whatever you want to follow and its chart appears here. Something being on your list does not mean the product is proposing it."
       },
       "chartLabel": "Price chart for {label}",
-      "chartNote": "Chart served by TradingView. Nothing it shows comes from your records."
+      "chartNote": "Chart served by TradingView. Nothing it shows comes from your records.",
+      "chartLoading": "Loading the chart…",
+      "chartFailedTitle": "The chart could not load",
+      "chartFailedBody": "TradingView did not answer. It is usually an ad blocker, the network, or being offline. Nothing else on this screen depends on it: the modelling above is arithmetic on your own figures and consults no price."
     },
     "errorTitle": "Could not save"
   }

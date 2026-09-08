@@ -312,6 +312,9 @@ export default async function InvestmentsPage({ params }: { params: Promise<{ lo
             emptyBody: t('watchlist.empty.body'),
             chartLabel: rawOf(t)('watchlist.chartLabel'),
             chartNote: t('watchlist.chartNote'),
+            chartLoading: t('watchlist.chartLoading'),
+            chartFailedTitle: t('watchlist.chartFailedTitle'),
+            chartFailedBody: t('watchlist.chartFailedBody'),
             errorTitle: t('errorTitle'),
             errors: isStringRecord(errors) ? errors : {},
           }}

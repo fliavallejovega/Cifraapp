@@ -44,6 +44,9 @@ export interface WatchlistLabels {
   readonly emptyBody: string;
   readonly chartLabel: string;
   readonly chartNote: string;
+  readonly chartLoading: string;
+  readonly chartFailedTitle: string;
+  readonly chartFailedBody: string;
   readonly errorTitle: string;
   readonly errors: Readonly<Record<string, string>>;
 }
@@ -215,6 +218,11 @@ function WatchedRow({
           symbol={row.symbol}
           locale={locale}
           label={labels.chartLabel.replace('{label}', row.label)}
+          labels={{
+            loading: labels.chartLoading,
+            failedTitle: labels.chartFailedTitle,
+            failedBody: labels.chartFailedBody,
+          }}
         />
 
         <p className="text-xs text-[color:var(--color-ink-tertiary)]">{labels.chartNote}</p>

@@ -2552,7 +2552,10 @@
         "body": "Agrega lo que te interese seguir y aparece el gráfico aquí. Que algo esté en tu lista no significa que el producto te lo esté proponiendo."
       },
       "chartLabel": "Gráfico de precios de {label}",
-      "chartNote": "Gráfico servido por TradingView. Nada de lo que muestra sale de tus registros."
+      "chartNote": "Gráfico servido por TradingView. Nada de lo que muestra sale de tus registros.",
+      "chartLoading": "Cargando el gráfico…",
+      "chartFailedTitle": "No se pudo cargar el gráfico",
+      "chartFailedBody": "TradingView no respondió. Suele ser un bloqueador de anuncios, la red o estar sin conexión. Nada más de esta pantalla depende de eso: el modelado de arriba es aritmética sobre tus propias cifras y no consulta ningún precio."
     },
     "errorTitle": "No se pudo guardar"
   }
