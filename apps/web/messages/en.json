@@ -606,7 +606,39 @@
     "reports": "Statements",
     "closeMenu": "Close the menu",
     "backToPage": "Back to the page",
-    "householdLabel": "Your household"
+    "householdLabel": "Your household",
+    "groups": {
+      "money": "Your money",
+      "claims": "What is claimed",
+      "intake": "Getting data in",
+      "decide": "Deciding",
+      "record": "The record",
+      "household": "Your household"
+    },
+    "movements": "Movements",
+    "income": "Income",
+    "commitments": "Commitments",
+    "debts": "Debts",
+    "goals": "Goals",
+    "budgets": "Budgets",
+    "merchants": "Merchants",
+    "review": "To review",
+    "advice": "This month's advice",
+    "alerts": "Alerts",
+    "debtSimulator": "Debt simulator",
+    "scenarios": "Scenarios",
+    "projection": "Projection",
+    "rules": "Rules",
+    "chat": "Ask",
+    "close": "Month close",
+    "exports": "Export",
+    "categories": "Categories",
+    "people": "People",
+    "access": "Access",
+    "tax": "Tax",
+    "notifications": "Notices",
+    "subscription": "Subscription",
+    "settings": "Settings"
   },
   "accounts": {
     "title": "Your accounts",
@@ -781,6 +813,607 @@
       "savings": "Savings account",
       "cash": "Cash",
       "digital_wallet": "Digital wallet"
+    }
+  },
+  "records": {
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "remove": "Remove",
+    "removeConfirmYes": "Yes, remove",
+    "errorTitle": "Could not save",
+    "openDetail": "Open detail",
+    "errors": {
+      "generic": "Something failed while saving. Try again.",
+      "signInRequired": "Your session expired. Sign in again and we will save it.",
+      "notFound": "This no longer exists. Someone may have removed it from another device.",
+      "createFailed": "Could not create it. Try again.",
+      "invalid": "Something is missing, or a value we could not read.",
+      "nameRequired": "Give it a name you will recognise.",
+      "amountInvalid": "Write an amount, for example 1,250.00",
+      "balanceInvalid": "Write the balance, for example 1,250.00",
+      "targetInvalid": "Write how much you want to save.",
+      "savedInvalid": "Write how much you have saved. If nothing yet, put 0.",
+      "minimumInvalid": "Write this month's minimum payment.",
+      "limitInvalid": "Write the card limit, or leave it empty.",
+      "bufferInvalid": "Write the buffer, or leave it empty.",
+      "rateInvalid": "Write a percentage, for example 24.5",
+      "aprInvalid": "Write the annual rate, for example 24.5",
+      "dateInvalid": "Choose a valid date.",
+      "dayInvalid": "Choose a day from 1 to 31.",
+      "yearInvalid": "Write a valid birth year.",
+      "frequencyInvalid": "Choose how often it happens.",
+      "priorityInvalid": "Choose how much it matters.",
+      "statusInvalid": "Choose the status.",
+      "strategyInvalid": "Choose a strategy.",
+      "kindInvalid": "Choose the category type.",
+      "relationshipInvalid": "Choose the relationship.",
+      "parentIsSelf": "A category cannot sit inside itself.",
+      "categoryNotFound": "That category no longer exists.",
+      "accountRequired": "Choose the account the money came from.",
+      "descriptionRequired": "Write what the expense was.",
+      "splitInvalid": "Check the parts: each one needs an amount.",
+      "splitDoesNotSum": "The parts have to add up to exactly the movement's amount.",
+      "importedCannotDelete": "This movement came from a statement and is not deleted. You can exclude it so it stops counting."
+    }
+  },
+  "movements": {
+    "title": "Movements",
+    "detail": "Everything that came in and went out, with the category we gave it. This is where you fix it.",
+    "summary": {
+      "entered": "Came in",
+      "left": "Went out",
+      "shown": "{count} movements",
+      "shownOne": "1 movement"
+    },
+    "filters": {
+      "title": "Filter",
+      "query": "Search",
+      "queryHint": "Any part of the text that appears on the statement.",
+      "account": "Account",
+      "allAccounts": "All accounts",
+      "category": "Category",
+      "allCategories": "All categories",
+      "uncategorized": "No category",
+      "from": "From",
+      "to": "To",
+      "min": "Minimum amount",
+      "max": "Maximum amount",
+      "direction": "In or out",
+      "allDirections": "Both",
+      "inflow": "Only money in",
+      "outflow": "Only money out",
+      "status": "Status",
+      "allStatuses": "All",
+      "apply": "Apply filters",
+      "clear": "Clear filters",
+      "activeNote": "You are seeing a subset. The totals above are of what is filtered."
+    },
+    "statuses": {
+      "posted": "Posted",
+      "pending": "Pending",
+      "excluded": "Excluded",
+      "transfer": "Transfer",
+      "duplicate": "Duplicate",
+      "needs_review": "Needs review",
+      "reconciled": "Reconciled"
+    },
+    "columns": {
+      "date": "Date",
+      "description": "Detail",
+      "category": "Category",
+      "account": "Account",
+      "amount": "Amount"
+    },
+    "noCategory": "No category",
+    "splitBadge": "Split into {count}",
+    "uncategorizedBanner": {
+      "title": "{count} movements with no category",
+      "body": "With no category they enter no budget and no statement. Categorising them is what makes every other figure mean something.",
+      "action": "See the ones missing"
+    },
+    "empty": {
+      "title": "No movements yet.",
+      "body": "Import a statement and they will appear here, or record by hand the cash expense no bank ever saw.",
+      "import": "Import a statement",
+      "manual": "Record an expense"
+    },
+    "noResults": {
+      "title": "No movement matches.",
+      "body": "Try fewer filters or a wider date range."
+    },
+    "addManual": "Record an expense",
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "position": "Page {page} of {pages}"
+    }
+  },
+  "movement": {
+    "title": "Movement",
+    "backToList": "Back to movements",
+    "notFound": {
+      "title": "That movement does not exist.",
+      "body": "It may have been removed, or the link belongs to another household.",
+      "action": "See all movements"
+    },
+    "original": "As it came on the statement",
+    "facts": {
+      "date": "Date",
+      "account": "Account",
+      "merchant": "Merchant",
+      "source": "Source",
+      "status": "Status"
+    },
+    "sources": {
+      "imported": "Imported",
+      "user": "Recorded by hand",
+      "ai": "Classified by the copilot",
+      "rule": "Applied by a rule",
+      "system": "From the system",
+      "bank": "From the bank",
+      "accountant": "From the accountant",
+      "tax_rule": "Tax rule"
+    },
+    "category": {
+      "title": "Category",
+      "detail": "Changing it here also teaches the system, and records who changed it.",
+      "field": "Category",
+      "none": "No category",
+      "save": "Save the category",
+      "saved": "Category saved.",
+      "confidence": "{percent}% confidence",
+      "byUser": "You set this",
+      "byAi": "The copilot set this",
+      "byRule": "A rule set this",
+      "bySystem": "The system set this"
+    },
+    "splits": {
+      "title": "Split across categories",
+      "detail": "One purchase can be two things. The parts have to add up to exactly the amount.",
+      "amount": "Amount",
+      "category": "Category",
+      "person": "For whom",
+      "anyone": "The whole household",
+      "note": "Note",
+      "add": "Add a part",
+      "removeLine": "Remove",
+      "save": "Save the split",
+      "clear": "Remove the split",
+      "remaining": "Left to assign: {amount}",
+      "over": "You are over by {amount}",
+      "balanced": "The parts match the amount.",
+      "empty": "This movement is not split.",
+      "start": "Split this movement"
+    },
+    "note": {
+      "title": "Note",
+      "detail": "So you remember what it was for, when you look at it in three months.",
+      "field": "Note",
+      "save": "Save the note"
+    },
+    "status": {
+      "title": "How it counts",
+      "detail": "Excluding deletes nothing: the movement stays and stops counting toward your figures.",
+      "exclude": "Exclude from my figures",
+      "include": "Count it again",
+      "markTransfer": "This is a transfer between my own accounts",
+      "excluded": "Excluded. It enters no figure."
+    },
+    "history": {
+      "title": "What has been changed",
+      "detail": "Every category change is recorded. That is what makes an automatic classification undoable.",
+      "empty": "Nothing has been changed yet.",
+      "from": "from {name}",
+      "fromNone": "no category",
+      "to": "to {name}",
+      "toNone": "to no category",
+      "by": "by {actor}"
+    },
+    "remove": {
+      "title": "Remove",
+      "detail": "Only the ones you recorded by hand are removed. Imported ones are excluded.",
+      "action": "Remove this movement",
+      "confirm": "It is removed and the account balance goes back.",
+      "confirmYes": "Yes, remove"
+    }
+  },
+  "movementNew": {
+    "title": "Record an expense",
+    "detail": "Cash, the lunch place, the taxi: what appears on no statement.",
+    "why": "If you do not record it, the system thinks you spend less than you do, and tells you that you have more available than you have.",
+    "account": "Where did it come from?",
+    "accountHint": "That account's balance goes down by this expense.",
+    "date": "What day was it?",
+    "amount": "How much?",
+    "direction": "Out or in?",
+    "outflow": "Money went out",
+    "inflow": "Money came in",
+    "description": "What was it?",
+    "descriptionHint": "The way you would say it. For example, «lunch with Ana».",
+    "category": "Category",
+    "categoryHint": "Optional. You can set it later.",
+    "noCategory": "No category for now",
+    "notes": "Note",
+    "submit": "Record this expense",
+    "cancel": "Cancel",
+    "noAccounts": {
+      "title": "You need an account first.",
+      "body": "An expense comes from somewhere. Create the account where you keep the cash and come back.",
+      "action": "Create an account"
+    }
+  },
+  "income": {
+    "title": "Your income",
+    "detail": "What comes in, how often, and when the next one lands. Everything the plan can allocate starts here.",
+    "summary": {
+      "monthly": "Per month, on average",
+      "monthlyDetail": "Each income brought to its monthly equivalent and added up."
+    },
+    "list": {
+      "title": "Recorded income",
+      "detail": "Correct an amount when it changes. The gap between what you said and what arrives is a fact worth having."
+    },
+    "add": "Add another income",
+    "addTitle": "New income",
+    "submitCreate": "Add this income",
+    "submitUpdate": "Save the changes",
+    "removeConfirm": "It stops counting in the plan. What already happened is kept.",
+    "empty": {
+      "title": "No income recorded yet.",
+      "body": "The salary that lands is the first one. With that, the plan can already tell you what to do with the next dollar."
+    },
+    "form": {
+      "name": "Which income is it?",
+      "nameHint": "The way you call it. For example, «Ana's salary» or «Apartment rent».",
+      "amount": "How much?",
+      "amountHint": "What you actually receive, not what the contract says.",
+      "frequency": "How often?",
+      "next": "When is the next one?",
+      "nextHint": "Leave it empty and we work it out from the frequency.",
+      "approximate": "It is approximate",
+      "approximateHint": "«About 2,400 in a good month» and «2,400 on the 15th» are two different claims, and the plan is entitled to know which one it was told."
+    },
+    "frequencies": {
+      "weekly": "Every week",
+      "biweekly": "Every two weeks",
+      "semimonthly": "Twice a month (15th and month end)",
+      "monthly": "Every month",
+      "quarterly": "Every three months",
+      "annual": "Once a year"
+    },
+    "badges": {
+      "approximate": "Approximate",
+      "inactive": "Retired",
+      "declared": "You stated it",
+      "detected": "We detected it"
+    },
+    "nextOn": "Next: {date}"
+  },
+  "debts": {
+    "title": "Your debts",
+    "detail": "How much you owe, at what rate, and what has to be paid this month. The rate is what decides which one to attack first.",
+    "summary": {
+      "owed": "What you owe",
+      "owedDetail": "All balances added up.",
+      "minimums": "This month's minimums",
+      "minimumsDetail": "What has to be paid to stay out of arrears."
+    },
+    "list": {
+      "title": "Recorded debts",
+      "detail": "Ordered from the most expensive rate to the cheapest, which is the order worth attacking them in."
+    },
+    "add": "Add another debt",
+    "addTitle": "New debt",
+    "submitCreate": "Add this debt",
+    "submitUpdate": "Save the changes",
+    "removeConfirm": "It leaves the plan and the simulator. What you already paid is kept.",
+    "empty": {
+      "title": "No debts recorded.",
+      "body": "If you carry a card balance or a loan, record it with its rate: that is the number that decides what every extra dollar should do."
+    },
+    "form": {
+      "name": "Which debt is it?",
+      "nameHint": "The way you recognise it. For example, «Banco General Visa».",
+      "balance": "How much do you owe today?",
+      "balanceHint": "Positive. Do not use a minus sign.",
+      "apr": "Annual rate",
+      "aprHint": "The number shown as APR or annual interest on your statement.",
+      "minimum": "This month's minimum payment",
+      "dueDay": "Payment day",
+      "dueDayHint": "The day of the month it falls due.",
+      "statementDay": "Statement day",
+      "limit": "Card limit",
+      "limitHint": "Optional. It tells you how much of the limit you are using."
+    },
+    "row": {
+      "apr": "{apr}% a year",
+      "minimum": "minimum {amount}",
+      "dueDay": "due on the {day}",
+      "used": "{percent}% of the limit"
+    }
+  },
+  "debt": {
+    "title": "Debt",
+    "backToList": "Back to debts",
+    "notFound": {
+      "title": "That debt does not exist.",
+      "body": "It may have been removed, or the link belongs to another household.",
+      "action": "See all debts"
+    },
+    "stats": {
+      "balance": "Balance today",
+      "paid": "Paid so far",
+      "paidDetail": "Against the balance you first recorded.",
+      "monthlyInterest": "This month's interest",
+      "monthlyInterestDetail": "What not paying it costs, on today's balance.",
+      "minimum": "Minimum payment"
+    },
+    "payoff": {
+      "title": "When it ends",
+      "detail": "Worked out from the payment you make, on today's balance and rate. No new charges.",
+      "atMinimum": "Paying only the minimum",
+      "months": "{count} months",
+      "never": "Never. The minimum does not even cover the interest.",
+      "interest": "Interest you would pay: {amount}",
+      "freeOn": "Free on {date}",
+      "simulate": "See what happens if I pay more"
+    },
+    "usage": {
+      "title": "Limit used",
+      "detail": "Of the limit you recorded."
+    },
+    "editTitle": "Correct this debt",
+    "noLimit": "You did not record a limit for this debt."
+  },
+  "goals": {
+    "title": "Your goals",
+    "detail": "What you are saving toward, how much you have, and by when. The plan sends what is left over here.",
+    "summary": {
+      "target": "Total target",
+      "saved": "Saved so far",
+      "savedDetail": "What you recorded on each goal, added up."
+    },
+    "list": {
+      "title": "Recorded goals",
+      "detail": "Ordered by what you said matters first."
+    },
+    "add": "Add another goal",
+    "addTitle": "New goal",
+    "submitCreate": "Add this goal",
+    "submitUpdate": "Save the changes",
+    "removeConfirm": "It is marked abandoned. It is kept so you know it existed.",
+    "empty": {
+      "title": "No goals yet.",
+      "body": "The emergency fund is usually the first: three months of expenses, so a surprise does not become a debt."
+    },
+    "form": {
+      "name": "What do you want to reach?",
+      "nameHint": "Concrete. «Emergency fund» or «Trip to Spain in July».",
+      "target": "How much do you need?",
+      "saved": "How much do you have?",
+      "savedHint": "If nothing yet, leave 0.",
+      "date": "By when?",
+      "dateHint": "Optional. With a date we can tell you how much to save each month.",
+      "priority": "How much does it matter?",
+      "status": "Status"
+    },
+    "priorities": {
+      "100": "Before anything else",
+      "200": "When there is room",
+      "300": "Further out"
+    },
+    "statuses": {
+      "active": "Active",
+      "reached": "Reached",
+      "paused": "Paused",
+      "abandoned": "Abandoned"
+    },
+    "row": {
+      "progress": "{percent}% · {amount} to go",
+      "by": "by {date}",
+      "reached": "Reached"
+    }
+  },
+  "goal": {
+    "title": "Goal",
+    "backToList": "Back to goals",
+    "notFound": {
+      "title": "That goal does not exist.",
+      "body": "It may have been removed, or the link belongs to another household.",
+      "action": "See all goals"
+    },
+    "stats": {
+      "target": "Target",
+      "saved": "Saved",
+      "missing": "To go",
+      "monthly": "Per month to arrive on time",
+      "monthlyDetail": "What is missing, spread across the months left."
+    },
+    "progress": {
+      "title": "Progress",
+      "label": "Saved against the target",
+      "percent": "{percent}% of the target",
+      "noDate": "Without a target date we cannot tell you how much to save each month. Set one and we will work it out.",
+      "late": "The date has passed and {amount} is still missing.",
+      "reached": "Goal reached. Mark it as reached, or raise the target."
+    },
+    "editTitle": "Correct this goal"
+  },
+  "commitments": {
+    "title": "This month's commitments",
+    "detail": "Rent, the light bill, the school. This is what makes your balance not what you have.",
+    "summary": {
+      "total": "Committed per month",
+      "totalDetail": "What already has an owner before you decide anything.",
+      "essential": "Of that, essential",
+      "essentialDetail": "What cannot go unpaid."
+    },
+    "list": {
+      "title": "Recorded commitments",
+      "detail": "Ordered by the next one falling due."
+    },
+    "add": "Add another commitment",
+    "addTitle": "New commitment",
+    "submitCreate": "Add this commitment",
+    "submitUpdate": "Save the changes",
+    "removeConfirm": "It stops being subtracted from what is available.",
+    "empty": {
+      "title": "No commitments recorded yet.",
+      "body": "Rent or the mortgage is usually the first. Without this, «available» is just your balance, and your balance lies."
+    },
+    "form": {
+      "name": "What do you pay?",
+      "nameHint": "The way you call it. For example, «Rent» or «Mateo's school».",
+      "amount": "How much?",
+      "day": "What day of the month is it due?",
+      "dayHint": "Put 31 and in a short month we move it to the last day.",
+      "frequency": "How often?",
+      "essential": "It is essential",
+      "essentialHint": "Tick this if not paying it has serious consequences. The plan protects it before anything else.",
+      "category": "Category",
+      "categoryHint": "Optional. It lets real spending be matched against this commitment."
+    },
+    "frequencies": {
+      "monthly": "Every month",
+      "weekly": "Every week",
+      "biweekly": "Every two weeks",
+      "quarterly": "Every three months",
+      "annual": "Once a year"
+    },
+    "badges": {
+      "essential": "Essential",
+      "settled": "Already paid",
+      "overdue": "Overdue"
+    },
+    "dueOn": "Due on {date}",
+    "overdue": "Was due on {date}",
+    "noCategory": "No category"
+  },
+  "categories": {
+    "title": "Spending categories",
+    "detail": "The vocabulary your household uses for where money goes. Change it until it sounds like you.",
+    "list": {
+      "title": "Your categories",
+      "detail": "The ones the system ships can be renamed. The ones you create can be removed while they have no movements."
+    },
+    "add": "Create a category",
+    "addTitle": "New category",
+    "submitCreate": "Create this category",
+    "submitUpdate": "Save the changes",
+    "removeConfirm": "With movements behind it, it is archived instead of deleted, so your statements are not rewritten.",
+    "removeAction": "Archive",
+    "restoreAction": "Restore",
+    "empty": {
+      "title": "No categories yet.",
+      "body": "Create the first with the name you actually use. «Groceries» and «Eating out» are usually the two that carry the most."
+    },
+    "form": {
+      "name": "Category name",
+      "nameHint": "The way you say it, not the way an accountant would.",
+      "kind": "Type",
+      "kindHint": "Decides whether it counts as spending. A transfer between your own accounts is not an expense.",
+      "parent": "Inside",
+      "parentHint": "Optional. A category inside another inherits its type.",
+      "noParent": "It is a top-level category"
+    },
+    "kinds": {
+      "expense": "Expense",
+      "income": "Income",
+      "transfer": "Transfer",
+      "investment": "Investment"
+    },
+    "badges": {
+      "system": "From the system",
+      "archived": "Archived"
+    },
+    "usage": {
+      "none": "no movements",
+      "some": "{count} movements"
+    }
+  },
+  "people": {
+    "title": "Who lives here",
+    "detail": "How many people the money has to reach. A thousand dollars left over is not the same fact for one person as for five.",
+    "summary": {
+      "total": "People",
+      "dependents": "Depend on the income",
+      "dependentsDetail": "Those who bring in no income of their own."
+    },
+    "list": {
+      "title": "People in the household",
+      "detail": "Those who contribute first, then those who depend."
+    },
+    "add": "Add someone",
+    "addTitle": "New person",
+    "submitCreate": "Add this person",
+    "submitUpdate": "Save the changes",
+    "removeConfirm": "They leave the list and the household counts.",
+    "empty": {
+      "title": "The list is not filled in yet.",
+      "body": "Start with yourself. With the full list, every explanation we give you knows how many people the money has to reach."
+    },
+    "form": {
+      "name": "Name",
+      "nameHint": "What you call them at home.",
+      "relationship": "Relationship",
+      "dependent": "Depends on the household income",
+      "dependentHint": "Tick this if they bring in no income of their own.",
+      "year": "Birth year",
+      "yearHint": "Optional. The year only: we have no use for the day and month.",
+      "notes": "Note"
+    },
+    "relationships": {
+      "self": "Me",
+      "partner": "My partner",
+      "child": "Son or daughter",
+      "parent": "Parent",
+      "sibling": "Sibling",
+      "other": "Other"
+    },
+    "badges": {
+      "dependent": "Depends",
+      "signsIn": "Signs in"
+    },
+    "syncNote": "This list is what counts. The number the plan uses updates itself whenever you change it."
+  },
+  "settings": {
+    "title": "Household settings",
+    "detail": "Four decisions that change a figure you read every day.",
+    "form": {
+      "name": "Household name",
+      "nameHint": "What you call it between you.",
+      "buffer": "Minimum buffer",
+      "bufferHint": "The floor «available» refuses to go below. It is why the plan says one figure and not your whole balance.",
+      "strategy": "Debt strategy",
+      "strategyHint": "Decides which balance the extra dollar attacks.",
+      "taxRate": "Tax reserve rate",
+      "taxRateHint": "What you set aside from each invoice if you work for yourself. Leave it empty if it does not apply.",
+      "submit": "Save the settings",
+      "saved": "Settings saved."
+    },
+    "strategies": {
+      "avalanche": "Avalanche — highest rate first",
+      "snowball": "Snowball — smallest balance first",
+      "hybrid": "Hybrid — the rate, with exceptions",
+      "custom": "My way — I decide the order"
+    },
+    "strategyNote": "Avalanche costs you less money. Snowball is the one more people finish. The product has an opinion and does not decide for you.",
+    "currency": {
+      "title": "Currency",
+      "detail": "The household currency is not changed. Every stored figure carries its code, and changing it would reinterpret everything stored without converting any of it.",
+      "current": "Current currency"
+    },
+    "profile": {
+      "title": "The household",
+      "people": "{count} people recorded",
+      "peopleNone": "Nobody recorded yet",
+      "stated": "You stated {count} people in the questionnaire",
+      "manage": "See who lives here"
+    },
+    "danger": {
+      "title": "The questionnaire",
+      "detail": "You can answer it again. It erases nothing you already recorded.",
+      "action": "Answer the questionnaire again"
     }
   }
 }

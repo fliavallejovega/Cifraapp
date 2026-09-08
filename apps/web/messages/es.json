@@ -606,7 +606,39 @@
     "reports": "Estados",
     "closeMenu": "Cerrar el menú",
     "backToPage": "Volver a la página",
-    "householdLabel": "Tu hogar"
+    "householdLabel": "Tu hogar",
+    "groups": {
+      "money": "Tu dinero",
+      "claims": "Lo comprometido",
+      "intake": "Entrada de datos",
+      "decide": "Decidir",
+      "record": "El registro",
+      "household": "Tu hogar"
+    },
+    "movements": "Movimientos",
+    "income": "Ingresos",
+    "commitments": "Compromisos",
+    "debts": "Deudas",
+    "goals": "Metas",
+    "budgets": "Presupuestos",
+    "merchants": "Comercios",
+    "review": "Por revisar",
+    "advice": "Consejo del mes",
+    "alerts": "Alertas",
+    "debtSimulator": "Simulador de deuda",
+    "scenarios": "Escenarios",
+    "projection": "Proyección",
+    "rules": "Reglas",
+    "chat": "Preguntar",
+    "close": "Cierre de mes",
+    "exports": "Exportar",
+    "categories": "Rubros",
+    "people": "Personas",
+    "access": "Accesos",
+    "tax": "Fiscal",
+    "notifications": "Avisos",
+    "subscription": "Suscripción",
+    "settings": "Ajustes"
   },
   "accounts": {
     "title": "Tus cuentas",
@@ -781,6 +813,607 @@
       "savings": "Cuenta de ahorros",
       "cash": "Efectivo",
       "digital_wallet": "Billetera digital"
+    }
+  },
+  "records": {
+    "cancel": "Cancelar",
+    "edit": "Editar",
+    "remove": "Eliminar",
+    "removeConfirmYes": "Sí, eliminar",
+    "errorTitle": "No se pudo guardar",
+    "openDetail": "Ver detalle",
+    "errors": {
+      "generic": "Algo falló al guardar. Vuelve a intentarlo.",
+      "signInRequired": "Tu sesión venció. Vuelve a entrar y lo guardamos.",
+      "notFound": "Ya no existe. Alguien pudo haberlo eliminado desde otro dispositivo.",
+      "createFailed": "No se pudo crear. Vuelve a intentarlo.",
+      "invalid": "Falta algo o hay un dato que no entendimos.",
+      "nameRequired": "Ponle un nombre para poder reconocerlo.",
+      "amountInvalid": "Escribe un monto, por ejemplo 1,250.00",
+      "balanceInvalid": "Escribe el saldo, por ejemplo 1,250.00",
+      "targetInvalid": "Escribe cuánto quieres juntar.",
+      "savedInvalid": "Escribe cuánto llevas juntado. Si aún no juntas nada, pon 0.",
+      "minimumInvalid": "Escribe el pago mínimo del mes.",
+      "limitInvalid": "Escribe el límite de la tarjeta, o déjalo vacío.",
+      "bufferInvalid": "Escribe el colchón, o déjalo vacío.",
+      "rateInvalid": "Escribe un porcentaje, por ejemplo 24.5",
+      "aprInvalid": "Escribe la tasa anual, por ejemplo 24.5",
+      "dateInvalid": "Elige una fecha válida.",
+      "dayInvalid": "Elige un día del 1 al 31.",
+      "yearInvalid": "Escribe un año de nacimiento válido.",
+      "frequencyInvalid": "Elige cada cuánto ocurre.",
+      "priorityInvalid": "Elige qué tan importante es.",
+      "statusInvalid": "Elige el estado.",
+      "strategyInvalid": "Elige una estrategia.",
+      "kindInvalid": "Elige el tipo de rubro.",
+      "relationshipInvalid": "Elige la relación.",
+      "parentIsSelf": "Un rubro no puede estar dentro de sí mismo.",
+      "categoryNotFound": "Ese rubro ya no existe.",
+      "accountRequired": "Elige la cuenta de donde salió el dinero.",
+      "descriptionRequired": "Escribe qué fue el gasto.",
+      "splitInvalid": "Revisa las partes: cada una necesita un monto.",
+      "splitDoesNotSum": "Las partes tienen que sumar exactamente el monto del movimiento.",
+      "importedCannotDelete": "Este movimiento vino de un estado de cuenta y no se borra. Puedes excluirlo para que no cuente."
+    }
+  },
+  "movements": {
+    "title": "Movimientos",
+    "detail": "Todo lo que entró y salió, con el rubro que le pusimos. Aquí se corrige.",
+    "summary": {
+      "entered": "Entró",
+      "left": "Salió",
+      "shown": "{count} movimientos",
+      "shownOne": "1 movimiento"
+    },
+    "filters": {
+      "title": "Filtrar",
+      "query": "Buscar",
+      "queryHint": "Parte del texto que aparece en el estado de cuenta.",
+      "account": "Cuenta",
+      "allAccounts": "Todas las cuentas",
+      "category": "Rubro",
+      "allCategories": "Todos los rubros",
+      "uncategorized": "Sin rubro",
+      "from": "Desde",
+      "to": "Hasta",
+      "min": "Monto mínimo",
+      "max": "Monto máximo",
+      "direction": "Entrada o salida",
+      "allDirections": "Ambas",
+      "inflow": "Solo entradas",
+      "outflow": "Solo salidas",
+      "status": "Estado",
+      "allStatuses": "Todos",
+      "apply": "Aplicar filtros",
+      "clear": "Quitar filtros",
+      "activeNote": "Estás viendo un subconjunto. Los totales de arriba son de lo filtrado."
+    },
+    "statuses": {
+      "posted": "Registrado",
+      "pending": "Pendiente",
+      "excluded": "Excluido",
+      "transfer": "Transferencia",
+      "duplicate": "Duplicado",
+      "needs_review": "Por revisar",
+      "reconciled": "Conciliado"
+    },
+    "columns": {
+      "date": "Fecha",
+      "description": "Detalle",
+      "category": "Rubro",
+      "account": "Cuenta",
+      "amount": "Monto"
+    },
+    "noCategory": "Sin rubro",
+    "splitBadge": "Dividido en {count}",
+    "uncategorizedBanner": {
+      "title": "{count} movimientos sin rubro",
+      "body": "Sin rubro no entran en ningún presupuesto ni en ningún estado. Ponerles rubro es lo que hace que el resto de las cifras signifiquen algo.",
+      "action": "Ver los que faltan"
+    },
+    "empty": {
+      "title": "Todavía no hay movimientos.",
+      "body": "Importa un estado de cuenta y aparecerán aquí, o registra a mano el gasto en efectivo que ningún banco vio.",
+      "import": "Importar un estado de cuenta",
+      "manual": "Registrar un gasto"
+    },
+    "noResults": {
+      "title": "Ningún movimiento coincide.",
+      "body": "Prueba con menos filtros o un rango de fechas más ancho."
+    },
+    "addManual": "Registrar un gasto",
+    "pagination": {
+      "previous": "Anteriores",
+      "next": "Siguientes",
+      "position": "Página {page} de {pages}"
+    }
+  },
+  "movement": {
+    "title": "Movimiento",
+    "backToList": "Volver a movimientos",
+    "notFound": {
+      "title": "Ese movimiento no existe.",
+      "body": "Puede haberse eliminado, o el enlace es de otro hogar.",
+      "action": "Ver todos los movimientos"
+    },
+    "original": "Como venía en el estado de cuenta",
+    "facts": {
+      "date": "Fecha",
+      "account": "Cuenta",
+      "merchant": "Comercio",
+      "source": "Origen",
+      "status": "Estado"
+    },
+    "sources": {
+      "imported": "Importado",
+      "user": "Registrado a mano",
+      "ai": "Clasificado por el copiloto",
+      "rule": "Aplicado por una regla",
+      "system": "Del sistema",
+      "bank": "Del banco",
+      "accountant": "Del contador",
+      "tax_rule": "Regla fiscal"
+    },
+    "category": {
+      "title": "Rubro",
+      "detail": "Cambiarlo aquí también le enseña al sistema, y queda registrado quién lo cambió.",
+      "field": "Rubro",
+      "none": "Sin rubro",
+      "save": "Guardar el rubro",
+      "saved": "Rubro guardado.",
+      "confidence": "{percent}% de confianza",
+      "byUser": "Lo pusiste tú",
+      "byAi": "Lo puso el copiloto",
+      "byRule": "Lo puso una regla",
+      "bySystem": "Lo puso el sistema"
+    },
+    "splits": {
+      "title": "Dividir entre varios rubros",
+      "detail": "Una compra puede ser dos cosas. Las partes tienen que sumar exactamente el monto.",
+      "amount": "Monto",
+      "category": "Rubro",
+      "person": "Para quién",
+      "anyone": "Todo el hogar",
+      "note": "Nota",
+      "add": "Agregar una parte",
+      "removeLine": "Quitar",
+      "save": "Guardar la división",
+      "clear": "Quitar la división",
+      "remaining": "Falta por asignar: {amount}",
+      "over": "Te pasaste por {amount}",
+      "balanced": "Las partes cuadran con el monto.",
+      "empty": "Este movimiento no está dividido.",
+      "start": "Dividir este movimiento"
+    },
+    "note": {
+      "title": "Nota",
+      "detail": "Para acordarte de por qué fue, cuando lo mires en tres meses.",
+      "field": "Nota",
+      "save": "Guardar la nota"
+    },
+    "status": {
+      "title": "Cómo cuenta",
+      "detail": "Excluir no borra nada: el movimiento sigue ahí y deja de contar en tus cifras.",
+      "exclude": "Excluir de mis cifras",
+      "include": "Volver a contarlo",
+      "markTransfer": "Es una transferencia entre mis cuentas",
+      "excluded": "Excluido. No entra en ninguna cifra."
+    },
+    "history": {
+      "title": "Qué se le ha cambiado",
+      "detail": "Cada cambio de rubro queda registrado. Por eso una clasificación automática se puede deshacer.",
+      "empty": "No se le ha cambiado nada todavía.",
+      "from": "de {name}",
+      "fromNone": "sin rubro",
+      "to": "a {name}",
+      "toNone": "a sin rubro",
+      "by": "por {actor}"
+    },
+    "remove": {
+      "title": "Eliminar",
+      "detail": "Solo se eliminan los que registraste a mano. Los importados se excluyen.",
+      "action": "Eliminar este movimiento",
+      "confirm": "Se elimina y el saldo de la cuenta vuelve atrás.",
+      "confirmYes": "Sí, eliminar"
+    }
+  },
+  "movementNew": {
+    "title": "Registrar un gasto",
+    "detail": "El efectivo, la fonda, el taxi: lo que no sale en ningún estado de cuenta.",
+    "why": "Si no lo registras, el sistema cree que gastas menos de lo que gastas, y te dice que tienes más disponible del que tienes.",
+    "account": "¿De dónde salió?",
+    "accountHint": "El saldo de esa cuenta baja con este gasto.",
+    "date": "¿Qué día fue?",
+    "amount": "¿Cuánto?",
+    "direction": "¿Salió o entró?",
+    "outflow": "Salió dinero",
+    "inflow": "Entró dinero",
+    "description": "¿Qué fue?",
+    "descriptionHint": "Como lo dirías tú. Por ejemplo, «almuerzo con Ana».",
+    "category": "Rubro",
+    "categoryHint": "Opcional. Puedes ponerlo después.",
+    "noCategory": "Sin rubro por ahora",
+    "notes": "Nota",
+    "submit": "Registrar este gasto",
+    "cancel": "Cancelar",
+    "noAccounts": {
+      "title": "Primero necesitas una cuenta.",
+      "body": "Un gasto sale de algún lado. Crea la cuenta donde tienes el efectivo y vuelve aquí.",
+      "action": "Crear una cuenta"
+    }
+  },
+  "income": {
+    "title": "Tus ingresos",
+    "detail": "Lo que entra, cada cuánto y cuándo cae el próximo. De aquí sale todo lo que el plan puede repartir.",
+    "summary": {
+      "monthly": "Al mes, en promedio",
+      "monthlyDetail": "Sumando cada ingreso llevado a su equivalente mensual."
+    },
+    "list": {
+      "title": "Ingresos registrados",
+      "detail": "Corrige un monto cuando cambie. La diferencia entre lo que dijiste y lo que llega es un dato que vale."
+    },
+    "add": "Agregar otro ingreso",
+    "addTitle": "Nuevo ingreso",
+    "submitCreate": "Agregar este ingreso",
+    "submitUpdate": "Guardar los cambios",
+    "removeConfirm": "Deja de contar en el plan. Lo que ya pasó se conserva.",
+    "empty": {
+      "title": "Todavía no registraste ningún ingreso.",
+      "body": "El salario que te cae es lo primero. Con eso el plan ya puede decirte qué hacer con el próximo dólar."
+    },
+    "form": {
+      "name": "¿Qué ingreso es?",
+      "nameHint": "Como lo llamas tú. Por ejemplo, «Salario Ana» o «Alquiler del apartamento».",
+      "amount": "¿Cuánto?",
+      "amountHint": "Lo que te queda en la mano, no lo que dice el contrato.",
+      "frequency": "¿Cada cuánto?",
+      "next": "¿Cuándo cae el próximo?",
+      "nextHint": "Si lo dejas vacío lo calculamos por la frecuencia.",
+      "approximate": "Es aproximado",
+      "approximateHint": "«Como 2,400 en un buen mes» y «2,400 el día 15» son dos afirmaciones distintas, y el plan tiene derecho a saber cuál le dijiste."
+    },
+    "frequencies": {
+      "weekly": "Cada semana",
+      "biweekly": "Cada dos semanas",
+      "semimonthly": "Quincenal (15 y fin de mes)",
+      "monthly": "Cada mes",
+      "quarterly": "Cada tres meses",
+      "annual": "Una vez al año"
+    },
+    "badges": {
+      "approximate": "Aproximado",
+      "inactive": "Retirado",
+      "declared": "Lo declaraste tú",
+      "detected": "Lo detectamos"
+    },
+    "nextOn": "Próximo: {date}"
+  },
+  "debts": {
+    "title": "Tus deudas",
+    "detail": "Cuánto debes, a qué tasa y cuánto hay que pagar este mes. La tasa es lo que decide a cuál atacar primero.",
+    "summary": {
+      "owed": "Lo que debes",
+      "owedDetail": "Suma de todos los saldos.",
+      "minimums": "Mínimos del mes",
+      "minimumsDetail": "Lo que hay que pagar sí o sí para no caer en mora."
+    },
+    "list": {
+      "title": "Deudas registradas",
+      "detail": "Ordenadas de la tasa más cara a la más barata, que es el orden en el que conviene atacarlas."
+    },
+    "add": "Agregar otra deuda",
+    "addTitle": "Nueva deuda",
+    "submitCreate": "Agregar esta deuda",
+    "submitUpdate": "Guardar los cambios",
+    "removeConfirm": "Sale del plan y del simulador. Lo que ya pagaste se conserva.",
+    "empty": {
+      "title": "No tienes deudas registradas.",
+      "body": "Si tienes una tarjeta con saldo o un préstamo, regístralo con su tasa: es el número que decide qué hacer con cada dólar extra."
+    },
+    "form": {
+      "name": "¿Qué deuda es?",
+      "nameHint": "Como la reconoces tú. Por ejemplo, «Visa Banco General».",
+      "balance": "¿Cuánto debes hoy?",
+      "balanceHint": "En positivo. No pongas el signo menos.",
+      "apr": "Tasa anual",
+      "aprHint": "El número que aparece como TEA o interés anual en tu estado de cuenta.",
+      "minimum": "Pago mínimo del mes",
+      "dueDay": "Día de pago",
+      "dueDayHint": "El día del mes en que vence.",
+      "statementDay": "Día de corte",
+      "limit": "Límite de la tarjeta",
+      "limitHint": "Opcional. Sirve para saber cuánto del cupo llevas usado."
+    },
+    "row": {
+      "apr": "{apr}% anual",
+      "minimum": "mínimo {amount}",
+      "dueDay": "vence el {day}",
+      "used": "{percent}% del cupo"
+    }
+  },
+  "debt": {
+    "title": "Deuda",
+    "backToList": "Volver a deudas",
+    "notFound": {
+      "title": "Esa deuda no existe.",
+      "body": "Puede haberse eliminado, o el enlace es de otro hogar.",
+      "action": "Ver todas las deudas"
+    },
+    "stats": {
+      "balance": "Saldo de hoy",
+      "paid": "Llevas pagado",
+      "paidDetail": "Contra el saldo con el que la registraste.",
+      "monthlyInterest": "Intereses de este mes",
+      "monthlyInterestDetail": "Lo que cuesta no pagarla, calculado sobre el saldo de hoy.",
+      "minimum": "Pago mínimo"
+    },
+    "payoff": {
+      "title": "Cuándo se acaba",
+      "detail": "Calculado con el pago que hagas, sobre el saldo y la tasa de hoy. Sin cargos nuevos.",
+      "atMinimum": "Pagando solo el mínimo",
+      "months": "{count} meses",
+      "never": "Nunca. El mínimo no cubre ni los intereses.",
+      "interest": "Intereses que pagarías: {amount}",
+      "freeOn": "Libre en {date}",
+      "simulate": "Ver qué pasa si pago más"
+    },
+    "usage": {
+      "title": "Cupo usado",
+      "detail": "Del límite que registraste."
+    },
+    "editTitle": "Corregir esta deuda",
+    "noLimit": "No registraste un límite para esta deuda."
+  },
+  "goals": {
+    "title": "Tus metas",
+    "detail": "Lo que estás juntando, cuánto llevas y para cuándo. El plan reparte hacia aquí lo que sobra.",
+    "summary": {
+      "target": "Meta total",
+      "saved": "Llevas juntado",
+      "savedDetail": "Sumando lo que registraste en cada meta."
+    },
+    "list": {
+      "title": "Metas registradas",
+      "detail": "Ordenadas por lo que dijiste que importa primero."
+    },
+    "add": "Agregar otra meta",
+    "addTitle": "Nueva meta",
+    "submitCreate": "Agregar esta meta",
+    "submitUpdate": "Guardar los cambios",
+    "removeConfirm": "Queda como abandonada. Se conserva para que sepas que existió.",
+    "empty": {
+      "title": "Todavía no tienes metas.",
+      "body": "El fondo de emergencia suele ser la primera: tres meses de gastos, para que un imprevisto no se vuelva una deuda."
+    },
+    "form": {
+      "name": "¿Qué quieres lograr?",
+      "nameHint": "Concreto. «Fondo de emergencia» o «Viaje a España en julio».",
+      "target": "¿Cuánto necesitas?",
+      "saved": "¿Cuánto llevas?",
+      "savedHint": "Si aún no juntas nada, deja 0.",
+      "date": "¿Para cuándo?",
+      "dateHint": "Opcional. Con fecha podemos decirte cuánto guardar al mes.",
+      "priority": "¿Qué tan importante es?",
+      "status": "Estado"
+    },
+    "priorities": {
+      "100": "Primero que todo",
+      "200": "Cuando se pueda",
+      "300": "Más adelante"
+    },
+    "statuses": {
+      "active": "Activa",
+      "reached": "Lograda",
+      "paused": "En pausa",
+      "abandoned": "Abandonada"
+    },
+    "row": {
+      "progress": "{percent}% · faltan {amount}",
+      "by": "para {date}",
+      "reached": "Lograda"
+    }
+  },
+  "goal": {
+    "title": "Meta",
+    "backToList": "Volver a metas",
+    "notFound": {
+      "title": "Esa meta no existe.",
+      "body": "Puede haberse eliminado, o el enlace es de otro hogar.",
+      "action": "Ver todas las metas"
+    },
+    "stats": {
+      "target": "Meta",
+      "saved": "Llevas",
+      "missing": "Falta",
+      "monthly": "Al mes para llegar a tiempo",
+      "monthlyDetail": "Repartiendo lo que falta entre los meses que quedan."
+    },
+    "progress": {
+      "title": "Avance",
+      "label": "Juntado contra la meta",
+      "percent": "{percent}% de la meta",
+      "noDate": "Sin fecha objetivo no podemos decirte cuánto guardar al mes. Ponle una y te lo calculamos.",
+      "late": "La fecha ya pasó y falta {amount}.",
+      "reached": "Meta lograda. Puedes marcarla como lograda o subir el objetivo."
+    },
+    "editTitle": "Corregir esta meta"
+  },
+  "commitments": {
+    "title": "Compromisos del mes",
+    "detail": "El alquiler, la luz, el colegio. Esto es lo que hace que tu saldo no sea lo que tienes.",
+    "summary": {
+      "total": "Comprometido al mes",
+      "totalDetail": "Lo que ya tiene dueño antes de que decidas nada.",
+      "essential": "De eso, indispensable",
+      "essentialDetail": "Lo que no se puede dejar de pagar."
+    },
+    "list": {
+      "title": "Compromisos registrados",
+      "detail": "Ordenados por el próximo que vence."
+    },
+    "add": "Agregar otro compromiso",
+    "addTitle": "Nuevo compromiso",
+    "submitCreate": "Agregar este compromiso",
+    "submitUpdate": "Guardar los cambios",
+    "removeConfirm": "Deja de restarse de lo disponible.",
+    "empty": {
+      "title": "Todavía no registraste compromisos.",
+      "body": "El alquiler o la hipoteca suele ser el primero. Sin esto, «disponible» es solo tu saldo, y tu saldo miente."
+    },
+    "form": {
+      "name": "¿Qué pagas?",
+      "nameHint": "Como lo llamas tú. Por ejemplo, «Alquiler» o «Colegio de Mateo».",
+      "amount": "¿Cuánto?",
+      "day": "¿Qué día del mes vence?",
+      "dayHint": "Si pones 31 y el mes es corto, lo movemos al último día.",
+      "frequency": "¿Cada cuánto?",
+      "essential": "Es indispensable",
+      "essentialHint": "Marca esto si dejar de pagarlo tiene consecuencias graves. El plan lo protege antes que nada.",
+      "category": "Rubro",
+      "categoryHint": "Opcional. Sirve para que el gasto real se cruce con este compromiso."
+    },
+    "frequencies": {
+      "monthly": "Cada mes",
+      "weekly": "Cada semana",
+      "biweekly": "Cada dos semanas",
+      "quarterly": "Cada tres meses",
+      "annual": "Una vez al año"
+    },
+    "badges": {
+      "essential": "Indispensable",
+      "settled": "Ya pagado",
+      "overdue": "Vencido"
+    },
+    "dueOn": "Vence el {date}",
+    "overdue": "Venció el {date}",
+    "noCategory": "Sin rubro"
+  },
+  "categories": {
+    "title": "Rubros de gasto",
+    "detail": "El vocabulario con el que tu hogar nombra en qué se va el dinero. Cámbialo hasta que suene a ti.",
+    "list": {
+      "title": "Tus rubros",
+      "detail": "Los que trae el sistema se pueden renombrar. Los que crees tú se pueden eliminar mientras no tengan movimientos."
+    },
+    "add": "Crear un rubro",
+    "addTitle": "Nuevo rubro",
+    "submitCreate": "Crear este rubro",
+    "submitUpdate": "Guardar los cambios",
+    "removeConfirm": "Si tiene movimientos se archiva en vez de borrarse, para no reescribir tus estados.",
+    "removeAction": "Archivar",
+    "restoreAction": "Reactivar",
+    "empty": {
+      "title": "No hay rubros todavía.",
+      "body": "Crea el primero con el nombre que usas de verdad. «Mercado» y «Comida fuera» suelen ser los dos que más se usan."
+    },
+    "form": {
+      "name": "Nombre del rubro",
+      "nameHint": "Como lo dices tú, no como lo diría un contador.",
+      "kind": "Tipo",
+      "kindHint": "Decide si cuenta como gasto. Una transferencia entre tus cuentas no es un gasto.",
+      "parent": "Dentro de",
+      "parentHint": "Opcional. Un rubro dentro de otro hereda su tipo.",
+      "noParent": "Es un rubro principal"
+    },
+    "kinds": {
+      "expense": "Gasto",
+      "income": "Ingreso",
+      "transfer": "Transferencia",
+      "investment": "Inversión"
+    },
+    "badges": {
+      "system": "Del sistema",
+      "archived": "Archivado"
+    },
+    "usage": {
+      "none": "sin movimientos",
+      "some": "{count} movimientos"
+    }
+  },
+  "people": {
+    "title": "Quiénes viven aquí",
+    "detail": "A cuánta gente tiene que alcanzar el dinero. Mil dólares que sobran no significan lo mismo para una persona que para cinco.",
+    "summary": {
+      "total": "Personas",
+      "dependents": "Dependen del ingreso",
+      "dependentsDetail": "Los que no aportan ingreso propio."
+    },
+    "list": {
+      "title": "Personas del hogar",
+      "detail": "Primero quienes aportan, después quienes dependen."
+    },
+    "add": "Agregar a alguien",
+    "addTitle": "Nueva persona",
+    "submitCreate": "Agregar a esta persona",
+    "submitUpdate": "Guardar los cambios",
+    "removeConfirm": "Sale de la lista y de las cuentas del hogar.",
+    "empty": {
+      "title": "Todavía no está la lista.",
+      "body": "Empieza por ti. Con la lista completa, cada explicación que te damos sabe a cuánta gente tiene que alcanzar el dinero."
+    },
+    "form": {
+      "name": "Nombre",
+      "nameHint": "Como le dices en la casa.",
+      "relationship": "Relación",
+      "dependent": "Depende del ingreso del hogar",
+      "dependentHint": "Marca esto si no aporta ingreso propio.",
+      "year": "Año de nacimiento",
+      "yearHint": "Opcional. Solo el año: el día y el mes no los usamos para nada.",
+      "notes": "Nota"
+    },
+    "relationships": {
+      "self": "Yo",
+      "partner": "Mi pareja",
+      "child": "Hijo o hija",
+      "parent": "Padre o madre",
+      "sibling": "Hermano o hermana",
+      "other": "Otra"
+    },
+    "badges": {
+      "dependent": "Depende",
+      "signsIn": "Entra al sistema"
+    },
+    "syncNote": "Esta lista es la que manda. El conteo que usa el plan se actualiza solo cuando la cambias."
+  },
+  "settings": {
+    "title": "Ajustes del hogar",
+    "detail": "Cuatro decisiones que cambian una cifra que lees todos los días.",
+    "form": {
+      "name": "Nombre del hogar",
+      "nameHint": "Como lo llaman ustedes.",
+      "buffer": "Colchón mínimo",
+      "bufferHint": "El piso al que «disponible» se niega a bajar. Por eso el plan dice una cifra y no tu saldo completo.",
+      "strategy": "Estrategia de deuda",
+      "strategyHint": "Decide a qué saldo ataca el dólar extra.",
+      "taxRate": "Tasa de reserva fiscal",
+      "taxRateHint": "Lo que apartas de cada factura si trabajas por tu cuenta. Déjalo vacío si no aplica.",
+      "submit": "Guardar los ajustes",
+      "saved": "Ajustes guardados."
+    },
+    "strategies": {
+      "avalanche": "Avalancha — primero la tasa más alta",
+      "snowball": "Bola de nieve — primero el saldo más chico",
+      "hybrid": "Mixta — la tasa, con excepciones",
+      "custom": "A mi manera — yo decido el orden"
+    },
+    "strategyNote": "Avalancha te cuesta menos dinero. Bola de nieve es la que más gente termina. El producto tiene una opinión y no decide por ti.",
+    "currency": {
+      "title": "Moneda",
+      "detail": "La moneda del hogar no se cambia. Cada cifra guardada lleva su código, y cambiarlo reinterpretaría todo lo guardado sin convertir nada.",
+      "current": "Moneda actual"
+    },
+    "profile": {
+      "title": "El hogar",
+      "people": "{count} personas registradas",
+      "peopleNone": "Nadie registrado todavía",
+      "stated": "Declaraste {count} personas en el cuestionario",
+      "manage": "Ver quiénes viven aquí"
+    },
+    "danger": {
+      "title": "El cuestionario",
+      "detail": "Puedes volver a contestarlo. No borra nada de lo que ya registraste.",
+      "action": "Volver a contestar el cuestionario"
     }
   }
 }

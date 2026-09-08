@@ -15,12 +15,49 @@ import { IconSignOut } from './shell-icons';
  * and a sign-out form bound to its server action.
  */
 
+/**
+ * Every signed-in destination, in the order the product argues for.
+ *
+ * The groups answer, in sequence, the questions the product exists to answer:
+ * what do I have, what already claims it, how does the data get in, what should
+ * I do, what is the record, and how is this household set up. A screen that
+ * does not answer one of those does not belong in the column.
+ */
 const DESTINATIONS = [
-  { href: '/overview', key: 'overview' },
-  { href: '/accounts', key: 'accounts' },
-  { href: '/documents', key: 'documents' },
-  { href: '/plan', key: 'plan' },
-  { href: '/reports', key: 'reports' },
+  { href: '/overview', key: 'overview', group: 'money' },
+  { href: '/accounts', key: 'accounts', group: 'money' },
+  { href: '/movements', key: 'movements', group: 'money' },
+
+  { href: '/commitments', key: 'commitments', group: 'claims' },
+  { href: '/debts', key: 'debts', group: 'claims' },
+  { href: '/goals', key: 'goals', group: 'claims' },
+  { href: '/income', key: 'income', group: 'claims' },
+  { href: '/budgets', key: 'budgets', group: 'claims' },
+
+  { href: '/documents', key: 'documents', group: 'intake' },
+  { href: '/review', key: 'review', group: 'intake' },
+  { href: '/merchants', key: 'merchants', group: 'intake' },
+
+  { href: '/plan', key: 'plan', group: 'decide' },
+  { href: '/advice', key: 'advice', group: 'decide' },
+  { href: '/alerts', key: 'alerts', group: 'decide' },
+  { href: '/debt-simulator', key: 'debtSimulator', group: 'decide' },
+  { href: '/scenarios', key: 'scenarios', group: 'decide' },
+  { href: '/projection', key: 'projection', group: 'decide' },
+  { href: '/chat', key: 'chat', group: 'decide' },
+
+  { href: '/reports', key: 'reports', group: 'record' },
+  { href: '/close', key: 'close', group: 'record' },
+  { href: '/exports', key: 'exports', group: 'record' },
+
+  { href: '/people', key: 'people', group: 'household' },
+  { href: '/categories', key: 'categories', group: 'household' },
+  { href: '/rules', key: 'rules', group: 'household' },
+  { href: '/access', key: 'access', group: 'household' },
+  { href: '/tax', key: 'tax', group: 'household' },
+  { href: '/notifications', key: 'notifications', group: 'household' },
+  { href: '/subscription', key: 'subscription', group: 'household' },
+  { href: '/settings', key: 'settings', group: 'household' },
 ] as const;
 
 export async function AppShell({
@@ -39,6 +76,7 @@ export async function AppShell({
     href: destination.href,
     key: destination.key,
     label: t(destination.key),
+    group: t(`groups.${destination.group}`),
   }));
 
   return (
