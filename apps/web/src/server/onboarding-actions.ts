@@ -11,7 +11,7 @@ import {
   recurringSeries,
 } from '@app/database/schema';
 import { addMonths, plainDateFromParts, todayIn, type PlainDate } from '@app/domain';
-import { and, eq, isNull, notInArray, sql } from 'drizzle-orm';
+import { and, eq, isNull, ne, notInArray, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
@@ -150,9 +150,21 @@ const setupInput = z.object({
 
 export type SetupInput = z.infer<typeof setupInput>;
 
-/** The ids still present in an answer set, by table. */
-const keptIds = (rows: readonly { id?: string | undefined }[]): string[] =>
-  rows.map((row) => row.id).filter((id): id is string => typeof id === 'string');
+/**
+ * The rows that must survive an archive sweep.
+ *
+ * Not «the ids the form sent» — that was the first version and it was wrong in
+ * the worst possible way: on a first pass no row carries an id yet, so the
+ * sweep that follows the inserts archived everything that had just been
+ * inserted, and a household finished the questionnaire with nothing to show
+ * for it. What survives is what the save touched, which means the ids updated
+ * *and* the ids created, collected as the loop goes.
+ *
+ * The sentinel keeps `not in ()` from being empty, which Postgres would read
+ * as «archive nothing» — the opposite mistake, and just as silent.
+ */
+const survivors = (ids: readonly string[]): string[] =>
+  ids.length > 0 ? [...ids] : ['00000000-0000-0000-0000-000000000000'];
 
 export async function completeSetup(
   _previous: SetupResult,
@@ -232,12 +244,10 @@ export async function completeSetup(
        * recurrence engine found — which this form never showed — is never
        * touched by it.
        */
-      const gone = (kept: string[]) =>
-        kept.length > 0 ? kept : ['00000000-0000-0000-0000-000000000000'];
-
       // People first: a card can name its holder, and the holder has to exist
       // before anything can point at them.
       const peopleByName = new Map<string, string>();
+      const keptPeople: string[] = [];
       for (const person of answers.people) {
         const values = {
           displayName: person.name,
@@ -252,12 +262,16 @@ export async function completeSetup(
               and(eq(householdPeople.id, person.id), eq(householdPeople.householdId, householdId)),
             );
           peopleByName.set(person.name, person.id);
+          keptPeople.push(person.id);
         } else {
           const [created] = await tx
             .insert(householdPeople)
             .values({ householdId, createdBy: session.user.id, ...values })
             .returning({ id: householdPeople.id });
-          if (created) peopleByName.set(person.name, created.id);
+          if (created) {
+            peopleByName.set(person.name, created.id);
+            keptPeople.push(created.id);
+          }
         }
       }
       await tx
@@ -267,11 +281,14 @@ export async function completeSetup(
           and(
             eq(householdPeople.householdId, householdId),
             isNull(householdPeople.deletedAt),
-            notInArray(householdPeople.id, gone(keptIds(answers.people))),
+            notInArray(householdPeople.id, survivors(keptPeople)),
           ),
         );
 
-      // Accounts
+      // Accounts. Cards are not in scope here — the questionnaire asks about
+      // them on the debts step, and this sweep must not archive one it never
+      // showed.
+      const keptAccounts: string[] = [];
       for (const entry of answers.accounts) {
         const values = {
           name: entry.name,
@@ -283,16 +300,21 @@ export async function completeSetup(
             .update(accounts)
             .set({ ...values, updatedAt: new Date() })
             .where(and(eq(accounts.id, entry.id), eq(accounts.householdId, householdId)));
+          keptAccounts.push(entry.id);
         } else {
-          await tx.insert(accounts).values({
-            householdId,
-            ownerId: session.user.id,
-            createdBy: session.user.id,
-            currency,
-            status: 'active' as const,
-            source: 'user' as const,
-            ...values,
-          });
+          const [created] = await tx
+            .insert(accounts)
+            .values({
+              householdId,
+              ownerId: session.user.id,
+              createdBy: session.user.id,
+              currency,
+              status: 'active' as const,
+              source: 'user' as const,
+              ...values,
+            })
+            .returning({ id: accounts.id });
+          if (created) keptAccounts.push(created.id);
         }
       }
       await tx
@@ -302,11 +324,13 @@ export async function completeSetup(
           and(
             eq(accounts.householdId, householdId),
             isNull(accounts.deletedAt),
-            notInArray(accounts.id, gone(keptIds(answers.accounts))),
+            ne(accounts.accountType, 'credit_card'),
+            notInArray(accounts.id, survivors(keptAccounts)),
           ),
         );
 
       // Income
+      const keptIncomes: string[] = [];
       for (const entry of answers.incomes) {
         const values = {
           name: entry.name,
@@ -321,25 +345,30 @@ export async function completeSetup(
             .where(
               and(eq(recurringSeries.id, entry.id), eq(recurringSeries.householdId, householdId)),
             );
+          keptIncomes.push(entry.id);
         } else {
-          await tx.insert(recurringSeries).values({
-            householdId,
-            ownerId: session.user.id,
-            direction: 'inflow' as const,
-            currency,
-            lastSeenOn: today,
-            nextExpectedDate: nextFor(today, entry.frequency),
-            // Stated by a person, so confidence in the statement is total; what
-            // is uncertain is the amount, and that is what the variation says.
-            confidence: '1.000',
-            occurrenceCount: 0,
-            isEssential: true,
-            isActive: true,
-            detectedBy: 'user' as const,
-            confirmedBy: session.user.id,
-            confirmedAt: new Date(),
-            ...values,
-          });
+          const [created] = await tx
+            .insert(recurringSeries)
+            .values({
+              householdId,
+              ownerId: session.user.id,
+              direction: 'inflow' as const,
+              currency,
+              lastSeenOn: today,
+              nextExpectedDate: nextFor(today, entry.frequency),
+              // Stated by a person, so confidence in the statement is total; what
+              // is uncertain is the amount, and that is what the variation says.
+              confidence: '1.000',
+              occurrenceCount: 0,
+              isEssential: true,
+              isActive: true,
+              detectedBy: 'user' as const,
+              confirmedBy: session.user.id,
+              confirmedAt: new Date(),
+              ...values,
+            })
+            .returning({ id: recurringSeries.id });
+          if (created) keptIncomes.push(created.id);
         }
       }
       // Only the household's stated income is in scope here. An outflow series
@@ -353,11 +382,12 @@ export async function completeSetup(
             eq(recurringSeries.householdId, householdId),
             eq(recurringSeries.direction, 'inflow'),
             isNull(recurringSeries.deletedAt),
-            notInArray(recurringSeries.id, gone(keptIds(answers.incomes))),
+            notInArray(recurringSeries.id, survivors(keptIncomes)),
           ),
         );
 
       // Monthly commitments
+      const keptCommitments: string[] = [];
       for (const entry of answers.commitments) {
         const due = nextDueOn(today, entry.dueDay);
         const values = {
@@ -372,14 +402,19 @@ export async function completeSetup(
             .update(obligations)
             .set({ ...values, updatedAt: new Date() })
             .where(and(eq(obligations.id, entry.id), eq(obligations.householdId, householdId)));
+          keptCommitments.push(entry.id);
         } else {
-          await tx.insert(obligations).values({
-            householdId,
-            currency,
-            frequency: 'monthly',
-            detectedBy: 'user' as const,
-            ...values,
-          });
+          const [created] = await tx
+            .insert(obligations)
+            .values({
+              householdId,
+              currency,
+              frequency: 'monthly',
+              detectedBy: 'user' as const,
+              ...values,
+            })
+            .returning({ id: obligations.id });
+          if (created) keptCommitments.push(created.id);
         }
       }
       await tx
@@ -389,7 +424,7 @@ export async function completeSetup(
           and(
             eq(obligations.householdId, householdId),
             isNull(obligations.deletedAt),
-            notInArray(obligations.id, gone(keptIds(answers.commitments))),
+            notInArray(obligations.id, survivors(keptCommitments)),
           ),
         );
 
@@ -407,6 +442,7 @@ export async function completeSetup(
        * negative on the account, which is what the account holds. Both are the
        * same fact from the two directions the system reads it from.
        */
+      const keptDebts: string[] = [];
       for (const entry of answers.debts) {
         const isCard = Boolean(entry.creditLimit);
         const holder = entry.personName?.trim()
@@ -441,6 +477,7 @@ export async function completeSetup(
             .returning({ id: debts.id });
           debtId = created?.id;
         }
+        if (debtId) keptDebts.push(debtId);
 
         if (!isCard || !debtId) continue;
 
@@ -490,12 +527,13 @@ export async function completeSetup(
           and(
             eq(debts.householdId, householdId),
             isNull(debts.deletedAt),
-            notInArray(debts.id, gone(keptIds(answers.debts))),
+            notInArray(debts.id, survivors(keptDebts)),
           ),
         );
 
       // Goals. No `deleted_at` here — a goal that is set aside is paused, which
       // is a state the goal screen already understands and can undo.
+      const keptGoals: string[] = [];
       for (const [index, entry] of answers.goals.entries()) {
         const values = {
           name: entry.name,
@@ -510,14 +548,19 @@ export async function completeSetup(
             .update(goals)
             .set({ ...values, updatedAt: new Date() })
             .where(and(eq(goals.id, entry.id), eq(goals.householdId, householdId)));
+          keptGoals.push(entry.id);
         } else {
-          await tx.insert(goals).values({
-            householdId,
-            createdBy: session.user.id,
-            currency,
-            status: 'active' as const,
-            ...values,
-          });
+          const [created] = await tx
+            .insert(goals)
+            .values({
+              householdId,
+              createdBy: session.user.id,
+              currency,
+              status: 'active' as const,
+              ...values,
+            })
+            .returning({ id: goals.id });
+          if (created) keptGoals.push(created.id);
         }
       }
       await tx
@@ -527,7 +570,7 @@ export async function completeSetup(
           and(
             eq(goals.householdId, householdId),
             eq(goals.status, 'active'),
-            notInArray(goals.id, gone(keptIds(answers.goals))),
+            notInArray(goals.id, survivors(keptGoals)),
           ),
         );
     });
