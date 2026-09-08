@@ -2,7 +2,7 @@ import 'server-only';
 
 import { allocationLines, allocationPlans, debts, goals, transactions } from '@app/database/schema';
 import { Money, type CurrencyCode, type PlainDate } from '@app/domain';
-import { and, desc, eq, gte, inArray, isNull, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, isNull } from 'drizzle-orm';
 
 import { queryAsUser, type Session } from '../session';
 
@@ -96,6 +96,44 @@ export async function loadAcceptedPlans(
       for (const row of rows) if (row.accountId) accountFor.set(row.id, row.accountId);
     }
 
+    // What actually arrived in each linked account since the earliest plan, in
+    // one query. Asking per line meant a round trip for every debt and goal on
+    // every plan on the screen.
+    const watched = [...new Set(accountFor.values())];
+    const earliest = plans.reduce(
+      (oldest, plan) => (plan.generatedFor < oldest ? plan.generatedFor : oldest),
+      plans[0]?.generatedFor ?? '1970-01-01',
+    );
+
+    const arrivals =
+      watched.length === 0
+        ? []
+        : await tx
+            .select({
+              accountId: transactions.accountId,
+              date: transactions.transactionDate,
+              amount: transactions.amount,
+            })
+            .from(transactions)
+            .where(
+              and(
+                eq(transactions.householdId, householdId),
+                inArray(transactions.accountId, watched),
+                eq(transactions.direction, 'inflow'),
+                isNull(transactions.deletedAt),
+                gte(transactions.transactionDate, earliest),
+              ),
+            );
+
+    /** What reached one account on or after a date, from the rows in memory. */
+    const arrivedSince = (accountId: string, since: string): Money =>
+      Money.sum(
+        arrivals
+          .filter((row) => row.accountId === accountId && row.date >= since)
+          .map((row) => Money.fromDecimalString(row.amount, currency)),
+        currency,
+      );
+
     const results: AcceptedPlan[] = [];
 
     for (const plan of plans) {
@@ -113,22 +151,7 @@ export async function loadAcceptedPlans(
         let actual: Money | null = null;
 
         if (accountId) {
-          const [row] = await tx
-            .select({
-              total: sql<string>`coalesce(sum(${transactions.amount}), 0)::text`,
-            })
-            .from(transactions)
-            .where(
-              and(
-                eq(transactions.householdId, householdId),
-                eq(transactions.accountId, accountId),
-                eq(transactions.direction, 'inflow'),
-                isNull(transactions.deletedAt),
-                gte(transactions.transactionDate, plan.generatedFor),
-              ),
-            );
-
-          actual = Money.fromDecimalString(row?.total ?? '0', currency);
+          actual = arrivedSince(accountId, plan.generatedFor);
           measurable += 1;
 
           const planned = Money.fromDecimalString(line.allocatedAmount, currency);

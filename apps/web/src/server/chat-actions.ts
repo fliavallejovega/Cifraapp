@@ -10,6 +10,8 @@ import { z } from 'zod';
 import { ask, copilotIsConfigured } from './ai';
 import { loadHouseholdContext } from './household-context';
 import { loadDebts, loadGoals } from './repositories/administration';
+import { loadThread } from './repositories/chat';
+import { conversationGrounding } from './repositories/chat-opening';
 import { loadPlan } from './repositories/plan';
 import { localeOf } from './revalidate';
 import { loadSession, queryAsUser } from './session';
@@ -25,6 +27,16 @@ import { loadSession, queryAsUser } from './session';
  * What is stored is the whole exchange *and* the grounding. Without the second,
  * an answer read in March is a claim nobody can check against anything, which
  * is precisely the failure mode the product exists to avoid.
+ *
+ * The thread's earlier turns travel with every question, which is what makes
+ * this a conversation rather than a row of unrelated answers. Until it did, «and
+ * what if I pay $300 instead» was a question the assistant could not understand,
+ * because it had never seen the one before it.
+ *
+ * Feeding prior answers back is safe for one specific reason: every stored
+ * answer already passed the guardrail when it was produced, so no figure in the
+ * history is one the product could not verify. The household's current figures
+ * are sent alongside regardless, so the authoritative set is always present.
  */
 
 export interface ChatResult {
@@ -58,11 +70,14 @@ export async function askQuestion(_previous: ChatResult, formData: FormData): Pr
   const locale = localeOf(formData);
   const promptLocale: PromptLocale = locale === 'en' ? 'en' : 'es';
 
-  const context = await loadHouseholdContext(session, householdId, locale);
-  const [plan, debts, goals] = await Promise.all([
+  const context = loadHouseholdContext(session, householdId, locale);
+  const [plan, debts, goals, priorTurns] = await Promise.all([
     loadPlan(session, householdId),
     loadDebts(session, householdId, context.currency),
     loadGoals(session, householdId, context.currency),
+    parsed.data.threadId
+      ? loadThread(session, householdId, parsed.data.threadId)
+      : Promise.resolve(null),
   ]);
 
   const money = (value: Money) => formatMoney(value, { locale: context.moneyLocale });
@@ -87,6 +102,14 @@ export async function askQuestion(_previous: ChatResult, formData: FormData): Pr
               (goal) => `${goal.name}: ${money(goal.currentAmount)} of ${money(goal.targetAmount)}`,
             )
             .join(' · '),
+    // What makes this a conversation rather than a row of unrelated answers:
+    // «and what if I pay $300 instead» is unanswerable without the turn before.
+    conversation: conversationGrounding(
+      priorTurns?.messages ?? [],
+      promptLocale === 'en'
+        ? { you: 'Household', assistant: 'Assistant' }
+        : { you: 'Hogar', assistant: 'Asistente' },
+    ),
   };
 
   const result = await ask(session, householdId, {

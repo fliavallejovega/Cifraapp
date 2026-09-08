@@ -40,7 +40,7 @@ export default async function PlanHistoryPage({ params }: { params: Promise<{ lo
   setRequestLocale(locale);
 
   const session = await requireHousehold(locale);
-  const context = await loadHouseholdContext(session, session.activeHouseholdId, locale);
+  const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
   const plans = await loadAcceptedPlans(session, session.activeHouseholdId, context.currency);
 
   const t = await getTranslations('planHistory');

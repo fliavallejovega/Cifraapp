@@ -26,7 +26,7 @@ export default async function GoalsPage({ params }: { params: Promise<{ locale: 
   setRequestLocale(locale);
 
   const session = await requireHousehold(locale);
-  const context = await loadHouseholdContext(session, session.activeHouseholdId, locale);
+  const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
   const goals = await loadGoals(session, session.activeHouseholdId, context.currency);
 
   const t = await getTranslations('goals');

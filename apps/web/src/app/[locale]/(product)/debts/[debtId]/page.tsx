@@ -39,7 +39,7 @@ export default async function DebtPage({
   setRequestLocale(locale);
 
   const session = await requireHousehold(locale);
-  const context = await loadHouseholdContext(session, session.activeHouseholdId, locale);
+  const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
   const debt = await loadDebt(session, session.activeHouseholdId, debtId, context.currency);
 
   const t = await getTranslations('debt');

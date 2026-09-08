@@ -32,7 +32,7 @@ export default async function CategoryReviewPage({
   setRequestLocale(locale);
 
   const session = await requireHousehold(locale);
-  const context = await loadHouseholdContext(session, session.activeHouseholdId, locale);
+  const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
   const [pending, categories] = await Promise.all([
     loadCategoryQueue(session, session.activeHouseholdId, context.currency),
     loadCategories(session, session.activeHouseholdId),

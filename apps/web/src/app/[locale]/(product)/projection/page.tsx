@@ -52,7 +52,7 @@ export default async function ProjectionPage({
 
   const query = await searchParams;
   const session = await requireHousehold(locale);
-  const context = await loadHouseholdContext(session, session.activeHouseholdId, locale);
+  const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
 
   const { baseline, hasData } = await loadBaseline(
     session,

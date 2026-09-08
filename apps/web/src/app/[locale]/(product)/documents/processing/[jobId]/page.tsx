@@ -32,7 +32,7 @@ export default async function ImportProcessingPage({
   setRequestLocale(locale);
 
   const session = await requireHousehold(locale);
-  const context = await loadHouseholdContext(session, session.activeHouseholdId, locale);
+  const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
   const job = await loadJob(session, session.activeHouseholdId, jobId);
 
   const t = await getTranslations('importJob');

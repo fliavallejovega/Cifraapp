@@ -89,6 +89,14 @@ export async function AppShell({
         close: t('closeMenu'),
         back: t('backToPage'),
         household: t('householdLabel'),
+        collapse: t('collapse'),
+        expand: t('expand'),
+        theme: {
+          legend: t('theme.legend'),
+          system: t('theme.system'),
+          light: t('theme.light'),
+          dark: t('theme.dark'),
+        },
       }}
       signOut={
         <form action={signOut}>

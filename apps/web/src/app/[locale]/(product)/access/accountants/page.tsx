@@ -29,7 +29,7 @@ export default async function AccountantsPage({ params }: { params: Promise<{ lo
 
   const session = await requireHousehold(locale);
   const householdId = session.activeHouseholdId;
-  const context = await loadHouseholdContext(session, householdId, locale);
+  const context = loadHouseholdContext(session, householdId, locale);
   const now = new Date();
 
   const [grants, owner] = await Promise.all([

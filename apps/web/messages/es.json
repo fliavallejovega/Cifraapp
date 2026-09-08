@@ -642,7 +642,15 @@
     "tax": "Fiscal",
     "notifications": "Avisos",
     "subscription": "Suscripción",
-    "settings": "Ajustes"
+    "settings": "Ajustes",
+    "collapse": "Plegar esta sección",
+    "expand": "Desplegar esta sección",
+    "theme": {
+      "legend": "Color de la pantalla",
+      "system": "Sistema",
+      "light": "Claro",
+      "dark": "Oscuro"
+    }
   },
   "accounts": {
     "title": "Tus cuentas",
@@ -1876,21 +1884,18 @@
     "factsNote": "Estos son todos los hechos que una regla puede consultar. Ampliar la lista es un cambio de código con revisión, no una fila en una tabla."
   },
   "chat": {
-    "title": "Pregúntale a tus finanzas",
-    "detail": "Sobre tus propias cifras. El asistente no consulta nada por su cuenta: recibe los datos y responde solo con ellos.",
+    "title": "Preguntar",
+    "detail": "Sobre tus propias cifras. El asistente no consulta nada por su cuenta: recibe tus datos y responde solo con ellos.",
     "off": {
       "title": "El copiloto no está encendido.",
       "body": "Falta configurar el proveedor y su clave en esta instalación. Todo lo demás del producto funciona sin él: las cifras las calcula el motor, no el modelo."
     },
-    "ask": "Tu pregunta",
-    "askHint": "Por ejemplo: «¿me alcanza para el viaje de julio?»",
-    "submit": "Preguntar",
-    "thinking": "Pensando…",
-    "newThread": "Empezar otra conversación",
+    "newThread": "Nueva conversación",
     "threads": {
       "title": "Conversaciones",
       "empty": "Todavía no has preguntado nada.",
-      "messages": "{count} mensajes"
+      "messages": "{count} mensajes",
+      "all": "Ver todas"
     },
     "you": "Tú",
     "assistant": "El asistente",
@@ -1898,18 +1903,55 @@
       "title": "Con qué cifras respondió",
       "detail": "Lo que el asistente recibió. Sin esto, una respuesta de hace tres meses sería imposible de comprobar."
     },
-    "ungrounded": "Hay cifras en esta respuesta que no pudimos verificar contra los datos: {figures}",
+    "ungrounded": "Hay cifras en esta respuesta que no pudimos verificar contra tus datos: {figures}",
     "remove": "Eliminar",
     "removeConfirm": "Se elimina la conversación entera.",
     "errors": {
       "copilotOff": "El copiloto no está encendido en esta instalación.",
-      "questionRequired": "Escribe una pregunta.",
+      "questionRequired": "Escribe algo antes de enviar.",
       "createFailed": "No se pudo guardar la conversación.",
       "signInRequired": "Tu sesión venció. Vuelve a entrar.",
       "notFound": "Esa conversación ya no existe.",
       "generic": "Algo falló. Vuelve a intentarlo."
     },
-    "errorTitle": "No se pudo preguntar"
+    "errorTitle": "No se pudo preguntar",
+    "opening": {
+      "greeting": "Vamos a ver tu caso.",
+      "knowTitle": "Esto ya lo sé de ti",
+      "knowEmpty": "Todavía no tengo casi nada tuyo. Registra una cuenta y lo que ya está comprometido, y esta conversación va a servir de verdad.",
+      "knowEmptyAction": "Empezar por mis cuentas",
+      "askTitle": "Esto no lo puedo saber, dímelo tú",
+      "askDetail": "Respóndeme aquí abajo, con tus palabras. Lo que me cuentes queda guardado en esta conversación y lo tengo en cuenta en todo lo que sigue.",
+      "startersTitle": "O empieza por una de estas",
+      "questions": [
+        "¿Qué te preocupa más ahora mismo: llegar a fin de mes, salir de deudas, o juntar para algo?",
+        "¿Hay algo que vaya a cambiar en los próximos meses — un gasto grande, un cambio de trabajo, alguien más en la casa?"
+      ],
+      "facts": {
+        "available": "Te queda disponible",
+        "committed": "Ya comprometido",
+        "liquid": "Tienes en cuentas",
+        "debt": "Tu deuda más cara",
+        "goal": "Tu meta principal",
+        "pending": "Decisiones esperándote"
+      },
+      "starters": {
+        "surplus": "Me quedan {amount} este mes, ¿qué hago con eso?",
+        "shortfall": "Me faltan {amount} este mes, ¿qué recorto primero?",
+        "debt": "¿Me conviene meterle todo a {name} antes que a lo demás?",
+        "goal": "¿Voy bien para llegar a «{name}»?",
+        "budget": "¿Por qué se me está yendo el presupuesto de «{budget}»?",
+        "month": "¿Cómo voy este mes comparado con lo normal?"
+      }
+    },
+    "composer": {
+      "label": "Tu pregunta",
+      "placeholder": "Escribe tu pregunta o cuéntame tu caso…",
+      "send": "Preguntar",
+      "thinking": "Pensando…",
+      "hint": "Enter para enviar · Shift+Enter para otra línea"
+    },
+    "memory": "Recuerda todo lo hablado en esta conversación. Para empezar de cero, abre una nueva."
   },
   "subscription": {
     "title": "Tu suscripción",

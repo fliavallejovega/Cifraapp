@@ -26,7 +26,7 @@ export default async function DebtsPage({ params }: { params: Promise<{ locale: 
   setRequestLocale(locale);
 
   const session = await requireHousehold(locale);
-  const context = await loadHouseholdContext(session, session.activeHouseholdId, locale);
+  const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
   const debts = await loadDebts(session, session.activeHouseholdId, context.currency);
 
   const t = await getTranslations('debts');

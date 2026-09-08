@@ -32,7 +32,7 @@ export default async function ScenariosPage({ params }: { params: Promise<{ loca
   setRequestLocale(locale);
 
   const session = await requireHousehold(locale);
-  const context = await loadHouseholdContext(session, session.activeHouseholdId, locale);
+  const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
 
   const [{ baseline, hasData }, stored] = await Promise.all([
     loadBaseline(session, session.activeHouseholdId, context.currency, context.today),

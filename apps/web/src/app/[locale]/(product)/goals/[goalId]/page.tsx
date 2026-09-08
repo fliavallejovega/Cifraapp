@@ -29,7 +29,7 @@ export default async function GoalPage({
   setRequestLocale(locale);
 
   const session = await requireHousehold(locale);
-  const context = await loadHouseholdContext(session, session.activeHouseholdId, locale);
+  const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
   const goal = await loadGoal(session, session.activeHouseholdId, goalId, context.currency);
 
   const t = await getTranslations('goal');

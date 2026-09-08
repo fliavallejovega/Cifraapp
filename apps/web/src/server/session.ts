@@ -27,7 +27,14 @@ import { getAuthenticatedUser } from './supabase';
 export interface Session {
   readonly user: User;
   readonly profile: { id: string; email: string; displayName: string | null; locale: string };
-  readonly households: readonly { id: string; name: string; role: string; baseCurrency: string }[];
+  readonly households: readonly {
+    id: string;
+    name: string;
+    role: string;
+    baseCurrency: string;
+    /** Carried here so no screen needs a second query to know what «today» is. */
+    timeZone: string;
+  }[];
   readonly activeHouseholdId: string | null;
 }
 
@@ -87,6 +94,7 @@ export const loadSession = cache(async (): Promise<Session | null> => {
         name: households.name,
         role: householdMembers.role,
         baseCurrency: households.baseCurrency,
+        timeZone: households.timeZone,
       })
       .from(householdMembers)
       .innerJoin(households, eq(households.id, householdMembers.householdId))

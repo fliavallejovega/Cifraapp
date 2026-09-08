@@ -4,7 +4,7 @@ import createIntlMiddleware from 'next-intl/middleware';
 import { NextResponse, type NextRequest } from 'next/server';
 
 import { routing } from './i18n/routing';
-import { AUTH_SEGMENTS, PROTECTED_SEGMENTS } from './product-routes';
+import { PROTECTED_SEGMENTS } from './product-routes';
 
 /**
  * Runs before a request reaches a route. Next 16 calls this the proxy; it is
@@ -16,11 +16,26 @@ import { AUTH_SEGMENTS, PROTECTED_SEGMENTS } from './product-routes';
  * Server Component cannot write cookies — so if the refresh does not happen
  * here, a user gets signed out mid-session for no reason they can see.
  *
- * Second, resolve the locale and, if the route is part of the product rather
- * than the marketing site, require a session. The guard lives here rather than
- * in each page because a route added later would otherwise ship unprotected by
- * omission — and RLS would be the only thing standing between a signed-out
- * visitor and a database query.
+ * Second, resolve the locale and, if the route is part of the product, send a
+ * visitor with no session to sign in before a page renders.
+ *
+ * **That second job reads the cookie; it does not verify it**, and the
+ * distinction is deliberate. `getUser()` validates the token against the auth
+ * server, which is a network round trip on *every* navigation — and it was
+ * being spent twice, because the page then calls `loadSession`, which verifies
+ * again before it reads a single row. Moving between screens cost two auth
+ * calls and three database round trips, and it felt like it.
+ *
+ * So the middleware is now a redirect, not a boundary. Somebody arriving with
+ * an edited cookie gets past it and is stopped by the page: `requireHousehold`
+ * verifies with the auth server, finds nothing, and sends them to sign in —
+ * and row-level security stands behind that. Nothing here decides what data
+ * anybody may read.
+ *
+ * `getSession()` still refreshes an expired token and still writes the new
+ * cookies through the handler below, so the reason this file exists survives.
+ * The network call now happens when a token actually needs refreshing rather
+ * than on every request.
  */
 
 const intlMiddleware = createIntlMiddleware(routing);
@@ -75,11 +90,11 @@ export default async function proxy(request: NextRequest) {
     },
   );
 
-  // Verified against the auth server, not decoded from the cookie. The cookie
-  // is a value the browser controls.
+  // Read, and refreshed if expired — not verified. See the note above: the
+  // page verifies before it reads anything, and RLS stands behind that.
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
 
   const path = stripLocale(request.nextUrl.pathname);
   const locale = localeOf(request.nextUrl.pathname);
@@ -88,19 +103,12 @@ export default async function proxy(request: NextRequest) {
     (segment) => path === segment || path.startsWith(`${segment}/`),
   );
 
-  if (needsSession && !user) {
+  if (needsSession && !session) {
     const url = request.nextUrl.clone();
     url.pathname = `/${locale}/sign-in`;
     // Carry the destination so the user lands where they were going, not on a
     // generic home page that makes them navigate again.
     url.searchParams.set('next', path);
-    return NextResponse.redirect(url);
-  }
-
-  if (user && AUTH_SEGMENTS.some((segment) => path === segment)) {
-    const url = request.nextUrl.clone();
-    url.pathname = `/${locale}/overview`;
-    url.search = '';
     return NextResponse.redirect(url);
   }
 

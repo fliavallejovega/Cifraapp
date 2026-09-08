@@ -30,7 +30,7 @@ export default async function NotificationsPage({
 
   const session = await requireHousehold(locale);
   const householdId = session.activeHouseholdId;
-  const context = await loadHouseholdContext(session, householdId, locale);
+  const context = loadHouseholdContext(session, householdId, locale);
 
   const [preferences, deliveries] = await Promise.all([
     loadPreferences(session, householdId),

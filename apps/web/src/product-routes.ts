@@ -54,6 +54,3 @@ export const PROTECTED_SEGMENTS = [
   '/settings',
   '/households',
 ];
-
-/** Routes a signed-in user has no reason to see. */
-export const AUTH_SEGMENTS = ['/sign-in', '/sign-up'];

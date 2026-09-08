@@ -71,7 +71,7 @@ export default async function MovementsPage({
 
   const query = await searchParams;
   const session = await requireHousehold(locale);
-  const context = await loadHouseholdContext(session, session.activeHouseholdId, locale);
+  const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
 
   const filters = filtersFrom(query);
   const [view, accounts, categories] = await Promise.all([

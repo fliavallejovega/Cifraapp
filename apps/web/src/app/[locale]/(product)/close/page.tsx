@@ -25,7 +25,7 @@ export default async function ClosePage({ params }: { params: Promise<{ locale: 
   setRequestLocale(locale);
 
   const session = await requireHousehold(locale);
-  const context = await loadHouseholdContext(session, session.activeHouseholdId, locale);
+  const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
   const view = await loadClose(session, session.activeHouseholdId, context.today);
 
   const t = await getTranslations('close');

@@ -31,7 +31,7 @@ export default async function AdvicePage({ params }: { params: Promise<{ locale:
 
   const session = await requireHousehold(locale);
   const householdId = session.activeHouseholdId;
-  const context = await loadHouseholdContext(session, householdId, locale);
+  const context = loadHouseholdContext(session, householdId, locale);
 
   const [plan, debts, goals, commitments, budgets, queues, uncategorized] = await Promise.all([
     loadPlan(session, householdId),

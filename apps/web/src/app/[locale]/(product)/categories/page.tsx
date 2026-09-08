@@ -27,7 +27,7 @@ export default async function CategoriesPage({ params }: { params: Promise<{ loc
   setRequestLocale(locale);
 
   const session = await requireHousehold(locale);
-  const context = await loadHouseholdContext(session, session.activeHouseholdId, locale);
+  const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
   const categories = await loadCategories(session, session.activeHouseholdId);
 
   const t = await getTranslations('categories');

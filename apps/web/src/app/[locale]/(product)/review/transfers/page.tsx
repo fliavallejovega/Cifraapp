@@ -30,7 +30,7 @@ export default async function TransfersReviewPage({
   setRequestLocale(locale);
 
   const session = await requireHousehold(locale);
-  const context = await loadHouseholdContext(session, session.activeHouseholdId, locale);
+  const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
   const candidates = await loadTransferQueue(session, session.activeHouseholdId, context.currency);
 
   const t = await getTranslations('transfersReview');

@@ -1,6 +1,5 @@
 import 'server-only';
 
-import { households } from '@app/database/schema';
 import {
   getCurrency,
   todayIn,
@@ -8,9 +7,8 @@ import {
   type MoneyLocale,
   type PlainDate,
 } from '@app/domain';
-import { eq } from 'drizzle-orm';
 
-import { queryAsUser, type Session } from './session';
+import type { Session } from './session';
 
 /**
  * The four facts every screen needs before it can render a figure.
@@ -24,6 +22,12 @@ import { queryAsUser, type Session } from './session';
  * Today is the one that actually breaks. A household in Panama at 21:00 is
  * already tomorrow in UTC, and a plan that thinks it is tomorrow moves rent
  * from «due today» to «overdue» for three hours every night.
+ *
+ * None of it costs a query. Every field comes from the session, which already
+ * joined `households` to know which ones the caller belongs to — and the
+ * session is memoized per render. This used to be a second round trip on every
+ * single product screen, against a database a continent away, for two columns
+ * that were already in memory.
  */
 
 export interface HouseholdContext {
@@ -35,21 +39,15 @@ export interface HouseholdContext {
   readonly moneyLocale: MoneyLocale;
 }
 
-export async function loadHouseholdContext(
+export function loadHouseholdContext(
   session: Session,
   householdId: string,
   locale: string,
-): Promise<HouseholdContext> {
-  const [row] = await queryAsUser(session, (tx) =>
-    tx
-      .select({ currency: households.baseCurrency, timeZone: households.timeZone })
-      .from(households)
-      .where(eq(households.id, householdId))
-      .limit(1),
-  );
+): HouseholdContext {
+  const household = session.households.find((entry) => entry.id === householdId);
 
-  const currency = (row?.currency.trim() ?? 'USD') as CurrencyCode;
-  const timeZone = row?.timeZone ?? 'America/Panama';
+  const currency = (household?.baseCurrency.trim() ?? 'USD') as CurrencyCode;
+  const timeZone = household?.timeZone ?? 'America/Panama';
 
   return {
     householdId,

@@ -31,7 +31,7 @@ export default async function SubscriptionPage({
   setRequestLocale(locale);
 
   const session = await requireHousehold(locale);
-  const context = await loadHouseholdContext(session, session.activeHouseholdId, locale);
+  const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
   const ready = await checkoutIsReady();
   const view = await loadSubscription(
     session,

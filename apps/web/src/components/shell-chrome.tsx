@@ -1,8 +1,9 @@
 'use client';
 
-import { type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 
 import { Link, usePathname } from '@/i18n/navigation';
+import { ThemeSwitch, type ThemeSwitchLabels } from './theme';
 import { CajonRevelado, type PropiedadesDeEnlace } from './cajon/CajonRevelado';
 import {
   IconAccess,
@@ -104,6 +105,9 @@ export interface ShellChromeProps {
     readonly close: string;
     readonly back: string;
     readonly household: string;
+    readonly collapse: string;
+    readonly expand: string;
+    readonly theme: ThemeSwitchLabels;
   };
   /** The sign-out form, built on the server around its action. */
   readonly signOut: ReactNode;
@@ -161,22 +165,25 @@ export function ShellChrome({
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
   const footer = (
-    <div className="flex min-w-0 items-center justify-between gap-3">
-      {/* The household's name is the switcher. A person who belongs to two —
+    <div className="flex flex-col gap-4">
+      <ThemeSwitch labels={labels.theme} />
+      <div className="flex min-w-0 items-center justify-between gap-3">
+        {/* The household's name is the switcher. A person who belongs to two —
           their own and their parents' — needs somewhere to change which one
           every figure on screen belongs to, and the name is where they look. */}
-      <Link
-        href="/households"
-        className="min-w-0 rounded-(--radius-sm) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-brand)]"
-      >
-        <span className="block truncate text-sm font-medium text-[color:var(--color-panel-ink)]">
-          {householdName}
-        </span>
-        <span className="block text-xs text-[color:var(--color-panel-ink-secondary)]">
-          {labels.household}
-        </span>
-      </Link>
-      {signOut}
+        <Link
+          href="/households"
+          className="min-w-0 rounded-(--radius-sm) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-brand)]"
+        >
+          <span className="block truncate text-sm font-medium text-[color:var(--color-panel-ink)]">
+            {householdName}
+          </span>
+          <span className="block text-xs text-[color:var(--color-panel-ink-secondary)]">
+            {labels.household}
+          </span>
+        </Link>
+        {signOut}
+      </div>
     </div>
   );
 
@@ -222,40 +229,13 @@ export function ShellChrome({
 
           <nav aria-label={labels.menu} className="flex-1 overflow-y-auto px-3 pb-4">
             {groupsOf(destinations).map((group) => (
-              <section key={group.name} className="mt-5 first:mt-0">
-                {group.name !== '' && (
-                  <h2 className="px-3.5 pb-1.5 font-(family-name:--font-mono) text-[0.6875rem] font-medium tracking-[0.14em] text-[color:var(--color-panel-ink-tertiary,var(--color-panel-ink-secondary))] uppercase opacity-70">
-                    {group.name}
-                  </h2>
-                )}
-                <ul className="flex flex-col gap-0.5">
-                  {group.entries.map((destination) => {
-                    const active = isActive(destination.href);
-                    return (
-                      <li key={destination.href}>
-                        <Link
-                          href={destination.href}
-                          aria-current={active ? 'page' : undefined}
-                          className={[
-                            'flex min-h-11 items-center gap-3 rounded-(--radius-sm) px-3.5 text-sm',
-                            'transition-colors duration-(--duration-quick) ease-(--ease-settle)',
-                            'focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[color:var(--color-brand)]',
-                            active
-                              ? // The one brand mark per posture: brass on raised ink.
-                                'bg-[color:var(--color-panel-raised)] font-semibold text-[color:var(--color-brand)] shadow-[inset_2px_0_0_var(--color-brand)]'
-                              : 'font-medium text-[color:var(--color-panel-ink-secondary)] hover:bg-[color:var(--color-panel-raised)] hover:text-[color:var(--color-panel-ink)]',
-                          ].join(' ')}
-                        >
-                          <span aria-hidden className="shrink-0 opacity-90">
-                            {ICONS[destination.key]()}
-                          </span>
-                          {destination.label}
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </section>
+              <NavGroup
+                key={group.name}
+                name={group.name}
+                entries={group.entries}
+                isActive={isActive}
+                labels={labels}
+              />
             ))}
           </nav>
 
@@ -268,6 +248,155 @@ export function ShellChrome({
     </CajonRevelado>
   );
 }
+
+/**
+ * One heading and the destinations under it, collapsible.
+ *
+ * Twenty-eight links is a lot of column, and most days a household lives in
+ * three of them. Folding a block away is how the two they use stay above the
+ * fold on a laptop — so the state is remembered per device, in `localStorage`,
+ * the same place the theme lives.
+ *
+ * The group holding the current page always opens, whatever was stored. Landing
+ * on a screen whose section is folded shut leaves a person unable to see where
+ * they are, and that costs more than the row it saves.
+ */
+function NavGroup({
+  name,
+  entries,
+  isActive,
+  labels,
+}: {
+  readonly name: string;
+  readonly entries: readonly ShellDestination[];
+  readonly isActive: (href: string) => boolean;
+  readonly labels: ShellChromeProps['labels'];
+}) {
+  const holdsCurrentPage = entries.some((entry) => isActive(entry.href));
+
+  // Open on the server and on the first client render, then corrected from
+  // storage. Starting closed would collapse the whole column for an instant on
+  // every load, which reads as a broken menu rather than as a preference.
+  const [open, setOpen] = useState(true);
+
+  useEffect(() => {
+    if (holdsCurrentPage) {
+      setOpen(true);
+      return;
+    }
+
+    try {
+      setOpen(localStorage.getItem(`${GROUP_STORAGE_PREFIX}${name}`) !== 'closed');
+    } catch {
+      // Site data blocked. Open is the honest default: nothing is hidden.
+    }
+  }, [name, holdsCurrentPage]);
+
+  const toggle = () => {
+    const next = !open;
+    setOpen(next);
+    try {
+      localStorage.setItem(`${GROUP_STORAGE_PREFIX}${name}`, next ? 'open' : 'closed');
+    } catch {
+      // It still folds; it just will not be remembered.
+    }
+  };
+
+  const panelId = `nav-group-${name.replace(/\s+/g, '-').toLowerCase()}`;
+
+  if (name === '') {
+    return (
+      <ul className="flex flex-col gap-0.5">
+        {entries.map((destination) => (
+          <NavLink
+            key={destination.href}
+            destination={destination}
+            active={isActive(destination.href)}
+          />
+        ))}
+      </ul>
+    );
+  }
+
+  return (
+    <section className="mt-5 first:mt-0">
+      <h2>
+        <button
+          type="button"
+          onClick={toggle}
+          aria-expanded={open}
+          aria-controls={panelId}
+          title={open ? labels.collapse : labels.expand}
+          className="flex min-h-8 w-full items-center gap-1.5 rounded-(--radius-sm) px-3.5 text-left font-(family-name:--font-mono) text-[0.6875rem] font-medium tracking-[0.14em] text-[color:var(--color-panel-ink-secondary)] uppercase opacity-70 transition-colors duration-(--duration-quick) hover:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[color:var(--color-brand)]"
+        >
+          <span
+            aria-hidden
+            className="shrink-0 transition-transform duration-(--duration-quick) ease-(--ease-settle) motion-reduce:transition-none"
+            style={{ transform: open ? 'rotate(90deg)' : 'none' }}
+          >
+            <svg
+              viewBox="0 0 12 12"
+              width="9"
+              height="9"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="m4.5 2.5 4 3.5-4 3.5" />
+            </svg>
+          </span>
+          <span className="truncate">{name}</span>
+        </button>
+      </h2>
+
+      <ul id={panelId} hidden={!open} className="flex flex-col gap-0.5">
+        {entries.map((destination) => (
+          <NavLink
+            key={destination.href}
+            destination={destination}
+            active={isActive(destination.href)}
+          />
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/** One destination. Extracted so the group renders the same row either way. */
+function NavLink({
+  destination,
+  active,
+}: {
+  readonly destination: ShellDestination;
+  readonly active: boolean;
+}) {
+  return (
+    <li>
+      <Link
+        href={destination.href}
+        aria-current={active ? 'page' : undefined}
+        className={[
+          'flex min-h-11 items-center gap-3 rounded-(--radius-sm) px-3.5 text-sm',
+          'transition-colors duration-(--duration-quick) ease-(--ease-settle)',
+          'focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[color:var(--color-brand)]',
+          active
+            ? // The one brand mark per posture: brass on raised ink.
+              'bg-[color:var(--color-panel-raised)] font-semibold text-[color:var(--color-brand)] shadow-[inset_2px_0_0_var(--color-brand)]'
+            : 'font-medium text-[color:var(--color-panel-ink-secondary)] hover:bg-[color:var(--color-panel-raised)] hover:text-[color:var(--color-panel-ink)]',
+        ].join(' ')}
+      >
+        <span aria-hidden className="shrink-0 opacity-90">
+          {ICONS[destination.key]()}
+        </span>
+        {destination.label}
+      </Link>
+    </li>
+  );
+}
+
+const GROUP_STORAGE_PREFIX = 'cifrapp-nav:';
 
 /**
  * The destinations, in the order given, gathered under their headings.

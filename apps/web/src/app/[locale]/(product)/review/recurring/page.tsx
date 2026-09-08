@@ -33,7 +33,7 @@ export default async function RecurringReviewPage({
   setRequestLocale(locale);
 
   const session = await requireHousehold(locale);
-  const context = await loadHouseholdContext(session, session.activeHouseholdId, locale);
+  const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
   const detected = await loadRecurringQueue(session, session.activeHouseholdId, context.currency);
 
   const t = await getTranslations('recurringReview');

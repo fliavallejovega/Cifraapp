@@ -30,7 +30,7 @@ export default async function MerchantsPage({ params }: { params: Promise<{ loca
   setRequestLocale(locale);
 
   const session = await requireHousehold(locale);
-  const context = await loadHouseholdContext(session, session.activeHouseholdId, locale);
+  const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
   const [merchants, categories] = await Promise.all([
     loadMerchants(session, session.activeHouseholdId, context.currency),
     loadCategories(session, session.activeHouseholdId),

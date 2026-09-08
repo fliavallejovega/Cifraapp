@@ -34,7 +34,7 @@ export default async function DebtSimulatorPage({
 
   const query = await searchParams;
   const session = await requireHousehold(locale);
-  const context = await loadHouseholdContext(session, session.activeHouseholdId, locale);
+  const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
 
   const [debts, settings] = await Promise.all([
     loadDebts(session, session.activeHouseholdId, context.currency),

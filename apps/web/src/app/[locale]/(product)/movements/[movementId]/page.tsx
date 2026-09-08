@@ -32,7 +32,7 @@ export default async function MovementPage({
   setRequestLocale(locale);
 
   const session = await requireHousehold(locale);
-  const context = await loadHouseholdContext(session, session.activeHouseholdId, locale);
+  const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
 
   const t = await getTranslations('movement');
   const shared = await getTranslations('records');

@@ -29,7 +29,7 @@ export default async function ExportsPage({ params }: { params: Promise<{ locale
   setRequestLocale(locale);
 
   const session = await requireHousehold(locale);
-  await loadHouseholdContext(session, session.activeHouseholdId, locale);
+  loadHouseholdContext(session, session.activeHouseholdId, locale);
   const report = await loadReport(session, session.activeHouseholdId);
 
   const t = await getTranslations('exports');

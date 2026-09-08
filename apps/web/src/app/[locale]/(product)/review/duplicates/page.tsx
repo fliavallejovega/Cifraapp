@@ -24,7 +24,7 @@ export default async function DuplicatesPage({ params }: { params: Promise<{ loc
   setRequestLocale(locale);
 
   const session = await requireHousehold(locale);
-  const context = await loadHouseholdContext(session, session.activeHouseholdId, locale);
+  const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
   const candidates = await loadDuplicateQueue(session, session.activeHouseholdId, context.currency);
 
   const t = await getTranslations('duplicates');

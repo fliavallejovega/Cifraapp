@@ -29,7 +29,7 @@ export default async function TaxPage({ params }: { params: Promise<{ locale: st
   setRequestLocale(locale);
 
   const session = await requireHousehold(locale);
-  const context = await loadHouseholdContext(session, session.activeHouseholdId, locale);
+  const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
   const profile = await loadTaxProfile(session, session.activeHouseholdId);
 
   const t = await getTranslations('tax');

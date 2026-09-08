@@ -51,7 +51,7 @@ export default async function BudgetPage({
   setRequestLocale(locale);
 
   const session = await requireHousehold(locale);
-  const context = await loadHouseholdContext(session, session.activeHouseholdId, locale);
+  const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
   const budget = await loadBudget(
     session,
     session.activeHouseholdId,

@@ -28,7 +28,7 @@ export default async function NewMovementPage({ params }: { params: Promise<{ lo
   setRequestLocale(locale);
 
   const session = await requireHousehold(locale);
-  const context = await loadHouseholdContext(session, session.activeHouseholdId, locale);
+  const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
   const [accounts, categories] = await Promise.all([
     loadAccountOptions(session, session.activeHouseholdId),
     loadCategories(session, session.activeHouseholdId),

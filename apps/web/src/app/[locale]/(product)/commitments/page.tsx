@@ -28,7 +28,7 @@ export default async function CommitmentsPage({ params }: { params: Promise<{ lo
   setRequestLocale(locale);
 
   const session = await requireHousehold(locale);
-  const context = await loadHouseholdContext(session, session.activeHouseholdId, locale);
+  const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
   const [commitments, categories] = await Promise.all([
     loadCommitments(session, session.activeHouseholdId, context.currency),
     loadCategories(session, session.activeHouseholdId),

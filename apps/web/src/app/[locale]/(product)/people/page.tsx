@@ -27,7 +27,7 @@ export default async function PeoplePage({ params }: { params: Promise<{ locale:
   setRequestLocale(locale);
 
   const session = await requireHousehold(locale);
-  const context = await loadHouseholdContext(session, session.activeHouseholdId, locale);
+  const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
   const people = await loadPeople(session, session.activeHouseholdId);
 
   const t = await getTranslations('people');

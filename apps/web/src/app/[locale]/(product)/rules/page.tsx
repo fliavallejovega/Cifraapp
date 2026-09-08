@@ -29,7 +29,7 @@ export default async function RulesPage({ params }: { params: Promise<{ locale: 
   setRequestLocale(locale);
 
   const session = await requireHousehold(locale);
-  const context = await loadHouseholdContext(session, session.activeHouseholdId, locale);
+  const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
   const rules = await loadRules(session, session.activeHouseholdId);
 
   const t = await getTranslations('rules');

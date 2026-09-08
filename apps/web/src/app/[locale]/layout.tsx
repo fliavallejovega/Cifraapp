@@ -5,6 +5,7 @@ import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 
 import { PwaRegister } from '@/components/pwa-register';
+import { THEME_BOOTSTRAP } from '@/components/theme';
 import { RecoveryRedirect } from '@/components/recovery-redirect';
 import { routing } from '@/i18n/routing';
 
@@ -83,6 +84,12 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale} className={`${archivo.variable} ${chivoMono.variable}`}>
+      <head>
+        {/* Applies the stored theme before the first paint. Without it a person
+            who chose dark gets a white flash on every navigation — at night, on
+            a financial screen, which is exactly when they chose it. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />
+      </head>
       <body className="min-h-dvh antialiased">
         <NextIntlClientProvider>
           <PwaRegister />

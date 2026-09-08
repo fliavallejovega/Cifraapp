@@ -642,7 +642,15 @@
     "tax": "Tax",
     "notifications": "Notices",
     "subscription": "Subscription",
-    "settings": "Settings"
+    "settings": "Settings",
+    "collapse": "Collapse this section",
+    "expand": "Expand this section",
+    "theme": {
+      "legend": "Screen colour",
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
+    }
   },
   "accounts": {
     "title": "Your accounts",
@@ -1876,21 +1884,18 @@
     "factsNote": "These are every fact a rule may consult. Widening the list is a code change with a review, not a row in a table."
   },
   "chat": {
-    "title": "Ask your finances",
-    "detail": "About your own figures. The assistant queries nothing on its own: it is handed the facts and answers only from them.",
+    "title": "Ask",
+    "detail": "About your own figures. The assistant queries nothing on its own: it is handed your data and answers only from it.",
     "off": {
       "title": "The copilot is not switched on.",
       "body": "The provider and its key are not configured in this installation. Everything else works without it: the engine computes the figures, not the model."
     },
-    "ask": "Your question",
-    "askHint": "For example: «can I afford the trip in July?»",
-    "submit": "Ask",
-    "thinking": "Thinking…",
-    "newThread": "Start another conversation",
+    "newThread": "New conversation",
     "threads": {
       "title": "Conversations",
       "empty": "You have not asked anything yet.",
-      "messages": "{count} messages"
+      "messages": "{count} messages",
+      "all": "See all"
     },
     "you": "You",
     "assistant": "The assistant",
@@ -1898,18 +1903,55 @@
       "title": "The figures it answered from",
       "detail": "What the assistant was given. Without this, an answer from three months ago would be impossible to check."
     },
-    "ungrounded": "This answer contains figures we could not verify against the data: {figures}",
+    "ungrounded": "This answer contains figures we could not verify against your data: {figures}",
     "remove": "Remove",
     "removeConfirm": "The whole conversation is removed.",
     "errors": {
       "copilotOff": "The copilot is not switched on in this installation.",
-      "questionRequired": "Write a question.",
+      "questionRequired": "Write something before sending.",
       "createFailed": "The conversation could not be saved.",
       "signInRequired": "Your session expired. Sign in again.",
       "notFound": "That conversation no longer exists.",
       "generic": "Something failed. Try again."
     },
-    "errorTitle": "Could not ask"
+    "errorTitle": "Could not ask",
+    "opening": {
+      "greeting": "Let's look at your case.",
+      "knowTitle": "Here is what I already know",
+      "knowEmpty": "I have almost nothing on you yet. Record an account and what is already committed, and this conversation will actually be worth having.",
+      "knowEmptyAction": "Start with my accounts",
+      "askTitle": "This I cannot know — tell me",
+      "askDetail": "Answer below, in your own words. What you tell me stays in this conversation and I take it into account in everything that follows.",
+      "startersTitle": "Or start with one of these",
+      "questions": [
+        "What worries you most right now: getting to the end of the month, getting out of debt, or saving for something?",
+        "Is anything changing in the next few months — a big expense, a job change, somebody else in the house?"
+      ],
+      "facts": {
+        "available": "Available to you",
+        "committed": "Already committed",
+        "liquid": "In your accounts",
+        "debt": "Your most expensive debt",
+        "goal": "Your main goal",
+        "pending": "Decisions waiting"
+      },
+      "starters": {
+        "surplus": "I have {amount} left this month — what should I do with it?",
+        "shortfall": "I am {amount} short this month — what do I cut first?",
+        "debt": "Should I put everything into {name} before anything else?",
+        "goal": "Am I on track to reach «{name}»?",
+        "budget": "Why is the «{budget}» budget running away from me?",
+        "month": "How am I doing this month compared with normal?"
+      }
+    },
+    "composer": {
+      "label": "Your question",
+      "placeholder": "Ask a question, or tell me about your case…",
+      "send": "Ask",
+      "thinking": "Thinking…",
+      "hint": "Enter to send · Shift+Enter for a new line"
+    },
+    "memory": "It remembers everything said in this conversation. To start fresh, open a new one."
   },
   "subscription": {
     "title": "Your subscription",

@@ -29,7 +29,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
   setRequestLocale(locale);
 
   const session = await requireHousehold(locale);
-  const context = await loadHouseholdContext(session, session.activeHouseholdId, locale);
+  const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
   const settings = await loadSettings(session, session.activeHouseholdId, context.currency);
 
   const t = await getTranslations('settings');

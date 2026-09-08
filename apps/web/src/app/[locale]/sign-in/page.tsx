@@ -1,9 +1,11 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { redirect } from 'next/navigation';
 
 import { AuthScreen } from '@/components/auth-screen';
 
 import { AuthForm } from '@/components/auth-form';
 import { Link } from '@/i18n/navigation';
+import { loadSession } from '@/server/session';
 import { signIn } from '@/server/auth-actions';
 
 export default async function SignInPage({
@@ -16,6 +18,14 @@ export default async function SignInPage({
   const { locale } = await params;
   // eslint-disable-next-line @typescript-eslint/no-deprecated
   setRequestLocale(locale);
+
+  // A signed-in visitor has no reason to be here. This used to live in the
+  // proxy, where it ran on every navigation in the product; it belongs on the
+  // two screens it is actually about. Verified, not read from the cookie —
+  // redirecting on an unverified cookie would bounce a forged session between
+  // here and the product forever.
+  const session = await loadSession();
+  if (session) redirect(`/${locale}/overview`);
 
   const { next, error } = await searchParams;
   const t = await getTranslations('auth');

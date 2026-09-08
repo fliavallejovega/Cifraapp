@@ -8,7 +8,7 @@ import {
 } from '@app/budget-engine';
 import { budgetLines, budgets, categories, obligations, transactions } from '@app/database/schema';
 import { endOfMonth, Money, startOfMonth, type CurrencyCode, type PlainDate } from '@app/domain';
-import { and, desc, eq, gte, isNull, lte, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, isNull, lte, sql } from 'drizzle-orm';
 
 import { queryAsUser, type Session } from '../session';
 
@@ -188,7 +188,39 @@ export async function loadBudgets(
 
     if (rows.length === 0) return [];
 
-    const summaries: BudgetSummary[] = [];
+    // Every line for every budget in one query, and the spending window once.
+    // The first version of this asked for the lines of each budget in a loop
+    // and then ran three spending queries per budget — four round trips per
+    // row, against a database a continent away, on a screen that shows four
+    // budgets.
+    const allLines = await tx
+      .select({
+        id: budgetLines.id,
+        budgetId: budgetLines.budgetId,
+        categoryId: budgetLines.categoryId,
+        planned: budgetLines.plannedAmount,
+        rolloverIn: budgetLines.rolloverIn,
+      })
+      .from(budgetLines)
+      .where(
+        inArray(
+          budgetLines.budgetId,
+          rows.map((budget) => budget.id),
+        ),
+      );
+
+    const linesByBudget = new Map<string, typeof allLines>();
+    for (const line of allLines) {
+      const bucket = linesByBudget.get(line.budgetId) ?? [];
+      bucket.push(line);
+      linesByBudget.set(line.budgetId, bucket);
+    }
+
+    // Budgets almost always share a window — they are nearly all the current
+    // month — so spending is fetched once per distinct window rather than once
+    // per budget.
+    const windows = new Map<string, { start: PlainDate; end: PlainDate }>();
+    const windowOfBudget = new Map<string, string>();
 
     for (const budget of rows) {
       const window = windowOf(
@@ -197,20 +229,25 @@ export async function loadBudgets(
         budget.period,
         today,
       );
+      const key = `${window.start}:${window.end}`;
+      windows.set(key, window);
+      windowOfBudget.set(budget.id, key);
+    }
 
-      const lines = await tx
-        .select({
-          id: budgetLines.id,
-          categoryId: budgetLines.categoryId,
-          planned: budgetLines.plannedAmount,
-          rolloverIn: budgetLines.rolloverIn,
-        })
-        .from(budgetLines)
-        .where(eq(budgetLines.budgetId, budget.id));
+    const spendingByWindow = new Map<string, Awaited<ReturnType<typeof spendingFor>>>();
+    await Promise.all(
+      [...windows].map(async ([key, window]) => {
+        spendingByWindow.set(key, await spendingFor(tx, householdId, window, currency));
+      }),
+    );
 
-      const spending = await spendingFor(tx, householdId, window, currency);
+    return rows.map((budget): BudgetSummary => {
+      const key = windowOfBudget.get(budget.id) ?? '';
+      const window = windows.get(key) ?? { start: today, end: today };
+      const spending = spendingByWindow.get(key);
+      const lines = linesByBudget.get(budget.id) ?? [];
 
-      summaries.push({
+      return {
         id: budget.id,
         name: budget.name,
         period: budget.period,
@@ -227,13 +264,11 @@ export async function loadBudgets(
             planned: Money.fromDecimalString(line.planned, currency),
             rolloverIn: Money.fromDecimalString(line.rolloverIn, currency),
           })),
-          spentByCategory: spending.spentByCategory,
-          committedByCategory: spending.committedByCategory,
+          spentByCategory: spending?.spentByCategory ?? new Map(),
+          committedByCategory: spending?.committedByCategory ?? new Map(),
         }),
-      });
-    }
-
-    return summaries;
+      };
+    });
   });
 }
 

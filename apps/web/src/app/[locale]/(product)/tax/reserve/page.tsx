@@ -30,7 +30,7 @@ export default async function TaxReservePage({ params }: { params: Promise<{ loc
 
   const session = await requireHousehold(locale);
   const householdId = session.activeHouseholdId;
-  const context = await loadHouseholdContext(session, householdId, locale);
+  const context = loadHouseholdContext(session, householdId, locale);
 
   const [profile, settings] = await Promise.all([
     loadTaxProfile(session, householdId),
