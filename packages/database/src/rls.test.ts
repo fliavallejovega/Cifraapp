@@ -213,15 +213,30 @@ describeWithDatabase('row-level security', () => {
     ).rejects.toThrow();
   });
 
-  it('shows a profile only to its owner', async () => {
-    const own = await asUser(ALEX, (tx) => tx<{ id: string }[]>`select id from app.profiles`);
-    expect(own.map((profile) => profile.id)).toEqual([ALEX]);
+  it('shows a profile to its owner and to the people who share a household with them', async () => {
+    // Taylor is Alex's partner in `alexHousehold`; Morgan is in neither. The
+    // rule is not «only yourself» — the access screen has to be able to name
+    // the people in the household, and an inner join across a policy that
+    // hides them returns fewer rows rather than an error, which is how the
+    // screen came to show an owner as the household's only member.
+    const alexSees = await asUser(
+      ALEX,
+      (tx) => tx<{ id: string }[]>`select id from app.profiles order by id`,
+    );
+    expect(alexSees.map((profile) => profile.id).sort()).toEqual([ALEX, TAYLOR].sort());
 
-    const other = await asUser(
+    // Somebody who shares no household is still invisible, in both directions.
+    const morganSeesAlex = await asUser(
       MORGAN,
       (tx) => tx<{ id: string }[]>`select id from app.profiles where id = ${ALEX}`,
     );
-    expect(other).toEqual([]);
+    expect(morganSeesAlex).toEqual([]);
+
+    const alexSeesMorgan = await asUser(
+      ALEX,
+      (tx) => tx<{ id: string }[]>`select id from app.profiles where id = ${MORGAN}`,
+    );
+    expect(alexSeesMorgan).toEqual([]);
   });
 
   it('refuses to create a household for a user who is not signed in', async () => {

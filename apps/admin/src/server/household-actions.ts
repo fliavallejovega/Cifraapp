@@ -102,8 +102,10 @@ export async function createHousehold(
         joinedAt: new Date(),
       });
 
-      // The category tree every household needs and, until migration 27, none
-      // ever got. Idempotent, so calling it here is safe whatever setup later does.
+      // The category tree every household needs. This connection is the service
+      // role and has no `auth.uid()`, which migration 28 is what makes
+      // acceptable here — before it, the function's membership guard rejected
+      // this call and took the whole creation down with it.
       await tx.execute(sql`select app.seed_household_categories(${household.id}::uuid)`);
 
       // Two trails, on purpose. The household's own audit log says the

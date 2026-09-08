@@ -2,8 +2,7 @@
 
 import { createHash } from 'node:crypto';
 
-import { householdInvitations, householdMembers } from '@app/database/schema';
-import { and, eq, gt, isNull } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 import { getServerEnv } from '@app/validation/env';
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
@@ -113,6 +112,12 @@ export async function createAnotherHousehold(
  * «Invalid link» for all three would leave somebody unable to tell a typo from
  * an invitation their partner already accepted.
  */
+/** What `app.accept_invitation` answers. Every branch is an ordinary outcome. */
+interface AcceptOutcome {
+  readonly state: 'ok' | 'invalid' | 'wrongAccount' | 'signInRequired';
+  readonly householdId?: string;
+}
+
 export async function acceptInvitation(
   _previous: RecordActionResult,
   formData: FormData,
@@ -125,48 +130,24 @@ export async function acceptInvitation(
 
   const tokenHash = createHash('sha256').update(token.data).digest('hex');
 
-  const outcome = await queryAsUser(session, async (tx) => {
-    const [invitation] = await tx
-      .select()
-      .from(householdInvitations)
-      .where(
-        and(
-          eq(householdInvitations.tokenHash, tokenHash),
-          isNull(householdInvitations.acceptedAt),
-          gt(householdInvitations.expiresAt, new Date()),
-        ),
-      )
-      .limit(1);
+  // One statement, in the database, rather than a read followed by a write
+  // here. Joining is the single membership write performed by somebody who is
+  // not yet a member, so the row-level policy — which requires an owner —
+  // refuses it, and rightly: a policy loose enough to allow it would let
+  // anybody add themselves to any household id they could guess. The authority
+  // comes from the invitation, and `app.accept_invitation` is where that is
+  // checked and acted on together.
+  const rows = await queryAsUser(session, (tx) =>
+    tx.execute<{ accept_invitation: AcceptOutcome }>(
+      sql`select app.accept_invitation(${tokenHash}) as accept_invitation`,
+    ),
+  );
 
-    if (!invitation) return { state: 'invalid' as const };
+  const outcome = rows[0]?.accept_invitation ?? { state: 'invalid' as const };
 
-    // The invitation names an address. Accepting one addressed to somebody else
-    // would let a forwarded link move an account into a household its owner
-    // never invited.
-    if (invitation.email.toLowerCase() !== session.profile.email.toLowerCase()) {
-      return { state: 'wrongAccount' as const };
-    }
-
-    await tx
-      .insert(householdMembers)
-      .values({
-        householdId: invitation.householdId,
-        userId: session.user.id,
-        role: invitation.role,
-        status: 'active',
-        invitedBy: invitation.invitedBy,
-      })
-      .onConflictDoNothing();
-
-    await tx
-      .update(householdInvitations)
-      .set({ acceptedAt: new Date(), acceptedBy: session.user.id })
-      .where(eq(householdInvitations.id, invitation.id));
-
-    return { state: 'ok' as const, householdId: invitation.householdId };
-  });
-
-  if (outcome.state !== 'ok') return { error: outcome.state };
+  if (outcome.state !== 'ok' || !outcome.householdId) {
+    return { error: outcome.state === 'ok' ? 'notFound' : outcome.state };
+  }
 
   const store = await cookies();
   store.set(ACTIVE_HOUSEHOLD_COOKIE, outcome.householdId, cookieOptions());
