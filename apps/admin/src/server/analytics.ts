@@ -353,6 +353,17 @@ const REFUSED = ['refused', 'ungrounded_figures', 'missing_grounding'] as const;
 const BROKEN = ['transport_error', 'malformed_output'] as const;
 const NOT_ATTEMPTED = ['not_configured', 'budget_exhausted'] as const;
 
+/**
+ * The list as a SQL literal.
+ *
+ * Passing the array as a parameter produces `($1, $2)::app.ai_outcome[]`,
+ * which Postgres reads as a record and refuses to cast. These are
+ * compile-time constants from the enum itself — never anything a request
+ * carries — so they are written into the statement.
+ */
+const outcomes = (values: readonly string[]) =>
+  sql.raw(`array[${values.map((value) => `'${value}'`).join(', ')}]::app.ai_outcome[]`);
+
 export interface AssistantMetrics {
   readonly requests: number;
   readonly costMicros: bigint;
@@ -393,10 +404,10 @@ export async function loadAssistantMetrics(): Promise<AssistantMetrics> {
         requests: count(),
         cost: sql<string>`coalesce(sum(${aiInvocations.costMicros}), 0)`,
         cacheHits: sql<number>`count(*) filter (where ${aiInvocations.cacheHit})::int`,
-        answered: sql<number>`count(*) filter (where ${aiInvocations.outcome} = any(${ANSWERED}::app.ai_outcome[]))::int`,
-        refused: sql<number>`count(*) filter (where ${aiInvocations.outcome} = any(${REFUSED}::app.ai_outcome[]))::int`,
-        broken: sql<number>`count(*) filter (where ${aiInvocations.outcome} = any(${BROKEN}::app.ai_outcome[]))::int`,
-        notAttempted: sql<number>`count(*) filter (where ${aiInvocations.outcome} = any(${NOT_ATTEMPTED}::app.ai_outcome[]))::int`,
+        answered: sql<number>`count(*) filter (where ${aiInvocations.outcome} = any(${outcomes(ANSWERED)}))::int`,
+        refused: sql<number>`count(*) filter (where ${aiInvocations.outcome} = any(${outcomes(REFUSED)}))::int`,
+        broken: sql<number>`count(*) filter (where ${aiInvocations.outcome} = any(${outcomes(BROKEN)}))::int`,
+        notAttempted: sql<number>`count(*) filter (where ${aiInvocations.outcome} = any(${outcomes(NOT_ATTEMPTED)}))::int`,
         // The median, not the mean: one 40-second timeout drags a mean into
         // uselessness and leaves the typical request undescribed.
         median: sql<
@@ -430,7 +441,7 @@ export async function loadAssistantMetrics(): Promise<AssistantMetrics> {
         at: aiInvocations.createdAt,
       })
       .from(aiInvocations)
-      .where(sql`${aiInvocations.outcome} <> all(${ANSWERED}::app.ai_outcome[])`)
+      .where(sql`${aiInvocations.outcome} <> all(${outcomes(ANSWERED)})`)
       .orderBy(desc(aiInvocations.createdAt))
       .limit(10),
   ]);

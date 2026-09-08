@@ -1,6 +1,7 @@
 export {
   closeConnections,
   getAdminDb,
+  getPlatformDb,
   getDb,
   withUserContext,
   type Database,

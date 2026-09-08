@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { getAdminDb, type Database } from '@app/database';
+import { getPlatformDb, type Database } from '@app/database';
 import { adminUsers, profiles } from '@app/database/schema';
 import { getServerEnv } from '@app/validation/env';
 import { and, eq, isNull } from 'drizzle-orm';
@@ -31,8 +31,19 @@ export interface AdminSession {
   readonly role: AdminRole;
 }
 
+/**
+ * This console's connection: the service role, over the transaction pooler.
+ *
+ * It used to be `getAdminDb(DIRECT_URL)`, which is the session pooler — the
+ * one Supabase caps at fifteen clients for the whole project. Every warm
+ * serverless instance held up to four of them, so the console started
+ * answering `EMAXCONNSESSION` under nothing more than a person clicking
+ * through its six screens, and took the migration path's connections down with
+ * it. Same credentials and the same freedom from every policy; a pooler that
+ * can carry a server.
+ */
 export function adminDb(): Database {
-  return getAdminDb(getServerEnv().DIRECT_URL);
+  return getPlatformDb(getServerEnv().DATABASE_URL);
 }
 
 async function currentUserId(): Promise<string | null> {

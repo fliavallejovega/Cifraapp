@@ -32,8 +32,10 @@ if ('window' in globalThis) {
 
 let pooledClient: postgres.Sql | undefined;
 let directClient: postgres.Sql | undefined;
+let platformClient: postgres.Sql | undefined;
 let pooledDb: Database | undefined;
 let adminDb: Database | undefined;
+let platformDb: Database | undefined;
 
 interface ConnectionOptions {
   readonly url: string;
@@ -74,13 +76,38 @@ export function getDb(connectionUrl: string): Database {
 }
 
 /**
- * Connection that bypasses row-level security. Migrations, cron jobs, seeds and
- * platform accounting only.
+ * Connection that bypasses row-level security, over a *session* connection.
+ *
+ * Migrations, seeds and one-off scripts. Not a long-lived server: Supabase's
+ * session pooler caps the whole project at fifteen clients, and a serverless
+ * application holding four of them per warm instance exhausts that with a
+ * handful of concurrent requests — and starves the migrations it shares the
+ * cap with. Anything that serves requests wants `getPlatformDb`.
  */
 export function getAdminDb(connectionUrl: string): Database {
   directClient ??= createClient({ url: connectionUrl, pooled: false });
   adminDb ??= drizzle(directClient, { schema, casing: 'snake_case' });
   return adminDb;
+}
+
+/**
+ * Connection that bypasses row-level security, over the transaction pooler.
+ *
+ * The administrative console's connection. It carries the same credentials as
+ * `getAdminDb` — the same superuser, so the same freedom from every policy —
+ * and differs only in which pooler it goes through, which is a scaling
+ * property rather than a privilege one. Prepared statements are off because
+ * the transaction pooler multiplexes and does not support them.
+ *
+ * The privilege is the reason this is a separate function rather than an
+ * argument: reaching for it is a decision, and the decision is that the caller
+ * has taken on tenant scoping by hand. Application code serving a customer
+ * uses `withUserContext` and lets the database decide.
+ */
+export function getPlatformDb(connectionUrl: string): Database {
+  platformClient ??= createClient({ url: connectionUrl, pooled: true, maxConnections: 4 });
+  platformDb ??= drizzle(platformClient, { schema, casing: 'snake_case' });
+  return platformDb;
 }
 
 export interface UserContext {
