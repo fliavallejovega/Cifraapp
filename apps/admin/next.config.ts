@@ -14,7 +14,22 @@ import type { NextConfig } from 'next';
 const securityHeaders = [
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'X-Frame-Options', value: 'DENY' },
-  { key: 'Referrer-Policy', value: 'no-referrer' },
+  /**
+   * `same-origin`, not `no-referrer`, and the difference is not cosmetic.
+   *
+   * Under `no-referrer` the Fetch specification serializes a request's origin
+   * as the literal string «null» when it attaches the `Origin` header. React
+   * posts Server Actions with `fetch`, and Next compares that `Origin` against
+   * `x-forwarded-host` as its CSRF defence — so every action on this console,
+   * sign-in included, was rejected as a forged cross-site request. The
+   * console's own security header was locking the door from the outside.
+   *
+   * `same-origin` keeps the property that was actually wanted: no referrer
+   * ever leaves for a third party, so no administrative URL leaks outward.
+   * Requests to this origin keep theirs, which is what the framework needs to
+   * tell a real form from an attack.
+   */
+  { key: 'Referrer-Policy', value: 'same-origin' },
   { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
   {
     key: 'Permissions-Policy',
