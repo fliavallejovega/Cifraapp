@@ -114,6 +114,13 @@ export const accounts = appSchema.table(
       .notNull()
       .references(() => households.id, { onDelete: 'cascade' }),
     ownerId: uuid('owner_id').references(() => profiles.id, { onDelete: 'set null' }),
+    /**
+     * The household member this belongs to, when it belongs to a person rather
+     * than to the household — «Rosa's card». Distinct from `ownerId`, which is
+     * the profile that administers it: most people a household names never get
+     * a login of their own.
+     */
+    personId: uuid('person_id'),
     institutionId: uuid('institution_id').references(() => institutions.id, {
       onDelete: 'set null',
     }),

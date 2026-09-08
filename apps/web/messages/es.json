@@ -872,8 +872,6 @@
   "setup": {
     "title": "Cuéntanos cómo vives",
     "detail": "Seis preguntas cortas. Con ellas armamos tu primer plan hoy mismo, sin esperar a que importes un estado de cuenta. Puedes saltarte cualquiera y volver después.",
-    "skipAll": "Prefiero mirar primero y llenar esto después",
-    "skipAllHint": "Sin estos datos el plan no puede repartir nada todavía.",
     "progress": "Paso {step} de {total}",
     "next": "Continuar",
     "back": "Atrás",
@@ -952,7 +950,13 @@
       "minimum": "Pago mínimo",
       "minimumHint": "Lo mínimo que tienes que pagar al mes.",
       "add": "Agregar otra deuda",
-      "next": "Continuar a tus metas"
+      "next": "Continuar a tus metas",
+      "limit": "Límite de la tarjeta",
+      "limitHint": "Solo si es tarjeta de crédito. Con esto sabemos cuánto te queda disponible; déjalo vacío si es un préstamo.",
+      "holder": "¿De quién es?",
+      "holderHint": "Elige a quién de la casa pertenece. Si es compartida, déjalo así.",
+      "holderShared": "Del hogar",
+      "available": "Te quedarían {amount} disponibles en esta tarjeta."
     },
     "goals": {
       "title": "¿Para qué es todo esto?",
@@ -986,6 +990,20 @@
       "rent": "Alquiler o hipoteca",
       "minimums": "Mínimos de tarjetas y préstamos",
       "other": "Otros pagos del mes"
+    },
+    "review": {
+      "title": "Revisa lo que nos contaste",
+      "detail": "Las mismas seis preguntas, con lo que ya está registrado. Corrige lo que haga falta: guardar actualiza lo que hay, no agrega una copia al lado.",
+      "notice": "Lo que quites aquí se archiva, no se borra: sigue en tu historial y lo puedes recuperar desde su propia pantalla.",
+      "finish": "Guardar los cambios"
+    },
+    "stages": {
+      "household": "Tu casa",
+      "income": "Ingresos",
+      "savings": "Cuentas",
+      "commitments": "Pagos",
+      "debts": "Deudas",
+      "goals": "Metas"
     }
   },
   "records": {

@@ -11,7 +11,7 @@ import {
   recurringSeries,
 } from '@app/database/schema';
 import { addMonths, plainDateFromParts, todayIn, type PlainDate } from '@app/domain';
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, isNull, notInArray, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
@@ -61,6 +61,17 @@ const optionalAmount = z.preprocess(
 
 const name = z.string().trim().min(1).max(120);
 
+/**
+ * The row this answer corrects, when there is one.
+ *
+ * Absent on a first pass and on anything added later, so absence means insert
+ * and presence means update. Carrying it is what turns a second visit to the
+ * questionnaire into a correction instead of a second helping — without it,
+ * somebody fixing a mistyped salary would end up with both the wrong figure
+ * and the right one, and the plan would add them together.
+ */
+const rowId = z.uuid().optional();
+
 const dueDay = z.coerce.number().int().min(1).max(31);
 
 const RELATIONSHIPS = ['self', 'partner', 'child', 'parent', 'sibling', 'other'] as const;
@@ -72,6 +83,7 @@ const setupInput = z.object({
   people: z
     .array(
       z.object({
+        id: rowId,
         name,
         relationship: z.enum(RELATIONSHIPS),
         isDependent: z.boolean(),
@@ -85,6 +97,7 @@ const setupInput = z.object({
   incomes: z
     .array(
       z.object({
+        id: rowId,
         name,
         amount,
         frequency: z.enum(['weekly', 'biweekly', 'semimonthly', 'monthly', 'quarterly', 'annual']),
@@ -97,18 +110,26 @@ const setupInput = z.object({
   accounts: z
     .array(
       z.object({
+        id: rowId,
         name,
         accountType: z.enum(['checking', 'savings', 'cash', 'digital_wallet']),
         balance: amount,
       }),
     )
     .max(20),
-  commitments: z.array(z.object({ name, amount, dueDay, isEssential: z.boolean() })).max(40),
+  commitments: z
+    .array(z.object({ id: rowId, name, amount, dueDay, isEssential: z.boolean() }))
+    .max(40),
   debts: z
     .array(
       z.object({
+        id: rowId,
         name,
         balance: amount,
+        /** Present when the debt is a credit card: what it can be spent up to. */
+        creditLimit: optionalAmount,
+        /** Whose card, by the name given on the first step. Empty is the household's. */
+        personName: z.string().trim().max(120).optional(),
         // A percentage: "24.5" means 24.5%. Bounded because a rate past 200%
         // is a figure entered in the wrong field, not a loan.
         apr: z.preprocess(
@@ -123,11 +144,15 @@ const setupInput = z.object({
     )
     .max(20),
   goals: z
-    .array(z.object({ name, targetAmount: amount, targetDate: z.string().optional() }))
+    .array(z.object({ id: rowId, name, targetAmount: amount, targetDate: z.string().optional() }))
     .max(20),
 });
 
 export type SetupInput = z.infer<typeof setupInput>;
+
+/** The ids still present in an answer set, by table. */
+const keptIds = (rows: readonly { id?: string | undefined }[]): string[] =>
+  rows.map((row) => row.id).filter((id): id is string => typeof id === 'string');
 
 export async function completeSetup(
   _previous: SetupResult,
@@ -194,111 +219,317 @@ export async function completeSetup(
       // and every budget had nothing to budget.
       await tx.execute(sql`select app.seed_household_categories(${householdId})`);
 
-      if (answers.people.length > 0) {
-        await tx.insert(householdPeople).values(
-          answers.people.map((person) => ({
-            householdId,
-            createdBy: session.user.id,
-            displayName: person.name,
-            relationship: person.relationship,
-            isDependent: person.isDependent,
-          })),
-        );
-      }
+      /**
+       * What the person took out of the questionnaire is archived, never
+       * deleted.
+       *
+       * A household that removes an account here may have transactions hanging
+       * off it, and «archived on the 14th» and «never existed» are different
+       * answers — the second is not available to a financial system. Written
+       * per table rather than through one helper because the tables are not
+       * interchangeable: goals have no `deleted_at` and are paused instead,
+       * and income is archived by direction so an outflow series the
+       * recurrence engine found — which this form never showed — is never
+       * touched by it.
+       */
+      const gone = (kept: string[]) =>
+        kept.length > 0 ? kept : ['00000000-0000-0000-0000-000000000000'];
 
-      if (answers.accounts.length > 0) {
-        await tx.insert(accounts).values(
-          answers.accounts.map((entry) => ({
+      // People first: a card can name its holder, and the holder has to exist
+      // before anything can point at them.
+      const peopleByName = new Map<string, string>();
+      for (const person of answers.people) {
+        const values = {
+          displayName: person.name,
+          relationship: person.relationship,
+          isDependent: person.isDependent,
+        };
+        if (person.id) {
+          await tx
+            .update(householdPeople)
+            .set({ ...values, updatedAt: new Date() })
+            .where(
+              and(eq(householdPeople.id, person.id), eq(householdPeople.householdId, householdId)),
+            );
+          peopleByName.set(person.name, person.id);
+        } else {
+          const [created] = await tx
+            .insert(householdPeople)
+            .values({ householdId, createdBy: session.user.id, ...values })
+            .returning({ id: householdPeople.id });
+          if (created) peopleByName.set(person.name, created.id);
+        }
+      }
+      await tx
+        .update(householdPeople)
+        .set({ deletedAt: new Date() })
+        .where(
+          and(
+            eq(householdPeople.householdId, householdId),
+            isNull(householdPeople.deletedAt),
+            notInArray(householdPeople.id, gone(keptIds(answers.people))),
+          ),
+        );
+
+      // Accounts
+      for (const entry of answers.accounts) {
+        const values = {
+          name: entry.name,
+          accountType: entry.accountType,
+          currentBalance: entry.balance,
+        };
+        if (entry.id) {
+          await tx
+            .update(accounts)
+            .set({ ...values, updatedAt: new Date() })
+            .where(and(eq(accounts.id, entry.id), eq(accounts.householdId, householdId)));
+        } else {
+          await tx.insert(accounts).values({
             householdId,
             ownerId: session.user.id,
             createdBy: session.user.id,
-            name: entry.name,
-            accountType: entry.accountType,
             currency,
-            currentBalance: entry.balance,
             status: 'active' as const,
             source: 'user' as const,
-          })),
-        );
+            ...values,
+          });
+        }
       }
+      await tx
+        .update(accounts)
+        .set({ deletedAt: new Date() })
+        .where(
+          and(
+            eq(accounts.householdId, householdId),
+            isNull(accounts.deletedAt),
+            notInArray(accounts.id, gone(keptIds(answers.accounts))),
+          ),
+        );
 
-      if (answers.incomes.length > 0) {
-        await tx.insert(recurringSeries).values(
-          answers.incomes.map((entry) => ({
+      // Income
+      for (const entry of answers.incomes) {
+        const values = {
+          name: entry.name,
+          expectedAmount: entry.amount,
+          frequency: entry.frequency,
+          amountVariation: entry.isApproximate ? '0.1500' : '0',
+        };
+        if (entry.id) {
+          await tx
+            .update(recurringSeries)
+            .set({ ...values, updatedAt: new Date() })
+            .where(
+              and(eq(recurringSeries.id, entry.id), eq(recurringSeries.householdId, householdId)),
+            );
+        } else {
+          await tx.insert(recurringSeries).values({
             householdId,
             ownerId: session.user.id,
-            name: entry.name,
             direction: 'inflow' as const,
-            expectedAmount: entry.amount,
             currency,
-            frequency: entry.frequency,
             lastSeenOn: today,
             nextExpectedDate: nextFor(today, entry.frequency),
             // Stated by a person, so confidence in the statement is total; what
             // is uncertain is the amount, and that is what the variation says.
             confidence: '1.000',
-            amountVariation: entry.isApproximate ? '0.1500' : '0',
             occurrenceCount: 0,
             isEssential: true,
             isActive: true,
             detectedBy: 'user' as const,
             confirmedBy: session.user.id,
             confirmedAt: new Date(),
-          })),
-        );
+            ...values,
+          });
+        }
       }
-
-      if (answers.commitments.length > 0) {
-        await tx.insert(obligations).values(
-          answers.commitments.map((entry) => {
-            const due = nextDueOn(today, entry.dueDay);
-            return {
-              householdId,
-              name: entry.name,
-              expectedAmount: entry.amount,
-              currency,
-              dueDate: due,
-              frequency: 'monthly',
-              nextExpectedDate: addMonths(due, 1),
-              isEssential: entry.isEssential,
-              detectedBy: 'user' as const,
-            };
-          }),
+      // Only the household's stated income is in scope here. An outflow series
+      // the recurrence engine found is not something this form ever showed, so
+      // it is not something this form may archive.
+      await tx
+        .update(recurringSeries)
+        .set({ deletedAt: new Date() })
+        .where(
+          and(
+            eq(recurringSeries.householdId, householdId),
+            eq(recurringSeries.direction, 'inflow'),
+            isNull(recurringSeries.deletedAt),
+            notInArray(recurringSeries.id, gone(keptIds(answers.incomes))),
+          ),
         );
-      }
 
-      if (answers.debts.length > 0) {
-        await tx.insert(debts).values(
-          answers.debts.map((entry) => ({
+      // Monthly commitments
+      for (const entry of answers.commitments) {
+        const due = nextDueOn(today, entry.dueDay);
+        const values = {
+          name: entry.name,
+          expectedAmount: entry.amount,
+          dueDate: due,
+          nextExpectedDate: addMonths(due, 1),
+          isEssential: entry.isEssential,
+        };
+        if (entry.id) {
+          await tx
+            .update(obligations)
+            .set({ ...values, updatedAt: new Date() })
+            .where(and(eq(obligations.id, entry.id), eq(obligations.householdId, householdId)));
+        } else {
+          await tx.insert(obligations).values({
             householdId,
-            name: entry.name,
-            // Nothing here knows the original amount borrowed, and inventing one
-            // would put a number nobody stated into a financial column.
-            principal: entry.balance,
-            currentBalance: entry.balance,
             currency,
-            apr: entry.apr,
-            minimumPayment: entry.minimumPayment,
-          })),
-        );
+            frequency: 'monthly',
+            detectedBy: 'user' as const,
+            ...values,
+          });
+        }
       }
+      await tx
+        .update(obligations)
+        .set({ deletedAt: new Date() })
+        .where(
+          and(
+            eq(obligations.householdId, householdId),
+            isNull(obligations.deletedAt),
+            notInArray(obligations.id, gone(keptIds(answers.commitments))),
+          ),
+        );
 
-      if (answers.goals.length > 0) {
-        await tx.insert(goals).values(
-          answers.goals.map((entry, index) => ({
+      /**
+       * Debts, and the cards among them.
+       *
+       * A credit card is two facts and the product needs both: what is owed,
+       * which drives the payoff plan, and what is still available on it, which
+       * is a spending limit the position has to know about. So a debt with a
+       * limit also gets an account of type `credit_card` and the debt points at
+       * it. Without that, a card entered during setup was a debt with no card
+       * behind it, and «how much room is left on it» had no answer anywhere.
+       *
+       * The balance is stored positive on the debt, which is what is owed, and
+       * negative on the account, which is what the account holds. Both are the
+       * same fact from the two directions the system reads it from.
+       */
+      for (const entry of answers.debts) {
+        const isCard = Boolean(entry.creditLimit);
+        const holder = entry.personName?.trim()
+          ? (peopleByName.get(entry.personName.trim()) ?? null)
+          : null;
+
+        const values = {
+          name: entry.name,
+          currentBalance: entry.balance,
+          apr: entry.apr,
+          minimumPayment: entry.minimumPayment,
+          ...(entry.creditLimit ? { creditLimit: entry.creditLimit } : {}),
+        };
+
+        let debtId = entry.id;
+        if (debtId) {
+          await tx
+            .update(debts)
+            .set({ ...values, updatedAt: new Date() })
+            .where(and(eq(debts.id, debtId), eq(debts.householdId, householdId)));
+        } else {
+          const [created] = await tx
+            .insert(debts)
+            .values({
+              householdId,
+              currency,
+              // Nothing here knows the original amount borrowed, and inventing
+              // one would put a number nobody stated into a financial column.
+              principal: entry.balance,
+              ...values,
+            })
+            .returning({ id: debts.id });
+          debtId = created?.id;
+        }
+
+        if (!isCard || !debtId) continue;
+
+        const [existing] = await tx
+          .select({ id: accounts.id })
+          .from(debts)
+          .innerJoin(accounts, eq(accounts.id, debts.accountId))
+          .where(and(eq(debts.id, debtId), isNull(accounts.deletedAt)))
+          .limit(1);
+
+        const cardValues = {
+          name: entry.name,
+          accountType: 'credit_card' as const,
+          // What the account holds, which for a card is what is owed on it.
+          currentBalance: `-${entry.balance}`,
+          creditLimit: entry.creditLimit ?? null,
+          personId: holder,
+        };
+
+        if (existing) {
+          await tx
+            .update(accounts)
+            .set({ ...cardValues, updatedAt: new Date() })
+            .where(eq(accounts.id, existing.id));
+        } else {
+          const [card] = await tx
+            .insert(accounts)
+            .values({
+              householdId,
+              ownerId: session.user.id,
+              createdBy: session.user.id,
+              currency,
+              status: 'active' as const,
+              source: 'user' as const,
+              ...cardValues,
+            })
+            .returning({ id: accounts.id });
+          if (card) {
+            await tx.update(debts).set({ accountId: card.id }).where(eq(debts.id, debtId));
+          }
+        }
+      }
+      await tx
+        .update(debts)
+        .set({ deletedAt: new Date() })
+        .where(
+          and(
+            eq(debts.householdId, householdId),
+            isNull(debts.deletedAt),
+            notInArray(debts.id, gone(keptIds(answers.debts))),
+          ),
+        );
+
+      // Goals. No `deleted_at` here — a goal that is set aside is paused, which
+      // is a state the goal screen already understands and can undo.
+      for (const [index, entry] of answers.goals.entries()) {
+        const values = {
+          name: entry.name,
+          targetAmount: entry.targetAmount,
+          // The order they were written in is the order they matter in, until
+          // the person says otherwise.
+          priority: 100 + index,
+          ...(isPlainDateString(entry.targetDate) ? { targetDate: entry.targetDate } : {}),
+        };
+        if (entry.id) {
+          await tx
+            .update(goals)
+            .set({ ...values, updatedAt: new Date() })
+            .where(and(eq(goals.id, entry.id), eq(goals.householdId, householdId)));
+        } else {
+          await tx.insert(goals).values({
             householdId,
             createdBy: session.user.id,
-            name: entry.name,
-            targetAmount: entry.targetAmount,
             currency,
-            // The order they were written in is the order they matter in, until
-            // the person says otherwise.
-            priority: 100 + index,
             status: 'active' as const,
-            ...(isPlainDateString(entry.targetDate) ? { targetDate: entry.targetDate } : {}),
-          })),
-        );
+            ...values,
+          });
+        }
       }
+      await tx
+        .update(goals)
+        .set({ status: 'paused' as const, updatedAt: new Date() })
+        .where(
+          and(
+            eq(goals.householdId, householdId),
+            eq(goals.status, 'active'),
+            notInArray(goals.id, gone(keptIds(answers.goals))),
+          ),
+        );
     });
   } catch {
     return { error: 'saveFailed' };
@@ -326,30 +557,6 @@ export async function completeSetup(
   // Landing back on the position would show a balance and hide the answer.
   // `redirect` throws, so the revalidations above have to come first.
   redirect(`/${locale}/advice`);
-}
-
-/** Lets a household answer the questionnaire again without re-signing up. */
-export async function skipSetup(_previous: SetupResult, formData: FormData): Promise<SetupResult> {
-  const session = await loadSession();
-  if (!session?.activeHouseholdId) return { error: 'signInRequired' };
-
-  const householdId = session.activeHouseholdId;
-
-  await queryAsUser(session, (tx) =>
-    tx
-      .insert(householdSettings)
-      .values({ householdId, onboardingCompletedAt: new Date() })
-      .onConflictDoUpdate({
-        target: householdSettings.householdId,
-        set: { onboardingCompletedAt: new Date(), updatedAt: new Date() },
-      }),
-  );
-
-  const locale = formData.get('locale') === 'en' ? 'en' : 'es';
-  revalidatePath(`/${locale}/overview`);
-  revalidatePath(`/${locale}/welcome`);
-
-  redirect(`/${locale}/overview`);
 }
 
 /** The next time a monthly claim falls due, clamped into a short month. */

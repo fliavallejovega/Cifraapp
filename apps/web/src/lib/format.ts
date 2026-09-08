@@ -54,3 +54,17 @@ export function clampedPercent(part: Money, whole: Money): number {
 export function trimRate(rate: string): string {
   return rate.includes('.') ? rate.replace(/0+$/, '').replace(/\.$/, '') : rate;
 }
+
+/**
+ * `1000.0000` as `numeric(19,4)` stores it; `1000` as a person typed it.
+ *
+ * For putting a stored amount back into the field it came from. Trailing
+ * zeroes past the cents are the column's business, not the form's, and a
+ * person who typed «1000» should not be shown «1000.0000» and asked whether
+ * that is still right.
+ */
+export function trimAmount(amount: string): string {
+  if (!amount.includes('.')) return amount;
+  const trimmed = amount.replace(/0+$/, '').replace(/\.$/, '');
+  return trimmed === '' || trimmed === '-' ? '0' : trimmed;
+}

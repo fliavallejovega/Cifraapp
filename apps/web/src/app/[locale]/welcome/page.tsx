@@ -1,14 +1,11 @@
 import { getCurrency, type CurrencyCode } from '@app/domain';
-import { householdSettings } from '@app/database/schema';
-import { eq } from 'drizzle-orm';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { redirect } from 'next/navigation';
 
 import { AuthScreen } from '@/components/auth-screen';
 import { HouseholdForm } from '@/components/household-form';
 import { SetupQuestionnaire } from '@/components/setup-questionnaire';
-import { SkipSetupButton } from '@/components/skip-setup-button';
-import { queryAsUser, requireSession } from '@/server/session';
+import { loadSetupAnswers } from '@/server/repositories/setup-answers';
+import { requireSession } from '@/server/session';
 
 /**
  * First run, in two halves.
@@ -35,34 +32,31 @@ export default async function WelcomePage({ params }: { params: Promise<{ locale
   }
 
   const householdId = session.activeHouseholdId;
-  const [settings] = await queryAsUser(session, (tx) =>
-    tx
-      .select({ completedAt: householdSettings.onboardingCompletedAt })
-      .from(householdSettings)
-      .where(eq(householdSettings.householdId, householdId))
-      .limit(1),
-  );
-
-  // Answered, or deliberately skipped. Either way it is asked once.
-  if (settings?.completedAt) {
-    redirect(`/${locale}/overview`);
-  }
+  const answers = await loadSetupAnswers(session, householdId);
 
   const household = session.households.find((entry) => entry.id === householdId);
   const currency = (household?.baseCurrency.trim() ?? 'USD') as CurrencyCode;
   const t = await getTranslations('setup');
 
+  // Answered before, so this is a review: same six questions, filled in with
+  // what is on record. It used to redirect anybody who came back, which made a
+  // mistyped salary permanent as far as this screen was concerned — and made a
+  // liar of the settings screen, which had been offering to re-open it.
+  const review = answers.answered;
+
   return (
-    <AuthScreen title={t('title')} detail={t('detail')} wide>
+    <AuthScreen
+      title={review ? t('review.title') : t('title')}
+      detail={review ? t('review.detail') : t('detail')}
+      wide
+    >
       <SetupQuestionnaire
         locale={locale}
         currencySymbol={getCurrency(currency).symbol}
         t={labels(rawOf(t))}
+        initial={answers}
+        review={review}
       />
-
-      <div className="mt-10 border-t border-[color:var(--color-rule)] pt-6">
-        <SkipSetupButton locale={locale} label={t('skipAll')} hint={t('skipAllHint')} />
-      </div>
     </AuthScreen>
   );
 }
@@ -103,7 +97,15 @@ function labels(read: (key: string) => string): Record<string, string> {
     'draft.rent',
     'draft.minimums',
     'draft.other',
+    'review.notice',
+    'review.finish',
     'progress',
+    'stages.household',
+    'stages.income',
+    'stages.savings',
+    'stages.commitments',
+    'stages.debts',
+    'stages.goals',
     'next',
     'back',
     'skipStep',
@@ -167,6 +169,12 @@ function labels(read: (key: string) => string): Record<string, string> {
     'debts.aprHint',
     'debts.minimum',
     'debts.minimumHint',
+    'debts.available',
+    'debts.holderShared',
+    'debts.holderHint',
+    'debts.holder',
+    'debts.limitHint',
+    'debts.limit',
     'debts.add',
     'debts.next',
     'goals.title',

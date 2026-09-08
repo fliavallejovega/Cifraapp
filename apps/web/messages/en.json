@@ -872,8 +872,6 @@
   "setup": {
     "title": "Tell us how you live",
     "detail": "Six short questions. With them we build your first plan today, without waiting for you to import a statement. You can skip any of them and come back later.",
-    "skipAll": "I would rather look around and fill this in later",
-    "skipAllHint": "Without these the plan has nothing to allocate yet.",
     "progress": "Step {step} of {total}",
     "next": "Continue",
     "back": "Back",
@@ -952,7 +950,13 @@
       "minimum": "Minimum payment",
       "minimumHint": "The least you have to pay each month.",
       "add": "Add another debt",
-      "next": "Continue to your goals"
+      "next": "Continue to your goals",
+      "limit": "Card limit",
+      "limitHint": "Only if it is a credit card. It is how we know what you still have available; leave it blank for a loan.",
+      "holder": "Whose is it?",
+      "holderHint": "Pick who in the household it belongs to. Leave it as is if it is shared.",
+      "holderShared": "The household’s",
+      "available": "That leaves {amount} available on this card."
     },
     "goals": {
       "title": "What is all this for?",
@@ -986,6 +990,20 @@
       "rent": "Rent or mortgage",
       "minimums": "Card and loan minimums",
       "other": "Other payments this month"
+    },
+    "review": {
+      "title": "Review what you told us",
+      "detail": "The same six questions, filled in with what is on record. Correct whatever needs it: saving updates what is there rather than adding a copy beside it.",
+      "notice": "Anything you take out here is archived, not deleted: it stays in your history and you can bring it back from its own screen.",
+      "finish": "Save the changes"
+    },
+    "stages": {
+      "household": "Household",
+      "income": "Income",
+      "savings": "Accounts",
+      "commitments": "Bills",
+      "debts": "Debts",
+      "goals": "Goals"
     }
   },
   "records": {

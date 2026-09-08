@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { getDb, withUserContext, type Database } from '@app/database';
-import { households, householdMembers, profiles } from '@app/database/schema';
+import { households, householdMembers, householdSettings, profiles } from '@app/database/schema';
 import { getServerEnv } from '@app/validation/env';
 import { and, eq, isNull } from 'drizzle-orm';
 import { sql } from 'drizzle-orm';
@@ -35,6 +35,16 @@ export interface Session {
     baseCurrency: string;
     /** Carried here so no screen needs a second query to know what «today» is. */
     timeZone: string;
+    /**
+     * Whether the setup questionnaire has been answered.
+     *
+     * Read in the same statement as the memberships, so knowing it costs no
+     * round trip. Every product screen refuses to open until it is true: a
+     * household that abandoned the questionnaire half-way has income recorded
+     * and no obligations, and a plan built on that half is not a partial
+     * answer — it is a wrong one, told confidently.
+     */
+    setupComplete: boolean;
   }[];
   readonly activeHouseholdId: string | null;
   /**
@@ -105,9 +115,11 @@ export const loadSession = cache(async (): Promise<Session | null> => {
         role: householdMembers.role,
         baseCurrency: households.baseCurrency,
         timeZone: households.timeZone,
+        setupComplete: sql<boolean>`${householdSettings.onboardingCompletedAt} is not null`,
       })
       .from(householdMembers)
       .innerJoin(households, eq(households.id, householdMembers.householdId))
+      .leftJoin(householdSettings, eq(householdSettings.householdId, households.id))
       .where(
         and(
           eq(householdMembers.userId, user.id),
@@ -197,6 +209,14 @@ export async function requireHousehold(
 ): Promise<Session & { activeHouseholdId: string }> {
   const session = await requireSession(locale);
   if (!session.activeHouseholdId) redirect(`/${locale}/welcome`);
+
+  // And the questionnaire has to be finished, not merely started. A household
+  // that answered two of the six questions has income and no obligations, and
+  // every engine downstream would read that as «nothing claims your money» —
+  // which is not a partial answer, it is a wrong one stated with confidence.
+  const active = session.households.find((entry) => entry.id === session.activeHouseholdId);
+  if (active && !active.setupComplete) redirect(`/${locale}/welcome`);
+
   return { ...session, activeHouseholdId: session.activeHouseholdId };
 }
 
