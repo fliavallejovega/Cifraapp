@@ -242,7 +242,11 @@ async function checkVercel(credentials) {
   }
 
   const token = credentials['VERCEL_TOKEN'];
-  const team = credentials['VERCEL_ORG_ID'] ?? '';
+  // The team, by slug. Its id used to be read from `VERCEL_ORG_ID`, which had
+  // to go: the editor exports this settings block into every command, and
+  // Vercel's CLI treats that variable as a project link that outranks its own
+  // arguments. One deploy went to the wrong project before that was noticed.
+  const team = credentials['VERCEL_TEAM'] ?? '';
 
   await attempt('Vercel', 'token authenticates', async () => {
     const { status, body } = await api(token, '/v2/user');

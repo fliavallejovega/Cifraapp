@@ -11,10 +11,14 @@
  * explicitly, so nothing about the machine's state can change where a deploy
  * lands.
  *
- *   pnpm deploy            preflight, then both applications
- *   pnpm deploy admin      the console only
- *   pnpm deploy web        the product only
- *   pnpm deploy --skip-preflight
+ *   pnpm deploy:all        preflight, then both applications
+ *   pnpm deploy:admin      the console only
+ *   pnpm deploy:web        the product only
+ *   pnpm deploy:all --skip-preflight
+ *
+ * Named `deploy:all` rather than `deploy` because pnpm has a built-in command
+ * by that name: `pnpm deploy admin` is pnpm's, not this one's, and it rejects
+ * the argument instead of passing it through.
  *
  * The product is linked to GitHub, so its production deploy is a push through
  * the Pime Git funnel and not a CLI upload — using the CLI there would produce
@@ -23,7 +27,7 @@
  */
 
 import { execFile, spawn } from 'node:child_process';
-import { readFile, mkdir, writeFile, rm } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
@@ -102,39 +106,52 @@ async function deployWeb() {
 }
 
 /**
- * The console: an upload, with the project named explicitly.
+ * The console: an upload, to the project named on the command line.
  *
- * The CLI reads its project link from `.vercel/project.json` in the working
- * directory, so the link is written, used, and removed again in a `finally`.
- * Leaving it behind would point every later CLI call in this repository at
- * whichever project was deployed last — including calls meant for the product.
+ * `--project` rather than a `.vercel/project.json` link file, and the ambient
+ * `VERCEL_*` variables stripped from the child's environment, because both of
+ * those can silently redirect a deploy and one of them already did: this
+ * script's first run uploaded the *product* to production while reporting that
+ * it was deploying the console. The link file was written correctly and lost
+ * to `VERCEL_PROJECT_ID`, which the editor exports into every command from the
+ * same settings file the token lives in.
+ *
+ * A deploy should be decided by its arguments and nothing else. Anything the
+ * environment can override is something that will eventually override it.
  */
 async function deployAdmin() {
-  console.log('\n→ Console — uploading to Vercel\n');
-  const link = join(ROOT, '.vercel');
-  try {
-    await mkdir(link, { recursive: true });
-    await writeFile(
-      join(link, 'project.json'),
-      JSON.stringify({
-        projectId: credentials['VERCEL_PROJECT_ADMIN_ID'],
-        orgId: credentials['VERCEL_ORG_ID'],
-        projectName: credentials['VERCEL_PROJECT_ADMIN'],
-      }),
-    );
-    await stream('npx', [
+  const project = credentials['VERCEL_PROJECT_ADMIN'];
+  console.log(`\n→ Console — uploading ${String(project)} to Vercel\n`);
+  await stream(
+    'npx',
+    [
       'vercel',
       'deploy',
       '--prod',
       '--yes',
+      '--project',
+      project,
       '--token',
       token,
       '--scope',
       scope,
-    ]);
-  } finally {
-    await rm(link, { recursive: true, force: true });
+    ],
+    { env: cleanEnvironment() },
+  );
+}
+
+/**
+ * The environment, minus anything Vercel's CLI reads as a project link.
+ *
+ * `VERCEL_PROJECT_ID` and `VERCEL_ORG_ID` outrank the arguments, so they are
+ * removed rather than trusted.
+ */
+function cleanEnvironment() {
+  const environment = { ...process.env };
+  for (const key of ['VERCEL_PROJECT_ID', 'VERCEL_ORG_ID', 'VERCEL_PROJECT_NAME']) {
+    delete environment[key];
   }
+  return environment;
 }
 
 if (target === 'web' || target === 'all') await deployWeb();

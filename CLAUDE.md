@@ -47,7 +47,7 @@ whose Vercel token authenticates as another deploys into somebody else's
 project without ever looking wrong.
 
 The product is linked to GitHub, so `pime-git push` to `main` is its production
-deploy. The console is not linked and ships with `pnpm deploy admin`.
+deploy. The console is not linked and ships with `pnpm deploy:admin`.
 
 ## Preflight and deploy
 
@@ -57,12 +57,12 @@ have changed:
 ```bash
 pnpm preflight          # git, toolchain, copy, Vercel and database
 pnpm preflight:quick    # the offline half, for a fast loop
-pnpm deploy             # preflight, then both applications
-pnpm deploy admin       # the console only
-pnpm deploy web         # the product only
+pnpm deploy:all         # preflight, then both applications
+pnpm deploy:admin       # the console only
+pnpm deploy:web         # the product only
 ```
 
-`pnpm deploy` never depends on which account the Vercel CLI happens to be
+`pnpm deploy:all` never depends on which account the Vercel CLI happens to be
 logged into. The CLI keeps one global session and signing into another account
 anywhere on this machine silently redirects deploys — the failure reads «Not
 authorized», which sounds like a project permission problem rather than a

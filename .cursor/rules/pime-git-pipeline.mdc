@@ -51,11 +51,11 @@ antes de subir. **Todo commit y todo deploy a producción** pasa por aquí.
 
 ```bash
 pnpm preflight        # git, toolchain, copy, Vercel y base de datos
-pnpm deploy           # preflight y luego ambas aplicaciones
-pnpm deploy admin     # solo la consola (no está vinculada a GitHub)
+pnpm deploy:all       # preflight y luego ambas aplicaciones
+pnpm deploy:admin     # solo la consola (no está vinculada a GitHub)
 ```
 
-`pnpm deploy` pasa el token y el scope de este proyecto de forma explícita, así
+`pnpm deploy:all` pasa el token y el scope de este proyecto de forma explícita, así
 que da igual en qué cuenta esté logueado el CLI de Vercel en el Mac.
 
 - Tokens: bloque `env` de `.claude/settings.local.json` (ignorado, nunca se sube).
