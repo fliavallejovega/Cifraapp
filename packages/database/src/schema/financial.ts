@@ -331,6 +331,21 @@ export const obligations = appSchema.table(
     frequency: text('frequency'),
     nextExpectedDate: date('next_expected_date'),
     isEssential: boolean('is_essential').notNull().default(true),
+    /**
+     * The income this is taken out of before it ever arrives.
+     *
+     * Null is the ordinary case — the household pays it from money it holds.
+     * When it is set, the obligation is still owed and still shown, but it is
+     * not a claim on any balance: the money never landed. Counting it as one
+     * subtracted the same deduction twice from «lo que de verdad te queda».
+     *
+     * The foreign key onto `recurring_series` lives in the migration rather
+     * than here, for the same reason `seriesId` above does: this module is
+     * imported *by* `recurring.ts`, and declaring the reference would make the
+     * two import each other. `on delete set null`, because losing the income
+     * must not delete the obligation — the debt survives the job.
+     */
+    deductedFromSeriesId: uuid('deducted_from_series_id'),
     confidence: numeric('confidence', { precision: 4, scale: 3, mode: 'string' }),
     detectedBy: provenance('detected_by').notNull().default('user'),
     /** The pattern that generated this claim, when one did (Phase 7). */

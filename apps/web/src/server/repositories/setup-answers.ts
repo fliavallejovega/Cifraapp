@@ -138,6 +138,7 @@ export async function loadSetupAnswers(
           amount: obligations.expectedAmount,
           dueDate: obligations.dueDate,
           isEssential: obligations.isEssential,
+          deductedFromSeriesId: obligations.deductedFromSeriesId,
         })
         .from(obligations)
         .where(and(eq(obligations.householdId, householdId), isNull(obligations.deletedAt)))
@@ -229,6 +230,14 @@ export async function loadSetupAnswers(
         // a date. The day is the part the person chose.
         dueDay: String(Number(row.dueDate.slice(8, 10))),
         isEssential: row.isEssential,
+        // Stored as the income's id, answered as its position in the list. An
+        // income deleted since is `-1` here rather than a stale index, so a
+        // review shows «lo pago yo» instead of silently pointing the deduction
+        // at whichever salary now happens to sit in that slot.
+        ...(() => {
+          const at = incomeRows.findIndex((income) => income.id === row.deductedFromSeriesId);
+          return row.deductedFromSeriesId && at >= 0 ? { deductedFromIncome: at } : {};
+        })(),
       })),
       debts: debtRows.map((row) => ({
         id: row.id,

@@ -110,6 +110,11 @@ export async function loadPosition(session: Session, householdId: string): Promi
           // Unsettled only: an obligation already paid is a transaction, and
           // counting it twice would understate what is available.
           isNull(obligations.settledTransactionId),
+          // Deducted at source is not a claim on a balance. The money never
+          // arrives, so the stated salary is already net of it; subtracting it
+          // here would take the same deduction out twice and understate what
+          // is available by exactly the amount that was already gone.
+          isNull(obligations.deductedFromSeriesId),
           gte(obligations.dueDate, today),
           lte(obligations.dueDate, horizon),
         ),

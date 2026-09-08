@@ -13,6 +13,7 @@ import {
   recurringSeries,
 } from '@app/database/schema';
 import { addMonths, plainDateFromParts, todayIn, type PlainDate } from '@app/domain';
+import { HOLDING_KINDS } from '@app/market-data';
 import { and, eq, isNull, ne, notInArray, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
@@ -156,7 +157,11 @@ const setupInput = z.object({
           .trim()
           .regex(/^\d+(\.\d{1,10})?$/)
           .refine((value) => Number(value) > 0),
-        kind: z.enum(['equity', 'etf', 'crypto', 'other']).default('other'),
+        // Read from the market data package rather than retyped. Widening the
+        // kinds there and leaving a copy of the old four here rejected the
+        // whole payload — a household with one mutual fund could not finish
+        // setup at all, and the error named nothing a person could act on.
+        kind: z.enum(HOLDING_KINDS).default('other'),
         currency: z.enum(['USD', 'PAB']).default('USD'),
         personName: z.string().trim().max(120).optional(),
       }),
@@ -164,7 +169,24 @@ const setupInput = z.object({
     .max(40)
     .default([]),
   commitments: z
-    .array(z.object({ id: rowId, name, amount, dueDay, isEssential: z.boolean() }))
+    .array(
+      z.object({
+        id: rowId,
+        name,
+        amount,
+        dueDay,
+        isEssential: z.boolean(),
+        /**
+         * The income this is taken out of before it arrives, when it is.
+         *
+         * Carried as the *position* of the income in the answers rather than
+         * its id, because on a first pass the incomes do not have ids yet —
+         * they are inserted in the same transaction as the commitments that
+         * point at them. Resolved below, once the inserts have returned.
+         */
+        deductedFromIncome: z.coerce.number().int().min(0).max(19).optional(),
+      }),
+    )
     .max(40),
   debts: z
     .array(
@@ -455,16 +477,31 @@ export async function completeSetup(
           ),
         );
 
-      // Monthly commitments
+      /**
+       * Monthly commitments.
+       *
+       * `keptIncomes` is in the order the incomes were answered and now holds
+       * a real id for every one of them, inserted or updated a few lines
+       * above. That is what lets a commitment point at «the second salary»
+       * before that salary had an id to point at.
+       */
       const keptCommitments: string[] = [];
       for (const entry of answers.commitments) {
         const due = nextDueOn(today, entry.dueDay);
+        const deductedFrom =
+          entry.deductedFromIncome === undefined
+            ? null
+            : (keptIncomes[entry.deductedFromIncome] ?? null);
         const values = {
           name: entry.name,
           expectedAmount: entry.amount,
           dueDate: due,
           nextExpectedDate: addMonths(due, 1),
           isEssential: entry.isEssential,
+          // Explicitly null rather than omitted, so unticking «se descuenta
+          // del sueldo» on a second pass clears it instead of leaving the old
+          // answer in place.
+          deductedFromSeriesId: deductedFrom,
         };
         if (entry.id) {
           await tx

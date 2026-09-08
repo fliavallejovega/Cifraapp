@@ -80,6 +80,15 @@ interface CommitmentRow {
   amount: string;
   dueDay: string;
   isEssential: boolean;
+  /**
+   * Which income this is taken out of, by its position in the income step.
+   *
+   * Undefined is the ordinary case: the household pays it from money it holds.
+   * The position rather than an id, because on a first pass the incomes have
+   * no ids yet — they are created in the same save as the commitments that
+   * point at them.
+   */
+  deductedFromIncome?: number | undefined;
 }
 interface DebtRow {
   id?: string;
@@ -191,6 +200,18 @@ export function SetupQuestionnaire({
       interestRate: '',
     }),
   );
+  /**
+   * The incomes worth offering as «se descuenta de aquí»: the ones that have a
+   * name to show. A blank row in the income step is not a salary yet, and
+   * listing it would offer a deduction from nothing.
+   *
+   * The position travels with the name because the position is what gets
+   * stored — the incomes have no ids until this form is saved.
+   */
+  const namedIncomes = incomes
+    .map((income, at) => ({ at, name: income.name.trim() }))
+    .filter((income) => income.name !== '');
+
   const [commitments, setCommitments] = useState<CommitmentRow[]>(
     start(initial?.commitments, { name: '', amount: '', dueDay: '1', isEssential: true }),
   );
@@ -288,7 +309,19 @@ export function SetupQuestionnaire({
     bufferMinimum: bufferMinimum.trim(),
     incomes: incomes.filter((row) => row.name.trim() !== '' && row.amount.trim() !== ''),
     accounts: accountRows.filter((row) => row.name.trim() !== '' && row.balance.trim() !== ''),
-    commitments: commitments.filter((row) => row.name.trim() !== '' && row.amount.trim() !== ''),
+    // A deduction points at an income by position, and the income step is
+    // still editable — somebody can go back and blank the salary a commitment
+    // was pointed at. Dropping the pointer when it no longer names anything is
+    // what stops «se descuenta del sueldo de Ana» from silently becoming a
+    // deduction from whoever now sits in that slot.
+    commitments: commitments
+      .filter((row) => row.name.trim() !== '' && row.amount.trim() !== '')
+      .map((row) =>
+        row.deductedFromIncome !== undefined &&
+        namedIncomes.some((income) => income.at === row.deductedFromIncome)
+          ? row
+          : { ...row, deductedFromIncome: undefined },
+      ),
     debts: debtRows.filter(
       (row) =>
         row.name.trim() !== '' &&
@@ -688,6 +721,43 @@ export function SetupQuestionnaire({
                   />
                 )}
               </Field>
+              {namedIncomes.length > 0 && (
+                <Field
+                  label={copy('commitments.deductedFrom')}
+                  hint={
+                    row.deductedFromIncome === undefined
+                      ? copy('commitments.deductedFromHint')
+                      : copy('commitments.deductedFromChosenHint')
+                  }
+                  className="sm:col-span-2"
+                >
+                  {({ id, describedBy }) => (
+                    <Select
+                      id={id}
+                      aria-describedby={describedBy}
+                      value={
+                        row.deductedFromIncome === undefined ? '' : String(row.deductedFromIncome)
+                      }
+                      onChange={(event) => {
+                        setCommitments(
+                          patch(commitments, at, {
+                            deductedFromIncome:
+                              event.target.value === '' ? undefined : Number(event.target.value),
+                          }),
+                        );
+                      }}
+                    >
+                      <option value="">{copy('commitments.deductedFromNone')}</option>
+                      {namedIncomes.map((income) => (
+                        <option key={income.at} value={income.at}>
+                          {income.name}
+                        </option>
+                      ))}
+                    </Select>
+                  )}
+                </Field>
+              )}
+
               <Check
                 label={copy('commitments.essential')}
                 hint={copy('commitments.essentialHint')}

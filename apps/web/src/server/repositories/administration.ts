@@ -215,6 +215,14 @@ export interface CommitmentView {
   readonly isEssential: boolean;
   readonly isSettled: boolean;
   readonly categoryId: string | null;
+  /**
+   * Taken out of a salary before it arrives, rather than paid from an account.
+   *
+   * Carried on the view instead of filtered out of it, because the two readers
+   * want opposite things: a list of what the household owes should show it,
+   * and any sum of what claims their *cash* must leave it out.
+   */
+  readonly isDeductedAtSource: boolean;
 }
 
 export async function loadCommitments(
@@ -233,6 +241,7 @@ export async function loadCommitments(
         isEssential: obligations.isEssential,
         settledTransactionId: obligations.settledTransactionId,
         categoryId: obligations.categoryId,
+        deductedFromSeriesId: obligations.deductedFromSeriesId,
       })
       .from(obligations)
       .where(and(eq(obligations.householdId, householdId), isNull(obligations.deletedAt)))
@@ -248,6 +257,7 @@ export async function loadCommitments(
     isEssential: row.isEssential,
     isSettled: row.settledTransactionId !== null,
     categoryId: row.categoryId,
+    isDeductedAtSource: row.deductedFromSeriesId !== null,
   }));
 }
 

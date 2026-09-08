@@ -24,7 +24,9 @@ import { Money, type CurrencyCode } from '@app/domain';
  * would put a classification on a screen that nobody stated, which is the one
  * thing this package is built not to do. Debt is searchable; it is not a type.
  */
-export type HoldingKind = 'equity' | 'etf' | 'fund' | 'crypto' | 'index' | 'other';
+export const HOLDING_KINDS = ['equity', 'etf', 'fund', 'crypto', 'index', 'other'] as const;
+
+export type HoldingKind = (typeof HOLDING_KINDS)[number];
 
 export interface Quote {
   /** As the provider names it: `AAPL`, `VOO`, `BTC-USD`. */

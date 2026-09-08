@@ -28,6 +28,7 @@ export {
   type SearchScope,
 } from './search.js';
 export {
+  HOLDING_KINDS,
   isStale,
   totalOf,
   valueOf,

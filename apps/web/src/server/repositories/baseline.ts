@@ -31,9 +31,18 @@ export async function loadBaseline(
     loadCommitments(session, householdId, currency),
   ]);
 
+  /**
+   * What the household pays each month out of money it holds.
+   *
+   * Deductions at source are left out, and this is the place it matters most:
+   * the baseline subtracts this from monthly income, and a salary is stated
+   * as what arrives. Counting a payroll deduction here took it off the same
+   * income twice, and every projection and scenario built on the baseline
+   * inherited the error compounded over its whole horizon.
+   */
   const monthlyCommitments = Money.sum(
     commitments
-      .filter((commitment) => !commitment.isSettled)
+      .filter((commitment) => !commitment.isSettled && !commitment.isDeductedAtSource)
       .map((commitment) => commitment.expectedAmount),
     currency,
   );

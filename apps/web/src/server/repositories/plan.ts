@@ -106,6 +106,9 @@ export async function loadPlan(session: Session, householdId: string): Promise<P
               eq(obligations.householdId, householdId),
               isNull(obligations.deletedAt),
               isNull(obligations.settledTransactionId),
+              // Not a claim on money the household holds: it is taken out of a
+              // salary before that salary arrives. See the column's own note.
+              isNull(obligations.deductedFromSeriesId),
             ),
           )
           .orderBy(obligations.dueDate),

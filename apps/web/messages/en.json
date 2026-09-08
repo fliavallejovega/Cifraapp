@@ -942,7 +942,11 @@
       "essential": "It is essential",
       "essentialHint": "What you would pay even in a bad month. The plan covers it first.",
       "add": "Add another commitment",
-      "next": "Continue to debts"
+      "next": "Continue to debts",
+      "deductedFrom": "Is it taken out of a salary?",
+      "deductedFromNone": "No, I pay it myself",
+      "deductedFromHint": "If it comes off the payslip before you are paid, say so here. That way we know the money never reached you.",
+      "deductedFromChosenHint": "We take it off that salary, not off your balance. If the figure you entered under Income already has this deduction taken out, leave it as it is."
     },
     "debts": {
       "title": "Do you owe anything?",

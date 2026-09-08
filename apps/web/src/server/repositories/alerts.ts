@@ -122,8 +122,13 @@ function deterministicAlerts(inputs: AlertInputs): Alert[] {
   }
 
   // ---- Commitments already past due --------------------------------------
+  // A deduction at source is never settled by a transaction, because no
+  // transaction will ever exist for it — the money was taken before it
+  // arrived. Left in, every payroll deduction became a critical «vencido»
+  // alert on its due date and stayed there for good.
   const overdue = inputs.commitments.filter(
-    (commitment) => !commitment.isSettled && commitment.dueDate < inputs.today,
+    (commitment) =>
+      !commitment.isSettled && !commitment.isDeductedAtSource && commitment.dueDate < inputs.today,
   );
 
   for (const commitment of overdue) {

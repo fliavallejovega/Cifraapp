@@ -942,7 +942,11 @@
       "essential": "Es indispensable",
       "essentialHint": "Lo que pagarías incluso en un mes malo. El plan lo cubre primero.",
       "add": "Agregar otro compromiso",
-      "next": "Continuar a las deudas"
+      "next": "Continuar a las deudas",
+      "deductedFrom": "¿Se descuenta de un sueldo?",
+      "deductedFromNone": "No, lo pago yo",
+      "deductedFromHint": "Si te lo descuentan de la planilla antes de cobrar, dilo aquí. Así sabemos que ese dinero nunca te llegó.",
+      "deductedFromChosenHint": "Lo restamos de ese sueldo, no de tu saldo. Si el monto que pusiste en Ingresos ya viene con este descuento hecho, déjalo así."
     },
     "debts": {
       "title": "¿Debes algo?",
