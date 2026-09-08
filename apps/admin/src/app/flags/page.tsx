@@ -8,8 +8,8 @@ import {
   LedgerRow,
   Status,
 } from '@app/ui';
-import { featureFlagOverrides, featureFlags } from '@app/database/schema';
-import { asc, eq } from 'drizzle-orm';
+import { featureFlags } from '@app/database/schema';
+import { asc, sql } from 'drizzle-orm';
 
 import { ConsolePage } from '@/components/figures';
 import { Console } from '@/components/shell';
@@ -31,28 +31,22 @@ export default async function FlagsPage() {
   const session = await requireAdmin();
   const db = adminDb();
 
+  // One statement, not one per flag. Written as a query inside a `map` this
+  // was seven round trips to a database a region away for a screen with seven
+  // rows on it, which is the same shape of mistake that made the overview
+  // screen time out.
   const flags = await db
     .select({
       key: featureFlags.key,
       description: featureFlags.description,
       defaultEnabled: featureFlags.defaultEnabled,
+      overrides: sql<number>`(
+        select count(*)::int from platform.feature_flag_overrides o
+         where o.flag_key = ${featureFlags.key}
+      )`,
     })
     .from(featureFlags)
     .orderBy(asc(featureFlags.key));
-
-  const overrides = await Promise.all(
-    flags.map(async (flag) => ({
-      key: flag.key,
-      rows: await db
-        .select({
-          scope: featureFlagOverrides.scope,
-          targetId: featureFlagOverrides.targetId,
-          enabled: featureFlagOverrides.enabled,
-        })
-        .from(featureFlagOverrides)
-        .where(eq(featureFlagOverrides.flagKey, flag.key)),
-    })),
-  );
 
   return (
     <Console current="flags" email={session.email} role={session.role}>
@@ -71,24 +65,22 @@ export default async function FlagsPage() {
               <LedgerColumn align="end">Overrides</LedgerColumn>
             </LedgerHead>
             <LedgerBody>
-              {flags.map((flag) => {
-                const rows = overrides.find((entry) => entry.key === flag.key)?.rows ?? [];
-
-                return (
-                  <LedgerRow key={flag.key}>
-                    <LedgerCell>{flag.key}</LedgerCell>
-                    <LedgerCell secondary>{flag.description}</LedgerCell>
-                    <LedgerCell align="end">
-                      {flag.defaultEnabled ? (
-                        <Status tone="caution">on</Status>
-                      ) : (
-                        <span className="text-[color:var(--color-ink-secondary)]">off</span>
-                      )}
-                    </LedgerCell>
-                    <LedgerCell align="end">{rows.length}</LedgerCell>
-                  </LedgerRow>
-                );
-              })}
+              {flags.map((flag) => (
+                <LedgerRow key={flag.key}>
+                  <LedgerCell>{flag.key}</LedgerCell>
+                  <LedgerCell secondary>{flag.description}</LedgerCell>
+                  <LedgerCell align="end">
+                    {flag.defaultEnabled ? (
+                      <Status tone="caution">on</Status>
+                    ) : (
+                      <span className="text-[color:var(--color-ink-secondary)]">off</span>
+                    )}
+                  </LedgerCell>
+                  <LedgerCell align="end">
+                    <span className="tabular">{flag.overrides}</span>
+                  </LedgerCell>
+                </LedgerRow>
+              ))}
             </LedgerBody>
           </Ledger>
         )}

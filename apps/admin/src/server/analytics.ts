@@ -1,27 +1,15 @@
 import 'server-only';
 
 import { snapshot, type CustomerMrr, type MrrMovement, type MrrSnapshot } from '@app/ledger';
-import {
-  accounts,
-  aiInvocations,
-  documents,
-  households,
-  invoices,
-  jobs,
-  journalLines,
-  plans,
-  subscriptions,
-  transactions,
-} from '@app/database/schema';
 import { Money, todayIn } from '@app/domain';
-import { and, count, desc, eq, isNull, sql } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 
 import { adminDb } from './admin-session';
 
 /**
  * The numbers the product is judged by.
  *
- * Three rules run through this file.
+ * Four rules run through this file.
  *
  * **Every metric is counted, never estimated.** There is no sampling and no
  * extrapolation; a figure here is a `count(*)` or a sum of rows. A dashboard
@@ -36,9 +24,29 @@ import { adminDb } from './admin-session';
  *
  * **Zero and «not applicable» are different answers.** A categorization rate
  * over no categorized rows is not zero percent, it is nothing, and it reads as
- * `null` all the way to the screen so the screen can say so. The same goes for
- * a growth rate against an empty previous period.
+ * `null` all the way to the screen so the screen can say so.
+ *
+ * **One statement per section.** This is the rule that was learned the hard
+ * way. Written as a `Promise.all` of twenty-odd small queries, the overview
+ * screen took thirty seconds and timed out in production — the database is a
+ * region away, so every round trip costs a few hundred milliseconds and a pool
+ * of four connections turns concurrency back into a queue. Postgres computes
+ * all of it in one pass for the price of one trip, so each loader below is
+ * exactly one statement: scalar subqueries where a screen needs a figure, and
+ * `jsonb` aggregates where it needs a list.
  */
+
+/**
+ * `count` and `sum` arrive as strings from numerics. These are the casts home.
+ *
+ * A `numeric` never reaches JavaScript as a number — that is the point of the
+ * whole money discipline in this codebase — so they are read as text and
+ * narrowed here rather than trusted at the call site.
+ */
+const text = (value: unknown): string =>
+  typeof value === 'string' ? value : typeof value === 'number' ? String(value) : '0';
+const toBig = (value: unknown): bigint => BigInt(text(value).split('.')[0] ?? '0');
+const toNum = (value: unknown): number => Number(text(value));
 
 // ---------------------------------------------------------------------------
 // Product
@@ -59,66 +67,46 @@ export interface ProductMetrics {
 }
 
 export async function loadProductMetrics(): Promise<ProductMetrics> {
-  const db = adminDb();
+  const rows = await adminDb().execute(sql`
+    select
+      (select count(*) from app.households where deleted_at is null)          as households,
+      -- "Active" is a household with a transaction in the last thirty days.
+      -- Naming the definition matters more than the number: every SaaS means
+      -- something different by it, and a metric nobody can define is a metric
+      -- nobody can act on.
+      (select count(distinct household_id) from app.transactions
+        where transaction_date > current_date - interval '30 days')           as active_households,
+      (select count(*) from app.accounts where deleted_at is null)            as accounts,
+      (select count(*) from app.transactions where deleted_at is null)        as transactions,
+      (select count(*) from app.documents)                                    as documents,
+      (select count(*) from app.profiles)                                     as people,
+      (select count(*) from app.transactions
+        where deleted_at is null and status = 'needs_review')                 as needs_review,
+      (select count(*) from app.transactions
+        where deleted_at is null and category_source = 'system')              as categorized_by_system,
+      (select count(*) from app.transactions
+        where deleted_at is null and category_id is not null)                 as categorized_total,
+      (select count(*) from app.ai_invocations)                               as ai_invocations,
+      (select coalesce(sum(cost_micros), 0) from app.ai_invocations)          as ai_cost_micros
+  `);
 
-  const [
-    householdCount,
-    activeCount,
-    accountCount,
-    transactionCount,
-    documentCount,
-    peopleCount,
-    categorized,
-    review,
-    aiCount,
-    aiCost,
-  ] = await Promise.all([
-    db.select({ value: count() }).from(households).where(isNull(households.deletedAt)),
-    // "Active" is a household with a transaction in the last 30 days. Naming the
-    // definition matters more than the number: every SaaS means something
-    // different by it, and a metric nobody can define is a metric nobody can act
-    // on.
-    db
-      .select({ value: sql<number>`count(distinct ${transactions.householdId})::int` })
-      .from(transactions)
-      .where(sql`${transactions.transactionDate} > current_date - interval '30 days'`),
-    db.select({ value: count() }).from(accounts).where(isNull(accounts.deletedAt)),
-    db.select({ value: count() }).from(transactions).where(isNull(transactions.deletedAt)),
-    db.select({ value: count() }).from(documents),
-    db.execute<{ value: number }>(sql`select count(*)::int as value from app.profiles`),
-    db
-      .select({
-        automatic: sql<number>`count(*) filter (where ${transactions.categorySource} = 'system')::int`,
-        total: sql<number>`count(*) filter (where ${transactions.categoryId} is not null)::int`,
-      })
-      .from(transactions)
-      .where(isNull(transactions.deletedAt)),
-    db
-      .select({ value: count() })
-      .from(transactions)
-      .where(and(isNull(transactions.deletedAt), eq(transactions.status, 'needs_review'))),
-    db.select({ value: count() }).from(aiInvocations),
-    db
-      .select({ value: sql<string>`coalesce(sum(${aiInvocations.costMicros}), 0)` })
-      .from(aiInvocations),
-  ]);
-
-  const automatic = categorized[0];
+  const row = rows[0] ?? {};
+  const categorizedTotal = toNum(row['categorized_total']);
 
   return {
-    households: householdCount[0]?.value ?? 0,
-    activeHouseholds: activeCount[0]?.value ?? 0,
-    accounts: accountCount[0]?.value ?? 0,
-    transactions: transactionCount[0]?.value ?? 0,
-    documents: documentCount[0]?.value ?? 0,
-    people: peopleCount[0]?.value ?? 0,
+    households: toNum(row['households']),
+    activeHouseholds: toNum(row['active_households']),
+    accounts: toNum(row['accounts']),
+    transactions: toNum(row['transactions']),
+    documents: toNum(row['documents']),
+    people: toNum(row['people']),
     // Null rather than 100% when nothing is categorized yet. A rate over zero
     // rows is not a rate.
     automaticCategorization:
-      automatic && automatic.total > 0 ? automatic.automatic / automatic.total : null,
-    needsReview: review[0]?.value ?? 0,
-    aiInvocations: aiCount[0]?.value ?? 0,
-    aiCostMicros: BigInt(aiCost[0]?.value ?? '0'),
+      categorizedTotal > 0 ? toNum(row['categorized_by_system']) / categorizedTotal : null,
+    needsReview: toNum(row['needs_review']),
+    aiInvocations: toNum(row['ai_invocations']),
+    aiCostMicros: toBig(row['ai_cost_micros']),
   };
 }
 
@@ -152,81 +140,78 @@ export interface RevenueMetrics {
   readonly hasProvider: boolean;
 }
 
+/**
+ * A subscription that is being paid for, or is expected to be.
+ *
+ * Past due and grace count. Dropping somebody the day a card fails overstates
+ * churn and understates what is recoverable.
+ */
+const PAYING = sql`status in ('active', 'past_due', 'grace')`;
+
 export async function loadRevenueMetrics(): Promise<RevenueMetrics> {
-  const db = adminDb();
   const today = todayIn('America/Panama');
 
-  const [rows, revenue, statusRows, invoiceRows, catalogue] = await Promise.all([
-    db
-      .select({
-        householdId: subscriptions.householdId,
-        status: subscriptions.status,
-        planCode: subscriptions.planCode,
-        provider: subscriptions.provider,
-        price: plans.priceAmount,
-        interval: plans.billingInterval,
-      })
-      .from(subscriptions)
-      .innerJoin(plans, eq(plans.code, subscriptions.planCode)),
-    db
-      .select({ value: sql<string>`coalesce(sum(${journalLines.amount}), 0)` })
-      .from(journalLines)
-      .where(and(eq(journalLines.accountCode, '4000'), eq(journalLines.side, 'credit'))),
-    db
-      .select({ status: subscriptions.status, households: count() })
-      .from(subscriptions)
-      .groupBy(subscriptions.status),
-    db
-      .select({
-        issued: count(),
-        paid: sql<number>`count(*) filter (where ${invoices.paidAt} is not null)::int`,
-        outstanding: sql<string>`coalesce(sum(${invoices.amount}) filter (where ${invoices.paidAt} is null), 0)`,
-      })
-      .from(invoices),
-    db
-      .select({
-        code: plans.code,
-        name: plans.name,
-        price: plans.priceAmount,
-        interval: plans.billingInterval,
-      })
-      .from(plans)
-      .where(eq(plans.isActive, true))
-      .orderBy(plans.sortOrder),
-  ]);
+  const rows = await adminDb().execute(sql`
+    select
+      (select coalesce(jsonb_agg(jsonb_build_object(
+                'householdId', s.household_id,
+                'price',       p.price_amount::text,
+                'interval',    p.billing_interval)), '[]'::jsonb)
+         from platform.subscriptions s
+         join platform.plans p on p.code = s.plan_code
+        where ${PAYING})                                                    as paying,
 
-  /** A subscription that is being paid for, or is expected to be. */
-  const isPaying = (status: string) =>
-    status === 'active' || status === 'past_due' || status === 'grace';
+      (select coalesce(jsonb_agg(jsonb_build_object(
+                'code',     p.code,
+                'name',     p.name,
+                'price',    p.price_amount::text,
+                'interval', p.billing_interval,
+                'subscribers', (
+                  select count(*)::int from platform.subscriptions s
+                   where s.plan_code = p.code and ${PAYING}))
+                order by p.sort_order), '[]'::jsonb)
+         from platform.plans p where p.is_active)                           as catalogue,
 
-  const monthly = (price: string, interval: 'month' | 'year') => {
+      (select coalesce(jsonb_agg(jsonb_build_object(
+                'status', t.status, 'households', t.n)), '[]'::jsonb)
+         from (select status::text as status, count(*)::int as n
+                 from platform.subscriptions group by status) t)            as by_status,
+
+      (select coalesce(sum(amount), 0) from platform.journal_lines
+        where account_code = '4000' and side = 'credit')                    as recognized,
+
+      (select count(*) from platform.invoices)                              as invoices_issued,
+      (select count(*) from platform.invoices where paid_at is not null)    as invoices_paid,
+      (select coalesce(sum(amount), 0) from platform.invoices
+        where paid_at is null)                                              as invoices_outstanding,
+      (select exists (select 1 from platform.subscriptions
+        where provider is not null))                                        as has_provider
+  `);
+
+  const row = rows[0] ?? {};
+
+  const monthly = (price: string, interval: string) => {
     const amount = Money.fromDecimalString(price, 'USD');
     return interval === 'year' ? amount.divide(12) : amount;
   };
 
-  const paying: CustomerMrr[] = rows
-    .filter((row) => isPaying(row.status))
-    .map((row) => ({
-      customerId: row.householdId,
-      mrr: monthly(row.price, row.interval),
-    }));
+  const payingRows = (row['paying'] ?? []) as {
+    householdId: string;
+    price: string;
+    interval: string;
+  }[];
+  const catalogue = (row['catalogue'] ?? []) as {
+    code: string;
+    name: string;
+    price: string;
+    interval: string;
+    subscribers: number;
+  }[];
 
-  const planMix: PlanMix[] = catalogue.map((plan) => {
-    const subscribers = rows.filter(
-      (row) => row.planCode === plan.code && isPaying(row.status),
-    ).length;
-    const unit = monthly(plan.price, plan.interval);
-    return {
-      code: plan.code,
-      name: plan.name,
-      price: Money.fromDecimalString(plan.price, 'USD'),
-      interval: plan.interval,
-      subscribers,
-      mrr: unit.multiply(subscribers),
-    };
-  });
-
-  const invoiceRow = invoiceRows[0];
+  const paying: CustomerMrr[] = payingRows.map((entry) => ({
+    customerId: entry.householdId,
+    mrr: monthly(entry.price, entry.interval),
+  }));
 
   return {
     snapshot: snapshot(paying, today, 'USD'),
@@ -234,15 +219,22 @@ export async function loadRevenueMetrics(): Promise<RevenueMetrics> {
     // the honest answer; a movement computed against an empty set would report
     // every customer as new, every month.
     movement: null,
-    revenueRecognized: Money.fromDecimalString(revenue[0]?.value ?? '0', 'USD'),
-    planMix,
-    byStatus: statusRows.map((row) => ({ status: row.status, households: row.households })),
+    revenueRecognized: Money.fromDecimalString(text(row['recognized']), 'USD'),
+    planMix: catalogue.map((plan) => ({
+      code: plan.code,
+      name: plan.name,
+      price: Money.fromDecimalString(plan.price, 'USD'),
+      interval: plan.interval === 'year' ? 'year' : 'month',
+      subscribers: plan.subscribers,
+      mrr: monthly(plan.price, plan.interval).multiply(plan.subscribers),
+    })),
+    byStatus: (row['by_status'] ?? []) as { status: string; households: number }[],
     invoices: {
-      issued: invoiceRow?.issued ?? 0,
-      paid: invoiceRow?.paid ?? 0,
-      outstanding: Money.fromDecimalString(invoiceRow?.outstanding ?? '0', 'USD'),
+      issued: toNum(row['invoices_issued']),
+      paid: toNum(row['invoices_paid']),
+      outstanding: Money.fromDecimalString(text(row['invoices_outstanding']), 'USD'),
     },
-    hasProvider: rows.some((row) => row.provider !== null),
+    hasProvider: row['has_provider'] === true,
   };
 }
 
@@ -267,15 +259,13 @@ export interface GrowthMetrics {
 /**
  * Twelve weeks of arrivals.
  *
- * The series is generated from a date range and left-joined, so a week nobody
- * signed up is a zero in the middle of the line rather than a gap that the
- * chart quietly closes — the shape of the last three months is the point, and a
- * chart that skips its empty weeks draws a different shape than the truth.
+ * The series is generated from a date range, so a week nobody signed up is a
+ * zero in the middle of the line rather than a gap the chart quietly closes —
+ * the shape of the last three months is the point, and a chart that skips its
+ * empty weeks draws a different shape than the truth.
  */
 export async function loadGrowthMetrics(): Promise<GrowthMetrics> {
-  const db = adminDb();
-
-  const weekly = (table: string, column: string) => sql<{ start: string; value: number }[]>`
+  const rows = await adminDb().execute(sql`
     with weeks as (
       select generate_series(
         date_trunc('week', current_date) - interval '11 weeks',
@@ -283,54 +273,34 @@ export async function loadGrowthMetrics(): Promise<GrowthMetrics> {
         interval '1 week'
       )::date as start
     )
-    select w.start::text as start,
-           count(t.*)::int as value
-      from weeks w
-      left join ${sql.raw(table)} t
-        on date_trunc('week', t.${sql.raw(column)})::date = w.start
-     group by w.start
-     order by w.start
-  `;
+    select
+      (select jsonb_agg(jsonb_build_object('start', w.start::text, 'value', (
+         select count(*)::int from app.profiles p
+          where date_trunc('week', p.created_at)::date = w.start
+       )) order by w.start) from weeks w)                                   as signups,
 
-  const [signups, created, totals] = await Promise.all([
-    db.execute<{ start: string; value: number }>(weekly('app.profiles', 'created_at')),
-    db.execute<{ start: string; value: number }>(
-      sql`
-        with weeks as (
-          select generate_series(
-            date_trunc('week', current_date) - interval '11 weeks',
-            date_trunc('week', current_date),
-            interval '1 week'
-          )::date as start
-        )
-        select w.start::text as start, count(h.*)::int as value
-          from weeks w
-          left join app.households h
-            on date_trunc('week', h.created_at)::date = w.start
-           and h.deleted_at is null
-         group by w.start order by w.start
-      `,
-    ),
-    db.execute<{ total: number; last30: number; previous30: number }>(sql`
-      select
-        count(*)::int as total,
-        count(*) filter (where created_at > now() - interval '30 days')::int as last30,
-        count(*) filter (
-          where created_at <= now() - interval '30 days'
-            and created_at > now() - interval '60 days'
-        )::int as previous30
-      from app.profiles
-    `),
-  ]);
+      (select jsonb_agg(jsonb_build_object('start', w.start::text, 'value', (
+         select count(*)::int from app.households h
+          where date_trunc('week', h.created_at)::date = w.start
+            and h.deleted_at is null
+       )) order by w.start) from weeks w)                                   as households,
 
-  const totalRow = totals[0];
+      (select count(*) from app.profiles)                                   as total,
+      (select count(*) from app.profiles
+        where created_at > now() - interval '30 days')                      as last30,
+      (select count(*) from app.profiles
+        where created_at <= now() - interval '30 days'
+          and created_at > now() - interval '60 days')                      as previous30
+  `);
+
+  const row = rows[0] ?? {};
 
   return {
-    signupsByWeek: signups.map((row) => ({ start: row.start, value: row.value })),
-    householdsByWeek: created.map((row) => ({ start: row.start, value: row.value })),
-    totalSignups: totalRow?.total ?? 0,
-    signupsLast30: totalRow?.last30 ?? 0,
-    signupsPrevious30: totalRow?.previous30 ?? 0,
+    signupsByWeek: (row['signups'] ?? []) as Bucket[],
+    householdsByWeek: (row['households'] ?? []) as Bucket[],
+    totalSignups: toNum(row['total']),
+    signupsLast30: toNum(row['last30']),
+    signupsPrevious30: toNum(row['previous30']),
   };
 }
 
@@ -341,34 +311,23 @@ export async function loadGrowthMetrics(): Promise<GrowthMetrics> {
 /**
  * The assistant's outcomes, grouped the way they should be read.
  *
- * `app.ai_outcome` has nine values and lumping eight of them together as
+ * `app.ai_outcome` has nine values, and lumping eight of them together as
  * «failed» would be wrong in a way that matters here. A guardrail refusing an
  * answer that mentioned a figure nobody gave it is the product working: it is
  * the rule that AI is never the source of a number, enforced. Counting that as
  * a failure next to a transport error would make the safety mechanism look
  * like an outage and hide the outage inside it.
  */
-const ANSWERED = ['ok', 'cache_hit'] as const;
-const REFUSED = ['refused', 'ungrounded_figures', 'missing_grounding'] as const;
-const BROKEN = ['transport_error', 'malformed_output'] as const;
-const NOT_ATTEMPTED = ['not_configured', 'budget_exhausted'] as const;
-
-/**
- * The list as a SQL literal.
- *
- * Passing the array as a parameter produces `($1, $2)::app.ai_outcome[]`,
- * which Postgres reads as a record and refuses to cast. These are
- * compile-time constants from the enum itself — never anything a request
- * carries — so they are written into the statement.
- */
-const outcomes = (values: readonly string[]) =>
-  sql.raw(`array[${values.map((value) => `'${value}'`).join(', ')}]::app.ai_outcome[]`);
+const ANSWERED = sql`outcome in ('ok', 'cache_hit')`;
+const REFUSED = sql`outcome in ('refused', 'ungrounded_figures', 'missing_grounding')`;
+const BROKEN = sql`outcome in ('transport_error', 'malformed_output')`;
+const NOT_ATTEMPTED = sql`outcome in ('not_configured', 'budget_exhausted')`;
 
 export interface AssistantMetrics {
   readonly requests: number;
   readonly costMicros: bigint;
   readonly cacheHits: number;
-  /** Answered: `ok` or served from cache. */
+  /** Answered: `ok`, or served from cache. */
   readonly answered: number;
   /** A guardrail declined to pass the answer on. A correct outcome. */
   readonly refused: number;
@@ -396,82 +355,85 @@ export interface AssistantMetrics {
 }
 
 export async function loadAssistantMetrics(): Promise<AssistantMetrics> {
-  const db = adminDb();
+  const rows = await adminDb().execute(sql`
+    select
+      (select count(*) from app.ai_invocations)                              as requests,
+      (select coalesce(sum(cost_micros), 0) from app.ai_invocations)         as cost,
+      (select count(*) from app.ai_invocations where cache_hit)              as cache_hits,
+      (select count(*) from app.ai_invocations where ${ANSWERED})            as answered,
+      (select count(*) from app.ai_invocations where ${REFUSED})             as refused,
+      (select count(*) from app.ai_invocations where ${BROKEN})              as broken,
+      (select count(*) from app.ai_invocations where ${NOT_ATTEMPTED})       as not_attempted,
+      -- The median, not the mean: one forty-second timeout drags a mean
+      -- somewhere useless and leaves the typical request undescribed.
+      (select percentile_cont(0.5) within group (order by latency_ms)
+         from app.ai_invocations)                                           as median_latency,
 
-  const [totals, byFeature, byModel, failures] = await Promise.all([
-    db
-      .select({
-        requests: count(),
-        cost: sql<string>`coalesce(sum(${aiInvocations.costMicros}), 0)`,
-        cacheHits: sql<number>`count(*) filter (where ${aiInvocations.cacheHit})::int`,
-        answered: sql<number>`count(*) filter (where ${aiInvocations.outcome} = any(${outcomes(ANSWERED)}))::int`,
-        refused: sql<number>`count(*) filter (where ${aiInvocations.outcome} = any(${outcomes(REFUSED)}))::int`,
-        broken: sql<number>`count(*) filter (where ${aiInvocations.outcome} = any(${outcomes(BROKEN)}))::int`,
-        notAttempted: sql<number>`count(*) filter (where ${aiInvocations.outcome} = any(${outcomes(NOT_ATTEMPTED)}))::int`,
-        // The median, not the mean: one 40-second timeout drags a mean into
-        // uselessness and leaves the typical request undescribed.
-        median: sql<
-          number | null
-        >`percentile_cont(0.5) within group (order by ${aiInvocations.latencyMs})`,
-      })
-      .from(aiInvocations),
-    db
-      .select({
-        feature: aiInvocations.feature,
-        requests: count(),
-        cost: sql<string>`coalesce(sum(${aiInvocations.costMicros}), 0)`,
-      })
-      .from(aiInvocations)
-      .groupBy(aiInvocations.feature)
-      .orderBy(desc(count())),
-    db
-      .select({
-        model: aiInvocations.model,
-        requests: count(),
-        cost: sql<string>`coalesce(sum(${aiInvocations.costMicros}), 0)`,
-      })
-      .from(aiInvocations)
-      .groupBy(aiInvocations.model)
-      .orderBy(desc(count())),
-    db
-      .select({
-        feature: aiInvocations.feature,
-        outcome: aiInvocations.outcome,
-        detail: aiInvocations.failureDetail,
-        at: aiInvocations.createdAt,
-      })
-      .from(aiInvocations)
-      .where(sql`${aiInvocations.outcome} <> all(${outcomes(ANSWERED)})`)
-      .orderBy(desc(aiInvocations.createdAt))
-      .limit(10),
-  ]);
+      (select coalesce(jsonb_agg(jsonb_build_object(
+                'feature', t.feature, 'requests', t.n, 'cost', t.cost)
+                order by t.n desc), '[]'::jsonb)
+         from (select feature::text as feature, count(*)::int as n,
+                      coalesce(sum(cost_micros), 0)::text as cost
+                 from app.ai_invocations group by feature) t)               as by_feature,
 
-  const row = totals[0];
+      (select coalesce(jsonb_agg(jsonb_build_object(
+                'model', t.model, 'requests', t.n, 'cost', t.cost)
+                order by t.n desc), '[]'::jsonb)
+         from (select model, count(*)::int as n,
+                      coalesce(sum(cost_micros), 0)::text as cost
+                 from app.ai_invocations group by model) t)                 as by_model,
+
+      (select coalesce(jsonb_agg(jsonb_build_object(
+                'feature', t.feature, 'outcome', t.outcome,
+                'detail', t.failure_detail, 'at', t.created_at)
+                order by t.created_at desc), '[]'::jsonb)
+         from (select feature::text as feature, outcome::text as outcome,
+                      failure_detail, created_at
+                 from app.ai_invocations
+                where not (${ANSWERED})
+                order by created_at desc limit 10) t)                       as recent_failures
+  `);
+
+  const row = rows[0] ?? {};
+  const median = row['median_latency'];
+
+  const byFeature = (row['by_feature'] ?? []) as {
+    feature: string;
+    requests: number;
+    cost: string;
+  }[];
+  const byModel = (row['by_model'] ?? []) as { model: string; requests: number; cost: string }[];
+  const failures = (row['recent_failures'] ?? []) as {
+    feature: string;
+    outcome: string;
+    detail: string | null;
+    at: string;
+  }[];
 
   return {
-    requests: row?.requests ?? 0,
-    costMicros: BigInt(row?.cost ?? '0'),
-    cacheHits: row?.cacheHits ?? 0,
-    answered: row?.answered ?? 0,
-    refused: row?.refused ?? 0,
-    broken: row?.broken ?? 0,
-    notAttempted: row?.notAttempted ?? 0,
-    medianLatencyMs: row?.median != null ? Math.round(row.median) : null,
+    requests: toNum(row['requests']),
+    costMicros: toBig(row['cost']),
+    cacheHits: toNum(row['cache_hits']),
+    answered: toNum(row['answered']),
+    refused: toNum(row['refused']),
+    broken: toNum(row['broken']),
+    notAttempted: toNum(row['not_attempted']),
+    medianLatencyMs: median == null ? null : Math.round(Number(median)),
     byFeature: byFeature.map((entry) => ({
       feature: entry.feature,
       requests: entry.requests,
-      costMicros: BigInt(entry.cost),
+      costMicros: toBig(entry.cost),
     })),
     byModel: byModel.map((entry) => ({
       model: entry.model,
       requests: entry.requests,
-      costMicros: BigInt(entry.cost),
+      costMicros: toBig(entry.cost),
     })),
     recentFailures: failures.map((entry) => ({
       feature: entry.feature,
       outcome: entry.outcome,
       detail: entry.detail,
-      at: entry.at,
+      at: new Date(entry.at),
     })),
   };
 }
@@ -495,55 +457,57 @@ export interface OperationsMetrics {
 }
 
 export async function loadOperationsMetrics(): Promise<OperationsMetrics> {
-  const db = adminDb();
+  const rows = await adminDb().execute(sql`
+    select
+      (select coalesce(jsonb_agg(jsonb_build_object('status', t.status, 'jobs', t.n)), '[]'::jsonb)
+         from (select status::text as status, count(*)::int as n
+                 from app.jobs group by status) t)                          as by_status,
 
-  const [byStatus, byKind, stuck, failures, version] = await Promise.all([
-    db.select({ status: jobs.status, jobs: count() }).from(jobs).groupBy(jobs.status),
-    db
-      .select({
-        kind: jobs.kind,
-        jobs: count(),
-        failed: sql<number>`count(*) filter (where ${jobs.status} = 'failed')::int`,
-      })
-      .from(jobs)
-      .groupBy(jobs.kind)
-      .orderBy(desc(count())),
-    // Claimed, and still claimed a long time later. This is the shape of a
-    // worker that died mid-job, and it is the one queue number worth an alarm.
-    db
-      .select({ value: count() })
-      .from(jobs)
-      .where(sql`${jobs.status} = 'running' and ${jobs.startedAt} < now() - interval '15 minutes'`),
-    db
-      .select({
-        kind: jobs.kind,
-        attempts: jobs.attempts,
-        message: jobs.errorMessage,
-        at: jobs.updatedAt,
-      })
-      .from(jobs)
-      .where(eq(jobs.status, 'failed'))
-      .orderBy(desc(jobs.updatedAt))
-      .limit(10),
-    db.execute<{ version: number; description: string }>(
-      sql`select version, description from platform.schema_version limit 1`,
-    ),
-  ]);
+      (select coalesce(jsonb_agg(jsonb_build_object(
+                'kind', t.kind, 'jobs', t.n, 'failed', t.failed)
+                order by t.n desc), '[]'::jsonb)
+         from (select kind, count(*)::int as n,
+                      count(*) filter (where status = 'failed')::int as failed
+                 from app.jobs group by kind) t)                            as by_kind,
 
-  const schema = version[0];
+      -- Claimed, and still claimed a long time later. This is the shape of a
+      -- worker that died mid-job, and it is the one queue number worth an alarm.
+      (select count(*) from app.jobs
+        where status = 'running'
+          and started_at < now() - interval '15 minutes')                   as stuck,
+
+      (select coalesce(jsonb_agg(jsonb_build_object(
+                'kind', t.kind, 'attempts', t.attempts,
+                'message', t.error_message, 'at', t.updated_at)
+                order by t.updated_at desc), '[]'::jsonb)
+         from (select kind, attempts, error_message, updated_at
+                 from app.jobs where status = 'failed'
+                order by updated_at desc limit 10) t)                       as recent_failures,
+
+      (select version from platform.schema_version limit 1)                 as version,
+      (select description from platform.schema_version limit 1)             as description
+  `);
+
+  const row = rows[0] ?? {};
+  const failures = (row['recent_failures'] ?? []) as {
+    kind: string;
+    attempts: number;
+    message: string | null;
+    at: string;
+  }[];
 
   return {
-    byStatus: byStatus.map((row) => ({ status: row.status, jobs: row.jobs })),
-    byKind: byKind.map((row) => ({ kind: row.kind, jobs: row.jobs, failed: row.failed })),
-    stuck: stuck[0]?.value ?? 0,
-    recentFailures: failures.map((row) => ({
-      kind: row.kind,
-      attempts: row.attempts,
-      message: row.message,
-      at: row.at,
+    byStatus: (row['by_status'] ?? []) as { status: string; jobs: number }[],
+    byKind: (row['by_kind'] ?? []) as { kind: string; jobs: number; failed: number }[],
+    stuck: toNum(row['stuck']),
+    recentFailures: failures.map((entry) => ({
+      kind: entry.kind,
+      attempts: entry.attempts,
+      message: entry.message,
+      at: new Date(entry.at),
     })),
-    schemaVersion: schema?.version ?? 0,
-    schemaDescription: schema?.description ?? '',
+    schemaVersion: toNum(row['version']),
+    schemaDescription: typeof row['description'] === 'string' ? row['description'] : '',
   };
 }
 
@@ -560,35 +524,26 @@ export interface SecurityMetrics {
 }
 
 export async function loadSecurityMetrics(): Promise<SecurityMetrics> {
-  const db = adminDb();
-
-  const rows = await db.execute<{
-    people: number;
-    with_two_factor: number;
-    administrators: number;
-    pending: number;
-    expired: number;
-  }>(sql`
+  const rows = await adminDb().execute(sql`
     select
-      (select count(*)::int from app.profiles) as people,
-      (select count(distinct user_id)::int from auth.mfa_factors where status = 'verified')
-        as with_two_factor,
-      (select count(*)::int from platform.admin_users where disabled_at is null)
-        as administrators,
-      (select count(*)::int from app.household_invitations
-        where accepted_at is null and expires_at > now()) as pending,
-      (select count(*)::int from app.household_invitations
-        where accepted_at is null and expires_at <= now()) as expired
+      (select count(*) from app.profiles)                                   as people,
+      (select count(distinct user_id) from auth.mfa_factors
+        where status = 'verified')                                          as with_two_factor,
+      (select count(*) from platform.admin_users where disabled_at is null) as administrators,
+      (select count(*) from app.household_invitations
+        where accepted_at is null and expires_at > now())                   as pending,
+      (select count(*) from app.household_invitations
+        where accepted_at is null and expires_at <= now())                  as expired
   `);
 
-  const row = rows[0];
+  const row = rows[0] ?? {};
 
   return {
-    people: row?.people ?? 0,
-    withTwoFactor: row?.with_two_factor ?? 0,
-    administrators: row?.administrators ?? 0,
-    pendingInvitations: row?.pending ?? 0,
-    expiredInvitations: row?.expired ?? 0,
+    people: toNum(row['people']),
+    withTwoFactor: toNum(row['with_two_factor']),
+    administrators: toNum(row['administrators']),
+    pendingInvitations: toNum(row['pending']),
+    expiredInvitations: toNum(row['expired']),
   };
 }
 
