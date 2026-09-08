@@ -162,12 +162,20 @@ export function ShellChrome({
 
   const footer = (
     <div className="flex min-w-0 items-center justify-between gap-3">
-      <div className="min-w-0">
-        <p className="truncate text-sm font-medium text-[color:var(--color-panel-ink)]">
+      {/* The household's name is the switcher. A person who belongs to two —
+          their own and their parents' — needs somewhere to change which one
+          every figure on screen belongs to, and the name is where they look. */}
+      <Link
+        href="/households"
+        className="min-w-0 rounded-(--radius-sm) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-brand)]"
+      >
+        <span className="block truncate text-sm font-medium text-[color:var(--color-panel-ink)]">
           {householdName}
-        </p>
-        <p className="text-xs text-[color:var(--color-panel-ink-secondary)]">{labels.household}</p>
-      </div>
+        </span>
+        <span className="block text-xs text-[color:var(--color-panel-ink-secondary)]">
+          {labels.household}
+        </span>
+      </Link>
       {signOut}
     </div>
   );

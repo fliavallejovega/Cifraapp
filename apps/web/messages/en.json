@@ -1906,5 +1906,316 @@
       "generic": "Something failed. Try again."
     },
     "errorTitle": "Could not ask"
+  },
+  "subscription": {
+    "title": "Your subscription",
+    "detail": "What plan you are on, how much you have used, and what else exists.",
+    "current": {
+      "title": "Current plan",
+      "free": "Free",
+      "renews": "Renews on {date}",
+      "cancels": "Ends on {date}",
+      "status": "Status"
+    },
+    "statuses": {
+      "none": "No subscription",
+      "trialing": "Trialing",
+      "active": "Active",
+      "past_due": "Payment due",
+      "canceled": "Cancelled",
+      "paused": "Paused",
+      "incomplete": "Incomplete"
+    },
+    "usage": {
+      "title": "What you have used this month",
+      "detail": "Resets on the first of each month.",
+      "unlimited": "Unlimited",
+      "notIncluded": "Not included in your plan",
+      "of": "{used} of {limit}",
+      "keys": {
+        "members": "People with access",
+        "transactions_per_month": "Movements per month",
+        "documents_per_month": "Documents imported per month",
+        "ai_queries_per_month": "Copilot questions",
+        "accounts": "Accounts",
+        "households": "Households",
+        "tax_module": "Tax module",
+        "accountant_seats": "Accountant seats",
+        "exports_per_month": "Exports per month"
+      }
+    },
+    "plans": {
+      "title": "The plans",
+      "current": "Your plan",
+      "choose": "Move to this plan",
+      "perMonth": "per month",
+      "perYear": "per year"
+    },
+    "unavailable": {
+      "title": "Payment is not wired up here yet.",
+      "body": "This installation has no payment processor configured. Everything else works: the free plan's limits apply just the same."
+    },
+    "provisional": "Prices are provisional and will change before the first real charge.",
+    "errorTitle": "Could not continue",
+    "errors": {
+      "checkoutUnavailable": "No payment processor is configured in this installation.",
+      "checkoutFailed": "The payment processor did not respond. Try again.",
+      "notFound": "That plan does not exist.",
+      "signInRequired": "Your session expired. Sign in again.",
+      "generic": "Something failed. Try again."
+    }
+  },
+  "access": {
+    "title": "Who gets into your household",
+    "detail": "Your partner shares the money. Your accountant looks with permission, for a while. Those are not the same thing, and they are managed separately here.",
+    "notAllowed": {
+      "title": "Only the owner or their partner can hand out access.",
+      "body": "Ask whoever created the household to raise your role if you need to invite people."
+    },
+    "members": {
+      "title": "Members",
+      "detail": "The people who sign in and see the household's money.",
+      "you": "You",
+      "role": "Role",
+      "joined": "Since {date}",
+      "changeRole": "Change role",
+      "revoke": "Remove access",
+      "revokeConfirm": "They stop getting in immediately. What they recorded is kept.",
+      "empty": "Just you for now."
+    },
+    "roles": {
+      "owner": "Owner",
+      "partner": "Partner",
+      "member": "Member",
+      "viewer": "Read only",
+      "accountant": "Accountant",
+      "advisor": "Advisor"
+    },
+    "invite": {
+      "title": "Invite someone",
+      "detail": "A link is generated that expires in 7 days. It only works for the email address you enter.",
+      "email": "Email",
+      "role": "With which role",
+      "submit": "Generate the invitation",
+      "linkTitle": "Done. Copy this link and send it to them:",
+      "linkNote": "We show it once. We do not store it in plain form: if you lose it, generate another invitation.",
+      "pending": "Pending invitations",
+      "expires": "Expires on {date}",
+      "expired": "Expired",
+      "accepted": "Accepted",
+      "cancel": "Cancel the invitation",
+      "cancelConfirm": "The link stops working.",
+      "none": "No pending invitations."
+    },
+    "accountants": {
+      "title": "Accountant access",
+      "detail": "With a scope and an expiry date.",
+      "open": "Manage accountant access"
+    },
+    "errorTitle": "Could not do that",
+    "errors": {
+      "notAllowed": "You do not have permission to do this.",
+      "emailInvalid": "Write a valid email address.",
+      "alreadyMember": "That person is already in the household.",
+      "cannotChangeOwner": "The owner's role is not changed from here.",
+      "cannotRemoveOwner": "The owner's access is not removed.",
+      "cannotRemoveSelf": "You cannot remove your own access.",
+      "notFound": "This no longer exists.",
+      "signInRequired": "Your session expired. Sign in again.",
+      "generic": "Something failed. Try again."
+    }
+  },
+  "accountants": {
+    "title": "Accountant access",
+    "detail": "Somebody outside your household looking at your figures with a specific, revocable, dated permission.",
+    "back": "Back to access",
+    "grant": {
+      "title": "Grant access",
+      "detail": "Your accountant needs a Cifrapp account with that email. If they do not have one, invite them as a member first and then give them the right scope.",
+      "email": "Accountant's email",
+      "scope": "What they can do",
+      "expires": "Expires in",
+      "expiresHint": "In days. Put 0 for no expiry — though an access that lapses on its own beats one that relies on remembering.",
+      "submit": "Grant access"
+    },
+    "scopes": {
+      "read": "View only",
+      "comment": "View and comment",
+      "classify": "View, comment and categorise"
+    },
+    "list": {
+      "title": "Access granted",
+      "empty": "You have not given anybody access yet.",
+      "granted": "Since {date}",
+      "expiresOn": "expires {date}",
+      "noExpiry": "no expiry",
+      "revoked": "Revoked on {date}",
+      "active": "Active",
+      "revoke": "Revoke",
+      "revokeConfirm": "They lose access immediately. The record that they had it is kept."
+    }
+  },
+  "households": {
+    "title": "Your households",
+    "detail": "If you manage more than one, this is where you choose which you are looking at.",
+    "current": "The one you are viewing",
+    "switch": "View this one",
+    "role": "Your role: {role}",
+    "create": {
+      "title": "Create another household",
+      "detail": "A new one starts empty, with its own questionnaire.",
+      "name": "Household name",
+      "submit": "Create this household"
+    },
+    "errorTitle": "Could not switch",
+    "errors": {
+      "notFound": "That household does not exist, or you no longer belong to it.",
+      "nameRequired": "Give it a name.",
+      "signInRequired": "Your session expired. Sign in again.",
+      "generic": "Something failed. Try again."
+    }
+  },
+  "invitation": {
+    "title": "You have been invited to a household",
+    "detail": "Accepting means you will see that household's money, and they will see that you joined.",
+    "accept": "Accept the invitation",
+    "signInFirst": {
+      "title": "Sign in first.",
+      "body": "The invitation is for a specific email address. Sign in with that address and open the link again.",
+      "action": "Sign in"
+    },
+    "errorTitle": "Could not accept",
+    "errors": {
+      "invalid": "This link no longer works: it may have expired, or somebody already used it.",
+      "wrongAccount": "This invitation is for another email address. Sign in with that address and open the link again.",
+      "notFound": "This link is not valid.",
+      "signInRequired": "Sign in and open the link again.",
+      "generic": "Something failed. Try again."
+    }
+  },
+  "notifications": {
+    "title": "What we tell you",
+    "detail": "A financial system that only speaks when opened is one nobody opens. This is yours, not the household's: your partner chooses their own.",
+    "form": {
+      "channel": "Where",
+      "frequency": "How often at most",
+      "submit": "Save my notices",
+      "saved": "Notices saved."
+    },
+    "channels": {
+      "email": "Email",
+      "push": "Phone notification",
+      "none": "Do not tell me"
+    },
+    "frequencies": {
+      "0": "As it happens",
+      "24": "A daily digest",
+      "168": "A weekly digest"
+    },
+    "kinds": {
+      "commitmentDue": "A commitment is about to fall due",
+      "commitmentDueDetail": "And there is not enough in the account to cover it.",
+      "bufferNegative": "You dropped below your buffer",
+      "bufferNegativeDetail": "What is committed went past what you have.",
+      "budgetPace": "A category is on pace to go over",
+      "budgetPaceDetail": "At the current rate, with the month not over.",
+      "importFinished": "A statement finished being read",
+      "importFinishedDetail": "With how many movements are waiting for review.",
+      "reviewBacklog": "There are decisions waiting for you",
+      "reviewBacklogDetail": "Repeats, transfers or categories to confirm.",
+      "weeklySummary": "The week's summary",
+      "weeklySummaryDetail": "What came in, what went out and what is coming."
+    },
+    "default": "Default",
+    "log": {
+      "title": "What we sent you",
+      "detail": "Including what we decided not to send, and why. «I never got it» has to have an answer.",
+      "empty": "We have not sent you anything yet.",
+      "statuses": {
+        "queued": "Queued",
+        "sent": "Sent",
+        "failed": "Failed",
+        "suppressed": "Not sent"
+      }
+    },
+    "pending": "Delivery is not connected in this installation yet. Your preferences are saved and will be honoured as soon as it is."
+  },
+  "tax": {
+    "title": "Tax profile",
+    "detail": "For anyone invoicing on their own account. With this we can tell you how much to set aside from each invoice.",
+    "draftWarning": {
+      "title": "Panama's tax rules here are still a draft.",
+      "body": "Nobody qualified has reviewed them, so the product shows you no figure computed from them. Saving your profile is still worth it: it is what will be used the day a Panamanian accountant reviews and publishes the rules, with their name and the date."
+    },
+    "form": {
+      "status": "How you are taxed",
+      "ruc": "Tax ID",
+      "rucHint": "Optional. We only store it; we look it up nowhere.",
+      "activity": "Activity",
+      "activityHint": "What you do, in your own words.",
+      "method": "Accounting method",
+      "methodHint": "Cash is when you get paid; accrual is when you invoice.",
+      "itbms": "I am registered for VAT",
+      "fiscalYear": "My fiscal year starts",
+      "fiscalYearHint": "As MM-DD. If it is the calendar year, leave 01-01.",
+      "submit": "Save my tax profile",
+      "saved": "Profile saved."
+    },
+    "statuses": {
+      "salaried": "Salaried",
+      "independent_professional": "Independent professional",
+      "freelancer": "Freelance",
+      "merchant": "Merchant",
+      "mixed_income": "Mixed income",
+      "personal_business": "Personal business"
+    },
+    "methods": {
+      "cash": "Cash",
+      "accrual": "Accrual"
+    },
+    "reserve": {
+      "title": "Tax reserve",
+      "detail": "How much to set aside from each invoice.",
+      "open": "See my tax reserve"
+    },
+    "remove": {
+      "title": "Remove the profile",
+      "detail": "If you stop invoicing on your own account.",
+      "action": "Remove my tax profile",
+      "confirm": "The profile is deleted. Your movements do not change."
+    }
+  },
+  "taxReserve": {
+    "title": "Tax reserve",
+    "detail": "The share of what you are paid that was never yours.",
+    "back": "Back to the tax profile",
+    "noProfile": {
+      "title": "You have no tax profile yet.",
+      "body": "Tell us how you are taxed and we can work out how much to set aside from each invoice.",
+      "action": "Fill in my tax profile"
+    },
+    "notPublished": {
+      "title": "We cannot compute a figure for you yet.",
+      "body": "The Panamanian tax rules loaded here are an unreviewed draft. Showing you a number out of them would be worse than showing you nothing: a wrong balance is embarrassing, a wrong tax figure is a fine you pay.",
+      "meanwhile": "In the meantime you can use your own reserve rate in the household settings. It is yours and the product treats it as yours: it sets it aside, it does not compute it."
+    },
+    "own": {
+      "title": "Your own rate",
+      "detail": "The one you set in the settings. It is not a tax calculation, it is your decision.",
+      "rate": "Your rate",
+      "onIncome": "On what you have been paid this year",
+      "shouldHold": "You should have set aside",
+      "held": "You hold in reserve accounts",
+      "missing": "You are short by",
+      "surplus": "You have over",
+      "noRate": "You have not set a reserve rate. Set one in the household settings and we will tell you how much to hold.",
+      "setRate": "Set my rate"
+    },
+    "accounts": {
+      "title": "Where it is held",
+      "detail": "Accounts of type «tax reserve». That is where the product looks for what you have set aside.",
+      "empty": "You have no tax reserve account. Create one and move what you set aside into it: separating the money for real is what makes the reserve work.",
+      "create": "Create a reserve account"
+    }
   }
 }

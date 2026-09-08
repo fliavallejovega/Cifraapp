@@ -1906,5 +1906,316 @@
       "generic": "Algo falló. Vuelve a intentarlo."
     },
     "errorTitle": "No se pudo preguntar"
+  },
+  "subscription": {
+    "title": "Tu suscripción",
+    "detail": "En qué plan estás, cuánto llevas usado y qué más hay.",
+    "current": {
+      "title": "Plan actual",
+      "free": "Gratis",
+      "renews": "Se renueva el {date}",
+      "cancels": "Termina el {date}",
+      "status": "Estado"
+    },
+    "statuses": {
+      "none": "Sin suscripción",
+      "trialing": "En prueba",
+      "active": "Activa",
+      "past_due": "Pago pendiente",
+      "canceled": "Cancelada",
+      "paused": "En pausa",
+      "incomplete": "Incompleta"
+    },
+    "usage": {
+      "title": "Lo que llevas usado este mes",
+      "detail": "Se reinicia el primero de cada mes.",
+      "unlimited": "Sin límite",
+      "notIncluded": "No incluido en tu plan",
+      "of": "{used} de {limit}",
+      "keys": {
+        "members": "Personas con acceso",
+        "transactions_per_month": "Movimientos al mes",
+        "documents_per_month": "Documentos importados al mes",
+        "ai_queries_per_month": "Consultas al copiloto",
+        "accounts": "Cuentas",
+        "households": "Hogares",
+        "tax_module": "Módulo fiscal",
+        "accountant_seats": "Accesos de contador",
+        "exports_per_month": "Exportaciones al mes"
+      }
+    },
+    "plans": {
+      "title": "Los planes",
+      "current": "Tu plan",
+      "choose": "Cambiar a este plan",
+      "perMonth": "al mes",
+      "perYear": "al año"
+    },
+    "unavailable": {
+      "title": "Todavía no se puede pagar aquí.",
+      "body": "Esta instalación no tiene procesador de pagos configurado. Todo lo demás funciona: los límites del plan gratis se aplican igual."
+    },
+    "provisional": "Los precios son provisionales y van a cambiar antes del primer cobro real.",
+    "errorTitle": "No se pudo continuar",
+    "errors": {
+      "checkoutUnavailable": "No hay procesador de pagos configurado en esta instalación.",
+      "checkoutFailed": "El procesador de pagos no respondió. Vuelve a intentarlo.",
+      "notFound": "Ese plan no existe.",
+      "signInRequired": "Tu sesión venció. Vuelve a entrar.",
+      "generic": "Algo falló. Vuelve a intentarlo."
+    }
+  },
+  "access": {
+    "title": "Quién entra a tu hogar",
+    "detail": "Tu pareja comparte el dinero. Tu contador mira con permiso y por un tiempo. No es lo mismo, y aquí se administran por separado.",
+    "notAllowed": {
+      "title": "Solo el dueño o su pareja pueden dar acceso.",
+      "body": "Pídele a quien creó el hogar que te suba de rol si necesitas invitar gente."
+    },
+    "members": {
+      "title": "Miembros",
+      "detail": "Quienes entran al sistema y ven el dinero del hogar.",
+      "you": "Tú",
+      "role": "Rol",
+      "joined": "Desde {date}",
+      "changeRole": "Cambiar rol",
+      "revoke": "Quitar acceso",
+      "revokeConfirm": "Deja de entrar de inmediato. Lo que registró se conserva.",
+      "empty": "Solo tú por ahora."
+    },
+    "roles": {
+      "owner": "Dueño",
+      "partner": "Pareja",
+      "member": "Miembro",
+      "viewer": "Solo lectura",
+      "accountant": "Contador",
+      "advisor": "Asesor"
+    },
+    "invite": {
+      "title": "Invitar a alguien",
+      "detail": "Se genera un enlace que vence en 7 días. El enlace solo funciona para el correo que pongas.",
+      "email": "Correo",
+      "role": "Con qué rol",
+      "submit": "Generar la invitación",
+      "linkTitle": "Listo. Copia este enlace y mándaselo:",
+      "linkNote": "Lo mostramos una sola vez. No lo guardamos en claro: si lo pierdes, genera otra invitación.",
+      "pending": "Invitaciones pendientes",
+      "expires": "Vence el {date}",
+      "expired": "Vencida",
+      "accepted": "Aceptada",
+      "cancel": "Cancelar la invitación",
+      "cancelConfirm": "El enlace deja de servir.",
+      "none": "No hay invitaciones pendientes."
+    },
+    "accountants": {
+      "title": "Accesos de contador",
+      "detail": "Con alcance y con fecha de vencimiento.",
+      "open": "Administrar accesos de contador"
+    },
+    "errorTitle": "No se pudo hacer",
+    "errors": {
+      "notAllowed": "No tienes permiso para hacer esto.",
+      "emailInvalid": "Escribe un correo válido.",
+      "alreadyMember": "Esa persona ya está en el hogar.",
+      "cannotChangeOwner": "El rol del dueño no se cambia desde aquí.",
+      "cannotRemoveOwner": "Al dueño no se le quita el acceso.",
+      "cannotRemoveSelf": "No puedes quitarte el acceso a ti mismo.",
+      "notFound": "Ya no existe.",
+      "signInRequired": "Tu sesión venció. Vuelve a entrar.",
+      "generic": "Algo falló. Vuelve a intentarlo."
+    }
+  },
+  "accountants": {
+    "title": "Accesos de contador",
+    "detail": "Alguien de afuera que mira tus cuentas con un permiso concreto, revocable y con fecha.",
+    "back": "Volver a accesos",
+    "grant": {
+      "title": "Dar acceso",
+      "detail": "Tu contador necesita tener cuenta en Cifrapp con ese correo. Si no la tiene, invítalo primero como miembro y después le das el alcance correcto.",
+      "email": "Correo del contador",
+      "scope": "Qué puede hacer",
+      "expires": "Vence en",
+      "expiresHint": "En días. Pon 0 si no quieres que venza — aunque un acceso que caduca solo es mejor que uno que depende de acordarse.",
+      "submit": "Dar acceso"
+    },
+    "scopes": {
+      "read": "Solo ver",
+      "comment": "Ver y comentar",
+      "classify": "Ver, comentar y clasificar"
+    },
+    "list": {
+      "title": "Accesos dados",
+      "empty": "Todavía no le diste acceso a nadie.",
+      "granted": "Desde el {date}",
+      "expiresOn": "vence el {date}",
+      "noExpiry": "sin vencimiento",
+      "revoked": "Revocado el {date}",
+      "active": "Activo",
+      "revoke": "Revocar",
+      "revokeConfirm": "Pierde el acceso de inmediato. Queda registrado que lo tuvo."
+    }
+  },
+  "households": {
+    "title": "Tus hogares",
+    "detail": "Si administras más de uno, aquí eliges cuál estás viendo.",
+    "current": "El que estás viendo",
+    "switch": "Ver este",
+    "role": "Tu rol: {role}",
+    "create": {
+      "title": "Crear otro hogar",
+      "detail": "Uno nuevo empieza vacío, con su propio cuestionario.",
+      "name": "Nombre del hogar",
+      "submit": "Crear este hogar"
+    },
+    "errorTitle": "No se pudo cambiar",
+    "errors": {
+      "notFound": "Ese hogar no existe o ya no perteneces a él.",
+      "nameRequired": "Ponle un nombre.",
+      "signInRequired": "Tu sesión venció. Vuelve a entrar.",
+      "generic": "Algo falló. Vuelve a intentarlo."
+    }
+  },
+  "invitation": {
+    "title": "Te invitaron a un hogar",
+    "detail": "Al aceptar vas a ver el dinero de ese hogar, y ellos van a ver que entraste.",
+    "accept": "Aceptar la invitación",
+    "signInFirst": {
+      "title": "Primero entra a tu cuenta.",
+      "body": "La invitación es para un correo específico. Entra con ese correo y vuelve a abrir el enlace.",
+      "action": "Entrar"
+    },
+    "errorTitle": "No se pudo aceptar",
+    "errors": {
+      "invalid": "Este enlace ya no sirve: puede haber vencido o alguien ya lo usó.",
+      "wrongAccount": "Esta invitación es para otro correo. Entra con ese correo y vuelve a abrir el enlace.",
+      "notFound": "Este enlace no es válido.",
+      "signInRequired": "Entra a tu cuenta y vuelve a abrir el enlace.",
+      "generic": "Algo falló. Vuelve a intentarlo."
+    }
+  },
+  "notifications": {
+    "title": "Qué te avisamos",
+    "detail": "Un sistema financiero que solo habla cuando lo abres es un sistema que nadie abre. Esto es tuyo, no del hogar: tu pareja elige lo suyo.",
+    "form": {
+      "channel": "Por dónde",
+      "frequency": "Cada cuánto como máximo",
+      "submit": "Guardar mis avisos",
+      "saved": "Avisos guardados."
+    },
+    "channels": {
+      "email": "Correo",
+      "push": "Notificación en el teléfono",
+      "none": "No avisar"
+    },
+    "frequencies": {
+      "0": "En cuanto pase",
+      "24": "Un resumen al día",
+      "168": "Un resumen a la semana"
+    },
+    "kinds": {
+      "commitmentDue": "Un compromiso está por vencer",
+      "commitmentDueDetail": "Y no hay suficiente en la cuenta para cubrirlo.",
+      "bufferNegative": "Te quedaste por debajo del colchón",
+      "bufferNegativeDetail": "Lo comprometido pasó lo que tienes.",
+      "budgetPace": "Un rubro va camino a pasarse",
+      "budgetPaceDetail": "Al ritmo que llevas, con el mes todavía sin terminar.",
+      "importFinished": "Terminó de leerse un estado de cuenta",
+      "importFinishedDetail": "Con cuántos movimientos quedaron por revisar.",
+      "reviewBacklog": "Hay decisiones esperándote",
+      "reviewBacklogDetail": "Repetidos, transferencias o rubros por confirmar.",
+      "weeklySummary": "Resumen de la semana",
+      "weeklySummaryDetail": "Qué entró, qué salió y qué viene."
+    },
+    "default": "Por defecto",
+    "log": {
+      "title": "Lo que te mandamos",
+      "detail": "Incluye lo que decidimos no mandarte, y por qué. «No me llegó» tiene que tener respuesta.",
+      "empty": "Todavía no te hemos mandado nada.",
+      "statuses": {
+        "queued": "En cola",
+        "sent": "Enviado",
+        "failed": "Falló",
+        "suppressed": "No enviado"
+      }
+    },
+    "pending": "El envío todavía no está conectado en esta instalación. Tus preferencias se guardan y se respetan en cuanto lo esté."
+  },
+  "tax": {
+    "title": "Perfil fiscal",
+    "detail": "Para el que factura por su cuenta. Con esto podemos decirte cuánto apartar de cada factura.",
+    "draftWarning": {
+      "title": "Las reglas fiscales de Panamá todavía son un borrador.",
+      "body": "Nadie con credenciales las ha revisado, así que el producto no te muestra ninguna cifra calculada con ellas. Guardar tu perfil sí sirve: es lo que se va a usar el día que un contador panameño revise y publique las reglas, con nombre y fecha."
+    },
+    "form": {
+      "status": "Cómo tributas",
+      "ruc": "RUC",
+      "rucHint": "Opcional. Solo lo guardamos, no lo consultamos en ningún lado.",
+      "activity": "Actividad",
+      "activityHint": "A qué te dedicas, en tus palabras.",
+      "method": "Método contable",
+      "methodHint": "Efectivo es cuando cobras; devengado es cuando facturas.",
+      "itbms": "Estoy registrado en ITBMS",
+      "fiscalYear": "Empieza mi año fiscal",
+      "fiscalYearHint": "En formato MM-DD. Si es el año calendario, deja 01-01.",
+      "submit": "Guardar mi perfil fiscal",
+      "saved": "Perfil guardado."
+    },
+    "statuses": {
+      "salaried": "Asalariado",
+      "independent_professional": "Profesional independiente",
+      "freelancer": "Freelance",
+      "merchant": "Comerciante",
+      "mixed_income": "Ingresos mixtos",
+      "personal_business": "Negocio personal"
+    },
+    "methods": {
+      "cash": "Efectivo",
+      "accrual": "Devengado"
+    },
+    "reserve": {
+      "title": "Reserva fiscal",
+      "detail": "Cuánto apartar de cada factura.",
+      "open": "Ver mi reserva fiscal"
+    },
+    "remove": {
+      "title": "Quitar el perfil",
+      "detail": "Si dejas de facturar por tu cuenta.",
+      "action": "Quitar mi perfil fiscal",
+      "confirm": "Se borra el perfil. Tus movimientos no cambian."
+    }
+  },
+  "taxReserve": {
+    "title": "Reserva fiscal",
+    "detail": "La parte de lo que cobras que nunca fue tuya.",
+    "back": "Volver al perfil fiscal",
+    "noProfile": {
+      "title": "Todavía no tienes perfil fiscal.",
+      "body": "Dinos cómo tributas y podemos calcular cuánto apartar de cada factura.",
+      "action": "Llenar mi perfil fiscal"
+    },
+    "notPublished": {
+      "title": "No podemos calcularte una cifra todavía.",
+      "body": "Las reglas fiscales de Panamá que tenemos cargadas son un borrador sin revisar. Mostrarte un número salido de ahí sería peor que no mostrarte nada: un saldo equivocado es vergonzoso, una cifra fiscal equivocada es una multa que pagas tú.",
+      "meanwhile": "Mientras tanto, puedes usar tu propia tasa de reserva en los ajustes del hogar. Es tuya y el producto la trata como tuya: la aparta, no la calcula."
+    },
+    "own": {
+      "title": "Tu propia tasa",
+      "detail": "La que tú pusiste en los ajustes. No es un cálculo fiscal, es una decisión tuya.",
+      "rate": "Tu tasa",
+      "onIncome": "Sobre lo que has cobrado este año",
+      "shouldHold": "Deberías tener apartado",
+      "held": "Tienes en cuentas de reserva",
+      "missing": "Te falta apartar",
+      "surplus": "Tienes de más",
+      "noRate": "No has puesto una tasa de reserva. Ponla en los ajustes del hogar y te decimos cuánto apartar.",
+      "setRate": "Poner mi tasa"
+    },
+    "accounts": {
+      "title": "Dónde está apartado",
+      "detail": "Las cuentas de tipo «reserva fiscal». Ahí es donde el producto busca lo que llevas apartado.",
+      "empty": "No tienes ninguna cuenta de reserva fiscal. Crea una y mueve ahí lo que apartes: separar el dinero de verdad es lo que hace que la reserva funcione.",
+      "create": "Crear una cuenta de reserva"
+    }
   }
 }

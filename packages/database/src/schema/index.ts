@@ -15,6 +15,7 @@ export * from './financial.js';
 export * from './identity.js';
 export * from './jobs.js';
 export * from './ledger.js';
+export * from './notifications.js';
 export * from './platform.js';
 export * from './recurring.js';
 export * from './reporting.js';

@@ -5,6 +5,7 @@ import { households, householdMembers, profiles } from '@app/database/schema';
 import { getServerEnv } from '@app/validation/env';
 import { and, eq, isNull } from 'drizzle-orm';
 import { sql } from 'drizzle-orm';
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { cache } from 'react';
 import type { User } from '@supabase/supabase-js';
@@ -101,10 +102,48 @@ export const loadSession = cache(async (): Promise<Session | null> => {
       user,
       profile,
       households: memberships,
-      activeHouseholdId: memberships[0]?.id ?? null,
+      activeHouseholdId: chooseHousehold(memberships, await preferredHouseholdId()),
     };
   });
 });
+
+/** The cookie name the household switcher writes. */
+export const ACTIVE_HOUSEHOLD_COOKIE = 'cifrapp_household';
+
+/**
+ * Which household this session is looking at.
+ *
+ * A person who belongs to two — their own and their parents', say — needs to
+ * choose, and the choice has to survive a navigation. It lives in a cookie
+ * rather than in the URL because every product route would otherwise have to
+ * carry it, and rather than in the profile because it is a per-device view
+ * preference, not a fact about the person.
+ *
+ * The cookie is never trusted. It is matched against the memberships the
+ * database just returned, and anything that does not match falls back to the
+ * first — so a stale or forged value shows the household the person is actually
+ * in, never one they are not.
+ */
+async function preferredHouseholdId(): Promise<string | null> {
+  try {
+    const store = await cookies();
+    return store.get(ACTIVE_HOUSEHOLD_COOKIE)?.value ?? null;
+  } catch {
+    // Read outside a request scope — a background job resolving a session.
+    // There is no cookie to have, and the first membership is the right answer.
+    return null;
+  }
+}
+
+function chooseHousehold(
+  memberships: readonly { id: string }[],
+  preferred: string | null,
+): string | null {
+  if (preferred && memberships.some((membership) => membership.id === preferred)) {
+    return preferred;
+  }
+  return memberships[0]?.id ?? null;
+}
 
 function displayNameOf(user: User): string | null {
   const metadata = user.user_metadata as { display_name?: unknown; full_name?: unknown };
