@@ -170,7 +170,7 @@ export default async function OverviewPage() {
               value={money(assistantSpend)}
               detail={`${String(assistant.requests)} ${
                 assistant.requests === 1 ? 'request' : 'requests'
-              }${assistant.failures > 0 ? ` · ${String(assistant.failures)} failed` : ''}`}
+              }${assistant.broken > 0 ? ` · ${String(assistant.broken)} failed` : ''}`}
             />
             <Metric
               label="Administrators"

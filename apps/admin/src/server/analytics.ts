@@ -338,11 +338,33 @@ export async function loadGrowthMetrics(): Promise<GrowthMetrics> {
 // The assistant
 // ---------------------------------------------------------------------------
 
+/**
+ * The assistant's outcomes, grouped the way they should be read.
+ *
+ * `app.ai_outcome` has nine values and lumping eight of them together as
+ * «failed» would be wrong in a way that matters here. A guardrail refusing an
+ * answer that mentioned a figure nobody gave it is the product working: it is
+ * the rule that AI is never the source of a number, enforced. Counting that as
+ * a failure next to a transport error would make the safety mechanism look
+ * like an outage and hide the outage inside it.
+ */
+const ANSWERED = ['ok', 'cache_hit'] as const;
+const REFUSED = ['refused', 'ungrounded_figures', 'missing_grounding'] as const;
+const BROKEN = ['transport_error', 'malformed_output'] as const;
+const NOT_ATTEMPTED = ['not_configured', 'budget_exhausted'] as const;
+
 export interface AssistantMetrics {
   readonly requests: number;
   readonly costMicros: bigint;
   readonly cacheHits: number;
-  readonly failures: number;
+  /** Answered: `ok` or served from cache. */
+  readonly answered: number;
+  /** A guardrail declined to pass the answer on. A correct outcome. */
+  readonly refused: number;
+  /** The call itself went wrong: transport, or output that would not parse. */
+  readonly broken: number;
+  /** Never attempted — no provider configured, or the budget was spent. */
+  readonly notAttempted: number;
   readonly medianLatencyMs: number | null;
   readonly byFeature: readonly {
     readonly feature: string;
@@ -371,7 +393,10 @@ export async function loadAssistantMetrics(): Promise<AssistantMetrics> {
         requests: count(),
         cost: sql<string>`coalesce(sum(${aiInvocations.costMicros}), 0)`,
         cacheHits: sql<number>`count(*) filter (where ${aiInvocations.cacheHit})::int`,
-        failures: sql<number>`count(*) filter (where ${aiInvocations.outcome} <> 'success')::int`,
+        answered: sql<number>`count(*) filter (where ${aiInvocations.outcome} = any(${ANSWERED}::app.ai_outcome[]))::int`,
+        refused: sql<number>`count(*) filter (where ${aiInvocations.outcome} = any(${REFUSED}::app.ai_outcome[]))::int`,
+        broken: sql<number>`count(*) filter (where ${aiInvocations.outcome} = any(${BROKEN}::app.ai_outcome[]))::int`,
+        notAttempted: sql<number>`count(*) filter (where ${aiInvocations.outcome} = any(${NOT_ATTEMPTED}::app.ai_outcome[]))::int`,
         // The median, not the mean: one 40-second timeout drags a mean into
         // uselessness and leaves the typical request undescribed.
         median: sql<
@@ -405,7 +430,7 @@ export async function loadAssistantMetrics(): Promise<AssistantMetrics> {
         at: aiInvocations.createdAt,
       })
       .from(aiInvocations)
-      .where(sql`${aiInvocations.outcome} <> 'success'`)
+      .where(sql`${aiInvocations.outcome} <> all(${ANSWERED}::app.ai_outcome[])`)
       .orderBy(desc(aiInvocations.createdAt))
       .limit(10),
   ]);
@@ -416,7 +441,10 @@ export async function loadAssistantMetrics(): Promise<AssistantMetrics> {
     requests: row?.requests ?? 0,
     costMicros: BigInt(row?.cost ?? '0'),
     cacheHits: row?.cacheHits ?? 0,
-    failures: row?.failures ?? 0,
+    answered: row?.answered ?? 0,
+    refused: row?.refused ?? 0,
+    broken: row?.broken ?? 0,
+    notAttempted: row?.notAttempted ?? 0,
     medianLatencyMs: row?.median != null ? Math.round(row.median) : null,
     byFeature: byFeature.map((entry) => ({
       feature: entry.feature,

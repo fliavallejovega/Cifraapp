@@ -40,8 +40,6 @@ export default async function UsagePage() {
 
   const cacheRate =
     assistant.requests > 0 ? (assistant.cacheHits / assistant.requests) * 100 : null;
-  const failureRate =
-    assistant.requests > 0 ? (assistant.failures / assistant.requests) * 100 : null;
 
   return (
     <Console current="usage" email={session.email} role={session.role}>
@@ -97,6 +95,28 @@ export default async function UsagePage() {
             />
           </div>
 
+          {assistant.requests > 0 && (
+            <div className="mt-8 grid gap-4 sm:grid-cols-4">
+              <Metric label="Answered" value={assistant.answered} />
+              <Metric
+                label="Refused by a guardrail"
+                value={assistant.refused}
+                detail="A correct outcome, not an outage"
+              />
+              <Metric
+                label="Broke"
+                value={assistant.broken}
+                detail="Transport, or output that would not parse"
+                tone={assistant.broken > 0 ? 'brand' : 'plain'}
+              />
+              <Metric
+                label="Never attempted"
+                value={assistant.notAttempted}
+                detail="No provider configured, or the budget was spent"
+              />
+            </div>
+          )}
+
           {assistant.requests === 0 && (
             <div className="mt-8">
               <EmptyState
@@ -149,18 +169,14 @@ export default async function UsagePage() {
         )}
 
         <Section
-          title="Failures"
-          detail={
-            failureRate === null
-              ? 'A refusal is recorded as a failed call, and a refusal is often the correct outcome.'
-              : `${failureRate.toFixed(1)}% of calls did not succeed. A guardrail refusal counts here, and a refusal is often the correct outcome.`
-          }
+          title="Calls that were not answered"
+          detail="A guardrail refusing an answer that named a figure nobody gave it is the product working — that rule is the reason the assistant is allowed near money at all. It is listed here beside the genuine breakages rather than hidden, and named differently from them."
           className="mt-14"
         >
           {assistant.recentFailures.length === 0 ? (
             <EmptyState
-              title="No failed calls"
-              body="When a call fails or a guardrail rejects an answer, the engine's own words are recorded and the ten most recent appear here. A provider's response body never is: those echo household facts back."
+              title="Every call was answered"
+              body="When a call breaks or a guardrail rejects an answer, the engine's own words are recorded and the ten most recent appear here. A provider's response body never is: those echo household facts back."
             />
           ) : (
             <Ledger caption="Recent assistant failures">
@@ -175,7 +191,16 @@ export default async function UsagePage() {
                   <LedgerRow key={`${failure.feature}-${String(index)}`}>
                     <LedgerCell>{failure.feature.replace(/[-_]/g, ' ')}</LedgerCell>
                     <LedgerCell>
-                      <Status tone="caution">{failure.outcome}</Status>
+                      <Status
+                        tone={
+                          failure.outcome === 'transport_error' ||
+                          failure.outcome === 'malformed_output'
+                            ? 'negative'
+                            : 'caution'
+                        }
+                      >
+                        {failure.outcome.replace(/_/g, ' ')}
+                      </Status>
                     </LedgerCell>
                     <LedgerCell secondary>{failure.detail ?? '—'}</LedgerCell>
                     <LedgerCell align="end" secondary>
