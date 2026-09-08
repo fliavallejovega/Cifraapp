@@ -172,7 +172,11 @@ export default async function OverviewPage({ params }: { params: Promise<{ local
                   <span className="text-sm font-medium text-[color:var(--color-ink-secondary)]">
                     {t('claims.total')}
                   </span>
-                  <Amount value={position.committed.negate()} locale={moneyLocale} tone="plain" />
+                  <Amount
+                    value={position.obligationsTotal.negate()}
+                    locale={moneyLocale}
+                    tone="plain"
+                  />
                 </div>
               </Card>
             )}

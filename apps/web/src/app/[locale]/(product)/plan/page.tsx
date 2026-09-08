@@ -75,7 +75,6 @@ export default async function PlanPage({ params }: { params: Promise<{ locale: s
   const money = (value: Parameters<typeof formatMoney>[0]) =>
     formatMoney(value, { locale: moneyLocale });
 
-
   /** Renders an engine explanation through the catalogue. The engine has no language. */
   const explain = (explanation: LineExplanation): string => {
     // The reason interpolates the same label the row shows, so a synthetic

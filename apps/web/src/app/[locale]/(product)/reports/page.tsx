@@ -47,7 +47,6 @@ export default async function ReportsPage({ params }: { params: Promise<{ locale
   const money = (value: Parameters<typeof formatMoney>[0]) =>
     formatMoney(value, { locale: moneyLocale });
 
-
   return (
     <Page>
       <PageHeader

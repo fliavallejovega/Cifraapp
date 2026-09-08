@@ -250,7 +250,7 @@
       "liquid": "Liquid",
       "committed": "Committed",
       "liquidDetail": "The sum of your liquid accounts: current, savings, cash and wallets.",
-      "committedDetail": "Obligations over the next 30 days that already have an owner."
+      "committedDetail": "Upcoming obligations, minimum debt payments, the tax reserve and your buffer."
     },
     "empty": {
       "title": "Give your money somewhere to live.",
@@ -276,7 +276,7 @@
     },
     "planLink": "See what to do with this money",
     "reportsLink": "See the statements",
-    "scopeNote": "Available here deducts the obligations recorded for the next 30 days. The full calculation — minimum debt payments, estimated tax reserve and buffer — is in the plan.",
+    "scopeNote": "This is the same figure the plan shows: your liquid balance less the next 30 days of obligations, your minimum debt payments, the estimated tax reserve and your minimum buffer. The plan tells you what to do with it.",
     "importLink": "Import a statement"
   },
   "plan": {

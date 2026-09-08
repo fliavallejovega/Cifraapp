@@ -6,6 +6,7 @@ import { getServerEnv } from '@app/validation/env';
 import { and, eq, isNull } from 'drizzle-orm';
 import { sql } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
+import { cache } from 'react';
 import type { User } from '@supabase/supabase-js';
 
 import { getAuthenticatedUser } from './supabase';
@@ -41,12 +42,20 @@ function claimsFor(user: User): Record<string, unknown> {
  * Reads the caller's profile and households, creating the profile on first
  * sign-in.
  *
+ * Wrapped in React's `cache`, and that is a performance fix, not a nicety.
+ * Every signed-in screen resolves the session twice — once in the product
+ * layout, which needs the household name for the chrome, and once in the page,
+ * which needs it to authorize. Each resolution was a Supabase auth call plus a
+ * three-query transaction against a database a continent away, and each round
+ * trip measures ~400ms in production. Deduplicated per render pass, a
+ * navigation drops from roughly six sequential round trips to three.
+ *
  * Supabase owns `auth.users`; the product owns `app.profiles`. Rather than a
  * trigger on `auth.users` — which needs ownership of a schema the platform
  * manages — the row is created here, idempotently, the first time a verified
  * user arrives.
  */
-export async function loadSession(): Promise<Session | null> {
+export const loadSession = cache(async (): Promise<Session | null> => {
   const user = await getAuthenticatedUser();
   if (!user?.email) return null;
 
@@ -95,7 +104,7 @@ export async function loadSession(): Promise<Session | null> {
       activeHouseholdId: memberships[0]?.id ?? null,
     };
   });
-}
+});
 
 function displayNameOf(user: User): string | null {
   const metadata = user.user_metadata as { display_name?: unknown; full_name?: unknown };

@@ -1,8 +1,9 @@
 import 'server-only';
 
-import { accounts, households, householdSettings, obligations } from '@app/database/schema';
+import { computeSafeToSpend } from '@app/budget-engine';
+import { accounts, debts, households, householdSettings, obligations } from '@app/database/schema';
 import { addDays, Money, todayIn, type PlainDate } from '@app/domain';
-import { and, eq, gte, inArray, isNull, lte } from 'drizzle-orm';
+import { and, eq, gte, isNull, lte } from 'drizzle-orm';
 
 import { queryAsUser, type Session } from '../session';
 
@@ -18,10 +19,16 @@ import { queryAsUser, type Session } from '../session';
  * balance as spendable is the single most common way personal finance software
  * misleads people (spec §18).
  *
- * This is the honest partial version. The full safe-to-spend — minimum debt
- * payments, tax reserves, goal allocations — arrives with the budget engine in
- * Phase 7. What is here is computed from real rows, and the interface says
- * which components it accounts for rather than implying completeness.
+ * It is also not a second opinion. This screen and the plan both label a figure
+ * "Disponible para gastar", and until now they computed it differently — this
+ * one subtracted only obligations, the plan subtracted obligations, debt
+ * minimums, the tax reserve and the buffer. Two screens, one label, two
+ * numbers: $3,400.25 here and $2,740.25 there, both correct and together
+ * indefensible. A user who sees that concludes the product is broken, and they
+ * are right to.
+ *
+ * Both now call `computeSafeToSpend` with the same inputs. There is one
+ * available figure in this product, and this is it.
  */
 
 /** Account types whose balance is money the household can actually spend. */
@@ -40,9 +47,14 @@ export interface Claim {
 export interface Position {
   readonly currency: 'USD' | 'PAB';
   readonly liquid: Money;
+  /** Everything claimed: obligations, debt minimums, tax reserve, buffer. */
   readonly committed: Money;
   readonly available: Money;
   readonly bufferMinimum: Money;
+  /** The obligations alone, so the screen can itemize what it lists. */
+  readonly obligationsTotal: Money;
+  readonly debtMinimums: Money;
+  readonly taxReserve: Money;
   readonly claims: readonly Claim[];
   readonly accountCount: number;
   /** True when the household has no accounts yet, so the screen can teach. */
@@ -112,28 +124,70 @@ export async function loadPosition(session: Session, householdId: string): Promi
       isEssential: row.isEssential,
     }));
 
-    const committed = Money.sum(
+    const obligationsTotal = Money.sum(
       claims.map((claim) => claim.amount),
       currency,
     );
 
     const [settings] = await tx
-      .select({ bufferMinimum: householdSettings.bufferMinimum })
+      .select({
+        bufferMinimum: householdSettings.bufferMinimum,
+        taxReserveRate: householdSettings.taxReserveRate,
+      })
       .from(householdSettings)
       .where(eq(householdSettings.householdId, householdId))
       .limit(1);
 
+    // The same three claims the plan subtracts. Loading them here is what makes
+    // the two screens agree.
+    const debtRows = await tx
+      .select({ minimumPayment: debts.minimumPayment })
+      .from(debts)
+      .where(and(eq(debts.householdId, householdId), isNull(debts.deletedAt)));
+
+    const debtMinimums = Money.sum(
+      debtRows.map((row) => Money.fromDecimalString(row.minimumPayment, currency)),
+      currency,
+    );
+
+    const bufferMinimum = Money.fromDecimalString(settings?.bufferMinimum ?? '0', currency);
+
+    // Estimated, never "your tax bill" — the household's own rate until the tax
+    // engine's reviewed rules ship.
+    const taxReserve = settings?.taxReserveRate
+      ? liquid.percentage(settings.taxReserveRate)
+      : Money.zero(currency);
+
+    const safeToSpend = computeSafeToSpend({
+      currency,
+      today,
+      liquid,
+      // `claims` is already this shape; the engine wants the same rows.
+      obligations: claims.map((claim) => ({
+        id: claim.id,
+        name: claim.name,
+        due: claim.due,
+        amount: claim.amount,
+        isEssential: claim.isEssential,
+      })),
+      minimumDebtPayments: debtMinimums,
+      taxReserve,
+      bufferMinimum,
+      horizonDays: OBLIGATION_HORIZON_DAYS,
+    });
+
     return {
       currency,
       liquid,
-      committed,
-      available: liquid.subtract(committed),
-      bufferMinimum: Money.fromDecimalString(settings?.bufferMinimum ?? '0', currency),
+      committed: liquid.subtract(safeToSpend.safeToSpend),
+      available: safeToSpend.safeToSpend,
+      bufferMinimum,
+      obligationsTotal,
+      debtMinimums,
+      taxReserve,
       claims,
       accountCount: accountRows.length,
       isEmpty: accountRows.length === 0,
     };
   });
 }
-
-void inArray;

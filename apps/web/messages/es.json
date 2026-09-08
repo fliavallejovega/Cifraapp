@@ -250,7 +250,7 @@
       "liquid": "Líquido",
       "committed": "Comprometido",
       "liquidDetail": "Suma de tus cuentas líquidas: corrientes, ahorros, efectivo y billeteras.",
-      "committedDetail": "Obligaciones de los próximos 30 días que ya tienen dueño."
+      "committedDetail": "Obligaciones próximas, pagos mínimos de deuda, reserva fiscal y tu colchón."
     },
     "empty": {
       "title": "Dale a tu dinero un lugar donde vivir.",
@@ -276,7 +276,7 @@
     },
     "planLink": "Ver qué hacer con este dinero",
     "reportsLink": "Ver los estados",
-    "scopeNote": "Por ahora el disponible descuenta las obligaciones registradas de los próximos 30 días. El cálculo completo — pagos mínimos de deuda, reserva fiscal estimada y colchón — está en el plan.",
+    "scopeNote": "Esta es la misma cifra que verás en el plan: el saldo líquido menos las obligaciones de los próximos 30 días, los pagos mínimos de tus deudas, la reserva fiscal estimada y tu colchón mínimo. El plan te dice qué hacer con ella.",
     "importLink": "Importar un estado de cuenta"
   },
   "plan": {

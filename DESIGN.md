@@ -117,7 +117,7 @@ Rules:
 
 1. `--signal` may not be used decoratively. If it appears, a threshold was
    crossed, and the interface also says so in words.
-1a. `--brand` is rationed: at most the wordmark, one active mark per posture,
+   1a. `--brand` is rationed: at most the wordmark, one active mark per posture,
    and one headline reading per screen. Brass on every button is no longer
    brass.
 2. Secondary text on a tinted surface is tinted from that hue, never gray.
