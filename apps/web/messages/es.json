@@ -650,7 +650,8 @@
       "system": "Sistema",
       "light": "Claro",
       "dark": "Oscuro"
-    }
+    },
+    "investments": "Inversiones"
   },
   "accounts": {
     "title": "Tus cuentas",
@@ -746,13 +747,23 @@
       "generic": "Algo no salió bien. Intenta de nuevo."
     },
     "household": {
-      "title": "¿Cuántos viven de este dinero?",
-      "detail": "Mil dólares libres no significan lo mismo para una persona que para una familia de cinco. Es el número que le da sentido a todo lo demás.",
-      "members": "Personas en la casa",
-      "membersHint": "Contándote a ti.",
-      "dependents": "De ellas, ¿cuántas no generan ingreso?",
-      "dependentsHint": "Hijos, familiares a cargo.",
-      "next": "Continuar a los ingresos"
+      "title": "¿Quiénes viven en la casa?",
+      "detail": "Con nombre. A cuánta gente tiene que alcanzar el dinero cambia todo lo que te vamos a decir después.",
+      "next": "Continuar a los ingresos",
+      "name": "Nombre",
+      "nameHint": "Como le dices en la casa.",
+      "namePlaceholder": "Ana",
+      "relationship": "Relación",
+      "dependent": "Depende del ingreso del hogar (no aporta ingreso propio)",
+      "add": "Agregar a alguien más",
+      "relationships": {
+        "self": "Yo",
+        "partner": "Mi pareja",
+        "child": "Hijo o hija",
+        "parent": "Padre o madre",
+        "sibling": "Hermano o hermana",
+        "other": "Otra"
+      }
     },
     "income": {
       "title": "¿Qué entra, y cada cuánto?",
@@ -879,7 +890,12 @@
       "horizonInvalid": "Elige cuántos meses ver.",
       "labelRequired": "Ponle nombre al cambio.",
       "monthsInvalid": "Escribe un número de meses válido.",
-      "changeIsEmpty": "Un escenario sin costo ni ingreso es no hacer nada con otro nombre."
+      "changeIsEmpty": "Un escenario sin costo ni ingreso es no hacer nada con otro nombre.",
+      "riskInvalid": "Elige un nivel de riesgo.",
+      "bandIncomplete": "Si cambias los supuestos, pon los tres: malo, esperado y bueno.",
+      "bandOutOfOrder": "El supuesto malo no puede ser mayor que el esperado, ni el esperado mayor que el bueno.",
+      "symbolInvalid": "Escribe el símbolo como lo usa TradingView. Por ejemplo, NASDAQ:AAPL o TVC:GOLD.",
+      "alreadyWatching": "Ya tienes ese símbolo en tu lista."
     }
   },
   "movements": {
@@ -2443,5 +2459,101 @@
     },
     "download": "Descargar",
     "note": "Nada de esto se guarda en el servidor. Se genera y se envía: una exportación financiera guardada en un bucket es una segunda copia de lo más sensible que hay aquí, para la comodidad de una descarga que ya funcionó."
+  },
+  "investments": {
+    "title": "Inversiones",
+    "detail": "Cuánto tendrías que apartar cada mes para llegar a tus metas, y qué te compra de verdad tomar más riesgo.",
+    "disclosure": {
+      "title": "Antes de mirar cualquier cifra de esta pantalla",
+      "body": "Este módulo **no te recomienda en qué invertir** y no lo va a hacer. Recomendar un instrumento concreto es asesoría regulada, y este producto no la da. Lo que hace es aritmética: dadas tus metas y un supuesto de rendimiento que tú puedes cambiar, cuánto tendrías que aportar cada mes. Los rendimientos son supuestos, no pronósticos: nadie sabe qué van a hacer los mercados, y cualquier número aquí que parezca una promesa no lo es. Los mercados caen, y la tabla te dice cuánto han caído históricamente mezclas de esta forma.",
+      "accept": "Entendido, muéstrame el modelado",
+      "again": "Ver esto de nuevo"
+    },
+    "profile": {
+      "title": "Tu perfil",
+      "detail": "Todo esto lo dices tú. El módulo no infiere cuánto riesgo aguantas ni cuánto puedes apartar.",
+      "risk": "Cuánto riesgo estás dispuesto a cargar",
+      "riskHint": "Describe la mezcla, no un producto: cuánto va en efectivo, en bonos y en bolsa amplia.",
+      "capacity": "Cuánto puedes apartar al mes",
+      "capacityHint": "Lo que estás dispuesto a dejar quieto, que no es lo mismo que lo que te sobra.",
+      "interests": "Qué te interesa mirar",
+      "interestsHint": "Separado por comas. Por ejemplo: energía, bonos de Panamá, tecnología. Alimenta la explicación, nunca una recomendación.",
+      "emergency": "Ya tengo un fondo de emergencia",
+      "emergencyHint": "Si no lo tienes, esa es la primera meta y te lo vamos a decir antes que cualquier otra cosa.",
+      "band": "Los supuestos de rendimiento",
+      "bandHint": "En porcentaje anual. Déjalos vacíos para usar los del producto. Si crees que somos optimistas, bájalos: son supuestos, no datos.",
+      "low": "Década mala",
+      "expected": "Década normal",
+      "high": "Década buena",
+      "submit": "Guardar mi perfil",
+      "saved": "Perfil guardado.",
+      "usingDefault": "Estás usando los supuestos del producto.",
+      "usingOwn": "Estás usando tus propios supuestos."
+    },
+    "risks": {
+      "cash": "Efectivo",
+      "cashDetail": "Sin bolsa. No cae, y tampoco te acompaña la inflación.",
+      "conservative": "Conservador",
+      "conservativeDetail": "Sobre todo bonos, algo de bolsa.",
+      "balanced": "Balanceado",
+      "balancedDetail": "Mitad y mitad, a grandes rasgos.",
+      "growth": "Crecimiento",
+      "growthDetail": "Casi todo bolsa amplia. La que más rinde a largo plazo y la que más duele en el camino."
+    },
+    "emergencyFirst": {
+      "title": "Antes de invertir: el fondo de emergencia.",
+      "body": "Dijiste que todavía no lo tienes. Invertir sin colchón obliga a vender justo cuando los mercados están abajo, que es el peor momento posible y también el más probable para una emergencia. Ese es el primer destino del dinero.",
+      "action": "Crear esa meta"
+    },
+    "goals": {
+      "title": "Lo que cada meta te pediría al mes",
+      "detail": "Con el supuesto de cada nivel. La columna sin crecimiento es el piso honesto: lo que costaría si los mercados no hicieran nada por ti.",
+      "goal": "Meta",
+      "months": "{count} meses",
+      "level": "Nivel",
+      "monthly": "Al mes",
+      "range": "Dónde terminarías",
+      "rangeDetail": "Entre {low} y {high}",
+      "noGrowth": "Sin crecimiento: {amount} al mes",
+      "tooShort": "Tu plazo es más corto de lo que este nivel aguanta",
+      "drawdown": "Una caída como las históricas se llevaría {amount} en el camino",
+      "unreachable": "Con esta fecha no llega, aportes lo que aportes",
+      "affordable": "Cabe en tus {capacity} al mes",
+      "notAffordable": "No cabe en tus {capacity} al mes",
+      "empty": {
+        "title": "Todavía no hay metas con fecha.",
+        "body": "Sin una fecha no hay cuántos meses, y sin meses no hay cuánto al mes. Ponle fecha a una meta y esta pantalla se llena.",
+        "action": "Ver mis metas"
+      },
+      "undated": "Sin fecha, así que no se puede modelar: {names}"
+    },
+    "narrative": {
+      "title": "Qué significa esto para ti",
+      "detail": "Escrito por el asistente sobre las cifras de arriba, y sobre lo que dijiste que te interesa. No nombra en qué invertir porque no puede.",
+      "unavailable": "El copiloto no está encendido en esta instalación. Las cifras de arriba son exactas igual: las calcula el motor.",
+      "budget": "Se acabó el presupuesto del asistente de este mes. Las cifras no cambian.",
+      "quality": "El asistente devolvió una cifra que no pudimos verificar contra el modelado, así que no la mostramos. En esta pantalla eso es exactamente lo que tiene que pasar.",
+      "error": "No pudimos comunicarnos con el asistente. Las cifras siguen siendo exactas."
+    },
+    "watchlist": {
+      "title": "Lo que estás mirando",
+      "detail": "Lo pones tú. Los gráficos son de TradingView; el producto no guarda ni interpreta precios.",
+      "symbol": "Símbolo",
+      "symbolHint": "Como lo usa TradingView. Por ejemplo NASDAQ:AAPL, AMEX:SPY o TVC:GOLD.",
+      "label": "Cómo lo llamas",
+      "note": "Nota",
+      "goal": "Para qué meta",
+      "noGoal": "Sin meta específica",
+      "add": "Agregar a la lista",
+      "remove": "Quitar",
+      "removeConfirm": "Sale de tu lista. No pasa nada más.",
+      "empty": {
+        "title": "Tu lista está vacía.",
+        "body": "Agrega lo que te interese seguir y aparece el gráfico aquí. Que algo esté en tu lista no significa que el producto te lo esté proponiendo."
+      },
+      "chartLabel": "Gráfico de precios de {label}",
+      "chartNote": "Gráfico servido por TradingView. Nada de lo que muestra sale de tus registros."
+    },
+    "errorTitle": "No se pudo guardar"
   }
 }

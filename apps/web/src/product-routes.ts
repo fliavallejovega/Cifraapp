@@ -38,6 +38,7 @@ export const PROTECTED_SEGMENTS = [
   '/debt-simulator',
   '/scenarios',
   '/projection',
+  '/investments',
   '/chat',
 
   '/reports',

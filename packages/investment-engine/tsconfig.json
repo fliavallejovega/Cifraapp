@@ -1,0 +1,7 @@
+{
+  "extends": "@app/config/tsconfig/library.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": ["src/**/*.ts", "*.config.ts", "eslint.config.js"]
+}

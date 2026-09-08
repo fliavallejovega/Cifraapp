@@ -44,6 +44,7 @@ const DESTINATIONS = [
   { href: '/debt-simulator', key: 'debtSimulator', group: 'decide' },
   { href: '/scenarios', key: 'scenarios', group: 'decide' },
   { href: '/projection', key: 'projection', group: 'decide' },
+  { href: '/investments', key: 'investments', group: 'decide' },
   { href: '/chat', key: 'chat', group: 'decide' },
 
   { href: '/reports', key: 'reports', group: 'record' },

@@ -399,3 +399,14 @@ export function IconMerchants() {
     </Icon>
   );
 }
+
+/** Investing: growth that is not a straight line, because it never is. */
+export function IconInvestments() {
+  return (
+    <Icon>
+      <path d="M3 15.5c2.5 0 3-6 5.5-6s3 4 5 4 2.5-5 3.5-6.5" />
+      <path d="M3 17.5h14" />
+      <circle cx="8.5" cy="9.5" r="1.1" />
+    </Icon>
+  );
+}

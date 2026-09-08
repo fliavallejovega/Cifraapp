@@ -650,7 +650,8 @@
       "system": "System",
       "light": "Light",
       "dark": "Dark"
-    }
+    },
+    "investments": "Investing"
   },
   "accounts": {
     "title": "Your accounts",
@@ -746,13 +747,23 @@
       "generic": "Something went wrong. Try again."
     },
     "household": {
-      "title": "How many people live on this money?",
-      "detail": "A thousand dollars left over does not mean the same for one person as for a family of five. It is the number that gives everything else its meaning.",
-      "members": "People in the house",
-      "membersHint": "Counting yourself.",
-      "dependents": "Of those, how many earn nothing?",
-      "dependentsHint": "Children, relatives in your care.",
-      "next": "Continue to income"
+      "title": "Who lives in the house?",
+      "detail": "By name. How many people the money has to reach changes everything we tell you afterwards.",
+      "next": "Continue to income",
+      "name": "Name",
+      "nameHint": "What you call them at home.",
+      "namePlaceholder": "Ana",
+      "relationship": "Relationship",
+      "dependent": "Depends on the household income (brings in none of their own)",
+      "add": "Add someone else",
+      "relationships": {
+        "self": "Me",
+        "partner": "My partner",
+        "child": "Son or daughter",
+        "parent": "Parent",
+        "sibling": "Sibling",
+        "other": "Other"
+      }
     },
     "income": {
       "title": "What comes in, and how often?",
@@ -879,7 +890,12 @@
       "horizonInvalid": "Choose how many months to look ahead.",
       "labelRequired": "Give the change a name.",
       "monthsInvalid": "Write a valid number of months.",
-      "changeIsEmpty": "A scenario with no cost and no income is doing nothing under another name."
+      "changeIsEmpty": "A scenario with no cost and no income is doing nothing under another name.",
+      "riskInvalid": "Choose a risk level.",
+      "bandIncomplete": "If you change the assumptions, give all three: poor, expected and good.",
+      "bandOutOfOrder": "The poor assumption cannot exceed the expected one, nor the expected the good one.",
+      "symbolInvalid": "Write the symbol the way TradingView does. For example, NASDAQ:AAPL or TVC:GOLD.",
+      "alreadyWatching": "That symbol is already on your list."
     }
   },
   "movements": {
@@ -2443,5 +2459,101 @@
     },
     "download": "Download",
     "note": "None of this is stored on the server. It is generated and sent: a financial export sitting in a bucket is a second copy of the most sensitive data here, kept for the convenience of a download that already worked."
+  },
+  "investments": {
+    "title": "Investing",
+    "detail": "How much you would have to set aside each month to reach your goals, and what taking more risk actually buys you.",
+    "disclosure": {
+      "title": "Before you look at any figure on this screen",
+      "body": "This module **does not recommend what to invest in**, and it will not. Recommending a specific instrument is regulated advice, and this product does not give it. What it does is arithmetic: given your goals and a return assumption you can change, how much you would have to contribute each month. Returns are assumptions, not forecasts: nobody knows what markets will do, and any number here that looks like a promise is not one. Markets fall, and the table tells you how far mixes of this shape have historically fallen.",
+      "accept": "Understood, show me the modelling",
+      "again": "Read this again"
+    },
+    "profile": {
+      "title": "Your profile",
+      "detail": "All of this you tell us. The module does not infer how much risk you can carry or how much you can set aside.",
+      "risk": "How much risk you are willing to carry",
+      "riskHint": "It describes a mix, not a product: how much sits in cash, in bonds and in broad equity.",
+      "capacity": "How much you can set aside each month",
+      "capacityHint": "What you are willing to leave alone, which is not the same as what is left over.",
+      "interests": "What you want to look at",
+      "interestsHint": "Comma separated. For example: energy, Panama bonds, technology. It feeds the explanation, never a recommendation.",
+      "emergency": "I already have an emergency fund",
+      "emergencyHint": "If you do not, that is the first goal, and we will say so before anything else.",
+      "band": "The return assumptions",
+      "bandHint": "Percent a year. Leave them empty to use the product's. If you think we are optimistic, lower them: they are assumptions, not data.",
+      "low": "A bad decade",
+      "expected": "An ordinary decade",
+      "high": "A good decade",
+      "submit": "Save my profile",
+      "saved": "Profile saved.",
+      "usingDefault": "You are using the product's assumptions.",
+      "usingOwn": "You are using your own assumptions."
+    },
+    "risks": {
+      "cash": "Cash",
+      "cashDetail": "No equity. It does not fall, and it does not keep up with inflation either.",
+      "conservative": "Conservative",
+      "conservativeDetail": "Mostly bonds, some equity.",
+      "balanced": "Balanced",
+      "balancedDetail": "Roughly half and half.",
+      "growth": "Growth",
+      "growthDetail": "Almost all broad equity. The most over decades, and the most painful along the way."
+    },
+    "emergencyFirst": {
+      "title": "Before investing: the emergency fund.",
+      "body": "You said you do not have one yet. Investing without a cushion forces a sale exactly when markets are down, which is the worst possible moment and also the likeliest one for an emergency. That is where the money goes first.",
+      "action": "Create that goal"
+    },
+    "goals": {
+      "title": "What each goal would ask of you monthly",
+      "detail": "At each level's assumption. The no-growth column is the honest floor: what it would cost if markets did nothing for you.",
+      "goal": "Goal",
+      "months": "{count} months",
+      "level": "Level",
+      "monthly": "Monthly",
+      "range": "Where you would land",
+      "rangeDetail": "Between {low} and {high}",
+      "noGrowth": "Without growth: {amount} a month",
+      "tooShort": "Your horizon is shorter than this level suits",
+      "drawdown": "A fall of the historical size would take {amount} off along the way",
+      "unreachable": "This date cannot be met, whatever you contribute",
+      "affordable": "Fits in your {capacity} a month",
+      "notAffordable": "Does not fit in your {capacity} a month",
+      "empty": {
+        "title": "No goals with a date yet.",
+        "body": "Without a date there are no months, and without months there is no monthly figure. Put a date on a goal and this screen fills in.",
+        "action": "See my goals"
+      },
+      "undated": "No date, so nothing to model: {names}"
+    },
+    "narrative": {
+      "title": "What this means for you",
+      "detail": "Written by the assistant over the figures above, and over what you said interests you. It names nothing to invest in, because it cannot.",
+      "unavailable": "The copilot is not switched on in this installation. The figures above are exact regardless: the engine computes them.",
+      "budget": "This month's assistant budget is spent. The figures are unaffected.",
+      "quality": "The assistant returned a figure we could not verify against the modelling, so we did not show it. On this screen in particular that is exactly what should happen.",
+      "error": "We could not reach the assistant. The figures are still exact."
+    },
+    "watchlist": {
+      "title": "What you are watching",
+      "detail": "You put it here. The charts are TradingView's; the product neither stores nor interprets prices.",
+      "symbol": "Symbol",
+      "symbolHint": "The way TradingView writes it. For example NASDAQ:AAPL, AMEX:SPY or TVC:GOLD.",
+      "label": "What you call it",
+      "note": "Note",
+      "goal": "For which goal",
+      "noGoal": "No specific goal",
+      "add": "Add to the list",
+      "remove": "Remove",
+      "removeConfirm": "It leaves your list. Nothing else happens.",
+      "empty": {
+        "title": "Your list is empty.",
+        "body": "Add whatever you want to follow and its chart appears here. Something being on your list does not mean the product is proposing it."
+      },
+      "chartLabel": "Price chart for {label}",
+      "chartNote": "Chart served by TradingView. Nothing it shows comes from your records."
+    },
+    "errorTitle": "Could not save"
   }
 }

@@ -33,6 +33,7 @@ const FINANCIAL_SCREENS = [
   'debt-simulator',
   'scenarios',
   'projection',
+  'investments',
   'reports',
   'close',
   'documents',

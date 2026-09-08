@@ -19,6 +19,7 @@ import {
   IconExport,
   IconGoals,
   IconImport,
+  IconInvestments,
   IconIncome,
   IconMerchants,
   IconMovements,
@@ -75,6 +76,7 @@ export type DestinationKey =
   | 'debtSimulator'
   | 'scenarios'
   | 'projection'
+  | 'investments'
   | 'rules'
   | 'chat'
   | 'reports'
@@ -132,6 +134,7 @@ const ICONS: Record<DestinationKey, () => ReactNode> = {
   debtSimulator: IconSimulate,
   scenarios: IconScenarios,
   projection: IconProjection,
+  investments: IconInvestments,
   rules: IconRules,
   chat: IconChat,
   reports: IconReports,

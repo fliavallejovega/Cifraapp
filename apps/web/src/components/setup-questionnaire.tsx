@@ -22,6 +22,12 @@ import { completeSetup, type SetupResult } from '@/server/onboarding-actions';
 
 type Frequency = 'weekly' | 'biweekly' | 'semimonthly' | 'monthly' | 'quarterly' | 'annual';
 
+interface PersonRow {
+  name: string;
+  relationship: string;
+  isDependent: boolean;
+}
+
 interface IncomeRow {
   name: string;
   amount: string;
@@ -69,8 +75,13 @@ export function SetupQuestionnaire({ locale, currencySymbol, t }: SetupQuestionn
   const [state, formAction, pending] = useActionState<SetupResult, FormData>(completeSetup, {});
   const [index, setIndex] = useState(0);
 
-  const [memberCount, setMemberCount] = useState('2');
-  const [dependentCount, setDependentCount] = useState('0');
+  // Who lives here, by name. The counts the plan reads are derived from this
+  // list rather than typed separately: two records of the same fact disagree
+  // eventually, and «four people, two dependents» could never answer «which
+  // child was this expense for».
+  const [people, setPeople] = useState<PersonRow[]>([
+    { name: '', relationship: 'self', isDependent: false },
+  ]);
   const [bufferMinimum, setBufferMinimum] = useState('');
 
   const [incomes, setIncomes] = useState<IncomeRow[]>([
@@ -94,9 +105,14 @@ export function SetupQuestionnaire({ locale, currencySymbol, t }: SetupQuestionn
 
   // A row counts only when it has both a name and a figure. A half-filled row
   // is a person who changed their mind, not an entry with a missing field.
+  const namedPeople = people.filter((row) => row.name.trim() !== '');
+
   const payload = {
-    memberCount,
-    dependentCount,
+    people: namedPeople,
+    // Derived, so the figure the plan reads and the list a person can see can
+    // never drift apart. A household that skipped the step still counts as one.
+    memberCount: String(Math.max(1, namedPeople.length)),
+    dependentCount: String(namedPeople.filter((row) => row.isDependent).length),
     bufferMinimum: bufferMinimum.trim(),
     incomes: incomes.filter((row) => row.name.trim() !== '' && row.amount.trim() !== ''),
     accounts: accountRows.filter((row) => row.name.trim() !== '' && row.balance.trim() !== ''),
@@ -138,36 +154,76 @@ export function SetupQuestionnaire({ locale, currencySymbol, t }: SetupQuestionn
       </div>
 
       {step === 'household' && (
-        <div className="grid max-w-md gap-5 sm:grid-cols-2">
-          <Field label={copy('household.members')} hint={copy('household.membersHint')}>
-            {({ id, describedBy }) => (
-              <Input
-                id={id}
-                numeric
-                inputMode="numeric"
-                value={memberCount}
-                onChange={(event) => {
-                  setMemberCount(event.target.value);
-                }}
-                aria-describedby={describedBy}
-              />
-            )}
-          </Field>
-          <Field label={copy('household.dependents')} hint={copy('household.dependentsHint')}>
-            {({ id, describedBy }) => (
-              <Input
-                id={id}
-                numeric
-                inputMode="numeric"
-                value={dependentCount}
-                onChange={(event) => {
-                  setDependentCount(event.target.value);
-                }}
-                aria-describedby={describedBy}
-              />
-            )}
-          </Field>
-        </div>
+        <RowEditor
+          rows={people}
+          addLabel={copy('household.add')}
+          removeLabel={copy('remove')}
+          onAdd={() => {
+            setPeople([...people, { name: '', relationship: 'child', isDependent: true }]);
+          }}
+          onRemove={(at) => {
+            setPeople(people.filter((_, position) => position !== at));
+          }}
+          render={(row, at) => (
+            <>
+              <Field label={copy('household.name')} hint={copy('household.nameHint')}>
+                {({ id, describedBy }) => (
+                  <Input
+                    id={id}
+                    value={row.name}
+                    placeholder={copy('household.namePlaceholder')}
+                    aria-describedby={describedBy}
+                    onChange={(event) => {
+                      setPeople(patch(people, at, { name: event.target.value }));
+                    }}
+                  />
+                )}
+              </Field>
+
+              <Field label={copy('household.relationship')}>
+                {({ id }) => (
+                  <Select
+                    id={id}
+                    value={row.relationship}
+                    onChange={(event) => {
+                      const relationship = event.target.value;
+                      setPeople(
+                        patch(people, at, {
+                          relationship,
+                          // A child is a dependant unless somebody says
+                          // otherwise; «self» and «partner» are not. Choosing
+                          // the common answer is what the household reads as a
+                          // recommendation, and most never change it.
+                          isDependent: relationship === 'child' || relationship === 'parent',
+                        }),
+                      );
+                    }}
+                  >
+                    {['self', 'partner', 'child', 'parent', 'sibling', 'other'].map((value) => (
+                      <option key={value} value={value}>
+                        {copy(`household.relationships.${value}`)}
+                      </option>
+                    ))}
+                  </Select>
+                )}
+              </Field>
+
+              <div className="sm:col-span-2">
+                <label className="flex items-start gap-2.5 text-sm text-[color:var(--color-ink-secondary)]">
+                  <input
+                    type="checkbox"
+                    checked={row.isDependent}
+                    onChange={(event) => {
+                      setPeople(patch(people, at, { isDependent: event.target.checked }));
+                    }}
+                    className="mt-0.5 h-4 w-4 shrink-0 accent-[color:var(--color-brand)]"
+                  />
+                  <span>{copy('household.dependent')}</span>
+                </label>
+              </div>
+            </>
+          )}
+        />
       )}
 
       {step === 'income' && (

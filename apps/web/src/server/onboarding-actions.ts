@@ -4,13 +4,14 @@ import {
   accounts,
   debts,
   goals,
+  householdPeople,
   householdSettings,
   households,
   obligations,
   recurringSeries,
 } from '@app/database/schema';
 import { addMonths, plainDateFromParts, todayIn, type PlainDate } from '@app/domain';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
@@ -62,7 +63,22 @@ const name = z.string().trim().min(1).max(120);
 
 const dueDay = z.coerce.number().int().min(1).max(31);
 
+const RELATIONSHIPS = ['self', 'partner', 'child', 'parent', 'sibling', 'other'] as const;
+
 const setupInput = z.object({
+  // Who lives here, by name. The counts below are derived from this list by the
+  // form, so the figure the plan reads and the list a person can edit are the
+  // same fact rather than two records of it.
+  people: z
+    .array(
+      z.object({
+        name,
+        relationship: z.enum(RELATIONSHIPS),
+        isDependent: z.boolean(),
+      }),
+    )
+    .max(20)
+    .default([]),
   memberCount: z.coerce.number().int().min(1).max(50),
   dependentCount: z.coerce.number().int().min(0).max(50),
   bufferMinimum: optionalAmount,
@@ -172,6 +188,24 @@ export async function completeSetup(
           },
         });
 
+      // The category tree, which no household had ever been given. Thirty-eight
+      // templates sat in `category_templates` from the second migration and
+      // nothing copied them in, so the classifier had nowhere to file anything
+      // and every budget had nothing to budget.
+      await tx.execute(sql`select app.seed_household_categories(${householdId})`);
+
+      if (answers.people.length > 0) {
+        await tx.insert(householdPeople).values(
+          answers.people.map((person) => ({
+            householdId,
+            createdBy: session.user.id,
+            displayName: person.name,
+            relationship: person.relationship,
+            isDependent: person.isDependent,
+          })),
+        );
+      }
+
       if (answers.accounts.length > 0) {
         await tx.insert(accounts).values(
           answers.accounts.map((entry) => ({
@@ -271,14 +305,27 @@ export async function completeSetup(
   }
 
   const locale = formData.get('locale') === 'en' ? 'en' : 'es';
-  for (const path of ['overview', 'plan', 'reports', 'accounts', 'documents', 'welcome']) {
+  for (const path of [
+    'overview',
+    'plan',
+    'advice',
+    'alerts',
+    'reports',
+    'accounts',
+    'categories',
+    'people',
+    'documents',
+    'welcome',
+  ]) {
     revalidatePath(`/${locale}/${path}`);
   }
 
-  // Straight to the plan, because the plan is what was promised. Landing back
-  // on the position would show a balance and hide the thing the questions were
-  // for. `redirect` throws, so the revalidations above have to come first.
-  redirect(`/${locale}/plan`);
+  // Straight to the advice, because a plan of action is what the questions
+  // were for. It is the same figures the plan screen renders, put in the order
+  // they should be acted on, and it links through to the line-by-line detail.
+  // Landing back on the position would show a balance and hide the answer.
+  // `redirect` throws, so the revalidations above have to come first.
+  redirect(`/${locale}/advice`);
 }
 
 /** Lets a household answer the questionnaire again without re-signing up. */
