@@ -95,7 +95,13 @@ export function IconSignOut() {
   );
 }
 
-/** The monogram: the brand mark, drawn once and reused everywhere. */
+/**
+ * The monogram: the brand mark, drawn once and reused everywhere.
+ *
+ * The letter is drawn as a path rather than set as text so it renders
+ * identically without waiting on a webfont — which matters most at 16px in a
+ * browser tab. It follows the working name (ADR-001) and changes with it.
+ */
 export function Monogram({ size = 34 }: { readonly size?: number }) {
   return (
     <svg viewBox="0 0 34 34" aria-hidden="true" width={size} height={size}>
@@ -109,7 +115,14 @@ export function Monogram({ size = 34 }: { readonly size?: number }) {
         stroke="var(--color-brand)"
         strokeWidth="1"
       />
-      <path d="M11 23.5v-13h2.4l7.2 8.9v-8.9H23v13h-2.4l-7.2-8.9v8.9z" fill="var(--color-brand)" />
+      {/* The same stroked arc the app icons use, scaled to this grid. */}
+      <path
+        d="M23.7 23 A9 9 0 1 1 23.7 11"
+        fill="none"
+        stroke="var(--color-brand)"
+        strokeWidth="3.4"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }

@@ -6,20 +6,20 @@ entry gets a note pointing at the one that replaced it.
 
 ---
 
-## ADR-001 — Working name is `Norte`, and it is provisional
+## ADR-001 — Working name is `Cifrapp`, and it is provisional
 
 **Status:** Accepted, provisional · Phase 0
 
 The specification left the product name as TBD. Building without any name blocks
 brand tokens, metadata, email templates and marketing copy.
 
-**Decision.** Use `Norte` as a working name. Internal packages are scoped
+**Decision.** Use `Cifrapp` as a working name — it replaced `Norte` on 7 September 2026, and is provisional on the same terms. Internal packages are scoped
 `@app/*` rather than to the product name, so renaming touches brand tokens and
 copy rather than every import in the repository.
 
 **Consequence.** The name must be settled before Phase 17 (landing page), when
 it stops being an internal label and becomes a public commitment. Until then,
-every appearance of `Norte` is a placeholder.
+every appearance of `Cifrapp` is a placeholder.
 
 ---
 

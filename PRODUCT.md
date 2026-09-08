@@ -90,7 +90,7 @@ and reviewed.
 The SaaS company's own double-entry accounting is a separate domain from
 customer financial data and never shares rows with it.
 
-**Undecided.** The product name (`Norte` is a working placeholder, ADR-001).
+**Undecided.** The product name (`Cifrapp` is a working placeholder, ADR-001).
 Pricing figures are drafted but not committed. Whether the product ever
 positions itself as tax preparation rather than tax planning is an open legal
 question, and until it is settled the product does not market itself as a

@@ -1,4 +1,4 @@
-# Norte
+# Cifrapp
 
 A financial operating system for households, couples, families and independent
 professionals.
@@ -6,7 +6,7 @@ professionals.
 Most personal finance software reports what happened to your money. This one is
 built to answer what should happen next.
 
-> `Norte` is a working name (ADR-001).
+> `Cifrapp` is a working name (ADR-001).
 
 ## Status
 

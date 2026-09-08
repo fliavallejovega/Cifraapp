@@ -12,7 +12,7 @@ de negocio y la lista completa de lo que falta.
 
 ## 1. Qué es el producto
 
-**Norte es el sistema operativo financiero de un hogar.** No es una app de
+**Cifrapp es el sistema operativo financiero de un hogar.** No es una app de
 presupuesto ni un categorizador de gastos: es el sistema que responde tres
 preguntas que ningún banco responde, en este orden.
 
@@ -212,59 +212,118 @@ ni fabricar urgencia. El producto se paga solo si es útil.
 
 ---
 
-## 5. Secuencia recomendada
+## 5. Plan de acción: las 37 pantallas que faltan
 
-El orden no es negociable y sale de una sola regla: **primero que el dato se
-pueda entrar y ver, después que se pueda automatizar, después que se pueda
-vender.** Un motor sin pantalla no vale nada; una pantalla sobre datos que no se
-pueden corregir se abandona.
+El orden sale de una sola regla: **primero que el dato se pueda entrar y ver,
+después que entre solo, después que el sistema aconseje, después que se cobre.**
+Un motor sin pantalla no vale nada; una pantalla sobre datos que no se pueden
+corregir se abandona el primer mes.
 
-### Fase 1 — Que el hogar se pueda administrar _(la más urgente)_
+La numeración de cada pantalla es su lugar en las 43. La lista arranca en la 7
+porque las seis primeras ya existen: posición, cuentas, importar, revisión de
+importación, plan y estados.
 
-Todo lo que hoy solo se puede tocar una vez en el cuestionario.
+| Fase | Pantallas | Avance al cerrar   | Bloqueada por             |
+| ---- | --------- | ------------------ | ------------------------- |
+| Hoy  | —         | 6 / 43 · 14%       | —                         |
+| 1    | 12        | **18 / 43 · 42%**  | nada, empieza hoy         |
+| 2    | 6         | 24 / 43 · 56%      | trabajos en segundo plano |
+| 3    | 8         | 32 / 43 · 74%      | encender el copiloto      |
+| 4    | 7         | 39 / 43 · 91%      | cuenta de Stripe          |
+| 5    | 4         | **43 / 43 · 100%** | —                         |
 
-- Pantalla de **movimientos** con búsqueda y filtro (B1) — _lo primero de todo_
-- Editar un movimiento y su rubro (B2), registrar gasto en efectivo (B3)
-- CRUD de **deudas, metas, ingresos y compromisos** (A2–A5)
-- **Rubros de gasto**: árbol de categorías propio (A6)
-- **Miembros del hogar** (A1) y **ajustes** (A8)
+### Fase 1 — Que el hogar se pueda administrar
 
-**Al cerrar esta fase**, el producto pasa de "una demostración con la que no se
-puede hacer nada" a "el sistema donde vive el dinero de la casa". Es el salto
-del 15% al ~50%.
+Todo lo que hoy solo se toca una vez dentro del cuestionario y nunca más. Es la
+fase que convierte una demostración en un sistema.
+
+| №   | Pantalla               | Qué hace                                                                                    |
+| --- | ---------------------- | ------------------------------------------------------------------------------------------- |
+| 7   | **Movimientos**        | Lista con búsqueda y filtro por fecha, cuenta, rubro y monto. **La más urgente de las 37.** |
+| 8   | **Movimiento**         | Detalle y edición: cambiar rubro, dividir entre varios, excluir, anotar.                    |
+| 9   | **Gasto manual**       | Registrar el efectivo que no sale en ningún estado de cuenta.                               |
+| 10  | **Ingresos**           | Lista y edición de salarios y otros ingresos, fijos o aproximados.                          |
+| 11  | **Deudas**             | Lista y edición: saldo, tasa, pago mínimo, día de corte.                                    |
+| 12  | **Deuda**              | Detalle: cuánto falta, cuánto se ha pagado, a qué ritmo se acaba.                           |
+| 13  | **Metas**              | Lista y edición: monto objetivo, fecha, prioridad.                                          |
+| 14  | **Meta**               | Detalle con progreso real contra lo aportado.                                               |
+| 15  | **Compromisos**        | Lista y edición de obligaciones mensuales con su vencimiento.                               |
+| 16  | **Rubros de gasto**    | El árbol de categorías, editable, con los propios del hogar.                                |
+| 17  | **Miembros del hogar** | Quién vive aquí, quién depende de quién.                                                    |
+| 18  | **Ajustes del hogar**  | Colchón, estrategia de deuda, tasa de reserva fiscal, moneda.                               |
+
+**Al cerrar:** el producto pasa de «no puedo hacer nada» a «aquí vive el dinero
+de la casa», y usarlo un mes sin tocar SQL se vuelve posible por primera vez.
 
 ### Fase 2 — Que los datos entren solos
 
-- **PDF con texto** + plantillas por banco (C1, C5)
-- **Trabajos en segundo plano** (C4) — bloquea todo lo demás de esta fase
-- **XLSX** (C3)
-- **OCR** para escaneos y fotos (C2)
-- **Categorización automática visible** al confirmar (D2)
-- Detección de recurrentes (D3), transferencias (B5), duplicados (B6)
+Los trabajos en segundo plano van primero y bloquean al resto: parsear un PDF no
+puede pasar dentro de una petición síncrona. Con eso resuelto, PDF, XLSX y OCR
+son parsers que se agregan al pipeline que ya existe.
+
+| №   | Pantalla                         | Qué hace                                                      |
+| --- | -------------------------------- | ------------------------------------------------------------- |
+| 19  | **Importación en proceso**       | Estado del trabajo, con su progreso y su error si falla.      |
+| 20  | **Comercios**                    | Normalización y reglas: «todo lo de Super 99 va a Mercado».   |
+| 21  | **Transferencias por confirmar** | Para que el pago de la tarjeta no cuente como gasto.          |
+| 22  | **Duplicados**                   | La cola de revisión con el veredicto que el motor ya calcula. |
+| 23  | **Recurrentes detectadas**       | «Esto se repite cada mes, ¿lo registro como compromiso?».     |
+| 24  | **Categorización por revisar**   | Lo que el motor clasificó con poca confianza.                 |
+
+**Al cerrar:** subir el estado de cuenta del banco en PDF y que los gastos queden
+clasificados sin escribir nada.
 
 ### Fase 3 — Que el sistema aconseje
 
-- **Encender el copiloto** (D1) — es configuración, no construcción
-- Consejo del mes y alertas (D4, D5)
-- **Aceptar un plan** y seguirlo (E1, E2)
-- Simulador de deuda (E3) y progreso de metas (E6)
-- Presupuestos por rubro (A7)
+Encender el copiloto es configuración, no construcción: una clave de proveedor y
+un presupuesto mensual. El motor ya tiene 31 pruebas, control de costo y
+guardarraíles.
+
+| №   | Pantalla                  | Qué hace                                                       |
+| --- | ------------------------- | -------------------------------------------------------------- |
+| 25  | **Presupuestos**          | Cuánto quiero gastar en cada rubro este mes.                   |
+| 26  | **Presupuesto**           | Detalle: lo presupuestado contra lo gastado, día a día.        |
+| 27  | **Consejo del mes**       | Qué hacer, escrito sobre las cifras que el motor ya calculó.   |
+| 28  | **Alertas**               | «A este ritmo no llegás al 30», «gastaste 40% más en mercado». |
+| 29  | **Simulador de deuda**    | Avalancha contra bola de nieve, con fechas y ahorro real.      |
+| 30  | **Seguimiento del plan**  | Acepté esto el mes pasado, ¿lo cumplí?                         |
+| 31  | **Constructor de reglas** | El editor visual sobre el motor de reglas que ya evalúa.       |
+| 32  | **Chat**                  | Preguntarle al sistema sobre las finanzas propias.             |
+
+**Al cerrar:** el producto deja de reportar y empieza a recomendar — que es la
+razón por la que alguien paga por él.
 
 ### Fase 4 — Que se pueda cobrar y compartir
 
-- **Stripe** y pantalla de suscripción (F4, F5)
-- Invitar a la pareja (F1) y al contador (F3)
-- Notificaciones y `cron` (F6)
-- Reserva fiscal del independiente (E7)
+Hasta el primer cobro, todo el modelo de negocio es hipótesis. El catálogo, los
+límites y los webhooks idempotentes ya están construidos y probados.
+
+| №   | Pantalla                 | Qué hace                                                 |
+| --- | ------------------------ | -------------------------------------------------------- |
+| 33  | **Suscripción**          | Plan actual, límites consumidos, subir de plan.          |
+| 34  | **Invitar miembros**     | Traer a la pareja al hogar.                              |
+| 35  | **Accesos del contador** | Conceder y revocar por alcance.                          |
+| 36  | **Selector de hogar**    | Para quien pertenece a dos.                              |
+| 37  | **Notificaciones**       | Qué avisar, por dónde, con qué frecuencia.               |
+| 38  | **Perfil fiscal**        | El régimen del independiente y su tasa.                  |
+| 39  | **Reserva fiscal**       | Cuánto apartar de cada factura, y cuánto lleva apartado. |
+
+**Al cerrar:** el producto cobra, y el canal de los contadores queda abierto.
 
 ### Fase 5 — Profundidad
 
-- Escenarios y proyecciones (E4, E5)
-- Cierre de mes (E8)
-- Exportación a PDF y XLSX
-- Carga, accesibilidad y rendimiento medidos, no supuestos
+Lo que separa una herramienta buena de una que se usa durante años. Los motores
+de escenarios y de cierre ya existen y están probados.
 
----
+| №   | Pantalla          | Qué hace                                                               |
+| --- | ----------------- | ---------------------------------------------------------------------- |
+| 40  | **Escenarios**    | «¿Y si me suben el sueldo?», «¿y si cambio de casa?».                  |
+| 41  | **Proyección**    | Cómo se ve el mes que viene, y el siguiente, y el de dentro de un año. |
+| 42  | **Cierre de mes** | Conciliar, cerrar y comparar contra el mes anterior.                   |
+| 43  | **Exportaciones** | PDF y XLSX, además del CSV y JSON que ya salen.                        |
+
+**Al cerrar:** 43 de 43. Queda pendiente lo que no es una pantalla — carga,
+accesibilidad y rendimiento medidos, no supuestos.
 
 ## 6. Cómo se mide el avance
 
@@ -289,7 +348,8 @@ Cuatro cifras, revisadas al cerrar cada fase. Nada de porcentajes inventados.
 - **Las credenciales de Supabase y R2 se pegaron en un chat y siguen sin
   rotar.** Es el riesgo abierto más grave del proyecto y no depende de ninguna
   fase.
-- **El nombre "Norte" es provisional** (ADR-001) y no hay marca registrada.
+- **El nombre "Cifrapp" es provisional** (ADR-001). Reemplazó a «Norte» el 7
+  de septiembre de 2026 y sigue sin marca registrada.
 - **El set de reglas fiscales de Panamá es un borrador sin revisar** y por eso no
   se le muestra a nadie. Antes de encender el módulo fiscal necesita revisión de
   un contador panameño con nombre y fecha.

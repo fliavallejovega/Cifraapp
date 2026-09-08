@@ -453,7 +453,7 @@ Without those variables the authenticated end-to-end suites skip and say so.
 
 1. `setRequestLocale` deprecation suppressed; `next/root-params` has no types
    until Next generates them (ADR-011).
-2. Product name `Norte` is a placeholder (ADR-001). Must be settled before
+2. Product name `Cifrapp` is a placeholder (ADR-001). Must be settled before
    Phase 17.
 3. Import picks the household's first active account rather than asking. An
    account picker is required before real use — a transaction filed against the
@@ -1577,7 +1577,7 @@ no public address is configured rather than inventing one. The `/security` page
 lists what the product does **not** have — no MFA, no external audit — because a
 financial product enumerating measures it lacks has already told you what it is.
 
-**Not built.** The product name is still `Norte` and remains provisional, so
+**Not built.** The product name is still `Cifrapp` and remains provisional, so
 nothing here should be advertised yet. Marketing routes are `force-dynamic`:
 every word is a database row and CI builds without credentials, so prerendering
 would bake an empty page into the deployment. Caching them at the edge with
@@ -1893,7 +1893,7 @@ fund $5,000 and travel $2,000. Use this to validate the allocation engine.
 
 | Decision                                                | Owner        | Needed by |
 | ------------------------------------------------------- | ------------ | --------- |
-| Product name (`Norte` is a placeholder)                 | User         | Phase 17  |
+| Product name (`Cifrapp` is a placeholder)               | User         | Phase 17  |
 | Whether the product ever positions as tax _preparation_ | User + legal | Phase 12  |
 | Final pricing figures                                   | User         | Phase 14  |
 | Stripe account                                          | User         | Phase 14  |

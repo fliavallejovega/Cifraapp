@@ -14,8 +14,8 @@ import type { MetadataRoute } from 'next';
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Norte',
-    short_name: 'Norte',
+    name: 'Cifrapp',
+    short_name: 'Cifrapp',
     description:
       'Tu sistema financiero: cuánto tienes, qué está comprometido y qué hacer con lo que queda.',
     id: '/',
