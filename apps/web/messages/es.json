@@ -1574,7 +1574,10 @@
     "badges": {
       "essential": "Indispensable",
       "settled": "Ya pagado",
-      "overdue": "Vencido"
+      "overdue": "Vencido",
+      "lateFee": "Mora {fee}",
+      "lateFeeRate": "Mora {rate}%",
+      "deductedAtSource": "Descuento de planilla"
     },
     "dueOn": "Vence el {date}",
     "overdue": "Venció el {date}",

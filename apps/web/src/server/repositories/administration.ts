@@ -223,6 +223,17 @@ export interface CommitmentView {
    * and any sum of what claims their *cash* must leave it out.
    */
   readonly isDeductedAtSource: boolean;
+  /**
+   * What paying it late costs, in whichever shape the contract states it.
+   *
+   * Both shapes are carried rather than reduced to one figure here, because
+   * «$25» and «5%» read differently on a screen and the household stated one
+   * of them: showing «$45» to somebody whose contract says five percent hides
+   * the term they actually agreed to.
+   */
+  readonly lateFee: Money | null;
+  readonly lateFeeRate: string | null;
+  readonly lateFeeAfterDays: number | null;
 }
 
 export async function loadCommitments(
@@ -242,6 +253,9 @@ export async function loadCommitments(
         settledTransactionId: obligations.settledTransactionId,
         categoryId: obligations.categoryId,
         deductedFromSeriesId: obligations.deductedFromSeriesId,
+        lateFeeAmount: obligations.lateFeeAmount,
+        lateFeeRate: obligations.lateFeeRate,
+        lateFeeAfterDays: obligations.lateFeeAfterDays,
       })
       .from(obligations)
       .where(and(eq(obligations.householdId, householdId), isNull(obligations.deletedAt)))
@@ -258,6 +272,10 @@ export async function loadCommitments(
     isSettled: row.settledTransactionId !== null,
     categoryId: row.categoryId,
     isDeductedAtSource: row.deductedFromSeriesId !== null,
+    lateFee:
+      row.lateFeeAmount === null ? null : Money.fromDecimalString(row.lateFeeAmount, currency),
+    lateFeeRate: row.lateFeeRate,
+    lateFeeAfterDays: row.lateFeeAfterDays,
   }));
 }
 

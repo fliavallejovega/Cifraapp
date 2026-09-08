@@ -1574,7 +1574,10 @@
     "badges": {
       "essential": "Essential",
       "settled": "Already paid",
-      "overdue": "Overdue"
+      "overdue": "Overdue",
+      "lateFee": "Late fee {fee}",
+      "lateFeeRate": "Late fee {rate}%",
+      "deductedAtSource": "Payroll deduction"
     },
     "dueOn": "Due on {date}",
     "overdue": "Was due on {date}",

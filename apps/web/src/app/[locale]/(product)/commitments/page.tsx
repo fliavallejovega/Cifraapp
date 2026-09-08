@@ -4,7 +4,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { RecordsManager } from '@/components/records';
 import type { FieldSpec, RecordRow } from '@/components/records/spec';
-import { formatPlainDate } from '@/lib/format';
+import { formatPlainDate, trimAmount } from '@/lib/format';
 import { createCommitment, removeCommitment, updateCommitment } from '@/server/commitment-actions';
 import { loadHouseholdContext } from '@/server/household-context';
 import { recordLabels } from '@/server/record-labels';
@@ -111,6 +111,33 @@ export default async function CommitmentsPage({ params }: { params: Promise<{ lo
         ...(overdue ? [{ label: t('badges.overdue'), tone: 'negative' as const }] : []),
         ...(commitment.isEssential
           ? [{ label: t('badges.essential'), tone: 'caution' as const }]
+          : []),
+        // The charge as the contract states it, not reduced to one figure:
+        // «5%» is the term the household agreed to, and showing «$45» instead
+        // would quietly replace their contract with our arithmetic.
+        ...(commitment.lateFee
+          ? [
+              {
+                label: t('badges.lateFee', {
+                  fee: formatMoney(commitment.lateFee, { locale: context.moneyLocale }),
+                }),
+                tone: 'caution' as const,
+              },
+            ]
+          : commitment.lateFeeRate
+            ? [
+                {
+                  label: t('badges.lateFeeRate', { rate: trimAmount(commitment.lateFeeRate) }),
+                  tone: 'caution' as const,
+                },
+              ]
+            : []),
+        // Owed, but never a claim on a balance — the money is taken before it
+        // arrives. Said out loud here because this screen's total includes it
+        // and the position screen's «disponible» deliberately does not, and a
+        // household comparing the two is entitled to know why they differ.
+        ...(commitment.isDeductedAtSource
+          ? [{ label: t('badges.deductedAtSource'), tone: 'neutral' as const }]
           : []),
         ...(commitment.isSettled
           ? [{ label: t('badges.settled'), tone: 'positive' as const }]
