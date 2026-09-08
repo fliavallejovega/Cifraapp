@@ -92,7 +92,20 @@ export default async function PlanPage({ params }: { params: Promise<{ locale: s
 
   return (
     <Page>
-      <PageHeader title={t('title')} detail={t('detail')} />
+      <PageHeader
+        title={t('title')}
+        detail={t('detail')}
+        actions={
+          /* The plan is a suggestion until somebody decides on it. This is the
+             door to that decision, and to the record of the ones already made. */
+          <Link
+            href="/plan/history"
+            className="text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
+          >
+            {t('historyLink')}
+          </Link>
+        }
+      />
 
       {view.isEmpty ? (
         <EmptyState

@@ -1,0 +1,227 @@
+'use server';
+
+import { QUESTION_ANSWER_V1, type PromptLocale } from '@app/ai';
+import { chatMessages, chatThreads } from '@app/database/schema';
+import { formatMoney, type Money } from '@app/domain';
+import { and, eq, isNull } from 'drizzle-orm';
+import { revalidatePath } from 'next/cache';
+import { z } from 'zod';
+
+import { ask, copilotIsConfigured } from './ai';
+import { loadHouseholdContext } from './household-context';
+import { loadDebts, loadGoals } from './repositories/administration';
+import { loadPlan } from './repositories/plan';
+import { localeOf } from './revalidate';
+import { loadSession, queryAsUser } from './session';
+
+/**
+ * Asking the system about your own finances.
+ *
+ * The question is a person's; every figure the answer may use is the product's,
+ * assembled here from the same readers the screens use. The model never queries
+ * anything — it is handed a fixed set of facts and told that a partial answer
+ * built on an assumption is worse than none.
+ *
+ * What is stored is the whole exchange *and* the grounding. Without the second,
+ * an answer read in March is a claim nobody can check against anything, which
+ * is precisely the failure mode the product exists to avoid.
+ */
+
+export interface ChatResult {
+  readonly error?: string;
+  readonly threadId?: string;
+  readonly ok?: true;
+}
+
+const questionInput = z.object({
+  question: z.string().trim().min(3).max(500),
+  threadId: z.preprocess(
+    (value) => (value === '' || value === undefined || value === null ? undefined : value),
+    z.uuid().optional(),
+  ),
+});
+
+export async function askQuestion(_previous: ChatResult, formData: FormData): Promise<ChatResult> {
+  const session = await loadSession();
+  if (!session?.activeHouseholdId) return { error: 'signInRequired' };
+
+  if (!copilotIsConfigured()) return { error: 'copilotOff' };
+
+  const parsed = questionInput.safeParse({
+    question: formData.get('question'),
+    threadId: formData.get('threadId'),
+  });
+
+  if (!parsed.success) return { error: 'questionRequired' };
+
+  const householdId = session.activeHouseholdId;
+  const locale = localeOf(formData);
+  const promptLocale: PromptLocale = locale === 'en' ? 'en' : 'es';
+
+  const context = await loadHouseholdContext(session, householdId, locale);
+  const [plan, debts, goals] = await Promise.all([
+    loadPlan(session, householdId),
+    loadDebts(session, householdId, context.currency),
+    loadGoals(session, householdId, context.currency),
+  ]);
+
+  const money = (value: Money) => formatMoney(value, { locale: context.moneyLocale });
+
+  const grounding: Record<string, string> = {
+    question: parsed.data.question,
+    today: context.today,
+    available: money(plan.safeToSpend.safeToSpend),
+    liquid: money(plan.safeToSpend.liquid),
+    committed: money(plan.safeToSpend.totalClaimed),
+    debts:
+      debts.length === 0
+        ? 'none'
+        : debts
+            .map((debt) => `${debt.name}: ${money(debt.currentBalance)} at ${debt.apr}%`)
+            .join(' · '),
+    goals:
+      goals.length === 0
+        ? 'none'
+        : goals
+            .map(
+              (goal) => `${goal.name}: ${money(goal.currentAmount)} of ${money(goal.targetAmount)}`,
+            )
+            .join(' · '),
+  };
+
+  const result = await ask(session, householdId, {
+    prompt: QUESTION_ANSWER_V1,
+    locale: promptLocale,
+    currency: context.currency,
+    grounding,
+  });
+
+  const answer = result.ok ? result.value.output['answer'] : undefined;
+  const answerText =
+    typeof answer === 'string' && answer.trim() !== ''
+      ? answer
+      : declineText(result.ok ? 'malformed_output' : result.error.kind, promptLocale);
+
+  const threadId = await queryAsUser(session, async (tx) => {
+    let id = parsed.data.threadId ?? null;
+
+    if (id) {
+      const [existing] = await tx
+        .select({ id: chatThreads.id })
+        .from(chatThreads)
+        .where(
+          and(
+            eq(chatThreads.id, id),
+            eq(chatThreads.householdId, householdId),
+            isNull(chatThreads.deletedAt),
+          ),
+        )
+        .limit(1);
+
+      if (!existing) id = null;
+    }
+
+    if (!id) {
+      // The thread is named from the question, so it is findable later without
+      // anybody being made to title it before they have asked anything.
+      const [created] = await tx
+        .insert(chatThreads)
+        .values({
+          householdId,
+          createdBy: session.user.id,
+          title: parsed.data.question.slice(0, 120),
+        })
+        .returning({ id: chatThreads.id });
+
+      if (!created) return null;
+      id = created.id;
+    }
+
+    await tx.insert(chatMessages).values([
+      {
+        threadId: id,
+        householdId,
+        role: 'user',
+        body: parsed.data.question,
+        authorId: session.user.id,
+      },
+      {
+        threadId: id,
+        householdId,
+        role: 'assistant',
+        body: answerText,
+        // Stored whether the call succeeded or not: «the assistant declined
+        // because the month's budget was spent» is part of the record too.
+        grounding,
+      },
+    ]);
+
+    await tx.update(chatThreads).set({ updatedAt: new Date() }).where(eq(chatThreads.id, id));
+
+    return id;
+  });
+
+  if (!threadId) return { error: 'createFailed' };
+
+  revalidatePath(`/${locale}/chat`);
+  revalidatePath(`/${locale}/chat/${threadId}`);
+
+  return { threadId, ok: true };
+}
+
+export async function removeThread(_previous: ChatResult, formData: FormData): Promise<ChatResult> {
+  const session = await loadSession();
+  if (!session?.activeHouseholdId) return { error: 'signInRequired' };
+
+  const id = z.uuid().safeParse(formData.get('id'));
+  if (!id.success) return { error: 'notFound' };
+
+  const householdId = session.activeHouseholdId;
+
+  const [removed] = await queryAsUser(session, (tx) =>
+    tx
+      .update(chatThreads)
+      .set({ deletedAt: new Date(), updatedAt: new Date() })
+      .where(
+        and(
+          eq(chatThreads.id, id.data),
+          eq(chatThreads.householdId, householdId),
+          isNull(chatThreads.deletedAt),
+        ),
+      )
+      .returning({ id: chatThreads.id }),
+  );
+
+  if (!removed) return { error: 'notFound' };
+
+  revalidatePath(`/${localeOf(formData)}/chat`);
+  return { ok: true };
+}
+
+/**
+ * What the assistant says when it will not answer.
+ *
+ * Written here, in the household's language, rather than surfaced as an error
+ * code — because it is stored as a message in the thread and has to read like
+ * one months later. The reason is always named: «over budget» and «I could not
+ * verify the figures» are different things and a person deserves to know which.
+ */
+function declineText(kind: string, locale: PromptLocale): string {
+  if (locale === 'en') {
+    if (kind === 'budget_exhausted') {
+      return 'I have used this month’s assistant budget. The figures on your screens are unaffected.';
+    }
+    if (kind === 'ungrounded_figures' || kind === 'malformed_output' || kind === 'refused') {
+      return 'I could not answer this without inventing a figure, so I did not answer it.';
+    }
+    return 'I could not reach the assistant just now. Every figure on your screens is still exact.';
+  }
+
+  if (kind === 'budget_exhausted') {
+    return 'Se acabó el presupuesto del asistente de este mes. Las cifras de tus pantallas no cambian.';
+  }
+  if (kind === 'ungrounded_figures' || kind === 'malformed_output' || kind === 'refused') {
+    return 'No pude responder sin inventar una cifra, así que no respondí.';
+  }
+  return 'No pude comunicarme con el asistente ahora. Todas las cifras de tus pantallas siguen siendo exactas.';
+}

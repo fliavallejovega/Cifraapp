@@ -372,7 +372,8 @@
         "error": "El asistente no respondió. El plan de arriba no depende de él."
       }
     },
-    "scopeNote": "El plan se calcula con las cuentas, obligaciones, deudas y metas que tienes registradas hoy. La reserva fiscal es una estimación a partir de la tasa que configuraste, no un cálculo del impuesto que debes."
+    "scopeNote": "El plan se calcula con las cuentas, obligaciones, deudas y metas que tienes registradas hoy. La reserva fiscal es una estimación a partir de la tasa que configuraste, no un cálculo del impuesto que debes.",
+    "historyLink": "Aceptar y seguir este plan"
   },
   "reports": {
     "title": "Estados",
@@ -856,7 +857,17 @@
       "descriptionRequired": "Escribe qué fue el gasto.",
       "splitInvalid": "Revisa las partes: cada una necesita un monto.",
       "splitDoesNotSum": "Las partes tienen que sumar exactamente el monto del movimiento.",
-      "importedCannotDelete": "Este movimiento vino de un estado de cuenta y no se borra. Puedes excluirlo para que no cuente."
+      "importedCannotDelete": "Este movimiento vino de un estado de cuenta y no se borra. Puedes excluirlo para que no cuente.",
+      "periodInvalid": "Elige un periodo.",
+      "explanationRequired": "Escribe por qué existe esta regla.",
+      "factInvalid": "Elige un hecho de la lista.",
+      "operatorInvalid": "Elige una comparación.",
+      "valueInvalid": "El valor no encaja con el tipo de ese hecho.",
+      "targetRequired": "Escribe a qué apunta la regla.",
+      "actionValueInvalid": "Revisa el valor de la acción.",
+      "ruleInvalid": "La regla no es válida. Revisa la condición y la acción.",
+      "nothingToAccept": "Todavía no hay un plan que aceptar.",
+      "alreadyStarted": "Ya empezó a procesarse y no se puede cancelar."
     }
   },
   "movements": {
@@ -1586,5 +1597,314 @@
       "movements": "{count} movimientos",
       "none": "sin movimientos"
     }
+  },
+  "budgets": {
+    "title": "Presupuestos",
+    "detail": "Cuánto quieres gastar en cada rubro. Con lo que ya llevas gastado y lo que falta pagar del mes.",
+    "summary": {
+      "planned": "Presupuestado",
+      "spent": "Gastado",
+      "remaining": "Queda",
+      "projected": "A este ritmo terminas en"
+    },
+    "list": {
+      "title": "Tus presupuestos",
+      "detail": "Un presupuesto mensual sin fecha de fin se recalcula solo cada mes."
+    },
+    "add": "Crear un presupuesto",
+    "addTitle": "Nuevo presupuesto",
+    "submitCreate": "Crear este presupuesto",
+    "submitUpdate": "Guardar los cambios",
+    "removeConfirm": "Se elimina el presupuesto y sus líneas. Tus movimientos no cambian.",
+    "empty": {
+      "title": "Todavía no tienes presupuesto.",
+      "body": "Podemos armarte uno con lo que gastas de verdad: la mediana de cada rubro en los últimos meses. Es una cifra que reconoces y con la que puedes discutir."
+    },
+    "form": {
+      "name": "Nombre",
+      "nameHint": "Por ejemplo, «Mes a mes».",
+      "period": "Periodo",
+      "starts": "Empieza",
+      "ends": "Termina",
+      "endsHint": "Déjalo vacío para que se renueve solo cada mes."
+    },
+    "periods": {
+      "monthly": "Mensual",
+      "weekly": "Semanal",
+      "annual": "Anual",
+      "sinking": "Fondo para algo puntual"
+    },
+    "suggest": "Armar uno con lo que gasto",
+    "suggestDetail": "Toma la mediana de cada rubro de los últimos seis meses. Nunca pisa una cifra que hayas puesto tú.",
+    "row": {
+      "lines": "{count} rubros",
+      "noLines": "sin rubros todavía",
+      "over": "Te pasaste por {amount}",
+      "pace": "A este ritmo te pasas"
+    }
+  },
+  "budget": {
+    "title": "Presupuesto",
+    "back": "Volver a presupuestos",
+    "notFound": {
+      "title": "Ese presupuesto no existe.",
+      "body": "Puede haberse eliminado, o el enlace es de otro hogar.",
+      "action": "Ver tus presupuestos"
+    },
+    "stats": {
+      "planned": "Presupuestado",
+      "spent": "Gastado",
+      "committed": "Falta pagar",
+      "committedDetail": "Compromisos que vencen dentro del periodo y aún no pagas.",
+      "remaining": "Queda",
+      "projected": "A este ritmo",
+      "projectedDetail": "Proyectado al cierre del periodo, con el gasto que llevas."
+    },
+    "pace": "Día {elapsed} de {total}",
+    "lines": {
+      "title": "Rubros",
+      "detail": "El monto que queda ya descuenta lo que aún tienes que pagar este periodo.",
+      "category": "Rubro",
+      "planned": "Presupuestado",
+      "spent": "Gastado",
+      "remaining": "Queda",
+      "projected": "A este ritmo",
+      "add": "Agregar un rubro",
+      "addTitle": "Nuevo rubro del presupuesto",
+      "save": "Guardar",
+      "remove": "Quitar",
+      "removeConfirm": "Se quita del presupuesto. Los movimientos no cambian.",
+      "empty": {
+        "title": "Este presupuesto no tiene rubros.",
+        "body": "Agrega el primero: mercado suele ser el que más se mueve."
+      },
+      "noCategory": "Sin rubro",
+      "over": "Pasado",
+      "willBeOver": "Va camino a pasarse"
+    },
+    "shape": {
+      "title": "Cómo se gastó el mes",
+      "detail": "Cada barra es un día. Sirve para ver si el gasto está parejo o se concentró."
+    },
+    "editTitle": "Ajustar este presupuesto"
+  },
+  "advice": {
+    "title": "Consejo del mes",
+    "detail": "Qué hacer con tu dinero este mes, en orden. Cada línea sale de una cifra que puedes ir a ver.",
+    "available": "Disponible para decidir",
+    "committed": "Ya comprometido",
+    "steps": {
+      "title": "En este orden",
+      "coverBuffer": "Te faltan {amount} para cubrir lo que ya está comprometido. Antes de cualquier otra cosa, este es el hueco a tapar.",
+      "payOverdue": "Tienes {count} compromiso(s) vencidos. Pagarlos primero es lo más barato que puedes hacer hoy.",
+      "attackDebt": "Manda {amount} a {name}. Es la deuda más cara que tienes, al {apr}% anual, y cada mes que pasa cuesta más.",
+      "fundGoal": "Manda {amount} a «{name}». No tienes deuda cara pendiente, así que este es el mejor destino.",
+      "trimBudget": "En «{budget}» vas camino a gastar {projected} contra {planned} presupuestados. Todavía hay mes para corregirlo.",
+      "nothingLeft": "Este mes no queda nada libre para repartir. No es un error: es lo que dicen tus cifras.",
+      "allClear": "No hay nada urgente. Lo que queda es tuyo para decidir."
+    },
+    "copilot": {
+      "title": "En palabras",
+      "detail": "Escrito sobre las mismas cifras de arriba. Si algo no cuadra, manda la cifra, no el párrafo.",
+      "unavailable": "El copiloto no está encendido en esta instalación. Las cifras de arriba son exactas igual: las calcula el motor, no el modelo.",
+      "budget": "Se acabó el presupuesto del asistente de este mes. Las cifras no cambian.",
+      "quality": "El asistente no pudo responder sin inventar una cifra, así que no respondió.",
+      "error": "No pudimos comunicarnos con el asistente. Las cifras siguen siendo exactas.",
+      "usedFacts": "Se basó en: {facts}"
+    },
+    "empty": {
+      "title": "Todavía no hay suficiente para aconsejarte.",
+      "body": "Registra una cuenta y lo que ya está comprometido. Con eso podemos decirte qué hacer con el próximo dólar."
+    },
+    "openPlan": "Ver el plan línea por línea"
+  },
+  "alerts": {
+    "title": "Alertas",
+    "detail": "Lo que va a salir mal si nada cambia. Cada una sale de tus propias cifras.",
+    "empty": {
+      "title": "Nada que avisarte.",
+      "body": "Cuando algo vaya camino a salir mal —un rubro que se dispara, un compromiso vencido, una tarjeta cerca del límite— te lo decimos aquí."
+    },
+    "dismiss": "Ya lo sé",
+    "dismissed": "{count} silenciadas este mes",
+    "severities": {
+      "critical": "Urgente",
+      "warning": "Atención",
+      "notice": "Para tener en cuenta"
+    },
+    "kinds": {
+      "bufferNegative": "Te faltan {amount} para cubrir lo que ya está comprometido este mes.",
+      "overdueCommitment": "«{name}» venció y sigue sin pagarse: {amount}.",
+      "budgetOverspent": "En «{budget}» te pasaste por {amount}.",
+      "budgetPace": "En «{budget}» vas camino a gastar {projected} contra {planned} presupuestados.",
+      "highUtilization": "«{name}» va por el {percent}% del cupo. Encima del 30% ya empieza a costarte.",
+      "goalLate": "«{name}» pasó su fecha y todavía faltan {amount}.",
+      "reviewBacklog": "Tienes {count} decisiones esperándote en «Por revisar».",
+      "uncategorized": "{count} movimientos sin rubro. Sin rubro no entran en ningún presupuesto.",
+      "categorySpike": "Gastaste {percent}% más en «{category}»: {amount} contra los {usual} de siempre."
+    },
+    "go": "Ver"
+  },
+  "debtSimulator": {
+    "title": "Simulador de deuda",
+    "detail": "Cuánto tardas y cuánto pagas de intereses, según la estrategia y lo que pongas cada mes.",
+    "form": {
+      "monthly": "¿Cuánto puedes pagar al mes?",
+      "monthlyHint": "Incluyendo los mínimos. Los tuyos suman {minimums}.",
+      "strategy": "Estrategia",
+      "submit": "Calcular"
+    },
+    "strategies": {
+      "avalanche": "Avalancha — primero la tasa más alta",
+      "snowball": "Bola de nieve — primero el saldo más chico",
+      "hybrid": "Mixta",
+      "custom": "Mi orden"
+    },
+    "result": {
+      "title": "Con ese pago",
+      "months": "{count} meses",
+      "freeOn": "Libre de deuda el {date}",
+      "interest": "Intereses totales",
+      "never": "Con ese monto la deuda no se acaba. No cubre ni los intereses.",
+      "belowMinimums": "Ese monto no alcanza para los mínimos. Necesitas al menos {required}.",
+      "noDebts": "No tienes deudas registradas. Nada que simular, que es la mejor noticia posible."
+    },
+    "compare": {
+      "title": "Avalancha contra bola de nieve",
+      "detail": "Con el mismo pago mensual. Avalancha te cuesta menos dinero; bola de nieve es la que más gente termina.",
+      "saves": "Avalancha te ahorra {amount} en intereses",
+      "sooner": "y termina {count} meses antes",
+      "same": "Con tus deudas de hoy, las dos estrategias dan el mismo resultado.",
+      "snowballSooner": "Bola de nieve termina {count} meses antes con esta combinación."
+    },
+    "order": {
+      "title": "En qué orden",
+      "detail": "Con la estrategia elegida, y por qué cada una va donde va."
+    },
+    "note": "Sobre el saldo y la tasa de hoy, sin compras nuevas. Si sigues usando la tarjeta, el resultado cambia."
+  },
+  "planHistory": {
+    "title": "Seguimiento del plan",
+    "detail": "Lo que decidiste, guardado como lo viste. Sin esto, «¿cumplí lo del mes pasado?» no tiene respuesta.",
+    "accept": "Aceptar este plan",
+    "accepted": "Plan guardado. Ahora es una decisión, no una sugerencia.",
+    "acceptDetail": "Se guarda tal como lo estás viendo. No se recalcula después.",
+    "empty": {
+      "title": "Todavía no has aceptado ningún plan.",
+      "body": "Cuando aceptes uno queda guardado con sus líneas, y el mes que viene puedes compararlo con lo que realmente pasó."
+    },
+    "list": {
+      "title": "Planes aceptados"
+    },
+    "on": "Del {date}",
+    "outcomes": {
+      "proposed": "Propuesto",
+      "viewed": "Visto",
+      "accepted": "Aceptado",
+      "modified": "Modificado",
+      "dismissed": "Descartado"
+    },
+    "columns": {
+      "line": "Línea",
+      "planned": "Planeado",
+      "actual": "Real"
+    },
+    "incoming": "Sobre {amount}",
+    "compliance": "Cumpliste {percent}% de lo que planeaste",
+    "complianceDetail": "Comparando lo asignado a cada deuda y meta contra lo que realmente se movió después.",
+    "notMeasurable": "Todavía no hay movimientos suficientes después de este plan para medirlo.",
+    "dismiss": "Descartar"
+  },
+  "rules": {
+    "title": "Tus reglas",
+    "detail": "«Cuando pase esto, haz aquello.» Se guardan como datos, nunca como código: una regla no puede tocar nada fuera de esta lista de hechos.",
+    "list": {
+      "title": "Reglas activas",
+      "detail": "Se evalúan cada vez que se arma el plan, en orden de prioridad."
+    },
+    "add": "Crear una regla",
+    "addTitle": "Nueva regla",
+    "submitCreate": "Crear esta regla",
+    "submitUpdate": "Guardar los cambios",
+    "removeConfirm": "Deja de evaluarse. Los planes que la usaron se conservan.",
+    "empty": {
+      "title": "Todavía no tienes reglas.",
+      "body": "Un ejemplo típico: «cuando la tarjeta pase del 30% del cupo, mándale el 20% de lo que sobre»."
+    },
+    "form": {
+      "name": "Nombre de la regla",
+      "nameHint": "Cómo la reconoces tú.",
+      "explanation": "Por qué existe",
+      "explanationHint": "Se muestra tal cual cuando la regla cambia un plan. Una regla que nadie puede explicar no se puede revisar.",
+      "fact": "Cuando",
+      "factHint": "Solo estos hechos. La lista es el límite de lo que una regla puede ver.",
+      "operator": "Sea",
+      "value": "Que",
+      "actionType": "Entonces",
+      "target": "Sobre",
+      "targetHint": "A qué apunta. Por ejemplo, «debt:visa» o «goal:emergencia».",
+      "actionValue": "Con",
+      "actionValueHint": "Un porcentaje, un monto, o la prioridad.",
+      "priority": "Prioridad",
+      "priorityHint": "Más bajo se evalúa primero.",
+      "from": "Desde",
+      "to": "Hasta"
+    },
+    "operators": {
+      "lt": "menor que",
+      "lte": "menor o igual que",
+      "gt": "mayor que",
+      "gte": "mayor o igual que",
+      "eq": "igual a",
+      "neq": "distinto de",
+      "contains": "contiene",
+      "in": "está entre"
+    },
+    "actions": {
+      "allocate_percentage": "asignar un porcentaje",
+      "allocate_amount": "asignar un monto",
+      "set_priority": "cambiar la prioridad"
+    },
+    "row": {
+      "priority": "prioridad {priority}",
+      "inactive": "Inactiva"
+    },
+    "factsNote": "Estos son todos los hechos que una regla puede consultar. Ampliar la lista es un cambio de código con revisión, no una fila en una tabla."
+  },
+  "chat": {
+    "title": "Pregúntale a tus finanzas",
+    "detail": "Sobre tus propias cifras. El asistente no consulta nada por su cuenta: recibe los datos y responde solo con ellos.",
+    "off": {
+      "title": "El copiloto no está encendido.",
+      "body": "Falta configurar el proveedor y su clave en esta instalación. Todo lo demás del producto funciona sin él: las cifras las calcula el motor, no el modelo."
+    },
+    "ask": "Tu pregunta",
+    "askHint": "Por ejemplo: «¿me alcanza para el viaje de julio?»",
+    "submit": "Preguntar",
+    "thinking": "Pensando…",
+    "newThread": "Empezar otra conversación",
+    "threads": {
+      "title": "Conversaciones",
+      "empty": "Todavía no has preguntado nada.",
+      "messages": "{count} mensajes"
+    },
+    "you": "Tú",
+    "assistant": "El asistente",
+    "grounding": {
+      "title": "Con qué cifras respondió",
+      "detail": "Lo que el asistente recibió. Sin esto, una respuesta de hace tres meses sería imposible de comprobar."
+    },
+    "ungrounded": "Hay cifras en esta respuesta que no pudimos verificar contra los datos: {figures}",
+    "remove": "Eliminar",
+    "removeConfirm": "Se elimina la conversación entera.",
+    "errors": {
+      "copilotOff": "El copiloto no está encendido en esta instalación.",
+      "questionRequired": "Escribe una pregunta.",
+      "createFailed": "No se pudo guardar la conversación.",
+      "signInRequired": "Tu sesión venció. Vuelve a entrar.",
+      "notFound": "Esa conversación ya no existe.",
+      "generic": "Algo falló. Vuelve a intentarlo."
+    },
+    "errorTitle": "No se pudo preguntar"
   }
 }

@@ -372,7 +372,8 @@
         "error": "The assistant did not answer. The plan above does not depend on it."
       }
     },
-    "scopeNote": "The plan is computed from the accounts, obligations, debts and goals you have recorded today. The tax reserve is an estimate from the rate you configured, not a calculation of tax owed."
+    "scopeNote": "The plan is computed from the accounts, obligations, debts and goals you have recorded today. The tax reserve is an estimate from the rate you configured, not a calculation of tax owed.",
+    "historyLink": "Accept and track this plan"
   },
   "reports": {
     "title": "Statements",
@@ -856,7 +857,17 @@
       "descriptionRequired": "Write what the expense was.",
       "splitInvalid": "Check the parts: each one needs an amount.",
       "splitDoesNotSum": "The parts have to add up to exactly the movement's amount.",
-      "importedCannotDelete": "This movement came from a statement and is not deleted. You can exclude it so it stops counting."
+      "importedCannotDelete": "This movement came from a statement and is not deleted. You can exclude it so it stops counting.",
+      "periodInvalid": "Choose a period.",
+      "explanationRequired": "Write why this rule exists.",
+      "factInvalid": "Choose a fact from the list.",
+      "operatorInvalid": "Choose a comparison.",
+      "valueInvalid": "The value does not match that fact's type.",
+      "targetRequired": "Write what the rule points at.",
+      "actionValueInvalid": "Check the action value.",
+      "ruleInvalid": "The rule is not valid. Check the condition and the action.",
+      "nothingToAccept": "There is no plan to accept yet.",
+      "alreadyStarted": "It already started processing and cannot be cancelled."
     }
   },
   "movements": {
@@ -1586,5 +1597,314 @@
       "movements": "{count} movements",
       "none": "no movements"
     }
+  },
+  "budgets": {
+    "title": "Budgets",
+    "detail": "How much you mean to spend on each category, against what you have spent and what is still to pay this month.",
+    "summary": {
+      "planned": "Planned",
+      "spent": "Spent",
+      "remaining": "Left",
+      "projected": "At this pace you end at"
+    },
+    "list": {
+      "title": "Your budgets",
+      "detail": "A monthly budget with no end date recomputes itself each month."
+    },
+    "add": "Create a budget",
+    "addTitle": "New budget",
+    "submitCreate": "Create this budget",
+    "submitUpdate": "Save the changes",
+    "removeConfirm": "The budget and its lines are removed. Your movements do not change.",
+    "empty": {
+      "title": "No budget yet.",
+      "body": "We can build one from what you actually spend: the median of each category over recent months. It is a figure you recognise, and can then argue with."
+    },
+    "form": {
+      "name": "Name",
+      "nameHint": "For example, «Month to month».",
+      "period": "Period",
+      "starts": "Starts",
+      "ends": "Ends",
+      "endsHint": "Leave it empty and it renews itself each month."
+    },
+    "periods": {
+      "monthly": "Monthly",
+      "weekly": "Weekly",
+      "annual": "Annual",
+      "sinking": "Fund for something specific"
+    },
+    "suggest": "Build one from what I spend",
+    "suggestDetail": "Takes the median of each category over the last six months. It never overwrites a figure you set.",
+    "row": {
+      "lines": "{count} categories",
+      "noLines": "no categories yet",
+      "over": "Over by {amount}",
+      "pace": "On pace to go over"
+    }
+  },
+  "budget": {
+    "title": "Budget",
+    "back": "Back to budgets",
+    "notFound": {
+      "title": "That budget does not exist.",
+      "body": "It may have been removed, or the link belongs to another household.",
+      "action": "See your budgets"
+    },
+    "stats": {
+      "planned": "Planned",
+      "spent": "Spent",
+      "committed": "Still to pay",
+      "committedDetail": "Commitments falling due inside the period that you have not paid.",
+      "remaining": "Left",
+      "projected": "At this pace",
+      "projectedDetail": "Projected to the end of the period, from the spending so far."
+    },
+    "pace": "Day {elapsed} of {total}",
+    "lines": {
+      "title": "Categories",
+      "detail": "The amount left already subtracts what you still have to pay this period.",
+      "category": "Category",
+      "planned": "Planned",
+      "spent": "Spent",
+      "remaining": "Left",
+      "projected": "At this pace",
+      "add": "Add a category",
+      "addTitle": "New budget line",
+      "save": "Save",
+      "remove": "Remove",
+      "removeConfirm": "It leaves the budget. Your movements do not change.",
+      "empty": {
+        "title": "This budget has no categories.",
+        "body": "Add the first one: groceries is usually the one that moves most."
+      },
+      "noCategory": "No category",
+      "over": "Over",
+      "willBeOver": "On pace to go over"
+    },
+    "shape": {
+      "title": "How the month was spent",
+      "detail": "Each bar is a day. It shows whether spending was even or bunched up."
+    },
+    "editTitle": "Adjust this budget"
+  },
+  "advice": {
+    "title": "This month's advice",
+    "detail": "What to do with your money this month, in order. Every line comes from a figure you can go and look at.",
+    "available": "Available to decide",
+    "committed": "Already committed",
+    "steps": {
+      "title": "In this order",
+      "coverBuffer": "You are {amount} short of covering what is already committed. Before anything else, this is the hole to fill.",
+      "payOverdue": "You have {count} overdue commitment(s). Paying them first is the cheapest thing you can do today.",
+      "attackDebt": "Send {amount} to {name}. It is the most expensive debt you have, at {apr}% a year, and every month costs more.",
+      "fundGoal": "Send {amount} to «{name}». You have no expensive debt outstanding, so this is the best destination.",
+      "trimBudget": "In «{budget}» you are on pace to spend {projected} against {planned} planned. There is still month left to fix it.",
+      "nothingLeft": "There is nothing free to allocate this month. That is not an error: it is what your figures say.",
+      "allClear": "Nothing is urgent. What is left is yours to decide."
+    },
+    "copilot": {
+      "title": "In words",
+      "detail": "Written on the same figures above. If something does not add up, trust the figure, not the paragraph.",
+      "unavailable": "The copilot is not switched on in this installation. The figures above are exact regardless: the engine computes them, not the model.",
+      "budget": "This month's assistant budget is spent. The figures are unaffected.",
+      "quality": "The assistant could not answer without inventing a figure, so it did not answer.",
+      "error": "We could not reach the assistant. The figures are still exact.",
+      "usedFacts": "It relied on: {facts}"
+    },
+    "empty": {
+      "title": "There is not enough yet to advise you.",
+      "body": "Record an account and what is already committed. With that we can tell you what the next dollar should do."
+    },
+    "openPlan": "See the plan line by line"
+  },
+  "alerts": {
+    "title": "Alerts",
+    "detail": "What will go wrong if nothing changes. Each one comes from your own figures.",
+    "empty": {
+      "title": "Nothing to tell you.",
+      "body": "When something is heading the wrong way — a category running hot, an overdue commitment, a card near its limit — we say so here."
+    },
+    "dismiss": "I know",
+    "dismissed": "{count} silenced this month",
+    "severities": {
+      "critical": "Urgent",
+      "warning": "Attention",
+      "notice": "Worth knowing"
+    },
+    "kinds": {
+      "bufferNegative": "You are {amount} short of covering what is already committed this month.",
+      "overdueCommitment": "«{name}» is past due and still unpaid: {amount}.",
+      "budgetOverspent": "In «{budget}» you are over by {amount}.",
+      "budgetPace": "In «{budget}» you are on pace to spend {projected} against {planned} planned.",
+      "highUtilization": "«{name}» is at {percent}% of its limit. Above 30% it starts to cost you.",
+      "goalLate": "«{name}» is past its date and {amount} is still missing.",
+      "reviewBacklog": "You have {count} decisions waiting under «To review».",
+      "uncategorized": "{count} movements with no category. Without one they enter no budget.",
+      "categorySpike": "You spent {percent}% more on «{category}»: {amount} against the usual {usual}."
+    },
+    "go": "Open"
+  },
+  "debtSimulator": {
+    "title": "Debt simulator",
+    "detail": "How long it takes and what it costs in interest, by strategy and by what you put in each month.",
+    "form": {
+      "monthly": "How much can you pay each month?",
+      "monthlyHint": "Minimums included. Yours add up to {minimums}.",
+      "strategy": "Strategy",
+      "submit": "Work it out"
+    },
+    "strategies": {
+      "avalanche": "Avalanche — highest rate first",
+      "snowball": "Snowball — smallest balance first",
+      "hybrid": "Hybrid",
+      "custom": "My own order"
+    },
+    "result": {
+      "title": "With that payment",
+      "months": "{count} months",
+      "freeOn": "Debt free on {date}",
+      "interest": "Total interest",
+      "never": "At that amount the debt never ends. It does not even cover the interest.",
+      "belowMinimums": "That amount does not cover the minimums. You need at least {required}.",
+      "noDebts": "You have no debts recorded. Nothing to simulate, which is the best possible news."
+    },
+    "compare": {
+      "title": "Avalanche against snowball",
+      "detail": "With the same monthly payment. Avalanche costs you less money; snowball is the one more people finish.",
+      "saves": "Avalanche saves you {amount} in interest",
+      "sooner": "and finishes {count} months sooner",
+      "same": "With today's debts, both strategies come out the same.",
+      "snowballSooner": "Snowball finishes {count} months sooner with this combination."
+    },
+    "order": {
+      "title": "In what order",
+      "detail": "Under the chosen strategy, and why each one sits where it does."
+    },
+    "note": "On today's balance and rate, with no new purchases. If you keep using the card, the result changes."
+  },
+  "planHistory": {
+    "title": "Plan tracking",
+    "detail": "What you decided, kept as you saw it. Without this, «did I do what I decided last month?» has no answer.",
+    "accept": "Accept this plan",
+    "accepted": "Plan saved. It is a decision now, not a suggestion.",
+    "acceptDetail": "Saved exactly as you are seeing it. It is not recomputed afterwards.",
+    "empty": {
+      "title": "You have not accepted a plan yet.",
+      "body": "When you accept one it is kept with its lines, and next month you can compare it against what actually happened."
+    },
+    "list": {
+      "title": "Accepted plans"
+    },
+    "on": "From {date}",
+    "outcomes": {
+      "proposed": "Proposed",
+      "viewed": "Viewed",
+      "accepted": "Accepted",
+      "modified": "Modified",
+      "dismissed": "Dismissed"
+    },
+    "columns": {
+      "line": "Line",
+      "planned": "Planned",
+      "actual": "Actual"
+    },
+    "incoming": "On {amount}",
+    "compliance": "You followed {percent}% of what you planned",
+    "complianceDetail": "Comparing what was allocated to each debt and goal against what actually moved afterwards.",
+    "notMeasurable": "There are not enough movements after this plan yet to measure it.",
+    "dismiss": "Dismiss"
+  },
+  "rules": {
+    "title": "Your rules",
+    "detail": "«When this happens, do that.» Stored as data, never as code: a rule cannot reach anything outside this list of facts.",
+    "list": {
+      "title": "Active rules",
+      "detail": "Evaluated every time the plan is built, in priority order."
+    },
+    "add": "Create a rule",
+    "addTitle": "New rule",
+    "submitCreate": "Create this rule",
+    "submitUpdate": "Save the changes",
+    "removeConfirm": "It stops being evaluated. Plans that used it are kept.",
+    "empty": {
+      "title": "No rules yet.",
+      "body": "A typical one: «when the card goes above 30% of its limit, send it 20% of what is left over»."
+    },
+    "form": {
+      "name": "Rule name",
+      "nameHint": "How you recognise it.",
+      "explanation": "Why it exists",
+      "explanationHint": "Shown verbatim when the rule changes a plan. A rule nobody can explain cannot be reviewed.",
+      "fact": "When",
+      "factHint": "These facts only. The list is the limit of what a rule can see.",
+      "operator": "Is",
+      "value": "This",
+      "actionType": "Then",
+      "target": "On",
+      "targetHint": "What it points at. For example, «debt:visa» or «goal:emergency».",
+      "actionValue": "With",
+      "actionValueHint": "A percentage, an amount, or the priority.",
+      "priority": "Priority",
+      "priorityHint": "Lower runs first.",
+      "from": "From",
+      "to": "Until"
+    },
+    "operators": {
+      "lt": "less than",
+      "lte": "at most",
+      "gt": "greater than",
+      "gte": "at least",
+      "eq": "equal to",
+      "neq": "not equal to",
+      "contains": "contains",
+      "in": "one of"
+    },
+    "actions": {
+      "allocate_percentage": "allocate a percentage",
+      "allocate_amount": "allocate an amount",
+      "set_priority": "change the priority"
+    },
+    "row": {
+      "priority": "priority {priority}",
+      "inactive": "Inactive"
+    },
+    "factsNote": "These are every fact a rule may consult. Widening the list is a code change with a review, not a row in a table."
+  },
+  "chat": {
+    "title": "Ask your finances",
+    "detail": "About your own figures. The assistant queries nothing on its own: it is handed the facts and answers only from them.",
+    "off": {
+      "title": "The copilot is not switched on.",
+      "body": "The provider and its key are not configured in this installation. Everything else works without it: the engine computes the figures, not the model."
+    },
+    "ask": "Your question",
+    "askHint": "For example: «can I afford the trip in July?»",
+    "submit": "Ask",
+    "thinking": "Thinking…",
+    "newThread": "Start another conversation",
+    "threads": {
+      "title": "Conversations",
+      "empty": "You have not asked anything yet.",
+      "messages": "{count} messages"
+    },
+    "you": "You",
+    "assistant": "The assistant",
+    "grounding": {
+      "title": "The figures it answered from",
+      "detail": "What the assistant was given. Without this, an answer from three months ago would be impossible to check."
+    },
+    "ungrounded": "This answer contains figures we could not verify against the data: {figures}",
+    "remove": "Remove",
+    "removeConfirm": "The whole conversation is removed.",
+    "errors": {
+      "copilotOff": "The copilot is not switched on in this installation.",
+      "questionRequired": "Write a question.",
+      "createFailed": "The conversation could not be saved.",
+      "signInRequired": "Your session expired. Sign in again.",
+      "notFound": "That conversation no longer exists.",
+      "generic": "Something failed. Try again."
+    },
+    "errorTitle": "Could not ask"
   }
 }

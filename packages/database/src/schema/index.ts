@@ -1,6 +1,7 @@
 export * from './accountant.js';
 export * from './administration.js';
 export * from './admin.js';
+export * from './advice.js';
 export * from './ai.js';
 export * from './allocation.js';
 export * from './app.js';

@@ -11,6 +11,7 @@ import {
   obligations,
   profiles,
   recurringSeries,
+  rules,
   transactions,
 } from '@app/database/schema';
 import { Money, type CurrencyCode, type PlainDate } from '@app/domain';
@@ -488,4 +489,97 @@ export async function loadGoalContributions(
   );
 
   return Money.fromDecimalString(row?.total ?? '0', currency);
+}
+
+export interface RuleView {
+  readonly id: string;
+  readonly name: string;
+  readonly explanation: string;
+  readonly priority: number;
+  readonly isActive: boolean;
+  readonly effectiveFrom: PlainDate | null;
+  readonly effectiveTo: PlainDate | null;
+  /** The stored condition, as the builder wrote it. */
+  readonly fact: string;
+  readonly operator: string;
+  readonly value: string;
+  readonly actionType: string;
+  readonly target: string;
+  readonly actionValue: string;
+}
+
+/**
+ * The household's rules, flattened back into the shape the builder edits.
+ *
+ * A stored rule is a condition tree and a list of actions, because the engine's
+ * language allows both. The builder writes one comparison and one action, which
+ * is what a household actually needs, and this reads a rule back only as far as
+ * that shape goes. A rule written by hand with a nested condition still runs —
+ * it simply cannot be round-tripped through the form, and the screen says so
+ * rather than silently flattening it.
+ */
+export async function loadRules(
+  session: Session,
+  householdId: string,
+): Promise<readonly RuleView[]> {
+  const rows = await queryAsUser(session, (tx) =>
+    tx
+      .select()
+      .from(rules)
+      .where(and(eq(rules.householdId, householdId), isNull(rules.deletedAt)))
+      .orderBy(rules.priority, rules.createdAt),
+  );
+
+  return rows.map((row) => {
+    const condition = row.conditions as {
+      type?: string;
+      fact?: string;
+      operator?: string;
+      value?: { kind?: string; amount?: string; value?: unknown; values?: unknown[] };
+    };
+
+    const actions = Array.isArray(row.actions) ? row.actions : [];
+    const action = (actions[0] ?? {}) as {
+      type?: string;
+      target?: string;
+      percent?: string;
+      amount?: string;
+      priority?: string;
+    };
+
+    return {
+      id: row.id,
+      name: row.name,
+      explanation: row.explanation,
+      priority: row.priority,
+      isActive: row.isActive,
+      effectiveFrom: (row.effectiveFrom as PlainDate | null) ?? null,
+      effectiveTo: (row.effectiveTo as PlainDate | null) ?? null,
+      fact: condition.fact ?? '',
+      operator: condition.operator ?? 'gte',
+      value: literalText(condition.value),
+      actionType: action.type ?? 'allocate_percentage',
+      target: action.target ?? '',
+      actionValue: action.percent ?? action.amount ?? action.priority ?? '',
+    };
+  });
+}
+
+/** A stored literal, back as the single line the form collects it on. */
+function literalText(value: unknown): string {
+  if (typeof value !== 'object' || value === null) return '';
+
+  const literal = value as { amount?: unknown; value?: unknown; values?: unknown[] };
+
+  if (typeof literal.amount === 'string') return literal.amount;
+  if (Array.isArray(literal.values)) return literal.values.map(scalarText).join(', ');
+
+  return scalarText(literal.value);
+}
+
+/** A stored scalar as a person typed it. Anything else is not a literal. */
+function scalarText(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  return '';
 }
