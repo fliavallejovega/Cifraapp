@@ -185,6 +185,20 @@ const setupInput = z.object({
          * point at them. Resolved below, once the inserts have returned.
          */
         deductedFromIncome: z.coerce.number().int().min(0).max(19).optional(),
+        /**
+         * What paying late costs, stated as one shape or the other.
+         *
+         * `lateFeeKind` decides which column the figure lands in. Sending a
+         * rate into the amount column would turn «5%» into «$5», which on a
+         * two-thousand-dollar rent is wrong by two orders of magnitude — so
+         * the shape travels with the number rather than being inferred.
+         */
+        lateFeeKind: z.enum(['none', 'amount', 'rate']).default('none'),
+        lateFee: optionalAmount,
+        lateFeeAfterDays: z.preprocess(
+          (value) => (value === '' || value === undefined || value === null ? undefined : value),
+          z.coerce.number().int().min(0).max(365).optional(),
+        ),
       }),
     )
     .max(40),
@@ -502,6 +516,16 @@ export async function completeSetup(
           // del sueldo» on a second pass clears it instead of leaving the old
           // answer in place.
           deductedFromSeriesId: deductedFrom,
+          // A fee with no figure is not a fee, and a figure with no shape is
+          // not a number anybody can use — so both have to be present, and the
+          // shape decides which of the two columns receives it. The other is
+          // set to null on purpose: the schema allows at most one, and a
+          // correction from «porcentaje» to «monto» has to clear the old one.
+          lateFeeAmount:
+            entry.lateFeeKind === 'amount' && entry.lateFee !== undefined ? entry.lateFee : null,
+          lateFeeRate:
+            entry.lateFeeKind === 'rate' && entry.lateFee !== undefined ? entry.lateFee : null,
+          lateFeeAfterDays: entry.lateFeeKind === 'none' ? null : (entry.lateFeeAfterDays ?? 0),
         };
         if (entry.id) {
           await tx

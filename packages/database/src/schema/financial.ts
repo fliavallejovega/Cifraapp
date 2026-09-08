@@ -346,6 +346,19 @@ export const obligations = appSchema.table(
      * must not delete the obligation — the debt survives the job.
      */
     deductedFromSeriesId: uuid('deducted_from_series_id'),
+    /**
+     * What paying this late costs, in whichever shape the contract states it.
+     *
+     * Two columns rather than one number and a unit, so a rate can never be
+     * read as an amount: «5%» silently becoming «$5» on a two-thousand-dollar
+     * rent is wrong by two orders of magnitude, in the direction that hurts.
+     * At most one is ever set, which the schema enforces. Both null is the
+     * ordinary case and means no penalty was stated — never that there is none.
+     */
+    lateFeeAmount: numeric('late_fee_amount', { precision: 19, scale: 4, mode: 'string' }),
+    lateFeeRate: numeric('late_fee_rate', { precision: 6, scale: 3, mode: 'string' }),
+    /** Days of grace after the due date. Zero is a real and common answer. */
+    lateFeeAfterDays: smallint('late_fee_after_days'),
     confidence: numeric('confidence', { precision: 4, scale: 3, mode: 'string' }),
     detectedBy: provenance('detected_by').notNull().default('user'),
     /** The pattern that generated this claim, when one did (Phase 7). */

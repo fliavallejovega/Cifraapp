@@ -139,6 +139,9 @@ export async function loadSetupAnswers(
           dueDate: obligations.dueDate,
           isEssential: obligations.isEssential,
           deductedFromSeriesId: obligations.deductedFromSeriesId,
+          lateFeeAmount: obligations.lateFeeAmount,
+          lateFeeRate: obligations.lateFeeRate,
+          lateFeeAfterDays: obligations.lateFeeAfterDays,
         })
         .from(obligations)
         .where(and(eq(obligations.householdId, householdId), isNull(obligations.deletedAt)))
@@ -238,6 +241,15 @@ export async function loadSetupAnswers(
           const at = incomeRows.findIndex((income) => income.id === row.deductedFromSeriesId);
           return row.deductedFromSeriesId && at >= 0 ? { deductedFromIncome: at } : {};
         })(),
+        // Read back as the shape it was answered in. Which column holds a
+        // figure is what says whether the contract charges a sum or a share.
+        lateFeeKind: row.lateFeeAmount
+          ? ('amount' as const)
+          : row.lateFeeRate
+            ? ('rate' as const)
+            : ('none' as const),
+        lateFee: trimAmount(row.lateFeeAmount ?? row.lateFeeRate ?? ''),
+        lateFeeAfterDays: row.lateFeeAfterDays === null ? '' : String(row.lateFeeAfterDays),
       })),
       debts: debtRows.map((row) => ({
         id: row.id,

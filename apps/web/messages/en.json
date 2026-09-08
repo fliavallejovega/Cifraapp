@@ -904,7 +904,9 @@
         "parent": "Parent",
         "sibling": "Sibling",
         "other": "Other"
-      }
+      },
+      "empty": "Nobody on the list yet. Add at least yourself: how many people the money has to reach changes everything we tell you afterwards.",
+      "addFirst": "Add the first person"
     },
     "income": {
       "title": "What comes in, and how often?",
@@ -915,7 +917,9 @@
       "approximate": "The amount is approximate",
       "approximateHint": "Tick it if it changes month to month. We will not use this figure as if it were fixed.",
       "add": "Add another income",
-      "next": "Continue to what you hold"
+      "next": "Continue to what you hold",
+      "empty": "No income yet. Add the first one — a salary, fees, rent you collect — or skip this step if nothing is coming in right now.",
+      "addFirst": "Add the first income"
     },
     "savings": {
       "title": "What do you have today?",
@@ -930,7 +934,16 @@
       "institutionHint": "Where the account is held. It is what lets us recognise your statements when you upload them.",
       "institutionNone": "Not applicable",
       "rate": "Annual interest it pays",
-      "rateHint": "As your statement reports it. Leave it blank if you do not know: we will not invent one."
+      "rateHint": "As your statement reports it. Leave it blank if you do not know: we will not invent one.",
+      "empty": "No accounts yet. Add the first one with today’s balance: it is the starting point the plan divides up.",
+      "totalTitle": "What you hold today",
+      "totalDetail": "The sum of what you just typed. We do not store it: it is here so you can see the figure your accounts make before moving on.",
+      "totalAccounts": "In accounts ({count})",
+      "totalHoldings": "In investments ({count})",
+      "totalOtherCurrency": "In {currency}, separately",
+      "totalLabel": "Total",
+      "totalUnpriced": "{count} still has no price. That value is not added in here yet.",
+      "addFirst": "Add the first account"
     },
     "commitments": {
       "title": "What do you have to pay every month?",
@@ -946,7 +959,18 @@
       "deductedFrom": "Is it taken out of a salary?",
       "deductedFromNone": "No, I pay it myself",
       "deductedFromHint": "If it comes off the payslip before you are paid, say so here. That way we know the money never reached you.",
-      "deductedFromChosenHint": "We take it off that salary, not off your balance. If the figure you entered under Income already has this deduction taken out, leave it as it is."
+      "deductedFromChosenHint": "We take it off that salary, not off your balance. If the figure you entered under Income already has this deduction taken out, leave it as it is.",
+      "empty": "No payments yet. Add the first one — rent, electricity, school — or skip this step if you have no fixed payments.",
+      "lateFee": "Is there a late fee?",
+      "lateFeeHint": "If paying it late costs more, say so here. It tells us which one is least worth delaying.",
+      "lateFeeNone": "No late fee",
+      "lateFeeAmount": "Yes, a fixed charge",
+      "lateFeeRate": "Yes, a percentage",
+      "lateFeeHowMuch": "How much they charge",
+      "lateFeeHowMuchRate": "What percentage",
+      "lateFeeAfter": "After how many days?",
+      "lateFeeAfterHint": "Days after the due date before the charge applies. If they charge from day one, put 0.",
+      "addFirst": "Add the first payment"
     },
     "debts": {
       "title": "Do you owe anything?",
@@ -965,7 +989,9 @@
       "holder": "Whose is it?",
       "holderHint": "Pick who in the household it belongs to. Leave it as is if it is shared.",
       "holderShared": "The household’s",
-      "available": "That leaves {amount} available on this card."
+      "available": "That leaves {amount} available on this card.",
+      "empty": "No debts yet. Add the first one — a card, a loan — or skip this step if you owe nothing.",
+      "addFirst": "Add the first debt"
     },
     "goals": {
       "title": "What is all this for?",
@@ -977,7 +1003,9 @@
       "dateHint": "Optional. With a date, the plan works out how much to set aside each month.",
       "add": "Add another goal",
       "buffer": "Minimum buffer",
-      "bufferHint": "The balance you never want to go below. The plan protects it before anything optional."
+      "bufferHint": "The balance you never want to go below. The plan protects it before anything optional.",
+      "empty": "No goals yet. Add the first one: without a goal the plan divides what is left over without knowing where it is going.",
+      "addFirst": "Add the first goal"
     },
     "frequency": {
       "weekly": "Every week",

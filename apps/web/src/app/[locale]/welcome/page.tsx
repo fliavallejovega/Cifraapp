@@ -53,6 +53,7 @@ export default async function WelcomePage({ params }: { params: Promise<{ locale
       <SetupQuestionnaire
         locale={locale}
         currencySymbol={getCurrency(currency).symbol}
+        currencyCode={currency}
         t={labels(rawOf(t))}
         institutions={answers.institutions}
         initial={answers}
@@ -204,6 +205,34 @@ function labels(read: (key: string) => string): Record<string, string> {
     'commitments.deductedFromNone',
     'commitments.deductedFromHint',
     'commitments.deductedFromChosenHint',
+    'household.empty',
+    'household.addFirst',
+    'income.addFirst',
+    'savings.addFirst',
+    'commitments.addFirst',
+    'debts.addFirst',
+    'goals.addFirst',
+    'income.empty',
+    'savings.empty',
+    'savings.totalTitle',
+    'savings.totalDetail',
+    'savings.totalAccounts',
+    'savings.totalHoldings',
+    'savings.totalOtherCurrency',
+    'savings.totalLabel',
+    'savings.totalUnpriced',
+    'commitments.empty',
+    'commitments.lateFee',
+    'commitments.lateFeeHint',
+    'commitments.lateFeeNone',
+    'commitments.lateFeeAmount',
+    'commitments.lateFeeRate',
+    'commitments.lateFeeHowMuch',
+    'commitments.lateFeeHowMuchRate',
+    'commitments.lateFeeAfter',
+    'commitments.lateFeeAfterHint',
+    'debts.empty',
+    'goals.empty',
     'commitments.add',
     'commitments.next',
     'debts.title',

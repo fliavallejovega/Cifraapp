@@ -904,7 +904,9 @@
         "parent": "Padre o madre",
         "sibling": "Hermano o hermana",
         "other": "Otra"
-      }
+      },
+      "empty": "Nadie en la lista todavía. Agrega al menos a ti: a cuánta gente tiene que alcanzar el dinero cambia todo lo que te vamos a decir después.",
+      "addFirst": "Agregar a la primera persona"
     },
     "income": {
       "title": "¿Qué entra, y cada cuánto?",
@@ -915,7 +917,9 @@
       "approximate": "El monto es aproximado",
       "approximateHint": "Márcalo si cambia de mes a mes. No usaremos esta cifra como si fuera fija.",
       "add": "Agregar otro ingreso",
-      "next": "Continuar a lo que ya tienes"
+      "next": "Continuar a lo que ya tienes",
+      "empty": "Ningún ingreso cargado. Agrega el primero —un sueldo, honorarios, un alquiler que cobras— o sáltate el paso si ahora mismo no entra nada.",
+      "addFirst": "Agregar el primer ingreso"
     },
     "savings": {
       "title": "¿Qué tienes hoy?",
@@ -930,7 +934,16 @@
       "institutionHint": "De dónde es la cuenta. Sirve para reconocer tus estados de cuenta cuando los subas.",
       "institutionNone": "No aplica",
       "rate": "Interés anual que paga",
-      "rateHint": "Como lo dice tu estado de cuenta. Si no lo sabes, déjalo vacío: no lo inventamos."
+      "rateHint": "Como lo dice tu estado de cuenta. Si no lo sabes, déjalo vacío: no lo inventamos.",
+      "empty": "Ninguna cuenta cargada. Agrega la primera con su saldo de hoy: es el punto de partida del que el plan reparte.",
+      "totalTitle": "Lo que tienen hoy",
+      "totalDetail": "La suma de lo que acabas de escribir. No la guardamos: es para que veas el número que forman tus cuentas antes de seguir.",
+      "totalAccounts": "En cuentas ({count})",
+      "totalHoldings": "En inversiones ({count})",
+      "totalOtherCurrency": "En {currency}, aparte",
+      "totalLabel": "Total",
+      "totalUnpriced": "Falta el precio de {count}. Ese valor todavía no está sumado aquí.",
+      "addFirst": "Agregar la primera cuenta"
     },
     "commitments": {
       "title": "¿Qué tienes que pagar todos los meses?",
@@ -946,7 +959,18 @@
       "deductedFrom": "¿Se descuenta de un sueldo?",
       "deductedFromNone": "No, lo pago yo",
       "deductedFromHint": "Si te lo descuentan de la planilla antes de cobrar, dilo aquí. Así sabemos que ese dinero nunca te llegó.",
-      "deductedFromChosenHint": "Lo restamos de ese sueldo, no de tu saldo. Si el monto que pusiste en Ingresos ya viene con este descuento hecho, déjalo así."
+      "deductedFromChosenHint": "Lo restamos de ese sueldo, no de tu saldo. Si el monto que pusiste en Ingresos ya viene con este descuento hecho, déjalo así.",
+      "empty": "Ningún pago cargado. Agrega el primero —alquiler, luz, colegio— o sáltate el paso si no tienes pagos fijos.",
+      "lateFee": "¿Cobra recargo por mora?",
+      "lateFeeHint": "Si pagarlo tarde cuesta más, dilo aquí. Nos ayuda a saber cuál conviene menos atrasar.",
+      "lateFeeNone": "No cobra recargo",
+      "lateFeeAmount": "Sí, un monto fijo",
+      "lateFeeRate": "Sí, un porcentaje",
+      "lateFeeHowMuch": "Cuánto cobran",
+      "lateFeeHowMuchRate": "Qué porcentaje",
+      "lateFeeAfter": "¿A los cuántos días?",
+      "lateFeeAfterHint": "Días después del vencimiento antes de que apliquen el recargo. Si cobran desde el primer día, pon 0.",
+      "addFirst": "Agregar el primer pago"
     },
     "debts": {
       "title": "¿Debes algo?",
@@ -965,7 +989,9 @@
       "holder": "¿De quién es?",
       "holderHint": "Elige a quién de la casa pertenece. Si es compartida, déjalo así.",
       "holderShared": "Del hogar",
-      "available": "Te quedarían {amount} disponibles en esta tarjeta."
+      "available": "Te quedarían {amount} disponibles en esta tarjeta.",
+      "empty": "Ninguna deuda cargada. Agrega la primera —una tarjeta, un préstamo— o sáltate el paso si no debes nada.",
+      "addFirst": "Agregar la primera deuda"
     },
     "goals": {
       "title": "¿Para qué es todo esto?",
@@ -977,7 +1003,9 @@
       "dateHint": "Opcional. Con fecha, el plan calcula cuánto apartar al mes.",
       "add": "Agregar otra meta",
       "buffer": "Colchón mínimo",
-      "bufferHint": "El saldo por debajo del cual no quieres bajar nunca. El plan lo protege antes que cualquier gasto opcional."
+      "bufferHint": "El saldo por debajo del cual no quieres bajar nunca. El plan lo protege antes que cualquier gasto opcional.",
+      "empty": "Ninguna meta cargada. Agrega la primera: sin una meta el plan reparte lo que sobra sin saber hacia dónde.",
+      "addFirst": "Agregar la primera meta"
     },
     "frequency": {
       "weekly": "Cada semana",

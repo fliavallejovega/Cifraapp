@@ -89,6 +89,17 @@ interface CommitmentRow {
    * point at them.
    */
   deductedFromIncome?: number | undefined;
+  /**
+   * What paying late costs, and how late «late» is.
+   *
+   * The shape is answered separately from the figure because a rate and an
+   * amount are not the same kind of number: «5» meaning five percent and «5»
+   * meaning five dollars differ by two orders of magnitude on a rent, and
+   * nothing about the digits says which was meant.
+   */
+  lateFeeKind?: 'none' | 'amount' | 'rate';
+  lateFee?: string;
+  lateFeeAfterDays?: string;
 }
 interface DebtRow {
   id?: string;
@@ -145,6 +156,14 @@ export interface SetupInitial {
 export interface SetupQuestionnaireProps {
   readonly locale: string;
   readonly currencySymbol: string;
+  /**
+   * The household's currency code, not just its symbol.
+   *
+   * The symbol cannot answer the question the total has to ask — «is this
+   * holding quoted in our money?» — and guessing from the symbol would add
+   * dollars to balboas, which this system refuses to do anywhere else.
+   */
+  readonly currencyCode: string;
   /** Every string on the screen, resolved on the server. */
   readonly t: Record<string, string>;
   /** The banks of Panama, from `app.institutions`. Names only — a rate is not a fact this system has. */
@@ -161,6 +180,7 @@ export interface SetupQuestionnaireProps {
 export function SetupQuestionnaire({
   locale,
   currencySymbol,
+  currencyCode,
   t,
   institutions,
   initial,
@@ -213,7 +233,25 @@ export function SetupQuestionnaire({
     .filter((income) => income.name !== '');
 
   const [commitments, setCommitments] = useState<CommitmentRow[]>(
-    start(initial?.commitments, { name: '', amount: '', dueDay: '1', isEssential: true }),
+    // Normalised on the way in, not defaulted at every use site. A row read
+    // back from the database predates these fields, so `lateFeeKind` arrived
+    // as `undefined` — and `undefined !== 'none'` is true, which put «¿a los
+    // cuántos días?» on screen for a commitment that charges no late fee at
+    // all. One shape for every row is what stops that class of bug.
+    start(initial?.commitments, {
+      name: '',
+      amount: '',
+      dueDay: '1',
+      isEssential: true,
+      lateFeeKind: 'none',
+      lateFee: '',
+      lateFeeAfterDays: '',
+    }).map((row) => ({
+      lateFeeKind: 'none' as const,
+      lateFee: '',
+      lateFeeAfterDays: '',
+      ...row,
+    })),
   );
   const [debtRows, setDebtRows] = useState<DebtRow[]>(
     start(initial?.debts, {
@@ -395,6 +433,8 @@ export function SetupQuestionnaire({
           rows={people}
           addLabel={copy('household.add')}
           removeLabel={copy('remove')}
+          addFirstLabel={copy('household.addFirst')}
+          emptyHint={copy('household.empty')}
           onAdd={() => {
             setPeople([...people, { name: '', relationship: 'child', isDependent: true }]);
           }}
@@ -468,6 +508,8 @@ export function SetupQuestionnaire({
           rows={incomes}
           addLabel={copy('income.add')}
           removeLabel={copy('remove')}
+          addFirstLabel={copy('income.addFirst')}
+          emptyHint={copy('income.empty')}
           onAdd={() => {
             setIncomes([
               ...incomes,
@@ -546,6 +588,8 @@ export function SetupQuestionnaire({
             rows={accountRows}
             addLabel={copy('savings.add')}
             removeLabel={copy('remove')}
+            addFirstLabel={copy('savings.addFirst')}
+            emptyHint={copy('savings.empty')}
             onAdd={() => {
               setAccountRows([
                 ...accountRows,
@@ -668,6 +712,14 @@ export function SetupQuestionnaire({
             people={namedPeople.map((person) => person.name)}
             copy={copy}
           />
+
+          <FamilyFunds
+            accounts={accountRows}
+            holdings={holdingRows}
+            currencySymbol={currencySymbol}
+            currencyCode={currencyCode}
+            copy={copy}
+          />
         </div>
       )}
 
@@ -676,10 +728,20 @@ export function SetupQuestionnaire({
           rows={commitments}
           addLabel={copy('commitments.add')}
           removeLabel={copy('remove')}
+          addFirstLabel={copy('commitments.addFirst')}
+          emptyHint={copy('commitments.empty')}
           onAdd={() => {
             setCommitments([
               ...commitments,
-              { name: '', amount: '', dueDay: '1', isEssential: true },
+              {
+                name: '',
+                amount: '',
+                dueDay: '1',
+                isEssential: true,
+                lateFeeKind: 'none',
+                lateFee: '',
+                lateFeeAfterDays: '',
+              },
             ]);
           }}
           onRemove={(at) => {
@@ -758,6 +820,103 @@ export function SetupQuestionnaire({
                 </Field>
               )}
 
+              <Field
+                label={copy('commitments.lateFee')}
+                hint={copy('commitments.lateFeeHint')}
+                {...(row.lateFeeKind === 'none' ? { className: 'sm:col-span-2' } : {})}
+              >
+                {({ id, describedBy }) => (
+                  <Select
+                    id={id}
+                    aria-describedby={describedBy}
+                    value={row.lateFeeKind ?? 'none'}
+                    onChange={(event) => {
+                      const kind = event.target.value as 'none' | 'amount' | 'rate';
+                      setCommitments(
+                        patch(commitments, at, {
+                          lateFeeKind: kind,
+                          // The figure is cleared on *every* change of shape,
+                          // not only on «no cobra recargo». Going from «5%» to
+                          // «un monto fijo» left the 5 sitting there and it
+                          // silently became five dollars — the exact mistake
+                          // the two separate columns exist to prevent, walked
+                          // straight back in through the form. The days of
+                          // grace survive, because they mean the same thing
+                          // whichever shape the charge takes.
+                          lateFee: '',
+                          ...(kind === 'none' ? { lateFeeAfterDays: '' } : {}),
+                        }),
+                      );
+                    }}
+                  >
+                    <option value="none">{copy('commitments.lateFeeNone')}</option>
+                    <option value="amount">{copy('commitments.lateFeeAmount')}</option>
+                    <option value="rate">{copy('commitments.lateFeeRate')}</option>
+                  </Select>
+                )}
+              </Field>
+
+              {row.lateFeeKind === 'amount' && (
+                <MoneyField
+                  label={copy('commitments.lateFeeHowMuch')}
+                  symbol={currencySymbol}
+                  value={row.lateFee ?? ''}
+                  onChange={(value) => {
+                    setCommitments(patch(commitments, at, { lateFee: value }));
+                  }}
+                />
+              )}
+
+              {row.lateFeeKind === 'rate' && (
+                <Field label={copy('commitments.lateFeeHowMuchRate')}>
+                  {({ id }) => (
+                    <div className="relative">
+                      <Input
+                        id={id}
+                        numeric
+                        inputMode="decimal"
+                        placeholder="0.0"
+                        className="pr-8"
+                        value={row.lateFee ?? ''}
+                        onChange={(event) => {
+                          setCommitments(patch(commitments, at, { lateFee: event.target.value }));
+                        }}
+                      />
+                      <span
+                        aria-hidden
+                        className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-[color:var(--color-ink-tertiary)]"
+                      >
+                        %
+                      </span>
+                    </div>
+                  )}
+                </Field>
+              )}
+
+              {row.lateFeeKind !== 'none' && (
+                <Field
+                  label={copy('commitments.lateFeeAfter')}
+                  hint={copy('commitments.lateFeeAfterHint')}
+                  className="sm:col-span-2"
+                >
+                  {({ id, describedBy }) => (
+                    <Input
+                      id={id}
+                      numeric
+                      inputMode="numeric"
+                      placeholder="0"
+                      value={row.lateFeeAfterDays ?? ''}
+                      aria-describedby={describedBy}
+                      onChange={(event) => {
+                        setCommitments(
+                          patch(commitments, at, { lateFeeAfterDays: event.target.value }),
+                        );
+                      }}
+                    />
+                  )}
+                </Field>
+              )}
+
               <Check
                 label={copy('commitments.essential')}
                 hint={copy('commitments.essentialHint')}
@@ -776,6 +935,8 @@ export function SetupQuestionnaire({
           rows={debtRows}
           addLabel={copy('debts.add')}
           removeLabel={copy('remove')}
+          addFirstLabel={copy('debts.addFirst')}
+          emptyHint={copy('debts.empty')}
           onAdd={() => {
             setDebtRows([
               ...debtRows,
@@ -894,6 +1055,8 @@ export function SetupQuestionnaire({
             rows={goalRows}
             addLabel={copy('goals.add')}
             removeLabel={copy('remove')}
+            addFirstLabel={copy('goals.addFirst')}
+            emptyHint={copy('goals.empty')}
             onAdd={() => {
               setGoalRows([...goalRows, { name: '', targetAmount: '', targetDate: '' }]);
             }}
@@ -1122,20 +1285,32 @@ function Progress({
 function RowEditor<T>({
   rows,
   addLabel,
+  addFirstLabel,
   removeLabel,
+  emptyHint,
   onAdd,
   onRemove,
   render,
 }: {
   readonly rows: readonly T[];
   readonly addLabel: string;
+  /** «Agregar la primera», for when there is nothing to add another to. */
+  readonly addFirstLabel: string;
   readonly removeLabel: string;
+  /** What this step will hold, shown when it holds nothing yet. */
+  readonly emptyHint: string;
   readonly onAdd: () => void;
   readonly onRemove: (index: number) => void;
   readonly render: (row: T, index: number) => ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-6">
+      {rows.length === 0 && (
+        <p className="max-w-[56ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]">
+          {emptyHint}
+        </p>
+      )}
+
       {rows.map((row, index) => (
         <div
           // Rows are positional and have no identity of their own until they
@@ -1144,25 +1319,32 @@ function RowEditor<T>({
           className="grid gap-4 border-t border-[color:var(--color-rule)] pt-6 first:border-t-0 first:pt-0 sm:grid-cols-2"
         >
           {render(row, index)}
-          {rows.length > 1 && (
-            <div className="sm:col-span-2">
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  onRemove(index);
-                }}
-              >
-                {removeLabel}
-              </Button>
-            </div>
-          )}
+          {/*
+            Always offered, including on the last row.
+            It used to appear only from the second row on, which meant an
+            account added by mistake could not be taken back out: the way to
+            reach one row is to remove the other, and then the wrong one is the
+            only one left and it is stuck. Removing everything leaves the step
+            empty, which is a real answer — the same one «no tengo de esto»
+            gives — and the line above says what goes there.
+          */}
+          <div className="sm:col-span-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                onRemove(index);
+              }}
+            >
+              {removeLabel}
+            </Button>
+          </div>
         </div>
       ))}
 
       <Button type="button" variant="secondary" size="sm" className="self-start" onClick={onAdd}>
-        {addLabel}
+        {rows.length === 0 ? addFirstLabel : addLabel}
       </Button>
     </div>
   );
@@ -1239,6 +1421,119 @@ function Check({
         <span className="mt-0.5 block text-xs text-[color:var(--color-ink-secondary)]">{hint}</span>
       </span>
     </label>
+  );
+}
+
+/**
+ * What the household holds today, added up in front of them.
+ *
+ * The step asks for balances one box at a time and then moves on, so nobody
+ * ever saw the figure those boxes make — which is the only figure the step is
+ * actually about. It is computed here in the browser, from what was just
+ * typed, and stored nowhere: the position screen does this arithmetic properly
+ * afterwards, from the saved rows, with the product's own exact money. This is
+ * the confirmation that the numbers being typed mean what the person thinks
+ * they mean, and it follows the same rule as the other read-only sums in this
+ * form.
+ *
+ * Two things it refuses to do. It does not add across currencies — a holding
+ * quoted in balboas and an account in dollars are reported on their own lines,
+ * because the peg is a fact about Panama and not a property of addition. And
+ * it does not quietly skip a holding nobody could price: it says how many are
+ * still without one, so a total that is missing something says so.
+ */
+function FamilyFunds({
+  accounts,
+  holdings,
+  currencySymbol,
+  currencyCode,
+  copy,
+}: {
+  readonly accounts: readonly AccountRow[];
+  readonly holdings: readonly HoldingRow[];
+  readonly currencySymbol: string;
+  readonly currencyCode: string;
+  readonly copy: (key: string) => string;
+}) {
+  const asNumber = (value: string) => Number(value.replace(/[^\d.]/g, '')) || 0;
+
+  const counted = accounts.filter((row) => row.balance.trim() !== '');
+  const inAccounts = counted.reduce((sum, row) => sum + asNumber(row.balance), 0);
+
+  const priced = holdings.filter((row) => row.status === 'ok' && row.quoted);
+  const unpriced = holdings.filter(
+    (row) => row.symbol.trim() !== '' && (row.status !== 'ok' || !row.quoted),
+  );
+
+  // Grouped by the currency the market quoted them in, never merged into the
+  // household's. Anything not in the household's currency gets its own line.
+  const byCurrency = new Map<string, number>();
+  for (const row of priced) {
+    const quoted = row.quoted;
+    if (!quoted) continue;
+    const value = asNumber(row.quantity) * Number(quoted.price);
+    if (!Number.isFinite(value)) continue;
+    byCurrency.set(quoted.currency, (byCurrency.get(quoted.currency) ?? 0) + value);
+  }
+
+  const inHouseholdCurrency = byCurrency.get(currencyCode) ?? 0;
+  const elsewhere = [...byCurrency.entries()].filter(([code]) => code !== currencyCode);
+
+  if (counted.length === 0 && priced.length === 0 && unpriced.length === 0) return null;
+
+  const money = (value: number) =>
+    `${currencySymbol}${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  const line = (label: string, value: string, muted = false) => (
+    <div className="flex items-baseline justify-between gap-4 py-1.5">
+      <span className={muted ? 'text-[color:var(--color-ink-tertiary)]' : ''}>{label}</span>
+      <span className={`tabular ${muted ? 'text-[color:var(--color-ink-tertiary)]' : ''}`}>
+        {value}
+      </span>
+    </div>
+  );
+
+  return (
+    <section className="border-t border-[color:var(--color-rule)] pt-8">
+      <h3 className="text-base font-medium">{copy('savings.totalTitle')}</h3>
+      <p className="mt-1 max-w-[68ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]">
+        {copy('savings.totalDetail')}
+      </p>
+
+      <div className="mt-4 max-w-[46ch] text-sm text-[color:var(--color-ink-secondary)]">
+        {counted.length > 0 &&
+          line(
+            copy('savings.totalAccounts').replace('{count}', String(counted.length)),
+            money(inAccounts),
+          )}
+
+        {priced.length > 0 &&
+          inHouseholdCurrency > 0 &&
+          line(
+            copy('savings.totalHoldings').replace('{count}', String(priced.length)),
+            money(inHouseholdCurrency),
+          )}
+
+        {elsewhere.map(([code, value]) =>
+          line(
+            copy('savings.totalOtherCurrency').replace('{currency}', code),
+            `${code} ${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            true,
+          ),
+        )}
+
+        <div className="mt-2 flex items-baseline justify-between gap-4 border-t border-[color:var(--color-rule)] pt-3 text-base text-[color:var(--color-ink)]">
+          <span className="font-medium">{copy('savings.totalLabel')}</span>
+          <span className="tabular font-medium">{money(inAccounts + inHouseholdCurrency)}</span>
+        </div>
+
+        {unpriced.length > 0 && (
+          <p className="mt-3 text-xs text-[color:var(--color-caution)]">
+            {copy('savings.totalUnpriced').replace('{count}', String(unpriced.length))}
+          </p>
+        )}
+      </div>
+    </section>
   );
 }
 
