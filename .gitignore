@@ -77,3 +77,6 @@ npm-debug.log*
 pnpm-debug.log*
 .vercel
 .env*
+
+# Pime Git preflight state — derived, regenerated on every run.
+.pime/preflight.json

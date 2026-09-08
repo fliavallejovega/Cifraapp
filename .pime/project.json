@@ -1,0 +1,17 @@
+{
+  "$comment": "The account pairing this repository must never drift from. Pime Git's preflight reads it and refuses a crossed account: a repo mapped to one GitHub profile whose Vercel token authenticates as another is how a deploy lands in somebody else's project. Committed on purpose — the declaration is a fact about the project, not a secret. The tokens that satisfy it live in .claude/settings.local.json, which is not committed.",
+  "project": "cifraapp",
+  "pime_git_profile": "fliavallejovega",
+  "github_repo": "fliavallejovega/Cifraapp",
+  "vercel_account": "fliavallejovega-5937",
+  "vercel_team": "fliavallejovega-5937s-projects",
+  "vercel_projects": {
+    "web": "cifraapp",
+    "admin": "cifraapp-admin"
+  },
+  "supabase_ref": "sdeeoccvwcvgsmgfsuoz",
+  "production": {
+    "web": "https://norte-web-three.vercel.app",
+    "admin": "https://cifraapp-admin.vercel.app"
+  }
+}

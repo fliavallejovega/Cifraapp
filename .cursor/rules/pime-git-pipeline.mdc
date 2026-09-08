@@ -47,6 +47,22 @@ antes de subir. **Todo commit y todo deploy a producción** pasa por aquí.
 5. **No** usar otra cuenta GitHub para este repo.
 6. `npx vercel deploy --prod --yes` solo si el usuario lo pide explícito o Git deploy falla.
 
+## Preflight (antes de desplegar)
+
+```bash
+pnpm preflight        # git, toolchain, copy, Vercel y base de datos
+pnpm deploy           # preflight y luego ambas aplicaciones
+pnpm deploy admin     # solo la consola (no está vinculada a GitHub)
+```
+
+`pnpm deploy` pasa el token y el scope de este proyecto de forma explícita, así
+que da igual en qué cuenta esté logueado el CLI de Vercel en el Mac.
+
+- Tokens: bloque `env` de `.claude/settings.local.json` (ignorado, nunca se sube).
+- Declaración: `.pime/project.json` (sí se versiona) — perfil, repo, cuenta y
+  equipo de Vercel, proyectos y ref de Supabase. El preflight de Pime Git la
+  compara contra la realidad y falla si hay **cuenta cruzada**.
+
 ## Si verify falla
 
 - Sin mapeo → `pime-git map "<ruta del repo>" fliavallejovega`

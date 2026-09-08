@@ -55,6 +55,41 @@ pime-git push                             # → GitHub → Vercel production
 Before the first commit in a session: `pime-git verify`. If it fails:
 `pime-git apply` and retry. Mapping: `pime-git map "<repo path>" fliavallejovega`.
 
+## Preflight and deploy
+
+Before shipping anything, and after any session where the machine's state may
+have changed:
+
+```bash
+pnpm preflight          # git, toolchain, copy, Vercel and database
+pnpm preflight:quick    # the offline half, for a fast loop
+pnpm deploy             # preflight, then both applications
+pnpm deploy admin       # the console only
+pnpm deploy web         # the product only
+```
+
+`pnpm deploy` never depends on which account the Vercel CLI happens to be
+logged into. The CLI keeps one global session and signing into another account
+anywhere on this machine silently redirects deploys — the failure reads «Not
+authorized», which sounds like a project permission problem rather than a
+terminal one. Every command passes this project's own token and scope
+explicitly.
+
+**Where the tokens live.** The `env` block of `.claude/settings.local.json`,
+which is globally ignored and never committed. That is also where Pime Git's
+own `preflight.mjs` looks, so there is one location and a rotated token is
+rotated once.
+
+**What the repository declares.** `.pime/project.json` is committed and states
+the pairing: the Pime Git profile, the GitHub repository, the Vercel account
+and team, the two Vercel projects, and the Supabase ref. Pime Git's preflight
+compares the declaration against reality and fails on a crossed account — a
+repo mapped to one GitHub profile whose Vercel token authenticates as another
+is how a deploy lands in somebody else's project.
+
+Run the funnel's own check with the Pime Git portal (`npm run pime-git:web`),
+or through `runPreflight` in `~/Documents/Websites/Git-PIME/preflight.mjs`.
+
 **Manual Vercel CLI** (`npx vercel deploy --prod --yes`) is only for when the
 user explicitly asks or Git deploy is broken — normal path is `pime-git push`.
 
