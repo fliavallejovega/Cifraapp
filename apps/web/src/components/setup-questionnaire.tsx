@@ -1,9 +1,17 @@
 'use client';
 
 import { Button, Field, Input, Problem, Select, Status } from '@app/ui';
-import { useActionState, useEffect, useState, type ReactNode } from 'react';
+import {
+  useActionState,
+  useEffect,
+  useState,
+  type Dispatch,
+  type ReactNode,
+  type SetStateAction,
+} from 'react';
 
 import { LANDING_DRAFT_KEY, type LandingDraft } from '@/components/marketing/try-it';
+import { lookupSymbol } from '@/server/holdings-actions';
 import { completeSetup, type SetupResult } from '@/server/onboarding-actions';
 
 /**
@@ -42,6 +50,28 @@ interface AccountRow {
   name: string;
   accountType: 'checking' | 'savings' | 'cash' | 'digital_wallet';
   balance: string;
+  /** The institution, by name, from the seeded list. Blank for cash. */
+  institution: string;
+  /** What it pays, annually, as a percentage. Asked, never assumed. */
+  interestRate: string;
+}
+
+/**
+ * Something owned that is not cash: shares, funds, a coin.
+ *
+ * The quantity is the household's to state. The price is looked up while they
+ * type and belongs to whoever quoted it — which is why the symbol, not the
+ * value, is what gets stored here.
+ */
+interface HoldingRow {
+  id?: string;
+  symbol: string;
+  label: string;
+  quantity: string;
+  personName: string;
+  /** Filled in by the lookup, shown back, never sent as an answer. */
+  quoted?: { name: string; price: string; currency: string; kind: string } | undefined;
+  status?: 'idle' | 'checking' | 'ok' | 'unknown' | 'unavailable' | undefined;
 }
 interface CommitmentRow {
   id?: string;
@@ -98,6 +128,7 @@ export interface SetupInitial {
   readonly commitments: readonly CommitmentRow[];
   readonly debts: readonly DebtRow[];
   readonly goals: readonly GoalRow[];
+  readonly holdings: readonly HoldingRow[];
   readonly bufferMinimum: string;
 }
 
@@ -106,6 +137,8 @@ export interface SetupQuestionnaireProps {
   readonly currencySymbol: string;
   /** Every string on the screen, resolved on the server. */
   readonly t: Record<string, string>;
+  /** The banks of Panama, from `app.institutions`. Names only — a rate is not a fact this system has. */
+  readonly institutions: readonly string[];
   readonly initial?: SetupInitial;
   /**
    * Answered before. The questions do not change — the words around them do,
@@ -119,6 +152,7 @@ export function SetupQuestionnaire({
   locale,
   currencySymbol,
   t,
+  institutions,
   initial,
   review = false,
 }: SetupQuestionnaireProps) {
@@ -148,7 +182,13 @@ export function SetupQuestionnaire({
     start(initial?.incomes, { name: '', amount: '', frequency: 'monthly', isApproximate: false }),
   );
   const [accountRows, setAccountRows] = useState<AccountRow[]>(
-    start(initial?.accounts, { name: '', accountType: 'checking', balance: '' }),
+    start(initial?.accounts, {
+      name: '',
+      accountType: 'checking',
+      balance: '',
+      institution: '',
+      interestRate: '',
+    }),
   );
   const [commitments, setCommitments] = useState<CommitmentRow[]>(
     start(initial?.commitments, { name: '', amount: '', dueDay: '1', isEssential: true }),
@@ -162,6 +202,11 @@ export function SetupQuestionnaire({
       creditLimit: '',
       personName: '',
     }),
+  );
+  const [holdingRows, setHoldingRows] = useState<HoldingRow[]>(
+    initial?.holdings && initial.holdings.length > 0
+      ? initial.holdings.map((row) => ({ ...row }))
+      : [],
   );
   const [goalRows, setGoalRows] = useState<GoalRow[]>(
     start(initial?.goals, { name: '', targetAmount: '', targetDate: '' }),
@@ -186,7 +231,13 @@ export function SetupQuestionnaire({
 
       if (has(draft.balance)) {
         setAccountRows([
-          { name: copy('draft.account'), accountType: 'checking', balance: draft.balance },
+          {
+            name: copy('draft.account'),
+            accountType: 'checking',
+            balance: draft.balance,
+            institution: '',
+            interestRate: '',
+          },
         ]);
       }
       if (has(draft.buffer)) setBufferMinimum(draft.buffer);
@@ -245,6 +296,25 @@ export function SetupQuestionnaire({
         row.minimumPayment.trim() !== '',
     ),
     goals: goalRows.filter((row) => row.name.trim() !== '' && row.targetAmount.trim() !== ''),
+    // Only what was found and counted. A symbol nobody could price is not a
+    // holding yet, and storing it would put a row in the portfolio that no
+    // screen can value.
+    holdings: holdingRows
+      .filter(
+        (row) => row.symbol.trim() !== '' && row.quantity.trim() !== '' && row.status === 'ok',
+      )
+      .map((row) => ({
+        ...(row.id ? { id: row.id } : {}),
+        symbol: row.symbol.trim().toUpperCase(),
+        label:
+          row.label.trim() !== ''
+            ? row.label.trim()
+            : (row.quoted?.name ?? row.symbol.trim().toUpperCase()),
+        quantity: row.quantity.trim(),
+        kind: row.quoted?.kind ?? 'other',
+        currency: row.quoted?.currency ?? 'USD',
+        personName: row.personName,
+      })),
   };
 
   return (
@@ -437,62 +507,134 @@ export function SetupQuestionnaire({
       )}
 
       {step === 'savings' && (
-        <RowEditor
-          rows={accountRows}
-          addLabel={copy('savings.add')}
-          removeLabel={copy('remove')}
-          onAdd={() => {
-            setAccountRows([...accountRows, { name: '', accountType: 'savings', balance: '' }]);
-          }}
-          onRemove={(at) => {
-            setAccountRows(accountRows.filter((_, position) => position !== at));
-          }}
-          render={(row, at) => (
-            <>
-              <Field label={copy('savings.name')} className="sm:col-span-2">
-                {({ id }) => (
-                  <Input
-                    id={id}
-                    value={row.name}
-                    placeholder={copy('savings.namePlaceholder')}
-                    onChange={(event) => {
-                      setAccountRows(patch(accountRows, at, { name: event.target.value }));
-                    }}
-                  />
+        <div className="flex flex-col gap-10">
+          <RowEditor
+            rows={accountRows}
+            addLabel={copy('savings.add')}
+            removeLabel={copy('remove')}
+            onAdd={() => {
+              setAccountRows([
+                ...accountRows,
+                {
+                  name: '',
+                  accountType: 'savings',
+                  balance: '',
+                  institution: '',
+                  interestRate: '',
+                },
+              ]);
+            }}
+            onRemove={(at) => {
+              setAccountRows(accountRows.filter((_, position) => position !== at));
+            }}
+            render={(row, at) => (
+              <>
+                <Field label={copy('savings.name')} className="sm:col-span-2">
+                  {({ id }) => (
+                    <Input
+                      id={id}
+                      value={row.name}
+                      placeholder={copy('savings.namePlaceholder')}
+                      onChange={(event) => {
+                        setAccountRows(patch(accountRows, at, { name: event.target.value }));
+                      }}
+                    />
+                  )}
+                </Field>
+                <Field label={copy('savings.type')}>
+                  {({ id }) => (
+                    <Select
+                      id={id}
+                      value={row.accountType}
+                      onChange={(event) => {
+                        setAccountRows(
+                          patch(accountRows, at, {
+                            accountType: event.target.value as AccountRow['accountType'],
+                          }),
+                        );
+                      }}
+                    >
+                      {(['checking', 'savings', 'cash', 'digital_wallet'] as const).map((value) => (
+                        <option key={value} value={value}>
+                          {copy(`accountType.${value}`)}
+                        </option>
+                      ))}
+                    </Select>
+                  )}
+                </Field>
+                {row.accountType !== 'cash' && (
+                  <>
+                    <Field
+                      label={copy('savings.institution')}
+                      hint={copy('savings.institutionHint')}
+                    >
+                      {({ id, describedBy }) => (
+                        <Select
+                          id={id}
+                          value={row.institution}
+                          aria-describedby={describedBy}
+                          onChange={(event) => {
+                            setAccountRows(
+                              patch(accountRows, at, { institution: event.target.value }),
+                            );
+                          }}
+                        >
+                          <option value="">{copy('savings.institutionNone')}</option>
+                          {institutions.map((bank) => (
+                            <option key={bank} value={bank}>
+                              {bank}
+                            </option>
+                          ))}
+                        </Select>
+                      )}
+                    </Field>
+                    <Field label={copy('savings.rate')} hint={copy('savings.rateHint')}>
+                      {({ id, describedBy }) => (
+                        <div className="relative">
+                          <Input
+                            id={id}
+                            numeric
+                            inputMode="decimal"
+                            value={row.interestRate}
+                            placeholder="0.0"
+                            aria-describedby={describedBy}
+                            className="pr-8"
+                            onChange={(event) => {
+                              setAccountRows(
+                                patch(accountRows, at, { interestRate: event.target.value }),
+                              );
+                            }}
+                          />
+                          <span
+                            aria-hidden
+                            className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-[color:var(--color-ink-tertiary)]"
+                          >
+                            %
+                          </span>
+                        </div>
+                      )}
+                    </Field>
+                  </>
                 )}
-              </Field>
-              <Field label={copy('savings.type')}>
-                {({ id }) => (
-                  <Select
-                    id={id}
-                    value={row.accountType}
-                    onChange={(event) => {
-                      setAccountRows(
-                        patch(accountRows, at, {
-                          accountType: event.target.value as AccountRow['accountType'],
-                        }),
-                      );
-                    }}
-                  >
-                    {(['checking', 'savings', 'cash', 'digital_wallet'] as const).map((value) => (
-                      <option key={value} value={value}>
-                        {copy(`accountType.${value}`)}
-                      </option>
-                    ))}
-                  </Select>
-                )}
-              </Field>
-              <MoneyField
-                label={copy('savings.balance')}
-                symbol={currencySymbol}
-                value={row.balance}
-                onChange={(value) => {
-                  setAccountRows(patch(accountRows, at, { balance: value }));
-                }}
-              />
-            </>
-          )}
-        />
+                <MoneyField
+                  label={copy('savings.balance')}
+                  symbol={currencySymbol}
+                  value={row.balance}
+                  onChange={(value) => {
+                    setAccountRows(patch(accountRows, at, { balance: value }));
+                  }}
+                />
+              </>
+            )}
+          />
+
+          <HoldingsEditor
+            rows={holdingRows}
+            setRows={setHoldingRows}
+            people={namedPeople.map((person) => person.name)}
+            copy={copy}
+          />
+        </div>
       )}
 
       {step === 'commitments' && (
@@ -1027,4 +1169,235 @@ function Check({
       </span>
     </label>
   );
+}
+
+/**
+ * Shares, funds and coins — the part of a household's wealth that has a price
+ * somebody else sets.
+ *
+ * The symbol is checked as it is typed, and that is the whole design. «BTC»,
+ * «BTC-USD» and a typo are three different outcomes, and a form that accepts
+ * all three silently produces a portfolio with a row nothing can value. So the
+ * lookup runs on blur, the answer is shown back — the real name, the price,
+ * the currency — and only a row that was actually found is sent as an answer.
+ *
+ * What is stored is the symbol and the quantity. The price is not: it belongs
+ * to whoever quoted it and it will be different tomorrow. Storing it as if the
+ * household had stated it is how a product ends up showing a figure from last
+ * March as though it were today's.
+ */
+function HoldingsEditor({
+  rows,
+  setRows,
+  people,
+  copy,
+}: {
+  readonly rows: readonly HoldingRow[];
+  /**
+   * The setter itself, not a plain callback.
+   *
+   * The lookup finishes after the person has moved on and typed the quantity,
+   * so writing the result against the rows this render captured would put the
+   * old ones back — which is exactly what happened: filling in a quantity and
+   * then leaving the symbol field silently blanked the quantity, and the
+   * holding valued at zero. Every write below goes through the updater form,
+   * against whatever the rows are when it lands.
+   */
+  readonly setRows: Dispatch<SetStateAction<HoldingRow[]>>;
+  readonly people: readonly string[];
+  readonly copy: (key: string) => string;
+}) {
+  const update = (at: number, changes: Partial<HoldingRow>) => {
+    setRows((current) =>
+      current.map((row, position) => (position === at ? { ...row, ...changes } : row)),
+    );
+  };
+
+  const check = async (at: number, symbol: string) => {
+    if (symbol.trim() === '') {
+      update(at, { status: 'idle', quoted: undefined });
+      return;
+    }
+    update(at, { status: 'checking' });
+    const result = await lookupSymbol(symbol);
+    if (result.ok && result.price && result.currency) {
+      update(at, {
+        status: 'ok',
+        symbol: result.symbol ?? symbol,
+        quoted: {
+          name: result.name ?? symbol,
+          price: result.price,
+          currency: result.currency,
+          kind: result.kind ?? 'other',
+        },
+      });
+    } else {
+      update(at, {
+        status: result.reason === 'unavailable' ? 'unavailable' : 'unknown',
+        quoted: undefined,
+      });
+    }
+  };
+
+  return (
+    <section className="border-t border-[color:var(--color-rule)] pt-8">
+      <h3 className="text-base font-medium">{copy('holdings.title')}</h3>
+      <p className="mt-1 max-w-[68ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]">
+        {copy('holdings.detail')}
+      </p>
+
+      <div className="mt-6 flex flex-col gap-6">
+        {rows.map((row, at) => (
+          <div
+            key={at}
+            className="grid gap-4 border-l border-[color:var(--color-rule)] pl-4 sm:grid-cols-2"
+          >
+            <Field label={copy('holdings.symbol')} hint={copy('holdings.symbolHint')}>
+              {({ id, describedBy }) => (
+                <Input
+                  id={id}
+                  value={row.symbol}
+                  placeholder="AAPL · VOO · BTC-USD"
+                  aria-describedby={describedBy}
+                  onChange={(event) => {
+                    update(at, { symbol: event.target.value, status: 'idle', quoted: undefined });
+                  }}
+                  onBlur={(event) => {
+                    void check(at, event.target.value);
+                  }}
+                />
+              )}
+            </Field>
+
+            <Field label={copy('holdings.quantity')} hint={copy('holdings.quantityHint')}>
+              {({ id, describedBy }) => (
+                <Input
+                  id={id}
+                  numeric
+                  inputMode="decimal"
+                  value={row.quantity}
+                  placeholder="0"
+                  aria-describedby={describedBy}
+                  onChange={(event) => {
+                    update(at, { quantity: event.target.value });
+                  }}
+                />
+              )}
+            </Field>
+
+            {people.length > 0 && (
+              <Field label={copy('holdings.holder')}>
+                {({ id }) => (
+                  <Select
+                    id={id}
+                    value={row.personName}
+                    onChange={(event) => {
+                      update(at, { personName: event.target.value });
+                    }}
+                  >
+                    <option value="">{copy('holdings.holderShared')}</option>
+                    {people.map((person) => (
+                      <option key={person} value={person}>
+                        {person}
+                      </option>
+                    ))}
+                  </Select>
+                )}
+              </Field>
+            )}
+
+            <div className="sm:col-span-2">
+              {row.status === 'checking' && (
+                <p className="text-xs text-[color:var(--color-ink-tertiary)]">
+                  {copy('holdings.checking')}
+                </p>
+              )}
+              {row.status === 'ok' && row.quoted && (
+                <p className="text-xs text-[color:var(--color-ink-secondary)]">
+                  <Status tone="positive">{row.quoted.name}</Status>{' '}
+                  <span className="tabular ml-2">
+                    {copy('holdings.quoted')
+                      .replace(
+                        '{price}',
+                        `${row.quoted.currency} ${readablePrice(row.quoted.price)}`,
+                      )
+                      .replace(
+                        '{value}',
+                        holdingValue(row.quantity, row.quoted.price, row.quoted.currency),
+                      )}
+                  </span>
+                </p>
+              )}
+              {row.status === 'unknown' && (
+                <p className="text-xs text-[color:var(--color-negative)]">
+                  {copy('holdings.unknown')}
+                </p>
+              )}
+              {row.status === 'unavailable' && (
+                <p className="text-xs text-[color:var(--color-caution)]">
+                  {copy('holdings.unavailable')}
+                </p>
+              )}
+            </div>
+
+            <div className="sm:col-span-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setRows((current) => current.filter((_, position) => position !== at));
+                }}
+              >
+                {copy('remove')}
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <Button
+        type="button"
+        variant="secondary"
+        size="sm"
+        className="mt-4"
+        onClick={() => {
+          setRows((current) => [
+            ...current,
+            { symbol: '', label: '', quantity: '', personName: '', status: 'idle' },
+          ]);
+        }}
+      >
+        {copy('holdings.add')}
+      </Button>
+    </section>
+  );
+}
+
+/**
+ * Quantity times price, for the line under the field.
+ *
+ * Read-only reassurance while typing, so it is done here rather than round
+ * tripping. Nothing is stored from it: the portfolio screen values the holding
+ * from the recorded quote with the product's own exact arithmetic, and this is
+ * only the confirmation that the number being typed means what the person
+ * thinks it means.
+ */
+/**
+ * A quote as a person reads it.
+ *
+ * Stored with eight decimals because a coin can trade below a cent; shown with
+ * as few as carry meaning, and never fewer than two, because «USD
+ * 316.22000000» is a database column pretending to be a price.
+ */
+function readablePrice(price: string): string {
+  const trimmed = price.includes('.') ? price.replace(/0+$/, '').replace(/\.$/, '') : price;
+  const [whole = '0', fraction = ''] = trimmed.split('.');
+  return `${Number(whole).toLocaleString('en-US')}.${fraction.padEnd(2, '0')}`;
+}
+
+function holdingValue(quantity: string, price: string, currency: string): string {
+  const amount = Number(quantity.replace(/[^\d.]/g, '')) * Number(price);
+  if (!Number.isFinite(amount)) return '—';
+  return `${currency} ${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }

@@ -4,9 +4,11 @@ import {
   accounts,
   debts,
   goals,
+  holdings,
   householdPeople,
   householdSettings,
   households,
+  institutions,
   obligations,
   recurringSeries,
 } from '@app/database/schema';
@@ -114,9 +116,53 @@ const setupInput = z.object({
         name,
         accountType: z.enum(['checking', 'savings', 'cash', 'digital_wallet']),
         balance: amount,
+        /** The institution by name, matched against the seeded list. */
+        institution: z.string().trim().max(120).optional(),
+        /** What it pays annually, as the household's statement reports it. */
+        interestRate: z.preprocess(
+          (value) => (value === '' || value === undefined || value === null ? undefined : value),
+          z
+            .string()
+            .regex(/^\d+(\.\d{1,3})?$/)
+            .refine((value) => Number(value) <= 100)
+            .optional(),
+        ),
       }),
     )
     .max(20),
+  /**
+   * What the household owns that is not cash.
+   *
+   * The symbol and the quantity are the answer; `kind` and `currency` come
+   * back from the lookup the form already did, and are re-derived on read
+   * rather than trusted for anything that matters. The price is deliberately
+   * absent: it belongs to whoever quoted it, it lives in `market_prices` with
+   * its moment, and accepting it here would let a form state what a market
+   * said.
+   */
+  holdings: z
+    .array(
+      z.object({
+        id: rowId,
+        symbol: z
+          .string()
+          .trim()
+          .min(1)
+          .max(20)
+          .regex(/^[A-Za-z0-9.\-^=]+$/),
+        label: name,
+        quantity: z
+          .string()
+          .trim()
+          .regex(/^\d+(\.\d{1,10})?$/)
+          .refine((value) => Number(value) > 0),
+        kind: z.enum(['equity', 'etf', 'crypto', 'other']).default('other'),
+        currency: z.enum(['USD', 'PAB']).default('USD'),
+        personName: z.string().trim().max(120).optional(),
+      }),
+    )
+    .max(40)
+    .default([]),
   commitments: z
     .array(z.object({ id: rowId, name, amount, dueDay, isEssential: z.boolean() }))
     .max(40),
@@ -257,6 +303,14 @@ export async function completeSetup(
        */
       // People first: a card can name its holder, and the holder has to exist
       // before anything can point at them.
+      // The seeded banks, by name, so an account can point at one without a
+      // second round trip per row.
+      const bankRows = await tx
+        .select({ id: institutions.id, name: institutions.name })
+        .from(institutions)
+        .where(eq(institutions.country, 'PA'));
+      const banksByName = new Map(bankRows.map((row) => [row.name, row.id]));
+
       const peopleByName = new Map<string, string>();
       const keptPeople: string[] = [];
       for (const person of answers.people) {
@@ -305,6 +359,10 @@ export async function completeSetup(
           name: entry.name,
           accountType: entry.accountType,
           currentBalance: entry.balance,
+          institutionId: entry.institution ? (banksByName.get(entry.institution) ?? null) : null,
+          // Null, not zero, when nothing was said. «Pays nothing» and «nobody
+          // told us» are different facts and only one of them is a rate.
+          interestRate: entry.interestRate ?? null,
         };
         if (entry.id) {
           await tx
@@ -544,6 +602,53 @@ export async function completeSetup(
 
       // Goals. No `deleted_at` here — a goal that is set aside is paused, which
       // is a state the goal screen already understands and can undo.
+      /**
+       * Holdings.
+       *
+       * The symbol and the quantity are written; the price is not. It lives in
+       * `app.market_prices` with the source that said it and the moment it was
+       * said, put there by the lookup the form ran while somebody typed. A
+       * holding that carried its own price would be a household asserting what
+       * a market did.
+       */
+      const keptHoldings: string[] = [];
+      for (const entry of answers.holdings) {
+        const holder = entry.personName?.trim()
+          ? (peopleByName.get(entry.personName.trim()) ?? null)
+          : null;
+        const values = {
+          symbol: entry.symbol.toUpperCase(),
+          label: entry.label,
+          quantity: entry.quantity,
+          kind: entry.kind,
+          currency: entry.currency,
+          personId: holder,
+        };
+        if (entry.id) {
+          await tx
+            .update(holdings)
+            .set({ ...values, updatedAt: new Date() })
+            .where(and(eq(holdings.id, entry.id), eq(holdings.householdId, householdId)));
+          keptHoldings.push(entry.id);
+        } else {
+          const [created] = await tx
+            .insert(holdings)
+            .values({ householdId, createdBy: session.user.id, ...values })
+            .returning({ id: holdings.id });
+          if (created) keptHoldings.push(created.id);
+        }
+      }
+      await tx
+        .update(holdings)
+        .set({ deletedAt: new Date() })
+        .where(
+          and(
+            eq(holdings.householdId, householdId),
+            isNull(holdings.deletedAt),
+            notInArray(holdings.id, survivors(keptHoldings)),
+          ),
+        );
+
       const keptGoals: string[] = [];
       for (const [index, entry] of answers.goals.entries()) {
         const values = {

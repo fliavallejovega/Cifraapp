@@ -925,7 +925,12 @@
       "type": "Type",
       "balance": "Today's balance",
       "add": "Add another account",
-      "next": "Continue to commitments"
+      "next": "Continue to commitments",
+      "institution": "Bank",
+      "institutionHint": "Where the account is held. It is what lets us recognise your statements when you upload them.",
+      "institutionNone": "Not applicable",
+      "rate": "Annual interest it pays",
+      "rateHint": "As your statement reports it. Leave it blank if you do not know: we will not invent one."
     },
     "commitments": {
       "title": "What do you have to pay every month?",
@@ -1004,6 +1009,21 @@
       "commitments": "Bills",
       "debts": "Debts",
       "goals": "Goals"
+    },
+    "holdings": {
+      "title": "Shares, funds and crypto",
+      "detail": "If you hold shares or coins, put them here. We look the price up as you type and track what they are worth and how they move. You state how much you hold; the market states the price, with its time.",
+      "symbol": "Symbol",
+      "symbolHint": "As it trades: AAPL, VOO, BTC-USD. We check it when you leave the field.",
+      "quantity": "How much you hold",
+      "quantityHint": "Shares or coins. Decimals are fine: 0.35 of a bitcoin is valid.",
+      "holder": "Whose is it?",
+      "holderShared": "The household’s",
+      "add": "Add a share or coin",
+      "checking": "Looking the price up…",
+      "quoted": "at {price} · worth {value}",
+      "unknown": "We could not find that symbol. Check the spelling — BTC-USD, for instance, rather than BTC.",
+      "unavailable": "We could not reach the price just now. You can carry on; we will try again later."
     }
   },
   "records": {
@@ -2753,6 +2773,27 @@
       "chartFailedTitle": "The chart could not load",
       "chartFailedBody": "TradingView did not answer. It is usually an ad blocker, the network, or being offline. Nothing else on this screen depends on it: the modelling above is arithmetic on your own figures and consults no price."
     },
-    "errorTitle": "Could not save"
+    "errorTitle": "Could not save",
+    "portfolio": {
+      "title": "What you hold",
+      "detail": "Shares, funds and crypto you recorded. You state how much you hold; the market states the price, with the time it said it.",
+      "total": "Portfolio value",
+      "since": "{amount} since the previous close",
+      "noChange": "No previous close to compare against yet.",
+      "unpriced": "Unpriced and left out of the total: {symbols}.",
+      "what": "What",
+      "quantity": "How much",
+      "price": "Price",
+      "value": "Value",
+      "move": "Move",
+      "stale": "stale price",
+      "noPrice": "no price",
+      "provenance": "Prices from {source}, stored with the moment they were taken. They are not live, and they are not recorded as though you had stated them: the quantity is yours, the price is the market’s.",
+      "empty": {
+        "title": "No shares or crypto recorded yet",
+        "body": "If you hold shares, funds or coins, add them in the questionnaire and they appear here with their value and their movement. Recording one is not a recommendation to buy it.",
+        "action": "Go to the questionnaire"
+      }
+    }
   }
 }

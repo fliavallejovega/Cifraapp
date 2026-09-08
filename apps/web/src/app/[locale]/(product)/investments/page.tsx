@@ -1,6 +1,21 @@
 import { formatMoney } from '@app/domain';
 import { RISK_LEVELS } from '@app/investment-engine';
-import { Card, EmptyState, Page, PageHeader, Problem, Section, Status } from '@app/ui';
+import {
+  Amount,
+  Card,
+  EmptyState,
+  Ledger,
+  LedgerBody,
+  LedgerCell,
+  LedgerColumn,
+  LedgerHead,
+  LedgerRow,
+  Page,
+  PageHeader,
+  Problem,
+  Section,
+  Status,
+} from '@app/ui';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { InvestmentProfileForm } from '@/components/investment-profile-form';
@@ -10,6 +25,8 @@ import { Link } from '@/i18n/navigation';
 import { loadHouseholdContext } from '@/server/household-context';
 import { explainInvestmentPlan } from '@/server/repositories/investment-narrative';
 import { loadGoalOptions, loadInvestments } from '@/server/repositories/investments';
+import { loadPortfolio } from '@/server/repositories/portfolio';
+import { trimAmount } from '@/lib/format';
 import { requireHousehold } from '@/server/session';
 
 /**
@@ -41,9 +58,10 @@ export default async function InvestmentsPage({ params }: { params: Promise<{ lo
   const householdId = session.activeHouseholdId;
   const context = loadHouseholdContext(session, householdId, locale);
 
-  const [view, goalOptions] = await Promise.all([
+  const [view, goalOptions, portfolio] = await Promise.all([
     loadInvestments(session, householdId, context.currency, context.today),
     loadGoalOptions(session, householdId, context.currency),
+    loadPortfolio(session, householdId, context.currency),
   ]);
 
   const t = await getTranslations('investments');
@@ -53,11 +71,137 @@ export default async function InvestmentsPage({ params }: { params: Promise<{ lo
   const money = (value: Parameters<typeof formatMoney>[0]) =>
     formatMoney(value, { locale: context.moneyLocale });
 
+  /**
+   * What the household owns, rendered on both sides of the disclosure.
+   *
+   * The disclosure gates the *modelling* — what to set aside, what more risk
+   * buys — because that is the part that reasons about a future. A record of
+   * what is already held is not a projection about anything; it is the
+   * household's own property, valued at a quote from a named source. Hiding it
+   * behind a warning about investment risk would be like putting a disclaimer
+   * in front of somebody's bank balance.
+   */
+  const portfolioSection = (
+    <Section title={t('portfolio.title')} detail={t('portfolio.detail')}>
+      {portfolio.positions.length === 0 ? (
+        <EmptyState
+          title={t('portfolio.empty.title')}
+          body={t('portfolio.empty.body')}
+          action={
+            <Link
+              href="/welcome"
+              className="text-sm font-medium underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
+            >
+              {t('portfolio.empty.action')}
+            </Link>
+          }
+        />
+      ) : (
+        <>
+          <Card tone="panel" padding="lg">
+            <p className="text-xs font-medium tracking-(--tracking-label) text-[color:var(--color-panel-ink-secondary)] uppercase">
+              {t('portfolio.total')}
+            </p>
+            <div className="mt-3">
+              <Amount
+                value={portfolio.total}
+                locale={context.moneyLocale}
+                tone="plain"
+                size="readout"
+              />
+            </div>
+            <p className="mt-3 text-sm text-[color:var(--color-panel-ink-secondary)]">
+              {portfolio.change
+                ? t('portfolio.since', {
+                    amount: formatMoney(portfolio.change, { locale: context.moneyLocale }),
+                  })
+                : t('portfolio.noChange')}
+            </p>
+            {portfolio.unpriced.length > 0 && (
+              <p className="mt-4 text-xs text-[color:var(--color-panel-ink-secondary)]">
+                {t('portfolio.unpriced', { symbols: portfolio.unpriced.join(', ') })}
+              </p>
+            )}
+          </Card>
+
+          <Ledger caption={t('portfolio.title')} className="mt-8">
+            <LedgerHead>
+              <LedgerColumn>{t('portfolio.what')}</LedgerColumn>
+              <LedgerColumn align="end">{t('portfolio.quantity')}</LedgerColumn>
+              <LedgerColumn align="end">{t('portfolio.price')}</LedgerColumn>
+              <LedgerColumn align="end">{t('portfolio.value')}</LedgerColumn>
+              <LedgerColumn align="end">{t('portfolio.move')}</LedgerColumn>
+            </LedgerHead>
+            <LedgerBody>
+              {portfolio.positions.map((position) => (
+                <LedgerRow key={position.id}>
+                  <LedgerCell>
+                    {position.label}
+                    <span className="mt-1 block text-xs text-[color:var(--color-ink-tertiary)]">
+                      {position.symbol}
+                      {position.holder ? ` · ${position.holder}` : ''}
+                      {position.stale ? ` · ${t('portfolio.stale')}` : ''}
+                    </span>
+                  </LedgerCell>
+                  <LedgerCell align="end">
+                    <span className="tabular">{trimAmount(position.quantity)}</span>
+                  </LedgerCell>
+                  <LedgerCell align="end">
+                    <span className="tabular">
+                      {position.valuation
+                        ? `${position.valuation.quote.currency} ${trimAmount(position.valuation.quote.price)}`
+                        : '—'}
+                    </span>
+                  </LedgerCell>
+                  <LedgerCell align="end">
+                    {position.valuation ? (
+                      <Amount
+                        value={position.valuation.value}
+                        locale={context.moneyLocale}
+                        size="sm"
+                        tone="plain"
+                      />
+                    ) : (
+                      <span className="text-[color:var(--color-ink-tertiary)]">
+                        {t('portfolio.noPrice')}
+                      </span>
+                    )}
+                  </LedgerCell>
+                  <LedgerCell align="end">
+                    {position.valuation?.change ? (
+                      <Amount
+                        value={position.valuation.change}
+                        locale={context.moneyLocale}
+                        size="sm"
+                        tone="directional"
+                      />
+                    ) : (
+                      <span className="text-[color:var(--color-ink-tertiary)]">—</span>
+                    )}
+                  </LedgerCell>
+                </LedgerRow>
+              ))}
+            </LedgerBody>
+          </Ledger>
+
+          <p className="mt-4 max-w-[72ch] text-xs text-pretty text-[color:var(--color-ink-tertiary)]">
+            {t('portfolio.provenance', {
+              source:
+                portfolio.positions.find((entry) => entry.valuation)?.valuation?.quote.source ??
+                '—',
+            })}
+          </p>
+        </>
+      )}
+    </Section>
+  );
+
   // Before the disclosure is read, the modelling is not rendered at all.
   if (view.profile.acknowledgedAt === null) {
     return (
       <Page>
         <PageHeader title={t('title')} detail={t('detail')} />
+        {portfolioSection}
         <RiskDisclosure
           locale={locale}
           labels={{
@@ -85,8 +229,12 @@ export default async function InvestmentsPage({ params }: { params: Promise<{ lo
     <Page>
       <PageHeader title={t('title')} detail={t('detail')} />
 
-      {/* Stated before any figure, every time — not once at sign-up. */}
-      <div className="mb-8">
+      {portfolioSection}
+
+      {/* Stated before any modelled figure, every time — not once at sign-up.
+          It sits below the portfolio because the portfolio is a record and
+          everything under this line is a projection. */}
+      <div className="my-8">
         <Problem title={t('disclosure.title')} body={t('disclosure.body')} />
       </div>
 
@@ -109,7 +257,7 @@ export default async function InvestmentsPage({ params }: { params: Promise<{ lo
         </div>
       )}
 
-      <Section title={t('profile.title')} detail={t('profile.detail')}>
+      <Section title={t('profile.title')} detail={t('profile.detail')} className="mt-12">
         <Card>
           <InvestmentProfileForm
             locale={locale}

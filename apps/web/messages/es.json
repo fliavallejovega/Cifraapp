@@ -925,7 +925,12 @@
       "type": "Tipo",
       "balance": "Saldo de hoy",
       "add": "Agregar otra cuenta",
-      "next": "Continuar a los compromisos"
+      "next": "Continuar a los compromisos",
+      "institution": "Banco",
+      "institutionHint": "De dónde es la cuenta. Sirve para reconocer tus estados de cuenta cuando los subas.",
+      "institutionNone": "No aplica",
+      "rate": "Interés anual que paga",
+      "rateHint": "Como lo dice tu estado de cuenta. Si no lo sabes, déjalo vacío: no lo inventamos."
     },
     "commitments": {
       "title": "¿Qué tienes que pagar todos los meses?",
@@ -1004,6 +1009,21 @@
       "commitments": "Pagos",
       "debts": "Deudas",
       "goals": "Metas"
+    },
+    "holdings": {
+      "title": "Acciones, fondos y cripto",
+      "detail": "Si tienes acciones o monedas, ponlas aquí. Buscamos el precio al momento y desde ahí llevamos cuánto valen y cuánto se mueven. Tú pones cuánto tienes; el precio lo pone el mercado, con su hora.",
+      "symbol": "Símbolo",
+      "symbolHint": "Como cotiza: AAPL, VOO, BTC-USD. Lo verificamos al salir del campo.",
+      "quantity": "Cuánto tienes",
+      "quantityHint": "Acciones o monedas. Admite decimales: 0.35 de bitcoin es válido.",
+      "holder": "¿De quién es?",
+      "holderShared": "Del hogar",
+      "add": "Agregar acción o cripto",
+      "checking": "Buscando el precio…",
+      "quoted": "a {price} · valor {value}",
+      "unknown": "No encontramos ese símbolo. Revisa cómo se escribe; por ejemplo BTC-USD, no BTC.",
+      "unavailable": "No pudimos consultar el precio ahora. Puedes seguir; lo intentamos otra vez más tarde."
     }
   },
   "records": {
@@ -2753,6 +2773,27 @@
       "chartFailedTitle": "No se pudo cargar el gráfico",
       "chartFailedBody": "TradingView no respondió. Suele ser un bloqueador de anuncios, la red o estar sin conexión. Nada más de esta pantalla depende de eso: el modelado de arriba es aritmética sobre tus propias cifras y no consulta ningún precio."
     },
-    "errorTitle": "No se pudo guardar"
+    "errorTitle": "No se pudo guardar",
+    "portfolio": {
+      "title": "Lo que tienes",
+      "detail": "Acciones, fondos y cripto que registraste. Tú pones cuánto tienes; el precio lo pone el mercado, con la hora en que lo dijo.",
+      "total": "Valor del portafolio",
+      "since": "{amount} desde el cierre anterior",
+      "noChange": "Sin cierre anterior con qué comparar todavía.",
+      "unpriced": "Sin precio y fuera del total: {symbols}.",
+      "what": "Qué",
+      "quantity": "Cuánto",
+      "price": "Precio",
+      "value": "Valor",
+      "move": "Movimiento",
+      "stale": "precio viejo",
+      "noPrice": "sin precio",
+      "provenance": "Precios de {source}, guardados con la hora en que se tomaron. No son en tiempo real y no los guardamos como si tú los hubieras dicho: la cantidad es tuya, el precio es del mercado.",
+      "empty": {
+        "title": "Todavía no registraste acciones ni cripto",
+        "body": "Si tienes acciones, fondos o monedas, ponlas en el cuestionario y aparecen aquí con su valor y su movimiento. Registrarlas no es una recomendación de comprarlas.",
+        "action": "Ir al cuestionario"
+      }
+    }
   }
 }

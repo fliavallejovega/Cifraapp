@@ -136,6 +136,15 @@ export const accounts = appSchema.table(
     currentBalance: money('current_balance').notNull().default('0'),
     availableBalance: money('available_balance'),
     creditLimit: money('credit_limit'),
+    /**
+     * What the account earns, as a percentage: 3.250 is 3.25%.
+     *
+     * Asked, never assumed. A bank's rate changes, varies by product and by
+     * balance tier, and this system has no source for it — seeding a plausible
+     * figure would put a number nobody stated into a column that projections
+     * read. Null means «not stated», which is not zero.
+     */
+    interestRate: numeric('interest_rate', { precision: 6, scale: 3, mode: 'string' }),
     status: accountStatus('status').notNull().default('active'),
     source: provenance('source').notNull().default('user'),
     lastImportedAt: timestamp('last_imported_at', { withTimezone: true }),
@@ -466,3 +475,66 @@ export const transactionRelations = relations(transactions, ({ one }) => ({
   merchant: one(merchants, { fields: [transactions.merchantId], references: [merchants.id] }),
   category: one(categories, { fields: [transactions.categoryId], references: [categories.id] }),
 }));
+
+/**
+ * The last quote per symbol, shared by every household.
+ *
+ * Reference data, not household data: it says what a market said, never what
+ * anybody owns. `asOf` and `source` are not nullable on purpose — a price
+ * without a moment is a lie by omission, and a price without a source is a
+ * rumour.
+ */
+export const marketPrices = appSchema.table('market_prices', {
+  symbol: text('symbol').primaryKey(),
+  kind: text('kind').notNull(),
+  displayName: text('display_name').notNull(),
+  /** Eight decimals, and deliberately not `money`: a quote is not an amount. */
+  price: numeric('price', { precision: 19, scale: 8, mode: 'string' }).notNull(),
+  currency: char('currency', { length: 3 })
+    .notNull()
+    .references(() => currencies.code),
+  previousClose: numeric('previous_close', { precision: 19, scale: 8, mode: 'string' }),
+  source: text('source').notNull(),
+  asOf: timestamp('as_of', { withTimezone: true }).notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
+ * What a household owns beyond cash.
+ *
+ * The quantity is stated by the household; the price it is valued at lives in
+ * `marketPrices` and carries its own source and moment. Keeping them in
+ * separate tables is what lets a screen say which half came from whom.
+ */
+export const holdings = appSchema.table(
+  'holdings',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .default(sql`public.uuid_generate_v7()`),
+    householdId: uuid('household_id')
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    /** Whose it is, when it belongs to a person rather than to the household. */
+    personId: uuid('person_id'),
+    kind: text('kind').notNull(),
+    symbol: text('symbol').notNull(),
+    /** What the household calls it. The provider's name is on the price row. */
+    label: text('label').notNull(),
+    /** Ten decimals: crypto divides far past a cent, and a quantity is not money. */
+    quantity: numeric('quantity', { precision: 28, scale: 10, mode: 'string' }).notNull(),
+    /** Optional: plenty of people do not know it, and inventing one turns an
+        unknown gain into a stated one. */
+    costBasis: money('cost_basis'),
+    currency: char('currency', { length: 3 })
+      .notNull()
+      .default('USD')
+      .references(() => currencies.code),
+    notes: text('notes'),
+    createdBy: uuid('created_by').references(() => profiles.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+    deletedAt: timestamp('deleted_at', { withTimezone: true }),
+  },
+  (table) => [index('holdings_household_idx').on(table.householdId)],
+);

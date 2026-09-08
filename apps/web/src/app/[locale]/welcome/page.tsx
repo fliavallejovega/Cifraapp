@@ -54,6 +54,7 @@ export default async function WelcomePage({ params }: { params: Promise<{ locale
         locale={locale}
         currencySymbol={getCurrency(currency).symbol}
         t={labels(rawOf(t))}
+        institutions={answers.institutions}
         initial={answers}
         review={review}
       />
@@ -99,6 +100,24 @@ function labels(read: (key: string) => string): Record<string, string> {
     'draft.other',
     'review.notice',
     'review.finish',
+    'savings.institution',
+    'savings.institutionHint',
+    'savings.institutionNone',
+    'savings.rate',
+    'savings.rateHint',
+    'holdings.title',
+    'holdings.detail',
+    'holdings.symbol',
+    'holdings.symbolHint',
+    'holdings.quantity',
+    'holdings.quantityHint',
+    'holdings.holder',
+    'holdings.holderShared',
+    'holdings.add',
+    'holdings.checking',
+    'holdings.quoted',
+    'holdings.unknown',
+    'holdings.unavailable',
     'progress',
     'stages.household',
     'stages.income',

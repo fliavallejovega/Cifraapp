@@ -117,10 +117,27 @@ describeWithDatabase('security audit', () => {
               or column_name like '%price%' or column_name like '%payment%')
     `;
 
-    const wrongScale = rows.filter((row) => row.scale !== 4);
+    /**
+     * Quotes, which are not money.
+     *
+     * A price per unit is not an amount anybody holds, and four decimals is
+     * wrong for it in a way that matters: a coin trading at $0.00001234 would
+     * round to zero and every holding of it would value at nothing. Eight
+     * decimals is what the quote needs; the *value* it produces is money and
+     * is rounded to four on the way in, which is the rule this test exists to
+     * defend.
+     *
+     * Listed by name rather than excluded by pattern, so a column called
+     * `price` that really is money still has to answer for itself.
+     */
+    const quotes = new Set(['app.market_prices.price', 'app.market_prices.previous_close']);
+    const wrongScale = rows.filter(
+      (row) => row.scale !== 4 && !quotes.has(`${row.table}.${row.column}`),
+    );
 
-    // Four decimals, everywhere, because interest accrual and allocation both
-    // need sub-cent intermediates. A column at scale 2 silently truncates them.
+    // Four decimals, everywhere else, because interest accrual and allocation
+    // both need sub-cent intermediates. A column at scale 2 silently truncates
+    // them.
     expect(wrongScale).toEqual([]);
   });
 

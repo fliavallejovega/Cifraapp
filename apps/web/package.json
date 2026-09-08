@@ -24,6 +24,7 @@
     "@app/debt-engine": "workspace:*",
     "@app/domain": "workspace:*",
     "@app/investment-engine": "workspace:*",
+    "@app/market-data": "workspace:*",
     "@app/reporting": "workspace:*",
     "@app/rule-engine": "workspace:*",
     "@app/scenario-engine": "workspace:*",
