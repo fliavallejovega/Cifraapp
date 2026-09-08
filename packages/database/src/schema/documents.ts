@@ -89,6 +89,8 @@ export const imports = appSchema.table(
       .references(() => documents.id, { onDelete: 'cascade' }),
     accountId: uuid('account_id').references(() => accounts.id, { onDelete: 'set null' }),
     startedBy: uuid('started_by').references(() => profiles.id, { onDelete: 'set null' }),
+    /** The background job that produced this import, when one did. */
+    jobId: uuid('job_id'),
     status: importStatus('status').notNull().default('uploaded'),
     format: text('format'),
     rowsFound: integer('rows_found').notNull().default(0),

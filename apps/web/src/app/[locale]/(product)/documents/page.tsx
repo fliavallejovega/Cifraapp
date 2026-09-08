@@ -20,7 +20,7 @@ import { getFormatter, getTranslations, setRequestLocale } from 'next-intl/serve
 
 import { ImportForm } from '@/components/import-form';
 import { Link } from '@/i18n/navigation';
-import { hasActiveAccount } from '@/server/repositories/accounts';
+import { loadAccountOptions } from '@/server/repositories/administration';
 import { queryAsUser, requireHousehold } from '@/server/session';
 
 /**
@@ -38,7 +38,6 @@ export default async function DocumentsPage({ params }: { params: Promise<{ loca
 
   const session = await requireHousehold(locale);
   const t = await getTranslations('documents');
-  const raw = rawOf(t);
   const format = await getFormatter();
 
   const runs = await queryAsUser(session, (tx) =>
@@ -62,7 +61,8 @@ export default async function DocumentsPage({ params }: { params: Promise<{ loca
       .limit(25),
   );
 
-  const hasAccount = await hasActiveAccount(session, session.activeHouseholdId);
+  const importAccounts = await loadAccountOptions(session, session.activeHouseholdId);
+  const hasAccount = importAccounts.length > 0;
 
   return (
     <Page>
@@ -88,20 +88,24 @@ export default async function DocumentsPage({ params }: { params: Promise<{ loca
       <Card padding="lg">
         <ImportForm
           locale={locale}
+          accounts={importAccounts.map((account) => ({ id: account.id, name: account.name }))}
           labels={{
             file: t('form.file'),
             fileHint: t('form.fileHint'),
+            account: t('form.account'),
+            accountHint: t('form.accountHint'),
             submit: t('form.submit'),
             errorTitle: t('form.errorTitle'),
-            summaryHeading: t('form.summaryHeading'),
-            summaryDetail: raw('form.summaryDetail'),
-            reviewLink: t('form.reviewLink'),
+            queuedHeading: t('form.queuedHeading'),
+            queuedDetail: t('form.queuedDetail'),
+            watchLink: t('form.watchLink'),
             errors: {
               tooLarge: t('form.errors.tooLarge'),
               unsupportedType: t('form.errors.unsupportedType'),
               alreadyImported: t('form.errors.alreadyImported'),
               unreadable: t('form.errors.unreadable'),
               storageUnavailable: t('form.errors.storageUnavailable'),
+              queueUnavailable: t('form.errors.queueUnavailable'),
               noAccount: t('form.errors.noAccount'),
               generic: t('form.errors.generic'),
             },
@@ -174,16 +178,3 @@ export default async function DocumentsPage({ params }: { params: Promise<{ loca
 
 void Amount;
 void Money;
-
-/**
- * A message that carries placeholders filled in the browser, where the value is
- * client state the server never had — a selection count, a running total.
- * `t()` would try to resolve them here and throw; the template has to travel
- * whole.
- */
-function rawOf(t: { raw: (key: string) => unknown }): (key: string) => string {
-  return (key) => {
-    const value = t.raw(key);
-    return typeof value === 'string' ? value : '';
-  };
-}

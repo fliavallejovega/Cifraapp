@@ -4,6 +4,8 @@ import { StatementParseError, type ParsedStatement, type StatementFormat } from 
 
 import { parseCsvStatement } from './csv.js';
 import { parseOfxStatement } from './ofx.js';
+import { parsePdfStatement } from './pdf.js';
+import { parseXlsxStatement } from './xlsx.js';
 
 /**
  * Format detection and dispatch.
@@ -59,24 +61,56 @@ export function parseStatement(contents: string, options: ParseOptions): ParsedS
       });
 
     case 'xlsx':
-      throw new StatementParseError(
-        'xlsx',
-        'Spreadsheet import is not available yet. Export the statement as CSV and try again.',
-      );
-
     case 'pdf':
+      // Both are binary. Reaching here means a caller decoded the bytes to a
+      // string first, which destroys them — `parseDocument` is the entry point.
       throw new StatementParseError(
-        'pdf',
-        'PDF statement import is not available yet. Export the statement as CSV or OFX and try again.',
+        format,
+        'This format has to be read from the file itself, not from decoded text.',
       );
 
     case null:
       throw new StatementParseError(
         'csv',
-        'The file format could not be recognised. Supported formats are CSV and OFX.',
+        'The file format could not be recognised. Supported formats are CSV, OFX, PDF and XLSX.',
       );
   }
 }
 
+/**
+ * The entry point for a file as it was uploaded.
+ *
+ * `parseStatement` takes text and is right for CSV and OFX. A PDF and a
+ * spreadsheet are binary, and decoding them to a string before dispatch turns
+ * a compressed stream into replacement characters — so detection happens on the
+ * bytes, and only the text formats are decoded.
+ */
+export function parseDocument(bytes: Uint8Array, options: ParseOptions): ParsedStatement {
+  const head = new TextDecoder('latin1').decode(bytes.subarray(0, 2048));
+  const format = detectStatementFormat(head, options.fileName);
+
+  if (format === 'pdf') {
+    return parsePdfStatement(bytes, {
+      accountId: options.accountId,
+      currency: options.currency,
+      ...(options.dayFirst === undefined ? {} : { dayFirst: options.dayFirst }),
+    });
+  }
+
+  if (format === 'xlsx') {
+    return parseXlsxStatement(bytes, {
+      accountId: options.accountId,
+      currency: options.currency,
+      ...(options.dayFirst === undefined ? {} : { dayFirst: options.dayFirst }),
+    });
+  }
+
+  return parseStatement(new TextDecoder('utf-8').decode(bytes), options);
+}
+
 export { parseCsvStatement, parseAmountText, parseStatementDate, splitCsvLine } from './csv.js';
 export { parseOfxStatement, parseOfxDate } from './ofx.js';
+export { extractPdfLines, parsePdfStatement, type PdfParseOptions } from './pdf.js';
+export { parseXlsxStatement, readXlsxSheet, type XlsxParseOptions } from './xlsx.js';
+export { findHeaderRow, normalizeHeader, parseTable, type TableParseOptions } from './table.js';
+export { readZipEntries, readZipFile, ZipError, type ZipEntry } from './zip.js';

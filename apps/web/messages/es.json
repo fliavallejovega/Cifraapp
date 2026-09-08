@@ -520,11 +520,14 @@
         "unreadable": "No pudimos leer este archivo.",
         "storageUnavailable": "No pudimos guardar el archivo. Intenta de nuevo en un momento.",
         "noAccount": "Primero agrega una cuenta a la que pertenezcan estos movimientos.",
-        "generic": "Algo no salió bien. Intenta de nuevo."
+        "generic": "Algo no salió bien. Intenta de nuevo.",
+        "queueUnavailable": "No pudimos poner el archivo en cola. Vuelve a intentarlo en un momento."
       },
-      "summaryHeading": "Analizamos el archivo",
-      "summaryDetail": "{found} líneas leídas · {new} nuevas · {duplicate} ya estaban · {review} para que las revises",
-      "reviewLink": "Revisar las líneas y confirmar"
+      "account": "¿De qué cuenta es este estado?",
+      "accountHint": "Filar un estado en la cuenta equivocada es peor que no filarlo.",
+      "queuedHeading": "Recibimos tu archivo.",
+      "queuedDetail": "Lo estamos leyendo. Suele tomar unos segundos; si es un PDF largo, un poco más.",
+      "watchLink": "Ver cómo va"
     },
     "history": {
       "title": "Importaciones anteriores",
@@ -1414,6 +1417,174 @@
       "title": "El cuestionario",
       "detail": "Puedes volver a contestarlo. No borra nada de lo que ya registraste.",
       "action": "Volver a contestar el cuestionario"
+    }
+  },
+  "importJob": {
+    "title": "Leyendo tu estado de cuenta",
+    "backToImports": "Volver a importar",
+    "startedAt": "Empezó el {moment}",
+    "notFound": {
+      "title": "No encontramos ese proceso.",
+      "body": "Puede haber terminado hace mucho, o el enlace es de otro hogar.",
+      "action": "Ver tus importaciones"
+    },
+    "queued": "En cola. Empieza en unos segundos.",
+    "running": "Trabajando…",
+    "stages": {
+      "reading": "Abriendo el archivo",
+      "parsing": "Leyendo los movimientos",
+      "matching": "Buscando repetidos contra lo que ya tienes",
+      "ready": "Listo para que lo revises"
+    },
+    "retrying": "Intento {attempt} de {max}. El anterior falló y lo estamos reintentando.",
+    "failedTitle": "No pudimos leer este archivo",
+    "cancelled": "Cancelado. El archivo sigue guardado.",
+    "succeeded": "Terminado.",
+    "review": "Revisar los movimientos",
+    "leaveNote": "Puedes cerrar esta página. El trabajo sigue y te espera en «Importar».",
+    "refresh": "Actualizar",
+    "summary": {
+      "title": "Qué encontramos",
+      "found": "Movimientos leídos",
+      "new": "Nuevos",
+      "duplicate": "Posibles repetidos",
+      "rejected": "Líneas que no pudimos leer"
+    }
+  },
+  "review": {
+    "title": "Por revisar",
+    "detail": "Lo que el sistema notó y no decide solo. Cada cosa aquí es una decisión tuya.",
+    "empty": {
+      "title": "No hay nada esperándote.",
+      "body": "Cuando importes un estado de cuenta, aquí aparece lo que el sistema note: repetidos, transferencias, gastos que se repiten y rubros de los que no está seguro."
+    },
+    "queues": {
+      "duplicates": {
+        "title": "Posibles repetidos",
+        "detail": "Movimientos que parecen ser el mismo dos veces."
+      },
+      "transfers": {
+        "title": "Transferencias por confirmar",
+        "detail": "Plata que se movió entre tus cuentas y no debería contar como gasto."
+      },
+      "recurring": {
+        "title": "Gastos que se repiten",
+        "detail": "Patrones que detectamos y que podrían ser compromisos."
+      },
+      "categories": {
+        "title": "Rubros por confirmar",
+        "detail": "Movimientos que clasificamos con poca confianza."
+      }
+    },
+    "pending": "{count} esperando",
+    "clear": "Al día",
+    "open": "Revisar",
+    "rescan": "Volver a analizar",
+    "rescanDetail": "Corre los cuatro análisis otra vez sobre tus movimientos.",
+    "rescanQueued": "Análisis en cola. En unos segundos aparece lo nuevo.",
+    "errorTitle": "No se pudo guardar",
+    "totalPending": "{count} decisiones esperándote"
+  },
+  "duplicates": {
+    "title": "Posibles repetidos",
+    "detail": "El mismo gasto puede llegar dos veces: en dos estados de cuenta, o porque lo registraste a mano y después lo importaste.",
+    "back": "Volver a lo pendiente",
+    "empty": {
+      "title": "Ningún repetido esperando.",
+      "body": "Cuando el sistema vea dos movimientos que parecen el mismo, te lo pregunta aquí antes de tocar nada."
+    },
+    "confidence": "{percent}% de confianza",
+    "existing": "El que ya estaba",
+    "incoming": "El que llegó después",
+    "same": "Es el mismo",
+    "different": "Son distintos",
+    "sameNote": "El segundo deja de contar. No se borra.",
+    "signals": {
+      "fingerprint": "Misma huella exacta",
+      "same_amount": "Mismo monto",
+      "same_date": "Misma fecha",
+      "near_date": "Fechas cercanas",
+      "same_reference": "Misma referencia del banco",
+      "similar_description": "Descripción parecida",
+      "same_merchant": "Mismo comercio",
+      "same_account": "Misma cuenta",
+      "different_document": "Vienen de archivos distintos"
+    }
+  },
+  "transfersReview": {
+    "title": "Transferencias por confirmar",
+    "detail": "Mover $500 de tu cuenta a tu ahorro no es un gasto ni un ingreso. Si cuenta como los dos, todas tus cifras quedan mal.",
+    "back": "Volver a lo pendiente",
+    "empty": {
+      "title": "Nada por confirmar.",
+      "body": "Cuando veamos dos movimientos iguales y opuestos entre tus cuentas, te lo preguntamos aquí."
+    },
+    "cardPayment": "Pago de tarjeta",
+    "cardPaymentNote": "Las compras que generaron ese saldo ya contaron como gasto cuando las hiciste. Contar el pago otra vez sería contarlas dos veces.",
+    "from": "Salió de",
+    "to": "Entró a",
+    "confidence": "{percent}% de confianza",
+    "confirm": "Sí, es una transferencia mía",
+    "reject": "No, son dos cosas distintas"
+  },
+  "recurringReview": {
+    "title": "Gastos que se repiten",
+    "detail": "Patrones que vimos en tus movimientos. Confirmar uno lo convierte en un compromiso que el plan tiene en cuenta.",
+    "back": "Volver a lo pendiente",
+    "empty": {
+      "title": "No detectamos patrones nuevos.",
+      "body": "Hacen falta al menos tres apariciones para llamar algo recurrente. Con un par de meses de movimientos empiezan a salir."
+    },
+    "seen": "Visto {count} veces",
+    "variation": "El monto varía {percent}%",
+    "steady": "Siempre el mismo monto",
+    "next": "El próximo: {date}",
+    "confirm": "Sí, registrarlo",
+    "confirmEssential": "Sí, y es indispensable",
+    "dismiss": "No es recurrente",
+    "confidence": "{percent}% de confianza"
+  },
+  "categoryReview": {
+    "title": "Rubros por confirmar",
+    "detail": "El sistema clasificó estos con poca confianza. Preferimos preguntarte a poner un número dudoso en tu presupuesto.",
+    "back": "Volver a lo pendiente",
+    "empty": {
+      "title": "Nada dudoso por ahora.",
+      "body": "Cuando el sistema no esté seguro de un rubro, no lo aplica en silencio: te lo pregunta aquí."
+    },
+    "suggested": "Sugerido: {category}",
+    "noSuggestion": "Sin sugerencia",
+    "confidence": "{percent}% de confianza",
+    "field": "Rubro",
+    "accept": "Confirmar",
+    "acceptNote": "Lo que elijas queda como tuyo y ninguna regla lo pisa después."
+  },
+  "merchants": {
+    "title": "Comercios",
+    "detail": "Dónde se va el dinero de verdad. Poner el rubro una vez aquí evita que te lo pregunten treinta veces.",
+    "list": {
+      "title": "Comercios reconocidos",
+      "detail": "El rubro que pongas se aplica a los movimientos de ese comercio que no hayas clasificado tú."
+    },
+    "add": "Agregar un comercio",
+    "addTitle": "Nuevo comercio",
+    "submitCreate": "Agregar",
+    "submitUpdate": "Guardar los cambios",
+    "removeConfirm": "Los movimientos conservan su rubro. Solo se pierde la etiqueta del comercio.",
+    "empty": {
+      "title": "Todavía no hay comercios.",
+      "body": "Se reconocen solos al importar estados de cuenta. Cuando aparezcan, aquí decides el rubro de cada uno."
+    },
+    "form": {
+      "name": "Nombre del comercio",
+      "nameHint": "Como lo llamas tú, no como sale en el estado de cuenta.",
+      "category": "Rubro por defecto",
+      "categoryHint": "Se aplica a lo que aún no tiene rubro puesto por ti."
+    },
+    "noCategory": "Sin rubro por defecto",
+    "row": {
+      "movements": "{count} movimientos",
+      "none": "sin movimientos"
     }
   }
 }

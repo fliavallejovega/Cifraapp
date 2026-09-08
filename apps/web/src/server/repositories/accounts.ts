@@ -2,7 +2,7 @@ import 'server-only';
 
 import { accounts } from '@app/database/schema';
 import { Money, type CurrencyCode } from '@app/domain';
-import { and, count, desc, eq, isNull, sql } from 'drizzle-orm';
+import { and, desc, eq, isNull, sql } from 'drizzle-orm';
 
 import { queryAsUser, type Session } from '../session';
 
@@ -138,22 +138,4 @@ export async function loadAccounts(
       isEmpty: views.length === 0,
     };
   });
-}
-
-/** Whether the household has at least one account an import could file against. */
-export async function hasActiveAccount(session: Session, householdId: string): Promise<boolean> {
-  const [row] = await queryAsUser(session, (tx) =>
-    tx
-      .select({ total: count() })
-      .from(accounts)
-      .where(
-        and(
-          eq(accounts.householdId, householdId),
-          eq(accounts.status, 'active'),
-          isNull(accounts.deletedAt),
-        ),
-      ),
-  );
-
-  return (row?.total ?? 0) > 0;
 }

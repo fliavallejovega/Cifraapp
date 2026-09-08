@@ -125,6 +125,24 @@ export async function getDocumentUrl(key: string): Promise<string> {
   });
 }
 
+/**
+ * The bytes back, for a worker rather than for a browser.
+ *
+ * A background job cannot follow a signed URL: it has no session, and going out
+ * to the public endpoint to fetch an object we hold credentials for would be a
+ * round trip bought with a security decision. So the object is read directly.
+ */
+export async function readDocument(key: string): Promise<Uint8Array> {
+  const { client, bucket } = storage();
+
+  const response = await client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+  const body = response.Body;
+
+  if (!body) throw new Error(`The stored document ${key} is empty.`);
+
+  return new Uint8Array(await body.transformToByteArray());
+}
+
 export async function deleteDocument(key: string): Promise<void> {
   const { client, bucket } = storage();
   await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));

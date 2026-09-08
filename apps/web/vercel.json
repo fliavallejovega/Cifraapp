@@ -4,6 +4,10 @@
     {
       "path": "/api/cron/supabase-keepalive",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/jobs",
+      "schedule": "*/5 * * * *"
     }
   ]
 }

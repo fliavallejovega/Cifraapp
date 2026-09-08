@@ -520,11 +520,14 @@
         "unreadable": "We couldn't read this file.",
         "storageUnavailable": "We couldn't store the file. Please try again in a moment.",
         "noAccount": "Add an account for these transactions to belong to first.",
-        "generic": "Something went wrong. Please try again."
+        "generic": "Something went wrong. Please try again.",
+        "queueUnavailable": "We could not queue the file. Try again in a moment."
       },
-      "summaryHeading": "We read the file",
-      "summaryDetail": "{found} lines read · {new} new · {duplicate} already there · {review} for you to check",
-      "reviewLink": "Review the lines and confirm"
+      "account": "Which account is this statement for?",
+      "accountHint": "Filing a statement against the wrong account is worse than not filing it.",
+      "queuedHeading": "We have your file.",
+      "queuedDetail": "We are reading it. It usually takes a few seconds; a long PDF takes a little more.",
+      "watchLink": "See how it is going"
     },
     "history": {
       "title": "Earlier imports",
@@ -1414,6 +1417,174 @@
       "title": "The questionnaire",
       "detail": "You can answer it again. It erases nothing you already recorded.",
       "action": "Answer the questionnaire again"
+    }
+  },
+  "importJob": {
+    "title": "Reading your statement",
+    "backToImports": "Back to imports",
+    "startedAt": "Started {moment}",
+    "notFound": {
+      "title": "We could not find that run.",
+      "body": "It may have finished long ago, or the link belongs to another household.",
+      "action": "See your imports"
+    },
+    "queued": "Queued. It starts in a few seconds.",
+    "running": "Working…",
+    "stages": {
+      "reading": "Opening the file",
+      "parsing": "Reading the movements",
+      "matching": "Checking for repeats against what you already have",
+      "ready": "Ready for you to review"
+    },
+    "retrying": "Attempt {attempt} of {max}. The last one failed and we are trying again.",
+    "failedTitle": "We could not read this file",
+    "cancelled": "Cancelled. The file is still stored.",
+    "succeeded": "Finished.",
+    "review": "Review the movements",
+    "leaveNote": "You can close this page. The work carries on and waits for you under «Import».",
+    "refresh": "Refresh",
+    "summary": {
+      "title": "What we found",
+      "found": "Movements read",
+      "new": "New",
+      "duplicate": "Possible repeats",
+      "rejected": "Lines we could not read"
+    }
+  },
+  "review": {
+    "title": "To review",
+    "detail": "What the system noticed and will not decide on its own. Everything here is your call.",
+    "empty": {
+      "title": "Nothing is waiting for you.",
+      "body": "When you import a statement, whatever the system notices shows up here: repeats, transfers, expenses that recur, and categories it is unsure about."
+    },
+    "queues": {
+      "duplicates": {
+        "title": "Possible repeats",
+        "detail": "Movements that look like the same one twice."
+      },
+      "transfers": {
+        "title": "Transfers to confirm",
+        "detail": "Money that moved between your own accounts and should not count as spending."
+      },
+      "recurring": {
+        "title": "Expenses that repeat",
+        "detail": "Patterns we detected that could be commitments."
+      },
+      "categories": {
+        "title": "Categories to confirm",
+        "detail": "Movements we classified without much confidence."
+      }
+    },
+    "pending": "{count} waiting",
+    "clear": "All clear",
+    "open": "Review",
+    "rescan": "Analyse again",
+    "rescanDetail": "Runs the four analyses over your movements again.",
+    "rescanQueued": "Analysis queued. Anything new shows up in a few seconds.",
+    "errorTitle": "Could not save",
+    "totalPending": "{count} decisions waiting for you"
+  },
+  "duplicates": {
+    "title": "Possible repeats",
+    "detail": "The same expense can arrive twice: in two statements, or because you recorded it by hand and then imported it.",
+    "back": "Back to what is pending",
+    "empty": {
+      "title": "No repeats waiting.",
+      "body": "When the system sees two movements that look like the same one, it asks you here before touching anything."
+    },
+    "confidence": "{percent}% confidence",
+    "existing": "The one already there",
+    "incoming": "The one that arrived later",
+    "same": "It is the same one",
+    "different": "They are different",
+    "sameNote": "The second stops counting. It is not deleted.",
+    "signals": {
+      "fingerprint": "Exact same fingerprint",
+      "same_amount": "Same amount",
+      "same_date": "Same date",
+      "near_date": "Dates close together",
+      "same_reference": "Same bank reference",
+      "similar_description": "Similar description",
+      "same_merchant": "Same merchant",
+      "same_account": "Same account",
+      "different_document": "They came from different files"
+    }
+  },
+  "transfersReview": {
+    "title": "Transfers to confirm",
+    "detail": "Moving $500 from your account to your savings is not spending and not income. Counted as both, every figure you have goes wrong.",
+    "back": "Back to what is pending",
+    "empty": {
+      "title": "Nothing to confirm.",
+      "body": "When we see two equal and opposite movements between your accounts, we ask you here."
+    },
+    "cardPayment": "Card payment",
+    "cardPaymentNote": "The purchases that produced that balance already counted as spending when you made them. Counting the payment as well would count them twice.",
+    "from": "Left from",
+    "to": "Arrived in",
+    "confidence": "{percent}% confidence",
+    "confirm": "Yes, that is my own transfer",
+    "reject": "No, they are two different things"
+  },
+  "recurringReview": {
+    "title": "Expenses that repeat",
+    "detail": "Patterns we saw in your movements. Confirming one turns it into a commitment the plan accounts for.",
+    "back": "Back to what is pending",
+    "empty": {
+      "title": "No new patterns detected.",
+      "body": "It takes at least three appearances to call something recurring. With a couple of months of movements they start to show up."
+    },
+    "seen": "Seen {count} times",
+    "variation": "The amount varies by {percent}%",
+    "steady": "Always the same amount",
+    "next": "Next one: {date}",
+    "confirm": "Yes, record it",
+    "confirmEssential": "Yes, and it is essential",
+    "dismiss": "Not recurring",
+    "confidence": "{percent}% confidence"
+  },
+  "categoryReview": {
+    "title": "Categories to confirm",
+    "detail": "The system classified these without much confidence. We would rather ask you than put a doubtful figure in your budget.",
+    "back": "Back to what is pending",
+    "empty": {
+      "title": "Nothing doubtful right now.",
+      "body": "When the system is unsure of a category it does not apply it silently: it asks you here."
+    },
+    "suggested": "Suggested: {category}",
+    "noSuggestion": "No suggestion",
+    "confidence": "{percent}% confidence",
+    "field": "Category",
+    "accept": "Confirm",
+    "acceptNote": "Whatever you choose becomes yours, and no rule overwrites it afterwards."
+  },
+  "merchants": {
+    "title": "Merchants",
+    "detail": "Where the money actually goes. Setting the category once here stops the question being asked thirty times.",
+    "list": {
+      "title": "Recognised merchants",
+      "detail": "The category you set applies to that merchant's movements you have not categorised yourself."
+    },
+    "add": "Add a merchant",
+    "addTitle": "New merchant",
+    "submitCreate": "Add",
+    "submitUpdate": "Save the changes",
+    "removeConfirm": "The movements keep their category. Only the merchant label is lost.",
+    "empty": {
+      "title": "No merchants yet.",
+      "body": "They are recognised on their own when you import statements. When they appear, you decide each one's category here."
+    },
+    "form": {
+      "name": "Merchant name",
+      "nameHint": "The way you call it, not the way it reads on the statement.",
+      "category": "Default category",
+      "categoryHint": "Applies to anything you have not categorised yourself."
+    },
+    "noCategory": "No default category",
+    "row": {
+      "movements": "{count} movements",
+      "none": "no movements"
     }
   }
 }

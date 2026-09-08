@@ -29,14 +29,29 @@ export {
 
 export {
   detectStatementFormat,
+  extractPdfLines,
+  findHeaderRow,
+  normalizeHeader,
   parseAmountText,
   parseCsvStatement,
+  parseDocument,
   parseOfxDate,
   parseOfxStatement,
+  parsePdfStatement,
   parseStatement,
   parseStatementDate,
+  parseTable,
+  parseXlsxStatement,
+  readXlsxSheet,
+  readZipEntries,
+  readZipFile,
   splitCsvLine,
+  ZipError,
   type ParseOptions,
+  type PdfParseOptions,
+  type TableParseOptions,
+  type XlsxParseOptions,
+  type ZipEntry,
 } from './parsers/index.js';
 
 export {

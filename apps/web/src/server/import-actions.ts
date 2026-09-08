@@ -4,25 +4,33 @@ import { accounts, importRows, imports, transactions } from '@app/database/schem
 import { Money } from '@app/domain';
 import { and, eq, isNull } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
+import { after } from 'next/server';
 import { z } from 'zod';
 
-import { runImport, type ImportSummary } from './import-service';
+import { scheduleAnalysis } from './analysis-service';
+import { stageDocument } from './import-service';
+import { runJobNow, runQueuedJobs } from './jobs';
 import { loadSession, queryAsUser } from './session';
 
 /**
  * The upload action.
  *
- * The file is read into memory and handed to the import service. For the file
- * sizes a bank statement actually reaches that is fine; when PDF and OCR arrive
- * this moves to a background job, because parsing must never happen inside a
- * synchronous request (spec §12).
+ * It no longer parses. The file is hashed, stored and queued, and the response
+ * comes back as soon as those three are done — because parsing a PDF inside a
+ * synchronous request is the thing the project rules forbid, and the thing that
+ * made "supports PDF" impossible to ship (spec §12).
+ *
+ * The work is then kicked off with `after`, which runs it once the response has
+ * been flushed. That is what makes the common case feel immediate: a small CSV
+ * is usually parsed before the person finishes reading the screen that says it
+ * is being read. A file that outlives the invocation is picked up by the cron
+ * runner instead, and the screen says so either way.
  */
 
 export interface ImportActionResult {
   readonly error?: string;
   readonly detail?: string;
-  readonly summary?: ImportSummary;
-  readonly importId?: string;
+  readonly jobId?: string;
 }
 
 export async function importStatement(
@@ -38,11 +46,12 @@ export async function importStatement(
   }
 
   const householdId = session.activeHouseholdId;
+  const chosen = z.uuid().safeParse(formData.get('accountId'));
 
-  // An import needs an account to belong to. Rather than guessing, the first
-  // active account is used and Phase 4's account picker replaces this — a
-  // transaction filed against the wrong account is worse than one not filed.
-  const account = await queryAsUser(session, (tx) =>
+  // The account the statement belongs to. A person who picked one gets that
+  // one; otherwise the first active account, because filing against the wrong
+  // account is worse than not filing, and the form always offers the choice.
+  const available = await queryAsUser(session, (tx) =>
     tx
       .select({ id: accounts.id, currency: accounts.currency })
       .from(accounts)
@@ -52,16 +61,18 @@ export async function importStatement(
           eq(accounts.status, 'active'),
           isNull(accounts.deletedAt),
         ),
-      )
-      .limit(1),
+      ),
   );
 
-  const target = account[0];
+  const target = chosen.success
+    ? available.find((account) => account.id === chosen.data)
+    : available[0];
+
   if (!target) return { error: 'noAccount' };
 
   const bytes = new Uint8Array(await file.arrayBuffer());
 
-  const outcome = await runImport(session, {
+  const outcome = await stageDocument(session, {
     householdId,
     accountId: target.id,
     currency: target.currency.trim() === 'PAB' ? 'PAB' : 'USD',
@@ -74,13 +85,21 @@ export async function importStatement(
     return { error: outcome.reason, ...(outcome.detail ? { detail: outcome.detail } : {}) };
   }
 
+  const jobId = outcome.jobId;
+  after(async () => {
+    try {
+      await runJobNow(jobId);
+    } catch (error: unknown) {
+      // The cron runner will pick it up. A failure here must not turn a queued
+      // import into a failed request the person already saw succeed.
+      console.error('[import] inline run failed', { jobId, error });
+    }
+  });
+
   const locale = formData.get('locale') === 'en' ? 'en' : 'es';
   revalidatePath(`/${locale}/documents`);
 
-  // The counts travel as numbers, not as a sentence. The English string that
-  // used to be built here rendered untranslated on a Spanish screen, and every
-  // user-visible word belongs in the catalogue (project rule).
-  return { importId: outcome.importId, summary: outcome.summary };
+  return { jobId };
 }
 
 /**
@@ -238,8 +257,32 @@ export async function confirmImport(
 
   if (filed === 0) return { error: 'nothingFiled' };
 
+  // Now that there are transactions, the four engines that were built and never
+  // run against a real row have something to look at: transfers, duplicates,
+  // recurring patterns and categories. All four propose; none of them decides.
+  await scheduleAnalysis(session, householdId);
+  after(async () => {
+    try {
+      await runQueuedJobs();
+    } catch (error: unknown) {
+      console.error('[import] analysis run failed', { householdId, error });
+    }
+  });
+
   const locale = formData.get('locale') === 'en' ? 'en' : 'es';
-  for (const path of ['documents', 'overview', 'plan', 'reports', 'accounts']) {
+  for (const path of [
+    'documents',
+    'overview',
+    'plan',
+    'reports',
+    'accounts',
+    'movements',
+    'review',
+    'review/duplicates',
+    'review/transfers',
+    'review/recurring',
+    'review/categories',
+  ]) {
     revalidatePath(`/${locale}/${path}`);
   }
   revalidatePath(`/${locale}/documents/${importId.data}`);

@@ -62,10 +62,16 @@ describe('format detection', () => {
     expect(detectStatementFormat('nothing useful here')).toBeNull();
   });
 
-  it('says plainly what it cannot do yet', () => {
-    // An error that names the recovery, not the rule that was broken.
+  it('refuses a binary format that has been decoded to text', () => {
+    // PDF and XLSX are read from the bytes by `parseDocument`. Decoding them to
+    // a string first destroys the compressed streams, so arriving here means a
+    // caller took the wrong door, and the error says which one.
     expect(() => parseStatement('%PDF-1.7', OPTIONS)).toThrow(StatementParseError);
-    expect(() => parseStatement('%PDF-1.7', OPTIONS)).toThrow(/CSV or OFX/);
+    expect(() => parseStatement('%PDF-1.7', OPTIONS)).toThrow(/from the file itself/);
+  });
+
+  it('names every format it accepts when it recognises none of them', () => {
+    expect(() => parseStatement('nothing useful here', OPTIONS)).toThrow(/CSV, OFX, PDF and XLSX/);
   });
 });
 

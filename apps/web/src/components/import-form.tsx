@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Field, Input, Problem } from '@app/ui';
+import { Button, Field, Input, Problem, Select } from '@app/ui';
 import { useActionState } from 'react';
 
 import { Link } from '@/i18n/navigation';
@@ -9,29 +9,34 @@ import { importStatement, type ImportActionResult } from '@/server/import-action
 /**
  * Statement upload.
  *
- * The result is a summary the user can check — found, new, duplicate, needing
- * review — rather than the word "done". A number a person can verify is worth
- * more than a reassurance they cannot (spec §105).
+ * The upload no longer reports a summary, because it no longer parses: it
+ * hands the file to a background job and hands the person a link to watch it.
+ * That is a real change in what the screen can honestly say. «1,284 found · 27
+ * new» was a claim worth making and it can only be made once the work is done —
+ * so it now lives on the screen that reports on the work.
  *
- * The summary now ends where it always should have: a link to the rows. Parsing
- * a file and reporting four new movements, with no way to reach them, was a
- * promise the screen could not keep.
+ * The account is chosen here rather than guessed. Filing a statement against
+ * the wrong account is worse than not filing it, and the household is the only
+ * one who knows which card this PDF belongs to.
  */
 export interface ImportFormProps {
   readonly locale: string;
+  readonly accounts: readonly { readonly id: string; readonly name: string }[];
   readonly labels: {
     readonly file: string;
     readonly fileHint: string;
+    readonly account: string;
+    readonly accountHint: string;
     readonly submit: string;
     readonly errorTitle: string;
-    readonly summaryHeading: string;
-    readonly summaryDetail: string;
-    readonly reviewLink: string;
+    readonly queuedHeading: string;
+    readonly queuedDetail: string;
+    readonly watchLink: string;
     readonly errors: Record<string, string>;
   };
 }
 
-export function ImportForm({ locale, labels }: ImportFormProps) {
+export function ImportForm({ locale, accounts, labels }: ImportFormProps) {
   const [state, formAction, pending] = useActionState<ImportActionResult, FormData>(
     importStatement,
     {},
@@ -48,26 +53,41 @@ export function ImportForm({ locale, labels }: ImportFormProps) {
         />
       )}
 
-      {state.summary && (
+      {state.jobId && (
         <div
           role="status"
           className="border-l border-[color:var(--color-positive)] bg-[color:var(--color-positive-sunk)] px-4 py-3"
         >
-          <p className="text-sm font-medium">{labels.summaryHeading}</p>
-          <p className="tabular mt-1 text-xs text-[color:var(--color-ink-secondary)]">
-            {fill(labels.summaryDetail, state.summary)}
+          <p className="text-sm font-medium">{labels.queuedHeading}</p>
+          <p className="mt-1 text-xs text-[color:var(--color-ink-secondary)]">
+            {labels.queuedDetail}
           </p>
-          {state.importId && (
-            <p className="mt-2">
-              <Link
-                href={`/documents/${state.importId}`}
-                className="text-sm underline underline-offset-4 hover:no-underline"
-              >
-                {labels.reviewLink}
-              </Link>
-            </p>
-          )}
+          <p className="mt-2">
+            <Link
+              href={`/documents/processing/${state.jobId}`}
+              className="text-sm underline underline-offset-4 hover:no-underline"
+            >
+              {labels.watchLink}
+            </Link>
+          </p>
         </div>
+      )}
+
+      {accounts.length > 1 && (
+        <Field label={labels.account} hint={labels.accountHint}>
+          {({ id, describedBy }) => (
+            <Select id={id} name="accountId" aria-describedby={describedBy}>
+              {accounts.map((account) => (
+                <option key={account.id} value={account.id}>
+                  {account.name}
+                </option>
+              ))}
+            </Select>
+          )}
+        </Field>
+      )}
+      {accounts.length === 1 && (
+        <input type="hidden" name="accountId" value={accounts[0]?.id ?? ''} />
       )}
 
       <Field label={labels.file} hint={labels.fileHint} required>
@@ -76,7 +96,7 @@ export function ImportForm({ locale, labels }: ImportFormProps) {
             id={id}
             name="file"
             type="file"
-            accept=".csv,.ofx,.qfx,text/csv,application/x-ofx"
+            accept=".csv,.ofx,.qfx,.pdf,.xlsx,text/csv,application/x-ofx,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             required
             aria-describedby={describedBy}
             className="file:mr-3 file:border-0 file:bg-transparent file:text-sm"
@@ -89,15 +109,4 @@ export function ImportForm({ locale, labels }: ImportFormProps) {
       </Button>
     </form>
   );
-}
-
-function fill(
-  template: string,
-  summary: { found: number; created: number; duplicate: number; review: number },
-): string {
-  return template
-    .replace('{found}', String(summary.found))
-    .replace('{new}', String(summary.created))
-    .replace('{duplicate}', String(summary.duplicate))
-    .replace('{review}', String(summary.review));
 }
