@@ -408,6 +408,62 @@
   --color-gauge-level: var(--color-brand);
 }
 
+/* -----------------------------------------------------------------------------
+ * Entrance.
+ *
+ * Everything that appears on a screen rises into place: a short travel, a
+ * critically damped settle, and a stagger down the page so a screen reads top
+ * to bottom rather than popping in as one block. Reduced motion collapses the
+ * travel and keeps the fade.
+ * -------------------------------------------------------------------------- */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@utility enter {
+  animation: rise var(--duration-sheet) var(--ease-settle) both;
+}
+
+/* Children of a page rise one after another. Eight steps, then everything
+   below the fold arrives together — nobody watches the fourteenth section
+   wait its turn. */
+@utility enter-stagger {
+  & > * {
+    animation: rise var(--duration-sheet) var(--ease-settle) both;
+  }
+  & > *:nth-child(1) {
+    animation-delay: 0ms;
+  }
+  & > *:nth-child(2) {
+    animation-delay: 50ms;
+  }
+  & > *:nth-child(3) {
+    animation-delay: 100ms;
+  }
+  & > *:nth-child(4) {
+    animation-delay: 150ms;
+  }
+  & > *:nth-child(5) {
+    animation-delay: 200ms;
+  }
+  & > *:nth-child(6) {
+    animation-delay: 250ms;
+  }
+  & > *:nth-child(7) {
+    animation-delay: 300ms;
+  }
+  & > *:nth-child(n + 8) {
+    animation-delay: 350ms;
+  }
+}
+
 /* Gradation labels along a scale. */
 @utility gradation-label {
   font-family: var(--font-mono);

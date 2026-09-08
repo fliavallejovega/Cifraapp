@@ -3,10 +3,12 @@ import { Card, Page, PageHeader, Section } from '@app/ui';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { SingleForm } from '@/components/records';
+import { TwoFactorSettings } from '@/components/two-factor-settings';
 import type { FieldSpec } from '@/components/records/spec';
 import { Link } from '@/i18n/navigation';
 import { trimRate } from '@/lib/format';
 import { loadHouseholdContext } from '@/server/household-context';
+import { loadTwoFactorState } from '@/server/mfa';
 import { loadSettings } from '@/server/repositories/administration';
 import { saveSettings } from '@/server/settings-actions';
 import { requireHousehold } from '@/server/session';
@@ -30,7 +32,10 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
 
   const session = await requireHousehold(locale);
   const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
-  const settings = await loadSettings(session, session.activeHouseholdId, context.currency);
+  const [settings, twoFactor] = await Promise.all([
+    loadSettings(session, session.activeHouseholdId, context.currency),
+    loadTwoFactorState(),
+  ]);
 
   const t = await getTranslations('settings');
   const shared = await getTranslations('records');
@@ -121,6 +126,38 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
             </Link>
           </div>
         </Card>
+      </Section>
+
+      <Section title={t('security.title')} detail={t('security.detail')} className="mt-12">
+        <TwoFactorSettings
+          enabled={twoFactor.enabled}
+          labels={{
+            enabled: t('security.enabled'),
+            disabled: t('security.disabled'),
+            enabledDetail: t('security.enabledDetail'),
+            disabledDetail: t('security.disabledDetail'),
+            enable: t('security.enable'),
+            scanTitle: t('security.scanTitle'),
+            scanDetail: t('security.scanDetail'),
+            secretLabel: t('security.secretLabel'),
+            code: t('security.code'),
+            confirm: t('security.confirm'),
+            confirmed: t('security.confirmed'),
+            cancel: t('security.cancel'),
+            disable: t('security.disable'),
+            disableTitle: t('security.disableTitle'),
+            disableDetail: t('security.disableDetail'),
+            disabledDone: t('security.disabledDone'),
+            errorTitle: t('security.errorTitle'),
+            errors: {
+              invalidCode: t('security.errors.invalidCode'),
+              codeRejected: t('security.errors.codeRejected'),
+              signInRequired: t('security.errors.signInRequired'),
+              alreadyEnabled: t('security.errors.alreadyEnabled'),
+              generic: t('security.errors.generic'),
+            },
+          }}
+        />
       </Section>
 
       <Section title={t('currency.title')} detail={t('currency.detail')} className="mt-12">

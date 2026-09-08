@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { z } from 'zod';
 
 import { requestAuthCallbackUrl } from '@/server/app-origin';
+import { loadTwoFactorState } from './mfa';
 import { createHousehold, loadSession } from './session';
 import { createRequestClient } from './supabase';
 
@@ -54,8 +55,15 @@ export async function signIn(_previous: ActionResult, formData: FormData): Promi
   const next = formData.get('next');
   const locale = formData.get('locale');
   const destination = typeof next === 'string' && next.startsWith('/') ? next : '/overview';
+  const prefix = `/${typeof locale === 'string' ? locale : 'es'}`;
 
-  redirect(`/${typeof locale === 'string' ? locale : 'es'}${destination}`);
+  // The password was right; whether that is enough is the session's to say.
+  const twoFactor = await loadTwoFactorState();
+  if (twoFactor.required) {
+    redirect(`${prefix}/mfa?next=${encodeURIComponent(destination)}`);
+  }
+
+  redirect(`${prefix}${destination}`);
 }
 
 export async function signUp(_previous: ActionResult, formData: FormData): Promise<ActionResult> {

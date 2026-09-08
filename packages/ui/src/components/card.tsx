@@ -56,7 +56,7 @@ export function Card({
   return (
     <div
       className={cn(
-        'rounded-(--radius-lg)',
+        'rounded-(--radius-lg) transition-[box-shadow,transform,background-color] duration-(--duration-quick) ease-(--ease-settle)',
         TONES[tone],
         PADDING[padding],
         interactive &&

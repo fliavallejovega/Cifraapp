@@ -11,7 +11,7 @@ import { getTranslations } from 'next-intl/server';
  * screenshot becomes noise and a sentence stays a sentence.
  */
 
-export const alt = 'Cifrapp';
+export const alt = 'Cifraapp';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 

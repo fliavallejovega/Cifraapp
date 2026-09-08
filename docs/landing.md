@@ -1,5 +1,14 @@
 # The home page, as a sales page
 
+> Revised 2026-09-08: rebuilt as a full-width, Apple-like page — centred display
+> type, the product's position panel as an animated hero (level fills, reading
+> counts up), cinematic feature rows with the product's own surfaces, a bento
+> grid, scroll reveals via `motion`, a translucent fixed bar, an ink close.
+> Every animation is once-on-view, and `prefers-reduced-motion` keeps only the
+> fade. Two deliberate departures from DESIGN.md's refusals — display type at
+> hero scale and one soft brass wash behind the hero panel — are the user's
+> explicit direction («premium, Apple-like») and are confined to this page.
+
 Written 2026-09-08, when the landing was rebuilt to sell. The earlier page was
 honest and inert: one demonstration gauge, four refusals, a price. It told a
 reader what the product would not do before showing anything it does.

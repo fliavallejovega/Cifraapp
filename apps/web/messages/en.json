@@ -1,15 +1,15 @@
 {
   "common": {
-    "appName": "Cifrapp",
+    "appName": "Cifraapp",
     "tagline": "Know what you have, what is already committed, and what the next dollar should do.",
     "loading": "Loading…",
     "retry": "Try again"
   },
   "landing": {
     "headline": "Your family’s finances, with one clear answer: what the next dollar should do.",
-    "subheadline": "Cifrapp brings together your household’s accounts, bills, debts and goals, works out what is actually left, and builds a plan of action every month. A family finance app made for Panama.",
+    "subheadline": "Cifraapp brings together your household’s accounts, bills, debts and goals, works out what is actually left, and builds a plan of action every month. A family finance app made for Panama.",
     "seoTitle": "Family finance app: know what to do with your money",
-    "seoDescription": "Cifrapp is the finance app for families: it gathers accounts, bills, debts and goals, works out what is truly available and gives you a plan of action every month. Free to start. Built for Panama.",
+    "seoDescription": "Cifraapp is the finance app for families: it gathers accounts, bills, debts and goals, works out what is truly available and gives you a plan of action every month. Free to start. Built for Panama.",
     "keywords": "family finance app, family budget, household budget, personal finance Panama, family expense tracking, debt payoff plan, family savings, tax reserve for freelancers Panama",
     "primaryCta": "Start for free",
     "secondaryCta": "I already have an account",
@@ -64,7 +64,7 @@
         "available": "Actually available",
         "availableDetail": "of {balance} in accounts, with {committed} already committed and a {buffer} buffer",
         "short": "{amount} short of covering the month",
-        "shortDetail": "Cifrapp tells you before the first due date, not after.",
+        "shortDetail": "Cifraapp tells you before the first due date, not after.",
         "orderTitle": "The order it gets covered in",
         "covered": "Covered",
         "partial": "{amount} of it",
@@ -216,6 +216,27 @@
       "claims": {
         "item": "Item",
         "amount": "Amount"
+      },
+      "eyebrows": {
+        "device": "Your position, on one screen",
+        "capabilities": "What it does",
+        "try": "Try it",
+        "who": "Who it is for",
+        "pricing": "Plans",
+        "refusals": "Principles",
+        "faq": "Questions"
+      },
+      "mechanism": {
+        "readout": "Available to spend",
+        "basis": "of {liquid} in accounts, with {committed} already committed",
+        "gaugeLabel": "Available over the total balance",
+        "buffer": "Buffer minimum",
+        "surface": "Current surface",
+        "claimsTitle": "What claims that money",
+        "rent": "Rent, due on the 1st",
+        "card": "Card minimum payment",
+        "electricity": "Electricity, due on the 14th",
+        "taxReserve": "Estimated tax reserve"
       }
     },
     "pricing": {
@@ -325,6 +346,17 @@
       "invalidEmail": "That email doesn't look valid.",
       "linkExpired": "That link has expired. Request a new one.",
       "generic": "Something went wrong. Please try again."
+    },
+    "mfa": {
+      "title": "Second step",
+      "detail": "Enter the six-digit code from your authenticator app. It submits on its own when complete.",
+      "code": "Six-digit code",
+      "submit": "Verify",
+      "errors": {
+        "invalidCode": "The code is six digits.",
+        "codeRejected": "That code is not valid or has expired. Wait for the next one in the app and try again.",
+        "signInRequired": "Your session expired. Sign in again."
+      }
     }
   },
   "onboarding": {
@@ -1572,6 +1604,34 @@
       "title": "The questionnaire",
       "detail": "You can answer it again. It erases nothing you already recorded.",
       "action": "Answer the questionnaire again"
+    },
+    "security": {
+      "title": "Security",
+      "detail": "Two-step verification with an authenticator app, such as Google Authenticator. Once on, signing in asks for the password and a code.",
+      "enabled": "On",
+      "disabled": "Off",
+      "enabledDetail": "Every time you sign in, after the password we will ask for the code from your app.",
+      "disabledDetail": "With only a password, whoever has it can see everything here. A second step stops that.",
+      "enable": "Turn on two-step verification",
+      "scanTitle": "Scan this code with your app",
+      "scanDetail": "Google Authenticator, Authy, 1Password or any app that uses TOTP codes. Then enter the code it shows.",
+      "secretLabel": "Or type this key by hand",
+      "code": "Six-digit code",
+      "confirm": "Confirm and turn on",
+      "confirmed": "Two-step verification is on. From now on, signing in asks for the code.",
+      "cancel": "Cancel",
+      "disable": "Turn off",
+      "disableTitle": "Turn off two-step verification",
+      "disableDetail": "To confirm it is you, enter the current code from your app. Afterwards, signing in asks only for the password.",
+      "disabledDone": "Two-step verification is off.",
+      "errorTitle": "Could not complete",
+      "errors": {
+        "invalidCode": "The code is six digits.",
+        "codeRejected": "That code is not valid or has expired. Wait for the next one and try again.",
+        "signInRequired": "Your session expired. Sign in again.",
+        "alreadyEnabled": "It is already on.",
+        "generic": "Something failed. Nothing changed; try again."
+      }
     }
   },
   "importJob": {
@@ -2209,7 +2269,7 @@
     "back": "Back to access",
     "grant": {
       "title": "Grant access",
-      "detail": "Your accountant needs a Cifrapp account with that email. If they do not have one, invite them as a member first and then give them the right scope.",
+      "detail": "Your accountant needs a Cifraapp account with that email. If they do not have one, invite them as a member first and then give them the right scope.",
       "email": "Accountant's email",
       "scope": "What they can do",
       "expires": "Expires in",

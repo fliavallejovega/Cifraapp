@@ -10,6 +10,7 @@ import { redirect } from 'next/navigation';
 import { cache } from 'react';
 import type { User } from '@supabase/supabase-js';
 
+import { loadTwoFactorState } from './mfa';
 import { getAuthenticatedUser } from './supabase';
 
 /**
@@ -169,10 +170,21 @@ function displayNameOf(user: User): string | null {
   return typeof candidate === 'string' && candidate.trim() !== '' ? candidate.trim() : null;
 }
 
-/** Requires a session, redirecting to sign-in when there is none. */
+/**
+ * Requires a session, redirecting to sign-in when there is none.
+ *
+ * A session that owes its second step is not a session yet, as far as the
+ * product is concerned. The check is local to the token and costs nothing; a
+ * person who enrolled an authenticator and signed in with only a password is
+ * sent to type the code before any figure is read.
+ */
 export async function requireSession(locale: string): Promise<Session> {
   const session = await loadSession();
   if (!session) redirect(`/${locale}/sign-in`);
+
+  const twoFactor = await loadTwoFactorState();
+  if (twoFactor.required) redirect(`/${locale}/mfa`);
+
   return session;
 }
 

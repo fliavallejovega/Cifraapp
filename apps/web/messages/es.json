@@ -1,15 +1,15 @@
 {
   "common": {
-    "appName": "Cifrapp",
+    "appName": "Cifraapp",
     "tagline": "Sabes cuánto tienes, qué ya está comprometido y qué debe hacer el próximo dólar.",
     "loading": "Cargando…",
     "retry": "Reintentar"
   },
   "landing": {
     "headline": "Las finanzas de tu familia, con una respuesta clara: qué hacer con el próximo dólar.",
-    "subheadline": "Cifrapp reúne las cuentas, los pagos, las deudas y las metas de tu hogar, calcula cuánto queda de verdad y arma un plan de acción cada mes. Una app de finanzas familiares hecha para Panamá.",
+    "subheadline": "Cifraapp reúne las cuentas, los pagos, las deudas y las metas de tu hogar, calcula cuánto queda de verdad y arma un plan de acción cada mes. Una app de finanzas familiares hecha para Panamá.",
     "seoTitle": "App de finanzas familiares: sabe qué hacer con tu dinero",
-    "seoDescription": "Cifrapp es la app de finanzas para la familia: junta cuentas, pagos, deudas y metas, calcula cuánto queda disponible de verdad y te da un plan de acción cada mes. Gratis para empezar. Hecha para Panamá.",
+    "seoDescription": "Cifraapp es la app de finanzas para la familia: junta cuentas, pagos, deudas y metas, calcula cuánto queda disponible de verdad y te da un plan de acción cada mes. Gratis para empezar. Hecha para Panamá.",
     "keywords": "finanzas familiares, app de finanzas para la familia, presupuesto familiar, finanzas personales Panamá, control de gastos familiar, plan de pago de deudas, ahorro familiar, reserva fiscal independientes Panamá",
     "primaryCta": "Empezar gratis",
     "secondaryCta": "Ya tengo cuenta",
@@ -64,7 +64,7 @@
         "available": "Disponible de verdad",
         "availableDetail": "de {balance} en cuentas, con {committed} ya comprometido y {buffer} de colchón",
         "short": "Faltan {amount} para cubrir el mes",
-        "shortDetail": "Cifrapp te lo dice antes del primer vencimiento, no después.",
+        "shortDetail": "Cifraapp te lo dice antes del primer vencimiento, no después.",
         "orderTitle": "En qué orden se cubre",
         "covered": "Cubierto",
         "partial": "Alcanza {amount}",
@@ -216,6 +216,27 @@
       "claims": {
         "item": "Concepto",
         "amount": "Monto"
+      },
+      "eyebrows": {
+        "device": "Tu posición, en una pantalla",
+        "capabilities": "Qué hace",
+        "try": "Pruébalo",
+        "who": "Para quién",
+        "pricing": "Planes",
+        "refusals": "Principios",
+        "faq": "Preguntas"
+      },
+      "mechanism": {
+        "readout": "Disponible para gastar",
+        "basis": "de {liquid} en cuentas, con {committed} ya comprometido",
+        "gaugeLabel": "Disponible sobre el saldo total",
+        "buffer": "Colchón mínimo",
+        "surface": "Superficie actual",
+        "claimsTitle": "Qué reclama ese dinero",
+        "rent": "Alquiler, vence el 1",
+        "card": "Pago mínimo de la tarjeta",
+        "electricity": "Electricidad, vence el 14",
+        "taxReserve": "Reserva fiscal estimada"
       }
     },
     "pricing": {
@@ -325,6 +346,17 @@
       "invalidEmail": "Ese correo no parece válido.",
       "linkExpired": "Ese enlace ya venció. Pide uno nuevo.",
       "generic": "Algo no salió bien. Intenta de nuevo."
+    },
+    "mfa": {
+      "title": "Segundo paso",
+      "detail": "Escribe el código de seis dígitos de tu aplicación de autenticación. Se envía solo al completarlo.",
+      "code": "Código de seis dígitos",
+      "submit": "Verificar",
+      "errors": {
+        "invalidCode": "El código son seis dígitos.",
+        "codeRejected": "Ese código no es válido o ya venció. Espera el siguiente en la aplicación e inténtalo otra vez.",
+        "signInRequired": "Tu sesión venció. Vuelve a entrar."
+      }
     }
   },
   "onboarding": {
@@ -1572,6 +1604,34 @@
       "title": "El cuestionario",
       "detail": "Puedes volver a contestarlo. No borra nada de lo que ya registraste.",
       "action": "Volver a contestar el cuestionario"
+    },
+    "security": {
+      "title": "Seguridad",
+      "detail": "Verificación en dos pasos con una aplicación de autenticación, como Google Authenticator. Una vez activa, entrar pide la contraseña y un código.",
+      "enabled": "Activa",
+      "disabled": "Inactiva",
+      "enabledDetail": "Cada vez que entres, después de la contraseña te pediremos el código de tu aplicación.",
+      "disabledDetail": "Con solo la contraseña, quien la tenga puede ver todo lo que hay aquí. Un segundo paso lo impide.",
+      "enable": "Activar la verificación en dos pasos",
+      "scanTitle": "Escanea este código con tu aplicación",
+      "scanDetail": "Google Authenticator, Authy, 1Password o cualquiera que use códigos TOTP. Después escribe el código que te muestra.",
+      "secretLabel": "O escribe esta clave a mano",
+      "code": "Código de seis dígitos",
+      "confirm": "Confirmar y activar",
+      "confirmed": "Verificación en dos pasos activa. Desde ahora, entrar pide el código.",
+      "cancel": "Cancelar",
+      "disable": "Desactivar",
+      "disableTitle": "Desactivar la verificación en dos pasos",
+      "disableDetail": "Para confirmar que eres tú, escribe el código actual de tu aplicación. Después, entrar pedirá solo la contraseña.",
+      "disabledDone": "Verificación en dos pasos desactivada.",
+      "errorTitle": "No se pudo completar",
+      "errors": {
+        "invalidCode": "El código son seis dígitos.",
+        "codeRejected": "Ese código no es válido o ya venció. Espera el siguiente e inténtalo otra vez.",
+        "signInRequired": "Tu sesión venció. Vuelve a entrar.",
+        "alreadyEnabled": "Ya está activa.",
+        "generic": "Algo falló. Nada cambió; inténtalo de nuevo."
+      }
     }
   },
   "importJob": {
@@ -2209,7 +2269,7 @@
     "back": "Volver a accesos",
     "grant": {
       "title": "Dar acceso",
-      "detail": "Tu contador necesita tener cuenta en Cifrapp con ese correo. Si no la tiene, invítalo primero como miembro y después le das el alcance correcto.",
+      "detail": "Tu contador necesita tener cuenta en Cifraapp con ese correo. Si no la tiene, invítalo primero como miembro y después le das el alcance correcto.",
       "email": "Correo del contador",
       "scope": "Qué puede hacer",
       "expires": "Vence en",
