@@ -291,9 +291,13 @@ async function checkVercel(credentials) {
       }
       const age = Math.round((Date.now() - deployment.created) / 60000);
       const state = String(deployment.state);
+      // A build still in flight is not a failure. Reporting it as one turns
+      // «you just pushed» into a red mark, and a preflight that cries wolf on
+      // its own success is a preflight people learn to skip.
+      const inFlight = state === 'BUILDING' || state === 'QUEUED' || state === 'INITIALIZING';
       return {
-        ok: state === 'READY',
-        detail: `${state.toLowerCase()}, ${String(age)} min ago`,
+        ok: state === 'READY' || inFlight,
+        detail: `${state.toLowerCase()}, ${String(age)} min ago${inFlight ? ' — still in flight' : ''}`,
         fix: 'pnpm deploy — the last one did not finish',
       };
     });
