@@ -184,7 +184,18 @@ export async function completeSetup(
   }
 
   const parsed = setupInput.safeParse(decoded);
-  if (!parsed.success) return { error: 'invalid' };
+  if (!parsed.success) {
+    // Which fields, never their values. A rejected answer set is a diagnostic
+    // problem — «accounts.0.accountType» is the whole answer — and the values
+    // are somebody's salary. This log exists because the first version of the
+    // review returned a message about amounts when nothing was wrong with the
+    // amounts, and there was no way to tell from the outside.
+    console.error(
+      '[setup] rejected fields:',
+      parsed.error.issues.map((issue) => issue.path.join('.')).join(', '),
+    );
+    return { error: 'invalid' };
+  }
 
   const answers = parsed.data;
   if (answers.dependentCount > answers.memberCount) return { error: 'dependentsExceedMembers' };
@@ -574,7 +585,11 @@ export async function completeSetup(
           ),
         );
     });
-  } catch {
+  } catch (error) {
+    // Logged, not shown. The household gets a sentence they can act on; the
+    // reason the database gave belongs in the server log, where it can name a
+    // constraint without naming somebody's money.
+    console.error('[setup] save failed:', error instanceof Error ? error.message : error);
     return { error: 'saveFailed' };
   }
 

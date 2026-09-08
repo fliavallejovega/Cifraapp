@@ -9,7 +9,7 @@ import {
   obligations,
   recurringSeries,
 } from '@app/database/schema';
-import { and, asc, eq, isNull } from 'drizzle-orm';
+import { and, asc, eq, isNull, ne } from 'drizzle-orm';
 
 import type { SetupInitial } from '@/components/setup-questionnaire';
 import { trimAmount } from '@/lib/format';
@@ -84,10 +84,18 @@ export async function loadSetupAnswers(
             balance: accounts.currentBalance,
           })
           .from(accounts)
+          // Cards excluded: the questionnaire asks about them on the debts
+          // step, where the limit and the holder are. Including one here sent
+          // `credit_card` to a field whose options are the four kinds of
+          // account you can hold money in, and the whole answer set was
+          // rejected as invalid — a save that failed with a message about
+          // amounts, on a form where nothing was wrong with the amounts.
           .where(
             and(
-              and(eq(accounts.householdId, householdId), isNull(accounts.deletedAt)),
+              eq(accounts.householdId, householdId),
+              isNull(accounts.deletedAt),
               eq(accounts.status, 'active'),
+              ne(accounts.accountType, 'credit_card'),
             ),
           )
           .orderBy(asc(accounts.createdAt)),
