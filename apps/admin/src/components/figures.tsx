@@ -95,7 +95,14 @@ export function Series({
       <figcaption className="sr-only">{label}</figcaption>
       <div className="flex h-40 items-end gap-1.5" role="img" aria-label={label}>
         {buckets.map((bucket) => (
-          <div key={bucket.start} className="flex min-w-0 flex-1 flex-col items-center gap-2">
+          // `h-full` matters: the bar's height is a percentage, and a
+          // percentage resolves against a parent with a definite height. In an
+          // auto-height column it resolved to nothing and the chart drew its
+          // labels above an empty strip.
+          <div
+            key={bucket.start}
+            className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2"
+          >
             <span className="gradation-label">{bucket.value > 0 ? bucket.value : ''}</span>
             <div
               className="w-full rounded-t-(--radius-xs) bg-[color:var(--color-brand)] transition-[height] duration-(--duration-settle) ease-(--ease-settle)"
