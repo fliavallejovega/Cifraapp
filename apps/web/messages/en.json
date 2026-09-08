@@ -1714,7 +1714,7 @@
       "budget": "This month's assistant budget is spent. The figures are unaffected.",
       "quality": "The assistant could not answer without inventing a figure, so it did not answer.",
       "error": "We could not reach the assistant. The figures are still exact.",
-      "usedFacts": "It relied on: {facts}"
+      "disclaimer": "Written by an assistant over figures already computed. The numbers come from your records, not from the assistant."
     },
     "empty": {
       "title": "There is not enough yet to advise you.",

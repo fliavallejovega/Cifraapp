@@ -151,13 +151,23 @@ export default async function AdvicePage({ params }: { params: Promise<{ locale:
           {advice.narrative.state === 'answered' ? (
             <div className="flex flex-col gap-3">
               <p className="max-w-[62ch] text-pretty text-[color:var(--color-ink)]">
-                {advice.narrative.body}
+                {advice.narrative.summary}
               </p>
-              {advice.narrative.usedFacts.length > 0 && (
-                <p className="text-xs text-[color:var(--color-ink-tertiary)]">
-                  {t('copilot.usedFacts', { facts: advice.narrative.usedFacts.join(', ') })}
-                </p>
+              {advice.narrative.cautions.length > 0 && (
+                <ul className="flex flex-col gap-2">
+                  {advice.narrative.cautions.map((caution) => (
+                    <li
+                      key={caution}
+                      className="max-w-[62ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]"
+                    >
+                      {caution}
+                    </li>
+                  ))}
+                </ul>
               )}
+              <p className="max-w-[62ch] text-xs text-pretty text-[color:var(--color-ink-tertiary)]">
+                {t('copilot.disclaimer')}
+              </p>
             </div>
           ) : advice.narrative.state === 'unavailable' ? (
             <p className="max-w-[62ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]">

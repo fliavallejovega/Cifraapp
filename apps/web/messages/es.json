@@ -1714,7 +1714,7 @@
       "budget": "Se acabó el presupuesto del asistente de este mes. Las cifras no cambian.",
       "quality": "El asistente no pudo responder sin inventar una cifra, así que no respondió.",
       "error": "No pudimos comunicarnos con el asistente. Las cifras siguen siendo exactas.",
-      "usedFacts": "Se basó en: {facts}"
+      "disclaimer": "Redactado por un asistente sobre las cifras ya calculadas. Los números salen de tus registros, no del asistente."
     },
     "empty": {
       "title": "Todavía no hay suficiente para aconsejarte.",

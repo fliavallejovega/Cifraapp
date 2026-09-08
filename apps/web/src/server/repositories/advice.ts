@@ -1,13 +1,16 @@
 import 'server-only';
 
-import { QUESTION_ANSWER_V1, type PromptLocale } from '@app/ai';
-import { formatMoney, Money, type CurrencyCode, type PlainDate } from '@app/domain';
+import type { PromptLocale } from '@app/ai';
+import { Money, type CurrencyCode, type PlainDate } from '@app/domain';
 
-import { ask, copilotIsConfigured } from '../ai';
+import { trimRate } from '@/lib/format';
+
+import { copilotIsConfigured } from '../ai';
 import type { Session } from '../session';
 
 import type { Alert } from './alerts';
 import type { BudgetSummary } from './budgets';
+import { explainPlan, type PlanNarrative } from './copilot';
 import type { DebtView, GoalView } from './administration';
 import type { PlanView } from './plan';
 
@@ -24,12 +27,13 @@ import type { PlanView } from './plan';
  * the household loses a paragraph and keeps every number. That is the rule the
  * product is built on — the AI explains what the engine decided, and is never
  * the source of a figure.
+ *
+ * That paragraph is `explainPlan`'s, not a second one written here. The first
+ * version of this screen asked the *question-answering* prompt for advice, and
+ * that prompt is built to refuse anything the facts do not directly answer — so
+ * it declined every time, correctly, and the screen showed a decline forever.
+ * The plan's narrator is the one whose job this is.
  */
-
-export type AdviceNarrative =
-  | { readonly state: 'unavailable' }
-  | { readonly state: 'declined'; readonly reason: 'budget' | 'quality' | 'error' }
-  | { readonly state: 'answered'; readonly body: string; readonly usedFacts: readonly string[] };
 
 export interface AdviceStep {
   readonly kind:
@@ -51,7 +55,7 @@ export interface AdviceView {
   readonly available: Money;
   readonly committed: Money;
   readonly steps: readonly AdviceStep[];
-  readonly narrative: AdviceNarrative;
+  readonly narrative: PlanNarrative;
   readonly copilotConfigured: boolean;
   readonly isEmpty: boolean;
 }
@@ -109,7 +113,7 @@ export function buildSteps(inputs: AdviceInputs): readonly AdviceStep[] {
       kind: 'attackDebt',
       values: {
         name: expensive.name,
-        apr: trim(expensive.apr),
+        apr: trimRate(expensive.apr),
         amount: safe.toDecimalString(),
       },
       href: `/debts/${expensive.id}`,
@@ -179,77 +183,7 @@ export async function loadAdvice(
     isEmpty: inputs.plan.isEmpty,
     narrative:
       configured && !inputs.plan.isEmpty
-        ? await narrate(session, householdId, inputs, steps, locale)
+        ? await explainPlan(session, householdId, inputs.plan, locale)
         : { state: 'unavailable' },
   };
-}
-
-async function narrate(
-  session: Session,
-  householdId: string,
-  inputs: AdviceInputs,
-  steps: readonly AdviceStep[],
-  locale: PromptLocale,
-): Promise<AdviceNarrative> {
-  const moneyLocale = locale === 'en' ? 'en-US' : 'es-PA';
-  const money = (value: Money) => formatMoney(value, { locale: moneyLocale });
-
-  // The grounding is formatted exactly as the screen formats it, so the
-  // guardrail compares the model's figures against the strings the household
-  // will actually read — not against a differently-rounded copy of them.
-  const result = await ask(session, householdId, {
-    prompt: QUESTION_ANSWER_V1,
-    locale,
-    currency: inputs.currency,
-    grounding: {
-      question:
-        locale === 'en'
-          ? 'What should this household do with its money this month?'
-          : '¿Qué debería hacer este hogar con su dinero este mes?',
-      available: money(inputs.plan.safeToSpend.safeToSpend),
-      liquid: money(inputs.plan.safeToSpend.liquid),
-      steps: steps.map((step) => step.kind).join(', '),
-      debts: inputs.debts
-        .map((debt) => `${debt.name} ${money(debt.currentBalance)} at ${trim(debt.apr)}%`)
-        .join(' · '),
-      goals: inputs.goals
-        .filter((goal) => goal.status === 'active')
-        .map((goal) => `${goal.name} ${money(goal.currentAmount)} of ${money(goal.targetAmount)}`)
-        .join(' · '),
-    },
-  });
-
-  if (!result.ok) {
-    switch (result.error.kind) {
-      case 'not_configured':
-        return { state: 'unavailable' };
-      case 'budget_exhausted':
-        return { state: 'declined', reason: 'budget' };
-      case 'ungrounded_figures':
-      case 'malformed_output':
-      case 'refused':
-        // The guardrail working. The household is told the assistant declined
-        // rather than shown a sentence nobody could verify.
-        return { state: 'declined', reason: 'quality' };
-      case 'missing_grounding':
-      case 'transport':
-        return { state: 'declined', reason: 'error' };
-    }
-  }
-
-  const answerable = result.value.output['answerable'];
-  if (answerable === false) return { state: 'declined', reason: 'quality' };
-
-  const answer = result.value.output['answer'];
-  const usedFacts = result.value.output['usedFacts'];
-
-  return {
-    state: 'answered',
-    body: typeof answer === 'string' ? answer : '',
-    usedFacts: Array.isArray(usedFacts) ? usedFacts.map((fact) => String(fact)) : [],
-  };
-}
-
-function trim(rate: string): string {
-  return rate.includes('.') ? rate.replace(/0+$/, '').replace(/\.$/, '') : rate;
 }
