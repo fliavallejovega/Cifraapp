@@ -106,6 +106,14 @@ interface Deduction {
   label: string;
   amount: string;
   appliesToAnchors?: readonly number[] | undefined;
+  /**
+   * La regla que la calculó, cuando no la escribió una persona.
+   *
+   * Es lo que decide si la línea pregunta en qué quincena sale. El seguro
+   * social no pregunta: es un porcentaje del sueldo del período y sale de cada
+   * pago, y poner el selector ahí sería ofrecer una decisión que no existe.
+   */
+  ruleKey?: string | undefined;
 }
 
 interface AccountRow {
@@ -1990,7 +1998,7 @@ function IncomeDeductions({
               default son las dos, porque las tres líneas que casi todo el mundo
               tiene —seguro social, educativo y renta— salen de cada pago.
             */}
-            {byFortnight && (
+            {byFortnight && line.ruleKey === undefined && (
               <FortnightPicker
                 anchors={anchors}
                 chosen={line.appliesToAnchors ?? []}
@@ -2055,6 +2063,9 @@ function IncomeDeductions({
                           line.isEffectiveRate ? ` ${copy('income.effectiveSuffix')}` : ''
                         })`,
                         amount: line.amount,
+                        // De dónde salió, que es lo que la marca como línea de
+                        // ley: sale de todos los pagos y no hay nada que elegir.
+                        ruleKey: line.key,
                       })),
                     );
                   })

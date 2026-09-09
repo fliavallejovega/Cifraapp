@@ -174,6 +174,17 @@ export const incomeDeductions = appSchema.table(
      * case and what every row stored before this column existed meant.
      */
     appliesToAnchors: smallint('applies_to_anchors').array(),
+
+    /**
+     * La regla que produjo esta línea, cuando se calculó en vez de escribirse.
+     *
+     * Una línea calculada sale de cada pago por construcción —es un porcentaje
+     * del sueldo del período— y por eso nunca lleva `appliesToAnchors`: la
+     * pregunta «¿en qué quincena?» no tiene respuesta para el seguro social.
+     * Nulo es lo que alguien leyó de su propio papel, que es lo que significaba
+     * cada fila antes de que esta columna existiera.
+     */
+    ruleKey: text('rule_key'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },

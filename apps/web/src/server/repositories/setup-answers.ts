@@ -235,6 +235,7 @@ export async function loadSetupAnswers(
           label: incomeDeductions.label,
           amount: incomeDeductions.amount,
           appliesToAnchors: incomeDeductions.appliesToAnchors,
+          ruleKey: incomeDeductions.ruleKey,
         })
         .from(incomeDeductions)
         .where(eq(incomeDeductions.householdId, householdId))
@@ -279,6 +280,9 @@ export async function loadSetupAnswers(
             // es lo que el formulario entiende, y las dos cosas significan lo
             // mismo: ningún día en particular.
             appliesToAnchors: line.appliesToAnchors ?? [],
+            // Se reabre sabiendo cuáles calculó el motor, para que esas sigan
+            // sin ofrecer una pregunta que no tienen.
+            ...(line.ruleKey ? { ruleKey: line.ruleKey } : {}),
           })),
       })),
       commitments: commitmentRows.map((row) => ({

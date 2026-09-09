@@ -304,9 +304,7 @@ export async function loadPlan(session: Session, householdId: string): Promise<P
         // garantiza que la lista tenga tantos montos como días.
         ...(row.anchorAmounts
           ? {
-              anchorAmounts: row.anchorAmounts.map((one) =>
-                Money.fromDecimalString(one, currency),
-              ),
+              anchorAmounts: row.anchorAmounts.map((one) => Money.fromDecimalString(one, currency)),
             }
           : {}),
         nextPayday: row.nextExpectedDate as PlainDate,

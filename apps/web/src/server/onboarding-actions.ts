@@ -161,10 +161,15 @@ const setupInput = z.object({
                * mes, y una vez al mes es **una** de las dos quincenas. Ausente
                * significa «en todos los pagos», que es el caso corriente.
                */
-              appliesToAnchors: z
-                .array(z.coerce.number().int().min(1).max(31))
-                .max(2)
-                .optional(),
+              appliesToAnchors: z.array(z.coerce.number().int().min(1).max(31)).max(2).optional(),
+              /**
+               * La regla que la calculó, si la calculó alguna.
+               *
+               * Una línea con regla sale de cada pago por construcción, así que
+               * los días que traiga se ignoran: la base lo prohíbe y aquí se
+               * normaliza antes de llegar a ella.
+               */
+              ruleKey: z.string().trim().min(1).max(80).optional(),
             }),
           )
           .max(8)
@@ -567,7 +572,7 @@ export async function completeSetup(
           const taken = entry.deductions.reduce((total, line) => {
             // La misma normalización que se guarda, para que el neto guardado y
             // las líneas guardadas no puedan contar historias distintas.
-            const only = onlyOn(line.appliesToAnchors, anchors);
+            const only = line.ruleKey === undefined ? onlyOn(line.appliesToAnchors, anchors) : null;
             // Sin días declarados, el descuento sale de todos los pagos. Con
             // ellos, solo del que nombran: preguntar y luego restarlo igual en
             // los dos habría sido preguntar por deporte.
@@ -663,7 +668,11 @@ export async function completeSetup(
                 // Solo los días que de verdad son de este ingreso. Un día que
                 // el sueldo no cobra no puede descontar nada, y guardarlo sería
                 // guardar una fecha que ningún cálculo va a encontrar.
-                appliesToAnchors: onlyOn(line.appliesToAnchors, anchors),
+                ruleKey: line.ruleKey ?? null,
+                // Una línea de ley sale de todos los pagos, y guardarle días
+                // sería guardar la respuesta a una pregunta que no se hizo.
+                appliesToAnchors:
+                  line.ruleKey === undefined ? onlyOn(line.appliesToAnchors, anchors) : null,
               })),
             );
           }
