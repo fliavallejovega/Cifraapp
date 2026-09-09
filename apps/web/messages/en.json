@@ -1221,7 +1221,8 @@
     },
     "edit": "Edit",
     "saveAndAdd": "Save and add another",
-    "done": "Done"
+    "done": "Done",
+    "incomplete": "To save it, this is missing: {fields}. Fill it in or remove it."
   },
   "records": {
     "cancel": "Cancel",

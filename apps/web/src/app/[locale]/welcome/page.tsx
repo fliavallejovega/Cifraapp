@@ -253,6 +253,7 @@ function labels(read: (key: string) => string): Record<string, string> {
     'remove',
     'edit',
     'saveAndAdd',
+    'incomplete',
     'done',
     'amount',
     'errorTitle',

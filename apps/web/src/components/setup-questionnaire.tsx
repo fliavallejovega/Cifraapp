@@ -651,6 +651,22 @@ export function SetupQuestionnaire({
     .filter((row) => row.name.trim() !== '')
     .reduce((total, row) => total + perMonth(arrivingAmount(row), row.frequency), 0);
 
+  /**
+   * Qué le falta a una fila, con las mismas reglas que usa el envío.
+   *
+   * El formulario descarta al guardar toda fila sin nombre o sin monto. Antes
+   * lo hacía en silencio: la persona veía su pago en pantalla, terminaba, y el
+   * plan no lo contaba — sin que nada le dijera por qué. La comprobación es la
+   * misma; lo que cambia es que ahora se dice en el momento y no se pierde.
+   */
+  const needs = <T,>(row: T, fields: readonly { key: keyof T; label: string }[]): string[] =>
+    fields
+      .filter((field) => String(row[field.key] ?? '').trim() === '')
+      .map((field) => field.label);
+
+  const untouched = <T,>(row: T, keys: readonly (keyof T)[]): boolean =>
+    keys.every((key) => String(row[key] ?? '').trim() === '');
+
   const step: Step = STEPS[index] ?? 'household';
   const isLast = index === STEPS.length - 1;
 
@@ -816,6 +832,8 @@ export function SetupQuestionnaire({
           rows={people}
           addLabel={copy('household.add')}
           itemLabel={copy('household.name')}
+          missing={(row: PersonRow) => needs(row, [{ key: 'name', label: copy('household.name') }])}
+          isBlank={(row: PersonRow) => untouched(row, ['name'])}
           summarize={(row: PersonRow) => ({
             title: row.name,
             detail: copy(`household.relationships.${row.relationship}`),
@@ -897,6 +915,13 @@ export function SetupQuestionnaire({
           rows={incomes}
           addLabel={copy('income.add')}
           itemLabel={copy('income.name')}
+          missing={(row: IncomeRow) =>
+            needs(row, [
+              { key: 'name', label: copy('income.name') },
+              { key: 'amount', label: copy('amount') },
+            ])
+          }
+          isBlank={(row: IncomeRow) => untouched(row, ['name', 'amount'])}
           summarize={(row: IncomeRow) => ({
             title: row.name,
             detail: `${money(amountOf(arrivingAmount(row)))} ${copy(`income.per.${row.frequency}`)}`,
@@ -1110,6 +1135,13 @@ export function SetupQuestionnaire({
             copy={copy}
             emptyHint={copy('receivables.empty')}
             itemLabel={copy('receivables.name')}
+            missing={(row: ReceivableRow) =>
+              needs(row, [
+                { key: 'name', label: copy('receivables.name') },
+                { key: 'amount', label: copy('amount') },
+              ])
+            }
+            isBlank={(row: ReceivableRow) => untouched(row, ['name', 'amount', 'source'])}
             summarize={(row: ReceivableRow) => ({
               title: row.name,
               detail: money(amountOf(row.amount)),
@@ -1234,6 +1266,13 @@ export function SetupQuestionnaire({
             rows={accountRows}
             addLabel={copy('savings.add')}
             itemLabel={copy('savings.name')}
+            missing={(row: AccountRow) =>
+              needs(row, [
+                { key: 'name', label: copy('savings.name') },
+                { key: 'balance', label: copy('savings.balance') },
+              ])
+            }
+            isBlank={(row: AccountRow) => untouched(row, ['name', 'balance'])}
             summarize={(row: AccountRow) => ({
               title: row.name,
               detail: money(amountOf(row.balance)),
@@ -1380,6 +1419,13 @@ export function SetupQuestionnaire({
           rows={commitments}
           addLabel={copy('commitments.add')}
           itemLabel={copy('commitments.name')}
+          missing={(row: CommitmentRow) =>
+            needs(row, [
+              { key: 'name', label: copy('commitments.name') },
+              { key: 'amount', label: copy('amount') },
+            ])
+          }
+          isBlank={(row: CommitmentRow) => untouched(row, ['name', 'amount'])}
           summarize={(row: CommitmentRow) => ({
             title: row.name,
             detail: money(amountOf(row.amount)),
@@ -1762,6 +1808,13 @@ export function SetupQuestionnaire({
           rows={debtRows}
           addLabel={copy('debts.add')}
           itemLabel={copy('debts.name')}
+          missing={(row: DebtRow) =>
+            needs(row, [
+              { key: 'name', label: copy('debts.name') },
+              { key: 'balance', label: copy('debts.balance') },
+            ])
+          }
+          isBlank={(row: DebtRow) => untouched(row, ['name', 'balance'])}
           summarize={(row: DebtRow) => ({
             title: row.name,
             detail: money(amountOf(row.balance)),
@@ -1888,6 +1941,13 @@ export function SetupQuestionnaire({
             rows={goalRows}
             addLabel={copy('goals.add')}
             itemLabel={copy('goals.name')}
+            missing={(row: GoalRow) =>
+              needs(row, [
+                { key: 'name', label: copy('goals.name') },
+                { key: 'targetAmount', label: copy('goals.amount') },
+              ])
+            }
+            isBlank={(row: GoalRow) => untouched(row, ['name', 'targetAmount'])}
             summarize={(row: GoalRow) => ({
               title: row.name,
               detail: money(amountOf(row.targetAmount)),
@@ -2150,6 +2210,8 @@ function RowEditor<T>({
   render,
   summarize,
   itemLabel,
+  missing,
+  isBlank,
   copy,
 }: {
   readonly rows: readonly T[];
@@ -2174,6 +2236,19 @@ function RowEditor<T>({
   ) => { title: string; detail?: string; icon?: ReactNode };
   /** «Cuenta», «Pago», «Deuda» — para numerar una tarjeta que todavía no tiene nombre. */
   readonly itemLabel?: string;
+  /**
+   * Qué le falta a esta fila para poder darla por terminada.
+   *
+   * Devuelve los nombres de los campos que faltan, ya traducidos, porque el
+   * aviso tiene que decir *cuál* falta: «revisa los campos» obliga a buscar, y
+   * en una tarjeta de diez campos buscar es media pantalla.
+   *
+   * Sin esta función la fila nunca está incompleta, que es el comportamiento
+   * que tenían todas antes de que esto existiera.
+   */
+  readonly missing?: (row: T) => readonly string[];
+  /** Si la fila está intacta: sin nada escrito no hay nada que reclamar. */
+  readonly isBlank?: (row: T) => boolean;
   readonly copy: (key: string) => string;
 }) {
   /**
@@ -2183,6 +2258,14 @@ function RowEditor<T>({
    * el siguiente — el estado natural de quien ya terminó con esta lista.
    */
   const [open, setOpen] = useState<number | null>(rows.length > 0 ? rows.length - 1 : null);
+  /**
+   * Lo que falta, cuando alguien intentó cerrar una fila a medio llenar.
+   *
+   * Aparece al intentar cerrarla y no antes: reclamar un monto vacío mientras
+   * la persona todavía está escribiendo el nombre es reclamar por algo que
+   * estaba a punto de hacer.
+   */
+  const [problem, setProblem] = useState<readonly string[]>([]);
 
   const titleOf = (row: T, index: number) => {
     const summary = summarize?.(row, index);
@@ -2226,6 +2309,7 @@ function RowEditor<T>({
                   variant="ghost"
                   aria-label={`${copy('edit')} — ${title}`}
                   onClick={() => {
+                    setProblem([]);
                     setOpen(index);
                   }}
                 >
@@ -2289,6 +2373,16 @@ function RowEditor<T>({
                   type="button"
                   size="sm"
                   onClick={() => {
+                    // Una fila a medio llenar no se cierra: se quedaría como un
+                    // renglón que parece guardado y que el envío va a descartar
+                    // en silencio, y nadie se entera hasta que el plan no
+                    // cuenta el pago que sí escribieron.
+                    const gaps = missing?.(row) ?? [];
+                    if (gaps.length > 0) {
+                      setProblem(gaps);
+                      return;
+                    }
+                    setProblem([]);
                     onAdd();
                     setOpen(rows.length);
                   }}
@@ -2300,6 +2394,20 @@ function RowEditor<T>({
                   size="sm"
                   variant="secondary"
                   onClick={() => {
+                    // Intacta: no hay nada que reclamar ni nada que guardar. Se
+                    // va, que es lo que «listo» significa en una fila vacía.
+                    if (isBlank?.(row) === true) {
+                      setProblem([]);
+                      onRemove(index);
+                      setOpen(null);
+                      return;
+                    }
+                    const gaps = missing?.(row) ?? [];
+                    if (gaps.length > 0) {
+                      setProblem(gaps);
+                      return;
+                    }
+                    setProblem([]);
                     setOpen(null);
                   }}
                 >
@@ -2325,6 +2433,15 @@ function RowEditor<T>({
                   {removeLabel}
                 </Button>
               </div>
+
+              {problem.length > 0 && (
+                <p
+                  role="status"
+                  className="text-sm text-pretty text-[color:var(--color-caution)] sm:col-span-2"
+                >
+                  {copy('incomplete').replace('{fields}', problem.join(', '))}
+                </p>
+              )}
             </div>
           </section>
         );
@@ -3063,9 +3180,12 @@ function StepTotals({
 
   return (
     <aside className="mt-2 max-w-[46ch] rounded-(--radius-md) border border-[color:var(--color-surface-border)] bg-[color:var(--color-ground-sunk)] px-4 py-3 text-sm">
-      {lines.map((line) => (
+      {lines.map((line, at) => (
         <div
-          key={line.label}
+          // Por posición y no por etiqueta: dos sueldos pueden llamarse igual
+          // —«Sueldo Blei» dos veces mientras alguien corrige el segundo— y dos
+          // hermanos con la misma clave se pisan.
+          key={at}
           className={[
             'flex items-baseline justify-between gap-4 py-1',
             line.tone === 'strong'

@@ -1221,7 +1221,8 @@
     },
     "edit": "Editar",
     "saveAndAdd": "Guardar y agregar otro",
-    "done": "Listo"
+    "done": "Listo",
+    "incomplete": "Para guardarlo falta: {fields}. Llénalo o quítalo."
   },
   "records": {
     "cancel": "Cancelar",
