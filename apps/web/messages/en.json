@@ -1116,7 +1116,8 @@
       "totalAllEssential": "You marked everything as indispensable. If something is not, untick it: that is the only thing that lets us tell you what could be cut without deciding it for you.",
       "totalIncome": "Comes in per month",
       "totalLeft": "Left over",
-      "totalLeftNote": "With what you have answered so far. Debts and goals are still to come, and they will move this figure."
+      "totalLeftNote": "With what you have answered so far. Debts and goals are still to come, and they will move this figure.",
+      "optionalTag": "optional"
     },
     "debts": {
       "title": "Do you owe anything?",
@@ -1169,7 +1170,14 @@
         "single_payment": "One payment at maturity",
         "no_interest_plan": "Interest-free instalments",
         "revolving": "Revolving (card or line)"
-      }
+      },
+      "frequency": "How often is it charged?",
+      "frequencyHint": "Monthly is the common case. With payroll deduction, many mortgages are charged twice a month.",
+      "dueDay": "Day of the month",
+      "dueDayHint": "The day the instalment is charged. If it falls on the last day of the month, use 31.",
+      "firstDay": "First charge day",
+      "secondDay": "Second charge day",
+      "secondDayHint": "The other day of the month half the instalment falls on."
     },
     "goals": {
       "title": "What is all this for?",

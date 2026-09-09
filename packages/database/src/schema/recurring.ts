@@ -14,7 +14,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 
-import { appSchema } from './app.js';
+import { appSchema, recurrenceFrequency } from './app.js';
 import {
   accounts,
   categories,
@@ -24,6 +24,11 @@ import {
   transactionDirection,
 } from './financial.js';
 import { households, profiles } from './identity.js';
+
+// Reexportado desde aquí, que es donde vivía: moverlo a `app.ts` fue para
+// romper un ciclo entre este módulo y `financial.ts`, no para cambiarle la casa
+// a quien ya lo importaba.
+export { recurrenceFrequency };
 import { currencies } from './platform.js';
 
 /**
@@ -33,19 +38,6 @@ import { currencies } from './platform.js';
  * generates. Keeping them separate is what lets an obligation be settled by a
  * transaction while the pattern that produced it carries on.
  */
-
-export const recurrenceFrequency = pgEnum('recurrence_frequency', [
-  // Plenty of work is paid by the day — a stall, a driver, piecework — and a
-  // product that only understands monthly salaries has nothing to say to those
-  // households about the week they are actually living through.
-  'daily',
-  'weekly',
-  'biweekly',
-  'semimonthly',
-  'monthly',
-  'quarterly',
-  'annual',
-]);
 
 export const recurringSeries = appSchema.table(
   'recurring_series',

@@ -363,6 +363,11 @@ const setupInput = z.object({
           .default('fixed_instalment'),
         /** La cuota sale de la planilla antes de que el sueldo llegue. */
         isPayrollDeducted: z.boolean().default(false),
+        /** Cada cuánto se cobra la cuota, y en qué días del mes cae. */
+        paymentFrequency: z
+          .enum(['daily', 'weekly', 'biweekly', 'semimonthly', 'monthly', 'quarterly', 'annual'])
+          .default('monthly'),
+        anchorDays: z.array(z.coerce.number().int().min(1).max(31)).max(2).optional(),
         /** Whose card, by the name given on the first step. Empty is the household's. */
         personName: z.string().trim().max(120).optional(),
         // A percentage: "24.5" means 24.5%. Bounded because a rate past 200%
@@ -933,6 +938,13 @@ export async function completeSetup(
           kind: entry.kind,
           repayment: entry.repayment,
           isPayrollDeducted: entry.isPayrollDeducted,
+          paymentFrequency: entry.paymentFrequency,
+          // Lo revolvente no tiene cuota que fechar, y la base lo rechaza: una
+          // tarjeta tiene corte y pago, que viven en sus propias columnas.
+          anchorDays:
+            entry.repayment === 'revolving' || !entry.anchorDays || entry.anchorDays.length === 0
+              ? null
+              : [...new Set(entry.anchorDays)].sort((a, b) => a - b),
           // El cupo solo en una tarjeta y las cuotas solo fuera de ella: la
           // base rechaza lo contrario, y normalizarlo aquí evita que un cambio
           // de clase reviente el guardado al final con un error de esquema.

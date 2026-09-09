@@ -1116,7 +1116,8 @@
       "totalAllEssential": "Marcaste todo como indispensable. Si algo no lo es, desmárcalo: es lo único que nos deja decirte qué se podría recortar sin decidirlo por ti.",
       "totalIncome": "Entra al mes",
       "totalLeft": "Te queda",
-      "totalLeftNote": "Con lo que llevas contestado. Faltan las deudas y las metas, que van a mover esta cifra."
+      "totalLeftNote": "Con lo que llevas contestado. Faltan las deudas y las metas, que van a mover esta cifra.",
+      "optionalTag": "prescindible"
     },
     "debts": {
       "title": "¿Debes algo?",
@@ -1169,7 +1170,14 @@
         "single_payment": "Un solo pago al vencimiento",
         "no_interest_plan": "Cuotas sin interés",
         "revolving": "Revolvente (tarjeta o línea)"
-      }
+      },
+      "frequency": "¿Cada cuánto se cobra?",
+      "frequencyHint": "Mensual es lo corriente. Con descuento directo, muchas hipotecas se cobran por quincena.",
+      "dueDay": "Día del mes en que cae",
+      "dueDayHint": "El día en que se cobra la cuota. Si cae el último día del mes, pon 31.",
+      "firstDay": "Primer día de cobro",
+      "secondDay": "Segundo día de cobro",
+      "secondDayHint": "El otro día del mes en que cae la mitad de la cuota."
     },
     "goals": {
       "title": "¿Para qué es todo esto?",

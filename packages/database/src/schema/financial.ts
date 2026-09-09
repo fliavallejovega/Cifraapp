@@ -14,7 +14,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 
-import { appSchema, categoryKind } from './app.js';
+import { appSchema, categoryKind, recurrenceFrequency } from './app.js';
 import { households, profiles } from './identity.js';
 import { currencies } from './platform.js';
 
@@ -547,6 +547,16 @@ export const debts = appSchema.table(
     isPayrollDeducted: boolean('is_payroll_deducted').notNull().default(false),
     /** El día del mes en que se cobra la cuota, cuando la hay. */
     instalmentDay: smallint('instalment_day'),
+    /**
+     * Cada cuánto se cobra la cuota.
+     *
+     * Mensual es lo corriente, y una hipoteca con descuento directo muy a
+     * menudo no lo es: se cobra por quincena, y guardarla como mensual es
+     * correcto sobre el mes y falso sobre las dos mitades.
+     */
+    paymentFrequency: recurrenceFrequency('payment_frequency').notNull().default('monthly'),
+    /** Los días en que cae. Uno para la mensual, dos para la quincenal. */
+    anchorDays: smallint('anchor_days').array(),
     promotionalApr: numeric('promotional_apr', { precision: 6, scale: 3, mode: 'string' }),
     promotionalExpiresOn: date('promotional_expires_on'),
     strategyPriority: integer('strategy_priority'),

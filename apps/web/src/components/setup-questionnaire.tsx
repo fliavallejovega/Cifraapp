@@ -308,6 +308,17 @@ interface DebtRow {
     | 'revolving';
   /** La cuota sale de la planilla antes de que el sueldo llegue. */
   isPayrollDeducted?: boolean | undefined;
+  /**
+   * Cada cuánto se cobra la cuota.
+   *
+   * Mensual es lo corriente, y una hipoteca con descuento directo muy a menudo
+   * no lo es: se cobra por quincena, y guardarla como mensual es correcto sobre
+   * el mes y falso sobre las dos mitades.
+   */
+  paymentFrequency?: Frequency | undefined;
+  /** El día del mes en que cae, y el segundo cuando son dos. */
+  anchorFirst?: string | undefined;
+  anchorSecond?: string | undefined;
   /** Whose card it is, by the name given on the first step. Blank means the household's. */
   personName: string;
 }
@@ -545,6 +556,9 @@ export function SetupQuestionnaire({
       paidMonths: '',
       repayment: 'revolving' as const,
       isPayrollDeducted: false,
+      paymentFrequency: 'monthly' as const,
+      anchorFirst: '',
+      anchorSecond: '',
     }),
   );
   const [holdingRows, setHoldingRows] = useState<HoldingRow[]>(
@@ -853,6 +867,11 @@ export function SetupQuestionnaire({
         ...row,
         ...((row.termMonths ?? '').trim() === '' ? { termMonths: undefined } : {}),
         ...((row.paidMonths ?? '').trim() === '' ? { paidMonths: undefined } : {}),
+        // Los días de cobro, como lista de números. Solo los escritos: un día
+        // en blanco no es el día cero, es un día que nadie dijo.
+        anchorDays: [row.anchorFirst, row.anchorSecond]
+          .map((value) => Number((value ?? '').replace(/[^\d]/g, '')))
+          .filter((day) => day >= 1 && day <= 31),
       })),
     goals: goalRows.filter((row) => row.name.trim() !== '' && row.targetAmount.trim() !== ''),
     // Only what was found and counted. A symbol nobody could price is not a
@@ -2012,6 +2031,9 @@ export function SetupQuestionnaire({
                   paidMonths: '',
                   repayment: 'revolving' as const,
                   isPayrollDeducted: false,
+                  paymentFrequency: 'monthly' as const,
+                  anchorFirst: '',
+                  anchorSecond: '',
                 },
               ]);
             }}
@@ -2202,6 +2224,88 @@ export function SetupQuestionnaire({
                         />
                       )}
                     </Field>
+                  </>
+                )}
+
+                {/*
+                  Cada cuánto cae la cuota, y en qué días.
+
+                  Una hipoteca con descuento directo se cobra muchas veces por
+                  quincena: la mitad el 15 y la mitad el 30, o los días que diga
+                  el contrato. Guardarla como mensual es correcto sobre el mes y
+                  falso sobre las dos mitades, que es donde una casa se queda
+                  corta. Los días no se suponen: el 15 y el 30 son una cadencia
+                  entre varias.
+                */}
+                {(row.repayment ?? 'fixed_instalment') !== 'revolving' && (
+                  <>
+                    <Field label={copy('debts.frequency')} hint={copy('debts.frequencyHint')}>
+                      {({ id, describedBy }) => (
+                        <Select
+                          id={id}
+                          aria-describedby={describedBy}
+                          value={row.paymentFrequency ?? 'monthly'}
+                          onChange={(event) => {
+                            const frequency = event.target.value as Frequency;
+                            setDebtRows(
+                              patch(debtRows, at, {
+                                paymentFrequency: frequency,
+                                ...(frequency === 'semimonthly' ? {} : { anchorSecond: '' }),
+                              }),
+                            );
+                          }}
+                        >
+                          {FREQUENCIES.map((value) => (
+                            <option key={value} value={value}>
+                              {copy(`frequency.${value}`)}
+                            </option>
+                          ))}
+                        </Select>
+                      )}
+                    </Field>
+
+                    <Field
+                      label={
+                        (row.paymentFrequency ?? 'monthly') === 'semimonthly'
+                          ? copy('debts.firstDay')
+                          : copy('debts.dueDay')
+                      }
+                      hint={copy('debts.dueDayHint')}
+                    >
+                      {({ id, describedBy }) => (
+                        <Input
+                          id={id}
+                          numeric
+                          inputMode="numeric"
+                          placeholder="15"
+                          value={row.anchorFirst ?? ''}
+                          aria-describedby={describedBy}
+                          onChange={(event) => {
+                            setDebtRows(patch(debtRows, at, { anchorFirst: event.target.value }));
+                          }}
+                        />
+                      )}
+                    </Field>
+
+                    {(row.paymentFrequency ?? 'monthly') === 'semimonthly' && (
+                      <Field label={copy('debts.secondDay')} hint={copy('debts.secondDayHint')}>
+                        {({ id, describedBy }) => (
+                          <Input
+                            id={id}
+                            numeric
+                            inputMode="numeric"
+                            placeholder="30"
+                            value={row.anchorSecond ?? ''}
+                            aria-describedby={describedBy}
+                            onChange={(event) => {
+                              setDebtRows(
+                                patch(debtRows, at, { anchorSecond: event.target.value }),
+                              );
+                            }}
+                          />
+                        )}
+                      </Field>
+                    )}
                   </>
                 )}
 
@@ -3825,6 +3929,7 @@ const COMMON_CATEGORIES = [
   'education',
   'insurance',
   'savings-contribution',
+  'tithe',
   'subscriptions',
   'debt',
 ] as const;
@@ -4146,6 +4251,8 @@ function CommitmentsTotal({
   readonly copy: (key: string) => string;
 }) {
   const asNumber = (value: string) => Number(value.replace(/[^\d.]/g, '')) || 0;
+  /** Qué rubro está abierto, o ninguno. Uno a la vez: la lista es para mirarla entera. */
+  const [opened, setOpened] = useState<string | null>(null);
 
   const counted = rows.filter((row) => row.name.trim() !== '' && row.amount.trim() !== '');
   if (counted.length === 0) return null;
@@ -4208,17 +4315,75 @@ function CommitmentsTotal({
       </p>
 
       <div className="mt-4 max-w-[46ch] text-sm text-[color:var(--color-ink-secondary)]">
-        {byCategory.map(([slug, value]) => (
-          <div key={slug} className="flex items-baseline justify-between gap-4 py-1.5">
-            <span className="flex min-w-0 items-center gap-2">
-              <CategoryIcon
-                name={categories.find((category) => category.slug === slug)?.icon ?? null}
-              />
-              <span className="truncate">{nameOf(slug)}</span>
-            </span>
-            <span className="tabular shrink-0">{money(value)}</span>
-          </div>
-        ))}
+        {/*
+          Cada rubro se abre y enseña de qué está hecho.
+
+          «Transporte $460» es una cifra que invita a una pregunta —¿qué hay ahí
+          dentro?— y hasta ahora la única forma de contestarla era subir a la
+          lista y sumar de cabeza. Los pagos ya están en pantalla; lo único que
+          faltaba era poder mirarlos agrupados como se los mira sumados.
+        */}
+        {byCategory.map(([slug, value]) => {
+          const open = opened === slug;
+          const inside = counted
+            .filter((row) => (row.categorySlug ?? '') === slug)
+            .sort((a, b) => monthly(b) - monthly(a));
+
+          return (
+            <div key={slug}>
+              <button
+                type="button"
+                aria-expanded={open}
+                className="flex w-full items-baseline justify-between gap-4 rounded-(--radius-sm) py-1.5 text-left transition-colors duration-(--duration-quick) hover:bg-[color:var(--color-ground-sunk)] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[color:var(--color-ink)]"
+                onClick={() => {
+                  setOpened(open ? null : slug);
+                }}
+              >
+                <span className="flex min-w-0 items-center gap-2">
+                  <svg
+                    aria-hidden
+                    viewBox="0 0 12 12"
+                    className={[
+                      'h-3 w-3 shrink-0 text-[color:var(--color-ink-tertiary)] transition-transform duration-(--duration-quick) ease-(--ease-settle)',
+                      open ? 'rotate-90' : '',
+                    ].join(' ')}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.75"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M4.5 2.5 8 6l-3.5 3.5" />
+                  </svg>
+                  <CategoryIcon
+                    name={categories.find((category) => category.slug === slug)?.icon ?? null}
+                  />
+                  <span className="truncate">{nameOf(slug)}</span>
+                </span>
+                <span className="tabular shrink-0">{money(value)}</span>
+              </button>
+
+              {open && (
+                <div className="mb-1 ml-5 border-l border-[color:var(--color-rule)] pl-4">
+                  {inside.map((row, at) => (
+                    <div
+                      key={at}
+                      className="flex items-baseline justify-between gap-4 py-1 text-xs"
+                    >
+                      <span className="min-w-0 truncate text-[color:var(--color-ink-secondary)]">
+                        {row.name}
+                        {!row.isEssential && ` · ${copy('commitments.optionalTag')}`}
+                      </span>
+                      <span className="tabular shrink-0 text-[color:var(--color-ink-tertiary)]">
+                        {money(monthly(row))}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
 
         <div className="mt-2 flex items-baseline justify-between gap-4 border-t border-[color:var(--color-rule)] pt-3 text-base text-[color:var(--color-ink)]">
           <span className="font-medium">{copy('commitments.totalLabel')}</span>

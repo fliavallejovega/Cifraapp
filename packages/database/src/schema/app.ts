@@ -30,6 +30,26 @@ export const categoryKind = pgEnum('category_kind', [
   'investment',
 ]);
 
+/**
+ * Cada cuánto se repite algo que se cobra o se paga.
+ *
+ * Vive aquí y no junto a las series porque lo usan tanto los ingresos como las
+ * deudas, y que un módulo importe al otro para alcanzarlo crea un ciclo que en
+ * ESM se resuelve con una de las dos mitades a medio evaluar.
+ */
+export const recurrenceFrequency = pgEnum('recurrence_frequency', [
+  // Plenty of work is paid by the day — a stall, a driver, piecework — and a
+  // product that only understands monthly salaries has nothing to say to those
+  // households about the week they are actually living through.
+  'daily',
+  'weekly',
+  'biweekly',
+  'semimonthly',
+  'monthly',
+  'quarterly',
+  'annual',
+]);
+
 export const categoryTemplates = appSchema.table(
   'category_templates',
   {

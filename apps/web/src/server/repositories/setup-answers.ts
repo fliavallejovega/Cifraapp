@@ -191,6 +191,8 @@ export async function loadSetupAnswers(
           kind: debts.kind,
           repayment: debts.repayment,
           isPayrollDeducted: debts.isPayrollDeducted,
+          paymentFrequency: debts.paymentFrequency,
+          anchorDays: debts.anchorDays,
           termMonths: debts.termMonths,
           paidMonths: debts.paidMonths,
           personName: householdPeople.displayName,
@@ -396,6 +398,11 @@ export async function loadSetupAnswers(
         kind: row.kind,
         repayment: row.repayment ?? 'fixed_instalment',
         isPayrollDeducted: row.isPayrollDeducted,
+        paymentFrequency: row.paymentFrequency,
+        // De vuelta a los dos campos en que se escribieron, para que una
+        // segunda visita muestre los días y no un par de casillas vacías.
+        anchorFirst: row.anchorDays?.[0] === undefined ? '' : String(row.anchorDays[0]),
+        anchorSecond: row.anchorDays?.[1] === undefined ? '' : String(row.anchorDays[1]),
         termMonths: row.termMonths === null ? '' : String(row.termMonths),
         paidMonths: row.paidMonths === null ? '' : String(row.paidMonths),
       })),

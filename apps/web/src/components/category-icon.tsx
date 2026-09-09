@@ -54,6 +54,10 @@ const PATHS: Record<string, string> = {
     'M4 7.5A2.5 2.5 0 0 1 6.5 5H18v2.5M4 7.5V17a2.5 2.5 0 0 0 2.5 2.5H19a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1H4Zm12.5 5.5h.01',
   // El sol sobre el horizonte: dejar de trabajar dibujado sin un reloj ni una
   // silla, que es como se dibuja normalmente y como se lee mal.
+  // Una mano abierta con algo encima: dar, dibujado sin una iglesia ni un
+  // símbolo religioso — el diezmo lo dan hogares de credos distintos.
+  giving:
+    'M3 13.5c1.5-1 3-1 4.5 0l2.5 2h3a1.5 1.5 0 0 1 0 3H12m-9-5V20m0-6.5 6.5 5.5H16l4.5-3.5a1.6 1.6 0 0 0-2-2.4M12 8.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z',
   retire: 'M3 19h18M6.5 19a5.5 5.5 0 0 1 11 0M12 5v3m6-1-2 2M6 7l2 2m-6 4h2m18 0h-2',
   tag: 'M4 4h7.5L20 12.5 12.5 20 4 11.5V4Zm3.5 3.5h.01',
 };
