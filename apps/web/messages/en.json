@@ -947,7 +947,16 @@
       "addFirstDeduction": "Add a deduction",
       "grossLine": "Gross",
       "deductedLine": "Deductions ({count})",
-      "netLine": "You receive"
+      "netLine": "You receive",
+      "estimateAction": "Work it out with Panama's rates",
+      "estimating": "Working it out…",
+      "estimateFailed": "We could not work it out. You can type the amounts from your payslip.",
+      "estimateNote": "If you used the calculator: those are the social security, education tax and income tax rates from the text in force, and they are a suggestion. Check them against your payslip and correct whatever does not match — what we store is what you confirm, not what we computed.",
+      "line": {
+        "socialSecurity": "Social security",
+        "educationTax": "Education tax",
+        "incomeTax": "Income tax"
+      }
     },
     "savings": {
       "title": "What do you have today?",

@@ -25,6 +25,25 @@ import type { RuleProvenance, TaxRuleSet } from '../types.js';
  * personal deductions and their caps, social security contributions for the
  * self-employed, and municipal rates. A deduction with an unverified cap is
  * worse than no deduction — it lowers a reserve a household is relying on.
+ *
+ * ## The payroll rules below, and what they may be used for
+ *
+ * `social_security.employee`, `social_security.education_employee` and the
+ * income brackets together describe what comes off a Panamanian salary before
+ * it is paid. They are here at the explicit request of the product owner, and
+ * they carry exactly the same status as everything else in this file: draft,
+ * unreviewed, `reviewedBy: null`.
+ *
+ * That status still decides what may be done with them. `mayPresent()` is
+ * false, so nothing here may be shown to a household as *what they owe* — not
+ * a reserve, not a filing figure, not an assertion about the law.
+ *
+ * They may be used for one thing: to prefill, as an editable suggestion, the
+ * deduction lines a household is copying off their own payslip. The difference
+ * is not cosmetic. A figure the person confirms against the paper in their hand
+ * and can overwrite is their statement; the same figure presented as settled is
+ * ours. Only the first is a claim this product is entitled to make, and the
+ * prefill path says so on the screen.
  */
 
 const UNREVIEWED: RuleProvenance = {
@@ -73,6 +92,37 @@ export const PANAMA_2026_DRAFT: TaxRuleSet = {
         { from: pab('50000.00'), upTo: null, rate: '25.000' },
       ],
       provenance: UNREVIEWED,
+    },
+    /**
+     * The employee's own contribution to the Caja de Seguro Social.
+     *
+     * The employer's share is a different, larger rate and is deliberately not
+     * here: it never touches the household's money and putting it in a file
+     * about what reaches a person would be an invitation to subtract it.
+     */
+    {
+      kind: 'flat_rate',
+      key: 'social_security.employee',
+      taxType: 'social_security',
+      rate: '9.750',
+      provenance: {
+        ...UNREVIEWED,
+        sourceReference: 'Caja de Seguro Social — cuota obrera sobre el salario',
+        notes:
+          'Transcribed from the commonly cited rate. Not verified against a primary CSS publication. Prefill only: shown as an editable suggestion the household confirms against their own payslip, never as a figure this product asserts.',
+      },
+    },
+    {
+      kind: 'flat_rate',
+      key: 'social_security.education_employee',
+      taxType: 'social_security',
+      rate: '1.250',
+      provenance: {
+        ...UNREVIEWED,
+        sourceReference: 'Seguro Educativo — cuota del trabajador',
+        notes:
+          'Transcribed from the commonly cited rate. Not verified against a primary publication. Prefill only, editable by the household.',
+      },
     },
     {
       kind: 'flat_rate',

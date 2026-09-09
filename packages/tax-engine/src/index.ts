@@ -37,3 +37,10 @@ export type {
   TaxpayerProfile,
   TaxpayerStatus,
 } from './types.js';
+
+export {
+  estimatePayroll,
+  type PayrollEstimate,
+  type PayrollInput,
+  type PayrollLine,
+} from './payroll.js';

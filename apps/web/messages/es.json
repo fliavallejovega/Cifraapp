@@ -947,7 +947,16 @@
       "addFirstDeduction": "Agregar un descuento",
       "grossLine": "Bruto",
       "deductedLine": "Descuentos ({count})",
-      "netLine": "Te llega"
+      "netLine": "Te llega",
+      "estimateAction": "Calcular con las tasas de Panamá",
+      "estimating": "Calculando…",
+      "estimateFailed": "No pudimos calcularlo. Puedes escribir los montos a mano desde tu recibo.",
+      "estimateNote": "Si usaste el cálculo: son las tasas de seguro social, seguro educativo y renta según el texto vigente, y son una sugerencia. Compáralas con tu recibo y corrige lo que no cuadre — lo que guardamos es lo que tú confirmes, no lo que calculamos.",
+      "line": {
+        "socialSecurity": "Seguro social",
+        "educationTax": "Seguro educativo",
+        "incomeTax": "Impuesto sobre la renta"
+      }
     },
     "savings": {
       "title": "¿Qué tienes hoy?",

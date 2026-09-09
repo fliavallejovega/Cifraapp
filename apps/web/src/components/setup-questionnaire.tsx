@@ -13,6 +13,7 @@ import {
 import { LANDING_DRAFT_KEY, type LandingDraft } from '@/components/marketing/try-it';
 import { KindIcon, SymbolSearch } from '@/components/symbol-search';
 import { lookupSymbol, type SymbolCandidate } from '@/server/holdings-actions';
+import { estimatePanamaPayroll } from '@/server/payroll-actions';
 import { completeSetup, type SetupResult } from '@/server/onboarding-actions';
 
 /**
@@ -1765,6 +1766,9 @@ function IncomeDeductions({
   readonly currencySymbol: string;
   readonly copy: (key: string) => string;
 }) {
+  const [estimating, setEstimating] = useState(false);
+  const [estimateFailed, setEstimateFailed] = useState(false);
+
   const lines = row.deductions ?? [];
   const asNumber = (value: string) => Number((value ?? '').replace(/[^\d.]/g, '')) || 0;
 
@@ -1851,17 +1855,64 @@ function IncomeDeductions({
           </div>
         ))}
 
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          className="self-start"
-          onClick={() => {
-            setLines([...lines, { label: '', amount: '' }]);
-          }}
-        >
-          {lines.length === 0 ? copy('income.addFirstDeduction') : copy('income.addDeduction')}
-        </Button>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              setLines([...lines, { label: '', amount: '' }]);
+            }}
+          >
+            {lines.length === 0 ? copy('income.addFirstDeduction') : copy('income.addDeduction')}
+          </Button>
+
+          {/*
+            El cálculo con las tasas panameñas rellena las líneas; no las
+            cierra. Lo que quede guardado es lo que la persona confirme contra
+            su propio recibo, y por eso el botón dice «calcular» y no
+            «aplicar», y por eso las tres líneas siguen siendo editables
+            después. El conjunto de reglas del que sale es un borrador que
+            nadie calificado revisó: presentarlo como lo que se debe sería
+            afirmar algo que este producto no puede afirmar.
+          */}
+          {gross > 0 && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={estimating}
+              onClick={() => {
+                setEstimating(true);
+                void estimatePanamaPayroll(row.grossAmount ?? '', row.frequency)
+                  .then((result) => {
+                    if (!result.ok || !result.lines) {
+                      setEstimateFailed(true);
+                      return;
+                    }
+                    setEstimateFailed(false);
+                    setLines(
+                      result.lines.map((line) => ({
+                        label: copy(`income.line.${line.key}`),
+                        amount: line.amount,
+                      })),
+                    );
+                  })
+                  .finally(() => {
+                    setEstimating(false);
+                  });
+              }}
+            >
+              {estimating ? copy('income.estimating') : copy('income.estimateAction')}
+            </Button>
+          )}
+        </div>
+
+        {estimateFailed && (
+          <p className="text-xs text-[color:var(--color-caution)]">
+            {copy('income.estimateFailed')}
+          </p>
+        )}
 
         {lines.length > 0 && gross > 0 && (
           <div className="max-w-[46ch] border-t border-[color:var(--color-rule)] pt-3 text-sm text-[color:var(--color-ink-secondary)]">
@@ -1877,6 +1928,9 @@ function IncomeDeductions({
               <span className="font-medium">{copy('income.netLine')}</span>
               <span className="tabular font-medium">{money(arrives)}</span>
             </div>
+            <p className="mt-3 text-xs text-[color:var(--color-ink-tertiary)]">
+              {copy('income.estimateNote')}
+            </p>
           </div>
         )}
       </div>
