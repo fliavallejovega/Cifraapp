@@ -217,6 +217,7 @@ function labels(read: (key: string) => string): Record<string, string> {
     'income.addDeduction',
     'income.addFirstDeduction',
     'income.grossLine',
+    'income.annualLine',
     'income.deductedLine',
     'income.netLine',
     'income.estimateAction',

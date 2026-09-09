@@ -1777,6 +1777,9 @@ function IncomeDeductions({
   // `arrivingAmount` para decidir si hay algo que restar, para que el monto que
   // se guarda y el que se muestra no puedan discrepar.
   const hasGross = (row.grossAmount ?? '').trim() !== '' && gross > 0;
+  // La misma tabla que usa el cálculo en el servidor. El bruto de este campo es
+  // por pago, no por mes, y sin esto la pantalla nunca decía cuál de las dos.
+  const paymentsPerYear = PAYMENTS_PER_YEAR[row.frequency];
   const taken = lines.reduce((total, line) => total + asNumber(line.amount), 0);
   const arrives = Math.max(gross - taken, 0);
 
@@ -1945,6 +1948,20 @@ function IncomeDeductions({
             <div className="flex items-baseline justify-between gap-4 py-1">
               <span>{copy('income.grossLine')}</span>
               <span className="tabular">{money(gross)}</span>
+            </div>
+            {/*
+              La cifra anual, a la vista.
+
+              Los tramos de renta son anuales, así que el bruto que se teclea
+              aquí se multiplica por los pagos del año antes de que se le
+              apliquen — y esa multiplicación es donde un bruto mensual escrito
+              en un ingreso quincenal se convierte en el doble de sueldo y en
+              una retención que no es la de nadie. El número que delata el error
+              es este, y hasta ahora no se mostraba en ninguna parte.
+            */}
+            <div className="flex items-baseline justify-between gap-4 py-1">
+              <span>{copy('income.annualLine').replace('{count}', String(paymentsPerYear))}</span>
+              <span className="tabular">{money(gross * paymentsPerYear)}</span>
             </div>
             <div className="flex items-baseline justify-between gap-4 py-1">
               <span>{copy('income.deductedLine').replace('{count}', String(lines.length))}</span>

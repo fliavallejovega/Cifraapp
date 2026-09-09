@@ -114,6 +114,50 @@ describe('los descuentos de una planilla panameña', () => {
     expect(result?.mayPresentAsOwed).toBe(false);
   });
 
+  /**
+   * El caso de 3.000, contra las calculadoras públicas de Panamá.
+   *
+   * Es el sueldo con el que un usuario reportó que «el sistema da datos
+   * erróneos», y fija el desglose que publican las calculadoras salariales
+   * panameñas para 3.000 al mes: 292,50 de CSS, 37,50 de educativo y 263,00 de
+   * renta, 593,00 en total y 2.407,00 netos.
+   *
+   * El mismo 3.000 cobrado por quincena son 72.000 al año y llega al tramo del
+   * 25%, así que la retención sube a 390,42. Las dos cifras son correctas para
+   * su propia pregunta, y ese es justamente el punto: el bruto de este campo es
+   * por pago, no por mes. La pantalla ahora enseña la cifra anual para que la
+   * diferencia se vea antes de que alguien planifique sobre ella.
+   */
+  it('reproduce el desglose publicado para 3.000 al mes', () => {
+    const result = estimatePayroll({
+      gross: pab('3000.00'),
+      paymentsPerYear: 12,
+      rules: PANAMA_2026_DRAFT,
+    });
+
+    const at = (key: string) => result?.lines.find((line) => line.key === key)?.amount;
+    expect(at('socialSecurity')?.toDecimalString()).toBe('292.5000');
+    expect(at('educationTax')?.toDecimalString()).toBe('37.5000');
+    expect(at('incomeTax')?.toDecimalString()).toBe('263.0000');
+    expect(result?.totalDeducted.toDecimalString()).toBe('593.0000');
+    expect(result?.net.toDecimalString()).toBe('2407.0000');
+  });
+
+  it('cobra más renta por el mismo 3.000 cuando es quincenal, porque son 72.000 al año', () => {
+    const result = estimatePayroll({
+      gross: pab('3000.00'),
+      paymentsPerYear: 24,
+      rules: PANAMA_2026_DRAFT,
+    });
+
+    // 72.000 menos 7.020 de CSS y 900 de educativo son 64.080 gravables: 5.850
+    // por el tramo del 15% completo, más 3.520 por los 14.080 que pasan de
+    // 50.000. Son 9.370 al año, 390,4166… por quincena.
+    const at = (key: string) => result?.lines.find((line) => line.key === key)?.amount;
+    expect(at('incomeTax')?.toDecimalString()).toBe('390.4167');
+    expect(result?.net.toDecimalString()).toBe('2279.5833');
+  });
+
   it('devuelve nada antes que una cuenta a medias', () => {
     // Sin tramos no hay retención que calcular, y un desglose al que le falta
     // la línea más grande parece completo y está mal por esa línea entera.
