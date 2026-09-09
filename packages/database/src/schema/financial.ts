@@ -476,6 +476,33 @@ export const goals = appSchema.table(
   (table) => [index('goals_household_idx').on(table.householdId, table.priority)],
 );
 
+/** Una tarjeta no se parece a una hipoteca, y el formulario tiene que saberlo. */
+export const debtKind = pgEnum('debt_kind', [
+  'credit_card',
+  'auto_loan',
+  'mortgage',
+  'personal_loan',
+  'student_loan',
+  'other',
+]);
+
+/**
+ * Cómo se paga un crédito, que no es lo mismo que qué clase de crédito es.
+ *
+ * Una hipoteca y un préstamo entre amigos pueden pagarse igual, y una hipoteca
+ * y una línea del mismo banco no. La forma decide qué preguntar y qué se puede
+ * calcular: una cuota fija baja el capital cada mes, un préstamo de solo
+ * intereses no lo baja hasta el final, y una tarjeta no termina.
+ */
+export const debtRepayment = pgEnum('debt_repayment', [
+  'fixed_instalment',
+  'declining_instalment',
+  'interest_only',
+  'single_payment',
+  'no_interest_plan',
+  'revolving',
+]);
+
 export const debts = appSchema.table(
   'debts',
   {
@@ -499,6 +526,27 @@ export const debts = appSchema.table(
     dueDay: smallint('due_day'),
     statementDay: smallint('statement_day'),
     creditLimit: money('credit_limit'),
+    /**
+     * Qué clase de deuda es.
+     *
+     * Una tarjeta tiene cupo y da vueltas; una hipoteca no tiene cupo y sí
+     * tiene final. Sin esta distinción el formulario no sabe qué está mirando y
+     * le pide a un préstamo un límite que no existe.
+     */
+    kind: debtKind('kind').notNull().default('other'),
+    /** Cuántas cuotas en total. Nula en lo que por diseño no termina. */
+    termMonths: smallint('term_months'),
+    /** Cuántas van pagadas. «18 de 60» es lo que la gente sabe de su préstamo. */
+    paidMonths: smallint('paid_months'),
+    repayment: debtRepayment('repayment'),
+    /**
+     * Descuento directo: la cuota sale de la planilla antes de que el sueldo
+     * llegue. Ese dinero nunca entra a la cuenta, así que no puede reclamar un
+     * saldo que ya no lo tiene.
+     */
+    isPayrollDeducted: boolean('is_payroll_deducted').notNull().default(false),
+    /** El día del mes en que se cobra la cuota, cuando la hay. */
+    instalmentDay: smallint('instalment_day'),
     promotionalApr: numeric('promotional_apr', { precision: 6, scale: 3, mode: 'string' }),
     promotionalExpiresOn: date('promotional_expires_on'),
     strategyPriority: integer('strategy_priority'),

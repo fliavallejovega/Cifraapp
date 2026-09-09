@@ -52,6 +52,33 @@ interface SetupDraft {
 type Frequency =
   'daily' | 'weekly' | 'biweekly' | 'semimonthly' | 'monthly' | 'quarterly' | 'annual';
 
+/** Ofrecidas en este orden, la más común primero. */
+/**
+ * Las formas de pago que se usan, la corriente primero.
+ *
+ * Cubren lo que se ve en Panamá: cuota fija en hipoteca y auto, cuota
+ * decreciente en parte de la banca local, solo intereses con el capital al
+ * final, un solo pago al vencimiento —la forma del préstamo informal—, cuotas
+ * sin interés de una compra a plazos, y lo revolvente de una tarjeta o línea.
+ */
+const DEBT_REPAYMENTS = [
+  'fixed_instalment',
+  'declining_instalment',
+  'interest_only',
+  'single_payment',
+  'no_interest_plan',
+  'revolving',
+] as const;
+
+const DEBT_KINDS = [
+  'credit_card',
+  'auto_loan',
+  'mortgage',
+  'personal_loan',
+  'student_loan',
+  'other',
+] as const;
+
 /** Offered in this order, commonest first. */
 const FREQUENCIES: readonly Frequency[] = [
   'monthly',
@@ -251,6 +278,36 @@ interface DebtRow {
    * limit the position has to know about. Blank means «a loan, not a card».
    */
   creditLimit: string;
+  /**
+   * Qué clase de deuda es.
+   *
+   * Una tarjeta tiene cupo y da vueltas; una hipoteca no tiene cupo y sí tiene
+   * final. Sin saberlo, el formulario le pide a un préstamo un límite que no
+   * existe y no puede preguntarle por sus cuotas, que es lo que su dueño sabe
+   * de memoria.
+   */
+  kind?: 'credit_card' | 'auto_loan' | 'mortgage' | 'personal_loan' | 'student_loan' | 'other';
+  /** Cuántas cuotas tiene en total. Vacío en lo que no termina. */
+  termMonths?: string | undefined;
+  /** Cuántas van pagadas. */
+  paidMonths?: string | undefined;
+  /**
+   * Cómo se paga, que no es lo mismo que qué clase de crédito es.
+   *
+   * Una hipoteca y un préstamo entre amigos pueden pagarse igual, y una
+   * hipoteca y una línea del mismo banco no. Es lo que decide qué preguntar:
+   * algo que da vueltas no tiene cuotas, y algo de solo intereses no baja el
+   * capital hasta el final.
+   */
+  repayment?:
+    | 'fixed_instalment'
+    | 'declining_instalment'
+    | 'interest_only'
+    | 'single_payment'
+    | 'no_interest_plan'
+    | 'revolving';
+  /** La cuota sale de la planilla antes de que el sueldo llegue. */
+  isPayrollDeducted?: boolean | undefined;
   /** Whose card it is, by the name given on the first step. Blank means the household's. */
   personName: string;
 }
@@ -483,6 +540,11 @@ export function SetupQuestionnaire({
       minimumPayment: '',
       creditLimit: '',
       personName: '',
+      kind: 'credit_card' as const,
+      termMonths: '',
+      paidMonths: '',
+      repayment: 'revolving' as const,
+      isPayrollDeducted: false,
     }),
   );
   const [holdingRows, setHoldingRows] = useState<HoldingRow[]>(
@@ -677,6 +739,20 @@ export function SetupQuestionnaire({
   const perMonth = (amount: string, frequency: Frequency) =>
     (amountOf(amount) * PAYMENTS_PER_YEAR[frequency]) / 12;
 
+  /**
+   * Lo que los pagos se llevan al mes, con las quincenas desiguales sumadas
+   * aparte. Se calcula aquí y no dentro de un paso porque lo miran dos: el de
+   * pagos, para su propio total, y el de deudas, para saber qué queda antes de
+   * los mínimos.
+   */
+  const commitmentsPerMonth = commitments
+    .filter((row) => row.name.trim() !== '' && row.amount.trim() !== '')
+    .reduce((all, row) => {
+      const uneven = anchorAmountsOf(row);
+      if (uneven) return all + uneven.reduce((sum, value) => sum + amountOf(value), 0);
+      return all + perMonth(row.amount, row.frequency ?? 'monthly');
+    }, 0);
+
   const incomePerMonth = incomes
     .filter((row) => row.name.trim() !== '')
     .reduce((total, row) => total + perMonth(arrivingAmount(row), row.frequency), 0);
@@ -762,13 +838,22 @@ export function SetupQuestionnaire({
         anchorDays: anchorDaysOf(row),
         anchorAmounts: anchorAmountsOf(row),
       })),
-    debts: debtRows.filter(
-      (row) =>
-        row.name.trim() !== '' &&
-        row.balance.trim() !== '' &&
-        row.apr.trim() !== '' &&
-        row.minimumPayment.trim() !== '',
-    ),
+    // Las cuotas viajan como número o no viajan: una cadena vacía en un campo
+    // que la base espera entero es un guardado que falla al final, cuando ya no
+    // hay nada que la persona pueda hacer al respecto.
+    debts: debtRows
+      .filter(
+        (row) =>
+          row.name.trim() !== '' &&
+          row.balance.trim() !== '' &&
+          row.apr.trim() !== '' &&
+          row.minimumPayment.trim() !== '',
+      )
+      .map((row) => ({
+        ...row,
+        ...((row.termMonths ?? '').trim() === '' ? { termMonths: undefined } : {}),
+        ...((row.paidMonths ?? '').trim() === '' ? { paidMonths: undefined } : {}),
+      })),
     goals: goalRows.filter((row) => row.name.trim() !== '' && row.targetAmount.trim() !== ''),
     // Only what was found and counted. A symbol nobody could price is not a
     // holding yet, and storing it would put a row in the portfolio that no
@@ -1922,6 +2007,11 @@ export function SetupQuestionnaire({
                   minimumPayment: '',
                   creditLimit: '',
                   personName: '',
+                  kind: 'credit_card' as const,
+                  termMonths: '',
+                  paidMonths: '',
+                  repayment: 'revolving' as const,
+                  isPayrollDeducted: false,
                 },
               ]);
             }}
@@ -1974,6 +2064,44 @@ export function SetupQuestionnaire({
                     </div>
                   )}
                 </Field>
+                <Field label={copy('debts.kind')} hint={copy('debts.kindHint')}>
+                  {({ id, describedBy }) => (
+                    <Select
+                      id={id}
+                      aria-describedby={describedBy}
+                      value={row.kind ?? 'credit_card'}
+                      onChange={(event) => {
+                        const kind = event.target.value as NonNullable<DebtRow['kind']>;
+                        // Cambiar de tarjeta a préstamo borra el cupo: un límite
+                        // en una hipoteca es un dato que nadie puede leer, y la
+                        // base lo rechaza. Mejor que se vaya al elegir que que
+                        // el guardado falle al final con un error de esquema.
+                        // La clase propone la forma corriente y la persona la
+                        // cambia si su crédito es de los otros: una tarjeta da
+                        // vueltas, y todo lo demás se paga en cuotas fijas
+                        // mientras nadie diga lo contrario.
+                        const repayment =
+                          kind === 'credit_card'
+                            ? ('revolving' as const)
+                            : ('fixed_instalment' as const);
+                        setDebtRows(
+                          patch(debtRows, at, {
+                            kind,
+                            repayment,
+                            ...(kind === 'credit_card' ? {} : { creditLimit: '' }),
+                            ...(kind === 'credit_card' ? { termMonths: '', paidMonths: '' } : {}),
+                          }),
+                        );
+                      }}
+                    >
+                      {DEBT_KINDS.map((value) => (
+                        <option key={value} value={value}>
+                          {copy(`debts.kinds.${value}`)}
+                        </option>
+                      ))}
+                    </Select>
+                  )}
+                </Field>
                 <MoneyField
                   label={copy('debts.minimum')}
                   hint={copy('debts.minimumHint')}
@@ -1983,13 +2111,113 @@ export function SetupQuestionnaire({
                     setDebtRows(patch(debtRows, at, { minimumPayment: value }));
                   }}
                 />
-                <MoneyField
-                  label={copy('debts.limit')}
-                  hint={copy('debts.limitHint')}
-                  symbol={currencySymbol}
-                  value={row.creditLimit}
-                  onChange={(value) => {
-                    setDebtRows(patch(debtRows, at, { creditLimit: value }));
+                {/*
+                  El cupo solo existe en una tarjeta.
+
+                  Preguntárselo a una hipoteca es preguntar por una cifra que no
+                  existe, y el hint que decía «déjalo vacío si es un préstamo»
+                  era la forma más silenciosa de tratar un préstamo como una
+                  tarjeta a la que le falta un dato. La base ahora lo rechaza,
+                  así que la pantalla tampoco lo ofrece.
+                */}
+                {row.kind === 'credit_card' && (
+                  <MoneyField
+                    label={copy('debts.limit')}
+                    hint={copy('debts.limitHint')}
+                    symbol={currencySymbol}
+                    value={row.creditLimit}
+                    onChange={(value) => {
+                      setDebtRows(patch(debtRows, at, { creditLimit: value }));
+                    }}
+                  />
+                )}
+
+                {/*
+                  Y las cuotas, solo en lo que termina.
+
+                  «Voy 18 de 60» es lo que su dueño sabe de memoria de un
+                  préstamo y lo que ninguna tarjeta puede contestar: una tarjeta
+                  no tiene final, y preguntarle cuándo acaba es preguntarle algo
+                  que por diseño no tiene respuesta.
+                */}
+                <Field label={copy('debts.repayment')} hint={copy('debts.repaymentHint')}>
+                  {({ id, describedBy }) => (
+                    <Select
+                      id={id}
+                      aria-describedby={describedBy}
+                      value={row.repayment ?? 'fixed_instalment'}
+                      onChange={(event) => {
+                        const repayment = event.target.value as NonNullable<DebtRow['repayment']>;
+                        // Lo revolvente no tiene cuotas: preguntarle cuándo
+                        // termina es preguntarle algo que por diseño no tiene
+                        // respuesta, y la base rechaza guardarlas.
+                        setDebtRows(
+                          patch(debtRows, at, {
+                            repayment,
+                            ...(repayment === 'revolving'
+                              ? { termMonths: '', paidMonths: '' }
+                              : {}),
+                          }),
+                        );
+                      }}
+                    >
+                      {DEBT_REPAYMENTS.map((value) => (
+                        <option key={value} value={value}>
+                          {copy(`debts.repayments.${value}`)}
+                        </option>
+                      ))}
+                    </Select>
+                  )}
+                </Field>
+
+                {(row.repayment ?? 'fixed_instalment') !== 'revolving' && (
+                  <>
+                    <Field label={copy('debts.term')} hint={copy('debts.termHint')}>
+                      {({ id, describedBy }) => (
+                        <Input
+                          id={id}
+                          numeric
+                          inputMode="numeric"
+                          placeholder="60"
+                          value={row.termMonths ?? ''}
+                          aria-describedby={describedBy}
+                          onChange={(event) => {
+                            setDebtRows(patch(debtRows, at, { termMonths: event.target.value }));
+                          }}
+                        />
+                      )}
+                    </Field>
+                    <Field label={copy('debts.paid')} hint={copy('debts.paidHint')}>
+                      {({ id, describedBy }) => (
+                        <Input
+                          id={id}
+                          numeric
+                          inputMode="numeric"
+                          placeholder="18"
+                          value={row.paidMonths ?? ''}
+                          aria-describedby={describedBy}
+                          onChange={(event) => {
+                            setDebtRows(patch(debtRows, at, { paidMonths: event.target.value }));
+                          }}
+                        />
+                      )}
+                    </Field>
+                  </>
+                )}
+
+                {/*
+                  Descuento directo, que en Panamá no es un detalle de trámite.
+
+                  Si la cuota sale de la planilla, ese dinero nunca entra a la
+                  cuenta: se debe, se muestra, y no puede reclamar un saldo que
+                  nunca lo tuvo. Es la misma distinción que ya hacen los pagos.
+                */}
+                <Check
+                  label={copy('debts.payroll')}
+                  hint={copy('debts.payrollHint')}
+                  checked={row.isPayrollDeducted === true}
+                  onChange={(checked) => {
+                    setDebtRows(patch(debtRows, at, { isPayrollDeducted: checked }));
                   }}
                 />
                 <Field label={copy('debts.holder')} hint={copy('debts.holderHint')}>
@@ -2023,6 +2251,81 @@ export function SetupQuestionnaire({
             )}
           />
         )}
+
+        {/*
+          Lo que se debe, y qué queda después de los mínimos.
+
+          Un paso que pide cuatro saldos y no los suma obliga a llevar la cuenta
+          de cabeza, y el total de deuda es la cifra que nadie tiene en la
+          cabeza porque vive repartida en cuatro estados de cuenta. Los mínimos
+          van aparte del saldo a propósito: el saldo dice cuánto se debe, los
+          mínimos dicen cuánto reclama este mes, y solo el segundo compite con
+          el sueldo.
+        */}
+        {step === 'debts' &&
+          debtRows.some((row) => row.name.trim() !== '' && row.balance.trim() !== '') && (
+            <StepTotals
+              lines={[
+                {
+                  label: copy('debts.totalBalance').replace(
+                    '{count}',
+                    String(
+                      debtRows.filter((row) => row.name.trim() !== '' && row.balance.trim() !== '')
+                        .length,
+                    ),
+                  ),
+                  value: money(debtRows.reduce((all, row) => all + amountOf(row.balance), 0)),
+                },
+                ...(debtRows.some((row) => amountOf(row.termMonths ?? '') > 0)
+                  ? [
+                      {
+                        label: copy('debts.totalRemaining'),
+                        value: String(
+                          debtRows.reduce(
+                            (all, row) =>
+                              all +
+                              Math.max(
+                                amountOf(row.termMonths ?? '') - amountOf(row.paidMonths ?? ''),
+                                0,
+                              ),
+                            0,
+                          ),
+                        ),
+                      },
+                    ]
+                  : []),
+                {
+                  label: copy('debts.totalMinimum'),
+                  value: money(
+                    debtRows.reduce((all, row) => all + amountOf(row.minimumPayment), 0),
+                  ),
+                },
+                ...(incomePerMonth > 0
+                  ? [
+                      { label: copy('income.totalLabel'), value: money(incomePerMonth) },
+                      {
+                        label: copy('commitments.totalLabel'),
+                        value: `−${money(commitmentsPerMonth)}`,
+                      },
+                      {
+                        label: copy('debts.totalMinimum'),
+                        value: `−${money(debtRows.reduce((all, row) => all + amountOf(row.minimumPayment), 0))}`,
+                      },
+                      {
+                        label: copy('debts.totalLeft'),
+                        value: money(
+                          incomePerMonth -
+                            commitmentsPerMonth -
+                            debtRows.reduce((all, row) => all + amountOf(row.minimumPayment), 0),
+                        ),
+                        tone: 'strong' as const,
+                      },
+                    ]
+                  : []),
+              ]}
+              note={copy('debts.totalNote')}
+            />
+          )}
 
         {step === 'goals' && (
           <div className="flex flex-col gap-8">
@@ -2308,16 +2611,24 @@ function Progress({
                     )}
                   </span>
 
-                  {/* The name of every stop on a desk; only the current one on a
-                    phone, where six labels would either wrap into a wall or
-                    truncate into nonsense. */}
+                  {/*
+                    El nombre de las seis paradas, también en el teléfono.
+
+                    Antes solo se veía el de la parada actual, y una barra donde
+                    cinco de seis puntos no dicen qué son obliga a tocar para
+                    averiguarlo. Los nombres son cortos —«Pagos», «Deudas»— y
+                    caben; lo que no cabía era la tipografía de escritorio, así
+                    que en pantalla chica se achican y el actual crece.
+
+                    La diferencia de tamaño hace además el trabajo que el anillo
+                    hacía a medias: se ve dónde estás sin comparar rellenos.
+                  */}
                   <span
                     className={[
-                      'max-w-[9ch] text-center text-[11px] leading-tight transition-colors duration-(--duration-settle)',
+                      'max-w-[8ch] text-center leading-tight transition-[color,font-size] duration-(--duration-settle) sm:max-w-[9ch]',
                       current
-                        ? 'font-medium text-[color:var(--color-ink)]'
-                        : 'text-[color:var(--color-ink-tertiary)]',
-                      current ? '' : 'hidden sm:block',
+                        ? 'text-[11px] font-medium text-[color:var(--color-ink)] sm:text-[13px]'
+                        : 'text-[9px] text-[color:var(--color-ink-tertiary)] sm:text-[11px]',
                     ].join(' ')}
                   >
                     {name}

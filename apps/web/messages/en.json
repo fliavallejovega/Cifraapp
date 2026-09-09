@@ -1137,7 +1137,39 @@
       "holderShared": "The household’s",
       "available": "That leaves {amount} available on this card.",
       "empty": "No debts yet. Add the first one — a card, a loan — or skip this step if you owe nothing.",
-      "addFirst": "Add the first debt"
+      "addFirst": "Add the first debt",
+      "kind": "What sort of debt is it?",
+      "kindHint": "A card has a limit and does not end; a loan has instalments and does.",
+      "term": "Instalments in total",
+      "termHint": "How many instalments the loan has.",
+      "paid": "Instalments paid",
+      "paidHint": "How many you have paid. With both we can say how many are left.",
+      "kinds": {
+        "credit_card": "Credit card",
+        "auto_loan": "Car loan",
+        "mortgage": "Mortgage",
+        "personal_loan": "Personal loan",
+        "student_loan": "Student loan",
+        "other": "Other"
+      },
+      "totalTitle": "What you owe",
+      "totalBalance": "Debts ({count})",
+      "totalMinimum": "Minimums per month",
+      "totalLeft": "Left over",
+      "totalNote": "With what you have answered so far. The minimums are what cannot go unpaid; the plan divides the rest.",
+      "totalRemaining": "Instalments left",
+      "repayment": "How is it repaid?",
+      "repaymentHint": "What decides whether it has instalments, whether the principal falls each month, or whether it ends at all.",
+      "payroll": "Taken from the payslip",
+      "payrollHint": "If the instalment comes off your salary before it reaches you. That money never enters the account, and the plan treats it differently.",
+      "repayments": {
+        "fixed_instalment": "Fixed instalment every month",
+        "declining_instalment": "Falling instalment (fixed principal)",
+        "interest_only": "Interest only, principal at the end",
+        "single_payment": "One payment at maturity",
+        "no_interest_plan": "Interest-free instalments",
+        "revolving": "Revolving (card or line)"
+      }
     },
     "goals": {
       "title": "What is all this for?",

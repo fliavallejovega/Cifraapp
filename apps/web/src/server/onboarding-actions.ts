@@ -336,6 +336,33 @@ const setupInput = z.object({
         balance: amount,
         /** Present when the debt is a credit card: what it can be spent up to. */
         creditLimit: optionalAmount,
+        /**
+         * Qué clase de deuda es. Lo que decide si tiene cupo o tiene cuotas —
+         * una tarjeta no termina y una hipoteca no tiene límite.
+         */
+        kind: z
+          .enum(['credit_card', 'auto_loan', 'mortgage', 'personal_loan', 'student_loan', 'other'])
+          .default('other'),
+        /** Cuántas cuotas tiene y cuántas van pagadas. Vacías en una tarjeta. */
+        termMonths: z.coerce.number().int().min(1).max(600).optional(),
+        paidMonths: z.coerce.number().int().min(0).max(600).optional(),
+        /**
+         * Cómo se paga. Es lo que decide si tiene cuotas o si da vueltas, y es
+         * distinto de la clase: una hipoteca y un préstamo entre amigos pueden
+         * pagarse igual.
+         */
+        repayment: z
+          .enum([
+            'fixed_instalment',
+            'declining_instalment',
+            'interest_only',
+            'single_payment',
+            'no_interest_plan',
+            'revolving',
+          ])
+          .default('fixed_instalment'),
+        /** La cuota sale de la planilla antes de que el sueldo llegue. */
+        isPayrollDeducted: z.boolean().default(false),
         /** Whose card, by the name given on the first step. Empty is the household's. */
         personName: z.string().trim().max(120).optional(),
         // A percentage: "24.5" means 24.5%. Bounded because a rate past 200%
@@ -890,7 +917,10 @@ export async function completeSetup(
        */
       const keptDebts: string[] = [];
       for (const entry of answers.debts) {
-        const isCard = Boolean(entry.creditLimit);
+        // La clase manda, no la presencia del cupo. Una tarjeta sin límite
+        // declarado sigue siendo una tarjeta, y un préstamo con un límite
+        // escrito por error no se convierte en una.
+        const isCard = entry.kind === 'credit_card';
         const holder = entry.personName?.trim()
           ? (peopleByName.get(entry.personName.trim()) ?? null)
           : null;
@@ -900,7 +930,17 @@ export async function completeSetup(
           currentBalance: entry.balance,
           apr: entry.apr,
           minimumPayment: entry.minimumPayment,
-          ...(entry.creditLimit ? { creditLimit: entry.creditLimit } : {}),
+          kind: entry.kind,
+          repayment: entry.repayment,
+          isPayrollDeducted: entry.isPayrollDeducted,
+          // El cupo solo en una tarjeta y las cuotas solo fuera de ella: la
+          // base rechaza lo contrario, y normalizarlo aquí evita que un cambio
+          // de clase reviente el guardado al final con un error de esquema.
+          creditLimit: isCard ? (entry.creditLimit ?? null) : null,
+          // Lo revolvente no tiene cuotas, y la base lo rechaza. Se normaliza
+          // aquí para que cambiar de forma no reviente el guardado al final.
+          termMonths: entry.repayment === 'revolving' ? null : (entry.termMonths ?? null),
+          paidMonths: entry.repayment === 'revolving' ? null : (entry.paidMonths ?? null),
         };
 
         let debtId = entry.id;

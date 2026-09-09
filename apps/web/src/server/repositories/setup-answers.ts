@@ -188,6 +188,11 @@ export async function loadSetupAnswers(
           apr: debts.apr,
           minimumPayment: debts.minimumPayment,
           creditLimit: debts.creditLimit,
+          kind: debts.kind,
+          repayment: debts.repayment,
+          isPayrollDeducted: debts.isPayrollDeducted,
+          termMonths: debts.termMonths,
+          paidMonths: debts.paidMonths,
           personName: householdPeople.displayName,
         })
         .from(debts)
@@ -388,6 +393,11 @@ export async function loadSetupAnswers(
         minimumPayment: trimAmount(row.minimumPayment),
         creditLimit: row.creditLimit ? trimAmount(row.creditLimit) : '',
         personName: row.personName ?? '',
+        kind: row.kind,
+        repayment: row.repayment ?? 'fixed_instalment',
+        isPayrollDeducted: row.isPayrollDeducted,
+        termMonths: row.termMonths === null ? '' : String(row.termMonths),
+        paidMonths: row.paidMonths === null ? '' : String(row.paidMonths),
       })),
       goals: goalRows.map((row) => ({
         id: row.id,

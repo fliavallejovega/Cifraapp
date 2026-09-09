@@ -1137,7 +1137,39 @@
       "holderShared": "Del hogar",
       "available": "Te quedarían {amount} disponibles en esta tarjeta.",
       "empty": "Ninguna deuda cargada. Agrega la primera —una tarjeta, un préstamo— o sáltate el paso si no debes nada.",
-      "addFirst": "Agregar la primera deuda"
+      "addFirst": "Agregar la primera deuda",
+      "kind": "¿Qué tipo de deuda es?",
+      "kindHint": "Una tarjeta tiene cupo y no termina; un préstamo tiene cuotas y sí.",
+      "term": "Cuotas en total",
+      "termHint": "Cuántas cuotas tiene el préstamo.",
+      "paid": "Cuotas pagadas",
+      "paidHint": "Cuántas llevas. Con las dos te decimos cuántas faltan.",
+      "kinds": {
+        "credit_card": "Tarjeta de crédito",
+        "auto_loan": "Préstamo de auto",
+        "mortgage": "Hipoteca",
+        "personal_loan": "Préstamo personal",
+        "student_loan": "Préstamo estudiantil",
+        "other": "Otra"
+      },
+      "totalTitle": "Lo que debes",
+      "totalBalance": "Deudas ({count})",
+      "totalMinimum": "Mínimos al mes",
+      "totalLeft": "Te queda",
+      "totalNote": "Con lo que llevas contestado. Los mínimos son lo que no se puede dejar de pagar; lo demás lo reparte el plan.",
+      "totalRemaining": "Cuotas por pagar",
+      "repayment": "¿Cómo se paga?",
+      "repaymentHint": "Lo que decide si tiene cuotas, si el capital baja cada mes, o si no termina.",
+      "payroll": "Se descuenta de la planilla",
+      "payrollHint": "Si la cuota sale del sueldo antes de que te llegue. Ese dinero nunca entra a la cuenta, y el plan lo trata distinto.",
+      "repayments": {
+        "fixed_instalment": "Cuota fija todos los meses",
+        "declining_instalment": "Cuota que va bajando (capital fijo)",
+        "interest_only": "Solo intereses, el capital al final",
+        "single_payment": "Un solo pago al vencimiento",
+        "no_interest_plan": "Cuotas sin interés",
+        "revolving": "Revolvente (tarjeta o línea)"
+      }
     },
     "goals": {
       "title": "¿Para qué es todo esto?",
