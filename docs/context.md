@@ -18,7 +18,7 @@ status table.
 | **Blocked on the world** | OCR needs a provider · billing needs a Stripe account · the copilot needs a key · the Panama tax rules need a qualified reviewer            |
 | **Tests**                | 668 unit and integration, all passing · 38 end-to-end, not run in this pass                                                                 |
 | **Gate**                 | 37/37 tasks green: `lint`, `typecheck`, `test`, `build`                                                                                     |
-| **Migrations**           | 44 written · **the last 7 are not applied yet** — see «Ingreso variable» below                                                              |
+| **Migrations**           | 64 applied, schema version 64 — verified against `information_schema`, not assumed                                                          |
 
 Live infrastructure is connected and exercised by the end-to-end suite. This is
 not a repository that merely compiles; it signs a user in, creates their
@@ -65,22 +65,32 @@ identificador del hogar, cifra presente en el grounding— y `plan_proposals` la
 guarda pendientes. Nada cambia hasta que una persona aprueba, y la fila guarda
 quién propuso, quién aprobó y qué valor había antes.
 
-### ⚠ Las siete migraciones nuevas no están aplicadas
+### Las siete migraciones nuevas están aplicadas
 
-`20260909300000` a `20260909360000`. El conector de Supabase de la sesión apunta
-a `wlmfsjtudhyxbclabdws`, y este proyecto es `sdeeoccvwcvgsmgfsuoz` — aplicarlas
-por ahí las habría escrito en la base de otro. Se aplican con el CLI enlazado a
-este proyecto:
+`20260909300000` a `20260909360000`, empujadas el 9 de septiembre de 2026 con el
+CLI enlazado a `sdeeoccvwcvgsmgfsuoz`. Comprobado leyendo `information_schema` y
+`pg_class` directamente, no dado por hecho:
+
+- cuatro tablas: `google_connections`, `google_messages`, `calendar_feeds`,
+  `plan_proposals` — las cuatro con `force row level security`;
+- nueve columnas: el piso, el percentil, los meses de colchón y la cuenta de
+  retención en `household_settings`; `stated_basis` en `recurring_series`; las
+  tres de reserva en `receivables`; y `source` en `imports`;
+- `imports.document_id` pasó a aceptar nulo, porque un aviso de transacción
+  llega como correo y no como archivo;
+- `app.ai_feature` ganó `plan_proposal`.
+
+**El conector MCP de Supabase de una sesión de Claude puede apuntar a otro
+proyecto.** Cuando se escribió esto apuntaba a `wlmfsjtudhyxbclabdws`, que no es
+este. Migrar por ahí habría escrito en la base de alguien más. El camino correcto
+es el CLI con el token de este proyecto, que vive en el bloque `env` de
+`.claude/settings.local.json` como `SUPABASE_ACCESS_TOKEN`:
 
 ```bash
-npx supabase link --project-ref sdeeoccvwcvgsmgfsuoz
-npx supabase db push --dry-run   # leer el diff primero
-pnpm db:migrate
+npx supabase migration list --linked   # qué falta, antes de tocar nada
+npx supabase db push --dry-run         # leer el diff
+npx supabase db push
 ```
-
-Hasta entonces el código compila y las pruebas pasan —ninguna toca la base
-remota— pero las pantallas nuevas fallarán contra producción por columnas que
-todavía no existen.
 
 ### Lo que sigue sin ser cierto, y por qué
 
