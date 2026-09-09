@@ -190,6 +190,7 @@ function labels(read: (key: string) => string): Record<string, string> {
     'income.name',
     'income.namePlaceholder',
     'income.frequency',
+    'income.frequencyHint',
     'income.approximate',
     'income.approximateHint',
     'income.add',

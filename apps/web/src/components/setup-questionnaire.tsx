@@ -702,11 +702,27 @@ export function SetupQuestionnaire({
                   setIncomes(patch(incomes, at, { amount: value }));
                 }}
               />
-              <Field label={copy('income.frequency')}>
-                {({ id }) => (
+              {/*
+                La nota solo donde se confunden.
+
+                «Quincenal» y «cada 14 días» suenan a lo mismo y no lo son: 24
+                pagos al año contra 26. Dos pagos de diferencia mueven el sueldo
+                anual y con él el tramo de renta, así que elegir mal no es un
+                detalle de calendario. La explicación aparece cuando una de las
+                dos está elegida; el resto del tiempo sería ruido bajo un menú
+                que nadie está dudando.
+              */}
+              <Field
+                label={copy('income.frequency')}
+                {...(row.frequency === 'semimonthly' || row.frequency === 'biweekly'
+                  ? { hint: copy('income.frequencyHint') }
+                  : {})}
+              >
+                {({ id, describedBy }) => (
                   <Select
                     id={id}
                     value={row.frequency}
+                    aria-describedby={describedBy}
                     onChange={(event) => {
                       setIncomes(
                         patch(incomes, at, { frequency: event.target.value as Frequency }),

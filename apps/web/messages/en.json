@@ -989,7 +989,8 @@
       "isrBaseGross": "It is computed on the whole gross, without taking social security or education tax off first.",
       "isrBaseNet": "It is computed on what is left after social security and education tax.",
       "isrEffective": "The percentage next to the income tax line is the effective one: what it came to over your gross. It is not a rate from the law, it is yours.",
-      "legendSource": "Method and rates transcribed from: {source}. It is a draft nobody qualified has reviewed. Check it against your payslip — what we store is what you confirm."
+      "legendSource": "Method and rates transcribed from: {source}. It is a draft nobody qualified has reviewed. Check it against your payslip — what we store is what you confirm.",
+      "frequencyHint": "Twice a month and every 14 days are not the same: the first is 24 payments a year on fixed days, the second is 26 and they drift. Two payments a year changes what is withheld."
     },
     "savings": {
       "title": "What do you have today?",
@@ -1102,8 +1103,8 @@
     "frequency": {
       "daily": "Every day",
       "weekly": "Every week",
-      "biweekly": "Every two weeks",
-      "semimonthly": "Twice a month",
+      "biweekly": "Every 14 days — drifts through the month (26 a year)",
+      "semimonthly": "Twice a month — fixed days (24 a year)",
       "monthly": "Every month",
       "quarterly": "Every three months",
       "annual": "Once a year"

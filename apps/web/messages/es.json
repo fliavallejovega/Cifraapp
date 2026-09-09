@@ -989,7 +989,8 @@
       "isrBaseGross": "Se calcula sobre el bruto entero, sin restarle antes el seguro social ni el educativo.",
       "isrBaseNet": "Se calcula sobre lo que queda después del seguro social y el educativo.",
       "isrEffective": "El porcentaje que ves junto a la línea de renta es el efectivo: cuánto acabó siendo sobre tu bruto. No es una tasa de la ley, es la tuya.",
-      "legendSource": "Método y tasas transcritos de: {source}. Es un borrador que nadie calificado revisó. Compáralo con tu recibo — lo que guardamos es lo que tú confirmes."
+      "legendSource": "Método y tasas transcritos de: {source}. Es un borrador que nadie calificado revisó. Compáralo con tu recibo — lo que guardamos es lo que tú confirmes.",
+      "frequencyHint": "Quincenal y «cada 14 días» no son lo mismo: la primera son 24 pagos al año en días fijos del mes, la segunda son 26 y se corren. Dos pagos de diferencia al año cambian lo que se retiene de renta."
     },
     "savings": {
       "title": "¿Qué tienes hoy?",
@@ -1102,8 +1103,8 @@
     "frequency": {
       "daily": "Todos los días",
       "weekly": "Cada semana",
-      "biweekly": "Cada dos semanas",
-      "semimonthly": "Quincenal",
+      "biweekly": "Cada 14 días — se corre de mes a mes (26 al año)",
+      "semimonthly": "Quincenal — dos veces al mes (24 al año)",
       "monthly": "Cada mes",
       "quarterly": "Cada tres meses",
       "annual": "Una vez al año"
