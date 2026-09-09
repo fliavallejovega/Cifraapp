@@ -1295,6 +1295,14 @@
       "equal": "Split equally",
       "mismatch": "The shares add up to {sum}%, not 100%. Adjust them before carrying on.",
       "note": "We do not work this out for you. Whoever earns more usually puts in more, but in what proportion is the household’s agreement, not a sum for us to do."
+    },
+    "computing": {
+      "title": "Building your plan",
+      "done": "Done. This is your plan.",
+      "step1": "Saving what you told us",
+      "step2": "Ordering your payments by date",
+      "step3": "Working out what is left in each fortnight",
+      "step4": "Dividing what remains"
     }
   },
   "records": {
@@ -2678,7 +2686,9 @@
       "weeklySummary": "The week's summary",
       "weeklySummaryDetail": "What came in, what went out and what is coming.",
       "thirteenthMonth": "The thirteenth month is due",
-      "thirteenthMonthDetail": "One of the three instalments lands today. It is one of the few large payments you can plan months ahead."
+      "thirteenthMonthDetail": "One of the three instalments lands today. It is one of the few large payments you can plan months ahead.",
+      "statementUpload": "Time to upload your statements",
+      "statementUploadDetail": "Twice a month, so what you see is your real spending and not our estimate."
     },
     "default": "Default",
     "log": {

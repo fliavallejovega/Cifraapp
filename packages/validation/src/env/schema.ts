@@ -68,6 +68,33 @@ export const serverEnvSchema = z.object({
    * refuses every caller.
    */
   CRON_SECRET: z.string().min(16).optional(),
+
+  /**
+   * Brevo, para el correo saliente.
+   *
+   * Opcional a propósito y comprobado en el momento de enviar: un despliegue sin
+   * clave no debe caerse al arrancar, tiene que arrancar y no mandar correos.
+   * La diferencia importa — una casa prefiere una aplicación que funciona sin
+   * avisos a una que no abre porque falta una clave de un tercero.
+   */
+  BREVO_API_KEY: z.string().min(16).optional(),
+  /**
+   * De dónde salen los correos. Un dominio verificado en Brevo; sin él, Brevo
+   * rechaza el envío y la entrega queda registrada como fallida con su razón.
+   */
+  MAIL_FROM_EMAIL: z.email().optional(),
+  MAIL_FROM_NAME: z.string().min(1).max(80).optional(),
+
+  /**
+   * El par VAPID que firma cada notificación push.
+   *
+   * La pública viaja al navegador y por eso vive también en el bloque público;
+   * la privada firma y no sale del servidor. Sin las dos, el push queda
+   * apagado y las preferencias lo dicen en vez de fallar en silencio.
+   */
+  VAPID_PRIVATE_KEY: z.string().min(20).optional(),
+  /** A quién escribirle si un servicio de push necesita reportar un abuso. */
+  VAPID_SUBJECT: z.string().min(5).optional(),
 });
 
 /**
@@ -80,6 +107,14 @@ export const clientEnvSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.url('NEXT_PUBLIC_APP_URL must be a URL.'),
   /** Where the administrative console lives. Absent means no link is shown. */
   NEXT_PUBLIC_ADMIN_URL: z.url('NEXT_PUBLIC_ADMIN_URL must be a URL.').optional(),
+  /**
+   * La mitad pública del par VAPID.
+   *
+   * Tiene que llegar al navegador —es con lo que se suscribe al push— y por eso
+   * es pública por diseño y no por descuido. Ausente significa que el push está
+   * apagado, y la pantalla de preferencias lo dice.
+   */
+  NEXT_PUBLIC_VAPID_PUBLIC_KEY: z.string().min(20).optional(),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;

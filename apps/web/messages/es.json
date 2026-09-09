@@ -1295,6 +1295,14 @@
       "equal": "Partes iguales",
       "mismatch": "Las partes suman {sum}%, no 100%. Ajústalas antes de seguir.",
       "note": "No lo calculamos por ustedes. Quien gana más suele poner más, pero en qué proporción es un acuerdo de la casa, no una cuenta que nos toque hacer."
+    },
+    "computing": {
+      "title": "Armando tu plan",
+      "done": "Listo. Este es tu plan.",
+      "step1": "Guardando lo que nos contaste",
+      "step2": "Ordenando tus pagos por fecha",
+      "step3": "Calculando lo que queda en cada quincena",
+      "step4": "Repartiendo lo que sobra"
     }
   },
   "records": {
@@ -2678,7 +2686,9 @@
       "weeklySummary": "Resumen de la semana",
       "weeklySummaryDetail": "Qué entró, qué salió y qué viene.",
       "thirteenthMonth": "Llega el décimo tercer mes",
-      "thirteenthMonthDetail": "Una de las tres partidas cae hoy. Es de las pocas entradas grandes que se pueden planear con meses de anticipación."
+      "thirteenthMonthDetail": "Una de las tres partidas cae hoy. Es de las pocas entradas grandes que se pueden planear con meses de anticipación.",
+      "statementUpload": "Toca subir los estados de cuenta",
+      "statementUploadDetail": "Dos veces al mes, para que lo que ves sea tu gasto real y no lo que calculamos."
     },
     "default": "Por defecto",
     "log": {

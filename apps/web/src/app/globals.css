@@ -31,3 +31,35 @@
     background-color: color-mix(in oklch, var(--color-ink) 16%, transparent);
   }
 }
+
+/*
+ * La lluvia de símbolos de la espera del plan.
+ *
+ * Cae y no gira a propósito: un giro no tiene principio ni final, así que no
+ * comunica avance. Algo que baja sí — hay un antes y un después, y la vista lo
+ * lee como trabajo que progresa aunque nadie sepa cuánto falta.
+ *
+ * Se apaga entera con `prefers-reduced-motion`. Lo que informa es el texto; el
+ * movimiento es lo que hace que la espera se sienta corta, y para quien el
+ * movimiento le sienta mal hace exactamente lo contrario.
+ */
+@keyframes money-fall {
+  from {
+    transform: translateY(-12vh) rotate(-8deg);
+  }
+  to {
+    transform: translateY(112vh) rotate(8deg);
+  }
+}
+
+.money-drop {
+  animation-name: money-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .money-drop {
+    animation: none;
+  }
+}

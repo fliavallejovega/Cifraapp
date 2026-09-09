@@ -26,6 +26,7 @@ export const NOTIFICATION_KINDS = [
   'reviewBacklog',
   'weeklySummary',
   'thirteenthMonth',
+  'statementUpload',
 ] as const;
 
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
@@ -52,6 +53,13 @@ const DEFAULTS: Readonly<Record<NotificationKind, KindDefault>> = {
    * Inmediata: avisar tarde de un dinero que ya entró no sirve de nada.
    */
   thirteenthMonth: { channel: 'email', throttleHours: 0, isEnabled: true },
+  /**
+   * Subir los estados de cuenta, dos veces al mes.
+   *
+   * Diez días de estrangulamiento: son dos avisos al mes por diseño, y un
+   * tercero por un reintento sería el que enseña a ignorarlos.
+   */
+  statementUpload: { channel: 'email', throttleHours: 24 * 10, isEnabled: true },
 };
 
 export interface PreferenceView {

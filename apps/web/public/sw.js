@@ -57,3 +57,61 @@ self.addEventListener('fetch', (event) => {
     })(),
   );
 });
+
+/*
+ * Push.
+ *
+ * El sobre viene cifrado de punta a punta: el servicio que lo transportó no
+ * pudo leerlo, y aquí se abre por primera vez. Por eso el cuerpo se trata como
+ * lo que es —un JSON del propio servidor— y aun así se lee con cuidado: un
+ * mensaje mal formado no debe dejar al service worker en un estado del que solo
+ * salga reinstalando la aplicación.
+ *
+ * Lo que NUNCA lleva: una cifra que no se pueda decir en una pantalla de
+ * bloqueo. Un aviso es «hoy vencen cuatro pagos», no el saldo de nadie.
+ */
+self.addEventListener('push', (event) => {
+  let data = { title: 'Cifra', body: '', url: '/' };
+  try {
+    if (event.data) data = { ...data, ...event.data.json() };
+  } catch {
+    // Sin cuerpo legible se muestra el aviso genérico: haber recibido algo ya
+    // es información, y callarse sería peor que decir poco.
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      // Un mismo asunto reemplaza al anterior en vez de apilarse: tres avisos
+      // del mismo pago en la bandeja son la forma más rápida de que alguien
+      // apague los avisos.
+      tag: data.url,
+      data: { url: data.url },
+    }),
+  );
+});
+
+/*
+ * Y al tocarla, llevar a donde el aviso prometía.
+ *
+ * Si la aplicación ya está abierta se la enfoca en vez de abrir otra pestaña:
+ * dos copias de una aplicación financiera son dos estados que pueden discrepar.
+ */
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const target = new URL(event.notification.data?.url || '/', self.location.origin).href;
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+      for (const client of clients) {
+        if ('focus' in client) {
+          client.navigate(target);
+          return client.focus();
+        }
+      }
+      return self.clients.openWindow(target);
+    }),
+  );
+});

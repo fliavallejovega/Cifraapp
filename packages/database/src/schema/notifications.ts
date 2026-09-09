@@ -66,3 +66,40 @@ export const notificationPreferenceRelations = relations(notificationPreferences
     references: [households.id],
   }),
 }));
+
+/**
+ * A qué navegador mandarle un aviso.
+ *
+ * Una suscripción push es de un navegador y no de una persona: la misma persona
+ * en el teléfono y en la portátil son dos, y una que se borra en uno tiene que
+ * seguir viva en el otro. Por eso la llave natural es el `endpoint`.
+ *
+ * Las dos claves que la acompañan cifran el mensaje de punta a punta: el
+ * servicio de push transporta un sobre que no puede abrir, que es exactamente
+ * lo que se quiere de un tercero que mueve avisos sobre el dinero de alguien.
+ */
+export const pushSubscriptions = appSchema.table(
+  'push_subscriptions',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .default(sql`public.uuid_generate_v7()`),
+    householdId: uuid('household_id')
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => profiles.id, { onDelete: 'cascade' }),
+    /** La dirección que dio el navegador. Única: dos filas son dos avisos iguales. */
+    endpoint: text('endpoint').notNull().unique(),
+    p256dh: text('p256dh').notNull(),
+    auth: text('auth').notNull(),
+    /** «Chrome en tu teléfono», para que quitar la correcta no sea adivinar. */
+    label: text('label'),
+    lastSentAt: timestamp('last_sent_at', { withTimezone: true }),
+    failedReason: text('failed_reason'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index('push_subscriptions_household_idx').on(table.householdId, table.userId)],
+);

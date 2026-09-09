@@ -14,6 +14,7 @@ import {
 
 import { LANDING_DRAFT_KEY, type LandingDraft } from '@/components/marketing/try-it';
 import { CategoryIcon } from '@/components/category-icon';
+import { PlanComputing } from '@/components/plan-computing';
 import { KindIcon, SymbolSearch } from '@/components/symbol-search';
 import { lookupSymbol, type SymbolCandidate } from '@/server/holdings-actions';
 import { estimatePanamaPayroll, estimateThirteenthMonth } from '@/server/payroll-actions';
@@ -2695,6 +2696,31 @@ export function SetupQuestionnaire({
       cuando toca.
     */}
       {invite && step === 'household' && !review && invite}
+
+      {/*
+      Y la espera, mientras se arma el plan.
+
+      Guardar escribe seis tablas en una transacción y después calcula; en una
+      casa con veinte pagos eso son un par de segundos en los que un botón que
+      gira solo dice «espera», que es lo único que ya se sabía. Esto dice qué se
+      está haciendo, con las palabras del cuestionario que se acaba de
+      contestar, y al terminar se acerca hacia el panel.
+    */}
+      {(pending || state.ok === true) && (
+        <PlanComputing
+          isDone={state.ok === true}
+          labels={{
+            title: copy('computing.title'),
+            done: copy('computing.done'),
+            steps: [
+              copy('computing.step1'),
+              copy('computing.step2'),
+              copy('computing.step3'),
+              copy('computing.step4'),
+            ],
+          }}
+        />
+      )}
     </>
   );
 }
