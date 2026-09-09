@@ -21,6 +21,10 @@ import { estimatePayroll, PANAMA_2026_DRAFT } from '@app/tax-engine';
 export interface PayrollLineOut {
   readonly key: string;
   readonly amount: string;
+  /** El porcentaje que explica la línea, como se cita: `9.75`. */
+  readonly rate: string;
+  /** Si ese porcentaje es el de la ley o el que le tocó a este sueldo. */
+  readonly isEffectiveRate: boolean;
 }
 
 export interface PayrollEstimateOut {
@@ -77,7 +81,12 @@ export async function estimatePanamaPayroll(
     // A dos decimales, que es como lo dice un recibo. El dinero se guarda con
     // cuatro y esta cifra va a un campo que una persona va a leer y corregir:
     // «195.0000» en una casilla de dinero se ve como un error del sistema.
-    lines: result.lines.map((line) => ({ key: line.key, amount: asShown(line.amount) })),
+    lines: result.lines.map((line) => ({
+      key: line.key,
+      amount: asShown(line.amount),
+      rate: line.rate,
+      isEffectiveRate: line.isEffectiveRate,
+    })),
     net: asShown(result.net),
     // Nunca deja de serlo mientras nadie revise el conjunto, y el día que
     // alguien lo publique esto lo dirá solo.

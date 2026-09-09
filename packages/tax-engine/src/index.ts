@@ -40,7 +40,9 @@ export type {
 
 export {
   estimatePayroll,
+  payrollReference,
   type PayrollEstimate,
   type PayrollInput,
   type PayrollLine,
+  type PayrollReference,
 } from './payroll.js';

@@ -957,7 +957,24 @@
         "socialSecurity": "Social security",
         "educationTax": "Education tax",
         "incomeTax": "Income tax"
-      }
+      },
+      "meaningTitle": "What is that amount?",
+      "meaningNet": "What reaches me",
+      "meaningNetHint": "The deposit, deductions already taken off. If you do not know your gross, this is the one.",
+      "meaningGross": "The contract gross",
+      "meaningGrossHint": "Before deductions. We ask below what is taken off and work out what arrives.",
+      "effectiveSuffix": "effective",
+      "legendShow": "How each one is worked out",
+      "legendHide": "Hide the detail",
+      "legendContributions": "Social security and education tax are a multiplication and nothing more: {social}% and {education}% of the gross for the period. No bands, no exempt minimum — they apply from the first balboa.",
+      "isrTitle": "Income tax does not work that way, and almost nobody knows it",
+      "isrIntro": "There is no single percentage. Your yearly salary is cut into bands and each band pays its own rate, so moving into a higher band only costs more on the part that crosses it — never on the whole salary. That is why a raise can never leave you with less.",
+      "isrChartCaption": "The income tax bands, over annual income.",
+      "isrBase": "The base is your salary for the year: {base} salaries, not {salaries}, because the thirteenth month is income too. And the withholding is spread across those {base}, so the {salaries} ordinary payments carry {salaries} of them.",
+      "isrBaseGross": "It is computed on the whole gross, without taking social security or education tax off first.",
+      "isrBaseNet": "It is computed on what is left after social security and education tax.",
+      "isrEffective": "The percentage next to the income tax line is the effective one: what it came to over your gross. It is not a rate from the law, it is yours.",
+      "legendSource": "Method and rates transcribed from: {source}. It is a draft nobody qualified has reviewed. Check it against your payslip — what we store is what you confirm."
     },
     "savings": {
       "title": "What do you have today?",

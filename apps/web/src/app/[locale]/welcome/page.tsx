@@ -1,4 +1,5 @@
 import { getCurrency, type CurrencyCode } from '@app/domain';
+import { PANAMA_2026_DRAFT, payrollReference } from '@app/tax-engine';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { AuthScreen } from '@/components/auth-screen';
@@ -44,6 +45,12 @@ export default async function WelcomePage({ params }: { params: Promise<{ locale
   // liar of the settings screen, which had been offering to re-open it.
   const review = answers.answered;
 
+  // Las cifras con las que se explica una planilla, leídas aquí porque aquí ya
+  // se está en el servidor: la pantalla dibuja la leyenda con ellas sin tener
+  // que pedirlas después. `null` cuando al conjunto le falta algo, y entonces no
+  // hay leyenda en vez de una leyenda a medias.
+  const payroll = payrollReference(PANAMA_2026_DRAFT);
+
   return (
     <AuthScreen
       title={review ? t('review.title') : t('title')}
@@ -56,6 +63,7 @@ export default async function WelcomePage({ params }: { params: Promise<{ locale
         currencyCode={currency}
         t={labels(rawOf(t))}
         institutions={answers.institutions}
+        {...(payroll ? { payroll } : {})}
         categories={answers.categories}
         initial={answers}
         review={review}
@@ -218,6 +226,23 @@ function labels(read: (key: string) => string): Record<string, string> {
     'income.addFirstDeduction',
     'income.grossLine',
     'income.annualLine',
+    'income.meaningTitle',
+    'income.meaningNet',
+    'income.meaningNetHint',
+    'income.meaningGross',
+    'income.meaningGrossHint',
+    'income.effectiveSuffix',
+    'income.legendShow',
+    'income.legendHide',
+    'income.legendContributions',
+    'income.isrTitle',
+    'income.isrIntro',
+    'income.isrChartCaption',
+    'income.isrBase',
+    'income.isrBaseGross',
+    'income.isrBaseNet',
+    'income.isrEffective',
+    'income.legendSource',
     'income.deductedLine',
     'income.netLine',
     'income.estimateAction',

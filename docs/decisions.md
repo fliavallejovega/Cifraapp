@@ -255,6 +255,29 @@ primary DGI publication; `is_supported` for `PA` stays false and no household
 sees a tax figure until someone qualified publishes a set. Making a tax screen
 work is never a reason to change a status.
 
+**Amendment, 2026-09-09 — the withholding method is a rule, not arithmetic.**
+Two public Panamanian calculators disagree about a payslip, and the gap is not a
+rounding difference: one takes the social contributions out of the income tax
+base before the bands apply and the other does not, and one counts thirteen
+salaries in the fiscal year while the other counts twelve. For a salary of
+B/.3,000 a month the two answers are B/.263.00 and B/.323.08 of monthly
+withholding — and at B/.1,000 a month one of them owes income tax and the other
+does not.
+
+Neither reading can be settled from this repository. So the choice is a rule:
+`income.withholding` in the Panamanian set carries `basePeriodsPerYear`,
+`salaryPeriodsPerYear` and `deductsContributions`, with its own provenance
+naming the calculator it was transcribed from. `estimatePayroll` reads it and
+decides nothing; absent the rule it falls back to the reading that charges least.
+The set stays `draft` and `mayPresentAsOwed` stays false — which is exactly what
+makes it legitimate to prefill an editable field with either answer while
+asserting neither.
+
+The consequence to keep in view: spreading the withholding across thirteen
+salaries means twelve ordinary payments carry twelve thirteenths of the year's
+tax. The missing thirteenth comes off the *décimo tercer mes*, which this
+product does not yet model as income of its own.
+
 ---
 
 ## ADR-014 — The admin application is English-only

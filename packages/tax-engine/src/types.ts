@@ -128,6 +128,39 @@ export type TaxRule =
       readonly provenance: RuleProvenance;
     }
   | {
+      /**
+       * Cómo se lleva un sueldo a la base anual del impuesto, y cómo vuelve.
+       *
+       * Dos preguntas que la tabla de tramos no responde y que cambian el
+       * resultado más que los tramos mismos.
+       *
+       * La primera es **sobre qué se grava**: hay jurisdicciones donde las
+       * contribuciones a la seguridad social salen de la base antes de que los
+       * tramos apliquen, y otras donde no. La diferencia decide incluso quién
+       * entra al impuesto, no solo cuánto paga.
+       *
+       * La segunda es **cuántos sueldos componen el año fiscal**. Donde existe
+       * un decimotercer mes, la base anual son trece sueldos y no doce, y la
+       * retención se reparte entre esos trece — de modo que en los doce pagos
+       * ordinarios se retiene doce trecios del impuesto del año y el resto sale
+       * del decimotercero.
+       *
+       * Ninguna de las dos es deducible de la otra ni de la tabla de tramos:
+       * son política de cada jurisdicción, así que viven aquí como dato con su
+       * procedencia y no como una decisión escrita en el motor.
+       */
+      readonly kind: 'withholding';
+      readonly key: string;
+      readonly taxType: TaxType;
+      /** Cuántos sueldos componen la base anual. Trece donde hay decimotercer mes. */
+      readonly basePeriodsPerYear: number;
+      /** Cuántos sueldos ordinarios tiene el año. Doce, casi siempre. */
+      readonly salaryPeriodsPerYear: number;
+      /** Si las contribuciones salen de la base antes de aplicar los tramos. */
+      readonly deductsContributions: boolean;
+      readonly provenance: RuleProvenance;
+    }
+  | {
       readonly kind: 'deadline';
       readonly key: string;
       readonly taxType: TaxType;

@@ -4,6 +4,7 @@ import { Button, Field, Input, Problem, Select, Status } from '@app/ui';
 import {
   useActionState,
   useEffect,
+  useId,
   useState,
   type Dispatch,
   type ReactNode,
@@ -81,6 +82,15 @@ interface IncomeRow {
    */
   grossAmount?: string | undefined;
   deductions?: readonly { label: string; amount: string }[] | undefined;
+  /**
+   * Qué significa el monto de arriba: lo que llega, o el bruto del contrato.
+   *
+   * Antes había dos casillas de dinero para el mismo sueldo —«Monto» y
+   * «Salario bruto»— y la persona tenía que mantenerlas de acuerdo. Es la misma
+   * cifra preguntada dos veces; lo que faltaba no era otro campo sino decir cuál
+   * de las dos cosas es la que se escribió.
+   */
+  amountIsGross?: boolean | undefined;
 }
 interface AccountRow {
   id?: string;
@@ -233,6 +243,17 @@ export interface SetupQuestionnaireProps {
   readonly categories: readonly { readonly slug: string; readonly name: string }[];
   readonly initial?: SetupInitial;
   /**
+   * Las cifras con las que se explica una planilla, leídas del conjunto de
+   * reglas en el servidor.
+   *
+   * Llegan como propiedad y no se piden desde el cliente a propósito: son datos
+   * que ya existen cuando la página se arma, y pedirlos después obligaría a esta
+   * pantalla a tener un estado de carga y otro de error para dibujar una
+   * leyenda. `undefined` cuando la jurisdicción del hogar no tiene conjunto: la
+   * leyenda no se dibuja y no se inventa ninguna tasa.
+   */
+  readonly payroll?: PayrollLegendData | undefined;
+  /**
    * Answered before. The questions do not change — the words around them do,
    * and so does what saving means: an update to what is on record rather than
    * a first description of it.
@@ -248,6 +269,7 @@ export function SetupQuestionnaire({
   institutions,
   categories,
   initial,
+  payroll,
   review = false,
 }: SetupQuestionnaireProps) {
   // `noUncheckedIndexedAccess` is on, and rightly: a missing key should not
@@ -282,7 +304,15 @@ export function SetupQuestionnaire({
       amount: '',
       frequency: 'monthly',
       isApproximate: false,
-    }).map((row) => ({ ...row, amount: arrivingAmount(row) })),
+    }).map((row) => {
+      // Una fila guardada con bruto se reabre en modo bruto, con el bruto en la
+      // única casilla que hay. Sin bruto, el monto es lo que llega y no hay
+      // nada que convertir.
+      const declaredGross = (row.grossAmount ?? '').trim();
+      return declaredGross === ''
+        ? { ...row, amountIsGross: false }
+        : { ...row, amountIsGross: true, amount: declaredGross };
+    }),
   );
   const [accountRows, setAccountRows] = useState<AccountRow[]>(
     start(initial?.accounts, {
@@ -425,13 +455,20 @@ export function SetupQuestionnaire({
       .map((row) => ({
         ...row,
         amount: arrivingAmount(row),
+        // El bruto se deriva de lo que la persona dijo que escribió, en vez de
+        // ser un segundo campo que hay que mantener de acuerdo con el primero.
+        ...(row.amountIsGross === true ? { grossAmount: row.amount } : { grossAmount: undefined }),
         anchorDays: anchorDaysOf(row),
-        // Solo las líneas escritas enteras. Una etiqueta sin monto o un monto
-        // sin etiqueta no es una deducción, es una fila a medio llenar, y
-        // restarla del bruto sería restar una suposición.
-        deductions: (row.deductions ?? []).filter(
-          (line) => line.label.trim() !== '' && line.amount.trim() !== '',
-        ),
+        // Solo las líneas escritas enteras, y solo si el monto es un bruto: una
+        // deducción sin bruto del que salir no describe nada. Quedan en la
+        // pantalla por si la persona vuelve a cambiar de idea, pero no se
+        // guardan colgando de un sueldo que ya dijo que es neto.
+        deductions:
+          row.amountIsGross === true
+            ? (row.deductions ?? []).filter(
+                (line) => line.label.trim() !== '' && line.amount.trim() !== '',
+              )
+            : [],
       })),
     accounts: accountRows.filter((row) => row.name.trim() !== '' && row.balance.trim() !== ''),
     // A deduction points at an income by position, and the income step is
@@ -623,7 +660,7 @@ export function SetupQuestionnaire({
                 )}
               </Field>
               <MoneyField
-                label={copy('amount')}
+                label={row.amountIsGross === true ? copy('income.grossLine') : copy('amount')}
                 symbol={currencySymbol}
                 value={row.amount}
                 onChange={(value) => {
@@ -684,14 +721,33 @@ export function SetupQuestionnaire({
                 </>
               )}
 
-              <IncomeDeductions
-                row={row}
-                currencySymbol={currencySymbol}
+              {/*
+                Qué es el número de arriba, preguntado una vez.
+
+                No es una preferencia ni un modo avanzado: es la única pregunta
+                que hacía falta para no pedir la misma cifra dos veces. Por
+                defecto, lo que llega — que es lo que la mayoría sabe de memoria
+                y lo único que el plan necesita para funcionar.
+              */}
+              <AmountMeaning
+                isGross={row.amountIsGross === true}
                 copy={copy}
-                onChange={(change) => {
-                  setIncomes(patch(incomes, at, change));
+                onChange={(isGross) => {
+                  setIncomes(patch(incomes, at, { amountIsGross: isGross }));
                 }}
               />
+
+              {row.amountIsGross === true && (
+                <IncomeDeductions
+                  row={row}
+                  currencySymbol={currencySymbol}
+                  copy={copy}
+                  payroll={payroll}
+                  onChange={(change) => {
+                    setIncomes(patch(incomes, at, change));
+                  }}
+                />
+              )}
 
               <Check
                 label={copy('income.approximate')}
@@ -1725,14 +1781,14 @@ function Check({
  */
 function arrivingAmount(row: {
   amount: string;
-  grossAmount?: string | undefined;
+  amountIsGross?: boolean | undefined;
   deductions?: readonly { label: string; amount: string }[] | undefined;
 }): string {
   const asNumber = (value: string) => Number((value ?? '').replace(/[^\d.]/g, '')) || 0;
   const lines = row.deductions ?? [];
-  if (!row.grossAmount || lines.length === 0) return row.amount;
+  if (row.amountIsGross !== true || lines.length === 0) return row.amount;
   const taken = lines.reduce((total, line) => total + asNumber(line.amount), 0);
-  return Math.max(asNumber(row.grossAmount) - taken, 0).toFixed(2);
+  return Math.max(asNumber(row.amount) - taken, 0).toFixed(2);
 }
 
 /**
@@ -1760,11 +1816,13 @@ function IncomeDeductions({
   onChange,
   currencySymbol,
   copy,
+  payroll,
 }: {
   readonly row: IncomeRow;
   readonly onChange: (change: Partial<IncomeRow>) => void;
   readonly currencySymbol: string;
   readonly copy: (key: string) => string;
+  readonly payroll?: PayrollLegendData | undefined;
 }) {
   const [estimating, setEstimating] = useState(false);
   const [estimateFailed, setEstimateFailed] = useState(false);
@@ -1772,13 +1830,10 @@ function IncomeDeductions({
   const lines = row.deductions ?? [];
   const asNumber = (value: string) => Number((value ?? '').replace(/[^\d.]/g, '')) || 0;
 
-  const gross = asNumber(row.grossAmount ?? '');
-  // Un bruto en blanco no es un bruto de cero. La misma condición que usa
-  // `arrivingAmount` para decidir si hay algo que restar, para que el monto que
-  // se guarda y el que se muestra no puedan discrepar.
-  const hasGross = (row.grossAmount ?? '').trim() !== '' && gross > 0;
-  // La misma tabla que usa el cálculo en el servidor. El bruto de este campo es
-  // por pago, no por mes, y sin esto la pantalla nunca decía cuál de las dos.
+  // El bruto ya no es un campo aparte: es el mismo monto de arriba, cuando la
+  // persona dijo que lo que escribió es el bruto. Pedir dos veces la misma
+  // cifra era pedirle que mantuviera dos números de acuerdo entre sí.
+  const gross = asNumber(row.amount);
   const paymentsPerYear = PAYMENTS_PER_YEAR[row.frequency];
   const taken = lines.reduce((total, line) => total + asNumber(line.amount), 0);
   const arrives = Math.max(gross - taken, 0);
@@ -1787,21 +1842,7 @@ function IncomeDeductions({
     `${currencySymbol}${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   const setLines = (next: readonly { label: string; amount: string }[]) => {
-    // El monto que el resto del sistema lee se recalcula aquí y no se escribe a
-    // mano: dos cifras editables que deben coincidir divergen el día que
-    // alguien corrige una sola.
-    //
-    // Recalcular solo cuando hay un bruto escrito. Sin bruto no hay resta que
-    // hacer —el monto de arriba ya es lo que llega, tal como pide el hint— y
-    // restarlo igual convertía «$1.500 al mes» en «$0.00» en el instante en que
-    // la persona tocaba «Agregar un descuento», antes de escribir nada.
-    if (!hasGross) {
-      onChange({ deductions: next });
-      return;
-    }
-    const total = next.reduce((sum, line) => sum + asNumber(line.amount), 0);
-    const net = Math.max(gross - total, 0);
-    onChange({ deductions: next, ...(next.length > 0 ? { amount: net.toFixed(2) } : {}) });
+    onChange({ deductions: next });
   };
 
   return (
@@ -1811,33 +1852,9 @@ function IncomeDeductions({
           {copy('income.deductionsDetail')}
         </p>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <MoneyField
-            label={copy('income.gross')}
-            hint={copy('income.grossHint')}
-            symbol={currencySymbol}
-            value={row.grossAmount ?? ''}
-            onChange={(value) => {
-              // Borrar el bruto devuelve el control del monto a la persona en
-              // lugar de dejárselo en cero: mientras el campo está vacío no hay
-              // resta posible, y el monto de arriba vuelve a ser lo que llega.
-              const typed = value.trim() !== '' && asNumber(value) > 0;
-              const total = lines.reduce((sum, line) => sum + asNumber(line.amount), 0);
-              const net = Math.max(asNumber(value) - total, 0);
-              onChange({
-                grossAmount: value,
-                ...(typed && lines.length > 0 ? { amount: net.toFixed(2) } : {}),
-              });
-            }}
-          />
-        </div>
-
         {lines.map((line, at) => (
           <div
             key={at}
-            // «Quitar» pertenece a la línea que quita, no a un renglón suelto
-            // debajo de ella: alineado al pie de los dos campos, la relación se
-            // lee sin tener que contar filas. En móvil vuelve a apilarse.
             className="grid items-end gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
           >
             <Field label={copy('income.deductionLabel')}>
@@ -1871,9 +1888,6 @@ function IncomeDeductions({
               size="sm"
               variant="ghost"
               className="justify-self-start sm:mb-1"
-              // Tres botones «Quitar» idénticos en la misma pantalla no le
-              // dicen nada a un lector de pantalla. El nombre accesible dice
-              // cuál, con la etiqueta que la persona escribió cuando existe.
               aria-label={`${copy('remove')} — ${line.label.trim() || `${copy('income.deductionLabel')} ${String(at + 1)}`}`}
               onClick={() => {
                 setLines(lines.filter((_, position) => position !== at));
@@ -1913,7 +1927,7 @@ function IncomeDeductions({
               disabled={estimating}
               onClick={() => {
                 setEstimating(true);
-                void estimatePanamaPayroll(row.grossAmount ?? '', row.frequency)
+                void estimatePanamaPayroll(row.amount, row.frequency)
                   .then((result) => {
                     if (!result.ok || !result.lines) {
                       setEstimateFailed(true);
@@ -1922,7 +1936,14 @@ function IncomeDeductions({
                     setEstimateFailed(false);
                     setLines(
                       result.lines.map((line) => ({
-                        label: copy(`income.line.${line.key}`),
+                        // El porcentaje viaja en la etiqueta porque es lo que
+                        // convierte un monto en algo verificable: «292,50» no
+                        // se puede comprobar contra nada, «292,50 (9,75%)» se
+                        // comprueba con el bruto delante. Y sale del conjunto
+                        // de reglas, no de una constante de esta pantalla.
+                        label: `${copy(`income.line.${line.key}`)} (${line.rate}%${
+                          line.isEffectiveRate ? ` ${copy('income.effectiveSuffix')}` : ''
+                        })`,
                         amount: line.amount,
                       })),
                     );
@@ -1957,7 +1978,7 @@ function IncomeDeductions({
               apliquen — y esa multiplicación es donde un bruto mensual escrito
               en un ingreso quincenal se convierte en el doble de sueldo y en
               una retención que no es la de nadie. El número que delata el error
-              es este, y hasta ahora no se mostraba en ninguna parte.
+              es este.
             */}
             <div className="flex items-baseline justify-between gap-4 py-1">
               <span>{copy('income.annualLine').replace('{count}', String(paymentsPerYear))}</span>
@@ -1976,8 +1997,262 @@ function IncomeDeductions({
             </p>
           </div>
         )}
+
+        {payroll && <PayrollLegend copy={copy} currencySymbol={currencySymbol} payroll={payroll} />}
       </div>
     </div>
+  );
+}
+
+/**
+ * Qué significa el monto que se acaba de escribir.
+ *
+ * Dos opciones y ninguna casilla nueva de dinero. La implementación anterior
+ * pedía «Monto» arriba y «Salario bruto» abajo, que es la misma cifra dos
+ * veces, y dejaba a la persona a cargo de que las dos coincidieran; lo que
+ * faltaba no era otro campo sino saber cuál de las dos cosas escribió.
+ *
+ * El neto va primero y es el que viene marcado. Es lo que casi todo el mundo
+ * sabe de memoria, es lo único que el plan necesita para funcionar, y elegirlo
+ * no abre nada más: quien no tenga descuentos que copiar termina la pregunta en
+ * un clic.
+ */
+function AmountMeaning({
+  isGross,
+  copy,
+  onChange,
+}: {
+  readonly isGross: boolean;
+  readonly copy: (key: string) => string;
+  readonly onChange: (isGross: boolean) => void;
+}) {
+  const group = useId();
+  const options = [
+    { gross: false, label: copy('income.meaningNet'), hint: copy('income.meaningNetHint') },
+    { gross: true, label: copy('income.meaningGross'), hint: copy('income.meaningGrossHint') },
+  ];
+
+  return (
+    <fieldset className="sm:col-span-2">
+      <legend className="text-sm font-medium text-[color:var(--color-ink)]">
+        {copy('income.meaningTitle')}
+      </legend>
+      <div className="mt-2 grid gap-3 sm:grid-cols-2">
+        {options.map((option) => {
+          const selected = option.gross === isGross;
+          return (
+            <label
+              key={String(option.gross)}
+              className={[
+                'flex cursor-pointer gap-3 rounded-(--radius-md) border p-3 transition-colors duration-(--duration-quick) ease-(--ease-settle)',
+                selected
+                  ? 'border-[color:var(--color-ink)] bg-[color:var(--color-ground-sunk)]'
+                  : 'border-[color:var(--color-surface-border)] hover:border-[color:var(--color-rule-strong)]',
+              ].join(' ')}
+            >
+              <input
+                type="radio"
+                name={group}
+                checked={selected}
+                className="mt-0.5 h-4 w-4 shrink-0 accent-[color:var(--color-ink)]"
+                onChange={() => {
+                  onChange(option.gross);
+                }}
+              />
+              <span className="text-sm">
+                <span className="block text-[color:var(--color-ink)]">{option.label}</span>
+                <span className="mt-0.5 block text-xs text-pretty text-[color:var(--color-ink-secondary)]">
+                  {option.hint}
+                </span>
+              </span>
+            </label>
+          );
+        })}
+      </div>
+    </fieldset>
+  );
+}
+
+/** Lo que la leyenda necesita saber, tal como sale del conjunto de reglas. */
+export interface PayrollLegendData {
+  readonly socialRate: string;
+  readonly educationRate: string;
+  readonly bands: readonly {
+    readonly from: string;
+    readonly upTo: string | null;
+    readonly rate: string;
+  }[];
+  readonly basePeriodsPerYear: number;
+  readonly salaryPeriodsPerYear: number;
+  readonly deductsContributions: boolean;
+  readonly source: string;
+}
+
+/**
+ * De dónde sale cada porcentaje, y por qué el de la renta no es un porcentaje.
+ *
+ * Va debajo del cálculo porque es lo que lo vuelve verificable: un monto solo
+ * se puede comprobar contra el recibo, pero una regla se puede comprobar contra
+ * el propio sueldo. Las dos contribuciones son una multiplicación y se explican
+ * en una línea; la renta necesita un dibujo, porque casi nadie sabe que es
+ * progresiva y la creencia contraria —«si paso de 50.000 me quitan el 25% de
+ * todo»— es la que hace que la gente rechace un aumento.
+ *
+ * Ninguna cifra de aquí está escrita en el texto: todas llegan del conjunto de
+ * reglas. Una leyenda que cita una tasa que ya cambió explica mal con la misma
+ * seguridad con la que explicaba bien.
+ */
+function PayrollLegend({
+  copy,
+  currencySymbol,
+  payroll,
+}: {
+  readonly copy: (key: string) => string;
+  readonly currencySymbol: string;
+  readonly payroll: PayrollLegendData;
+}) {
+  const [open, setOpen] = useState(false);
+
+  const round = (value: string) =>
+    `${currencySymbol}${Number(value).toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+  const fill = (key: string, values: Record<string, string>) =>
+    Object.entries(values).reduce(
+      (text, [name, value]) => text.replaceAll(`{${name}}`, value),
+      copy(key),
+    );
+
+  return (
+    <div className="max-w-[52ch]">
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="-ml-3"
+        aria-expanded={open}
+        onClick={() => {
+          setOpen(!open);
+        }}
+      >
+        {open ? copy('income.legendHide') : copy('income.legendShow')}
+      </Button>
+
+      {open && (
+        <div className="mt-2 flex flex-col gap-4 border-l border-[color:var(--color-rule)] pl-4 text-sm text-[color:var(--color-ink-secondary)]">
+          <p className="text-pretty">
+            {fill('income.legendContributions', {
+              social: payroll.socialRate,
+              education: payroll.educationRate,
+            })}
+          </p>
+
+          <div className="flex flex-col gap-2">
+            <p className="font-medium text-[color:var(--color-ink)]">{copy('income.isrTitle')}</p>
+            <p className="text-pretty">{copy('income.isrIntro')}</p>
+
+            <BracketChart bands={payroll.bands} round={round} copy={copy} />
+
+            <p className="text-pretty">
+              {fill('income.isrBase', {
+                base: String(payroll.basePeriodsPerYear),
+                salaries: String(payroll.salaryPeriodsPerYear),
+              })}
+            </p>
+            <p className="text-pretty">
+              {payroll.deductsContributions
+                ? copy('income.isrBaseNet')
+                : copy('income.isrBaseGross')}
+            </p>
+            <p className="text-pretty">{copy('income.isrEffective')}</p>
+          </div>
+
+          <p className="text-xs text-pretty text-[color:var(--color-ink-tertiary)]">
+            {fill('income.legendSource', { source: payroll.source })}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Los tramos, dibujados sobre la renta anual.
+ *
+ * Una barra y no un gráfico de barras: lo que hay que ver es que el sueldo se
+ * corta en trozos y que cada trozo paga lo suyo, no que un número sea mayor que
+ * otro. La escala es lineal hasta un cuarto por encima del último umbral, para
+ * que el tramo abierto tenga sitio donde verse sin dominar el dibujo.
+ *
+ * Sin color propio: la intensidad de la tinta lleva el orden de los tramos. En
+ * este sistema el color dice significado financiero, y un impuesto no es una
+ * ganancia ni una pérdida.
+ */
+function BracketChart({
+  bands,
+  round,
+  copy,
+}: {
+  readonly bands: PayrollLegendData['bands'];
+  readonly round: (value: string) => string;
+  readonly copy: (key: string) => string;
+}) {
+  const last = bands[bands.length - 1];
+  const top = Number(bands[bands.length - 1]?.from ?? '0') * 1.25 || 1;
+  const at = (value: string) => Math.min(Number(value) / top, 1) * 100;
+
+  if (!last) return null;
+
+  return (
+    <figure className="my-1 flex flex-col gap-2">
+      <figcaption className="sr-only">{copy('income.isrChartCaption')}</figcaption>
+      <div className="flex h-9 w-full overflow-hidden rounded-(--radius-sm) border border-[color:var(--color-surface-border)]">
+        {bands.map((band, index) => {
+          const start = at(band.from);
+          const end = band.upTo === null ? 100 : at(band.upTo);
+          // La tinta se intensifica con el tramo. El primero, que no paga, se
+          // queda en el fondo de la tarjeta: la ausencia de impuesto se lee
+          // mejor como ausencia de relleno que como un relleno claro.
+          const ink = index === 0 ? 0 : 0.18 + index * 0.22;
+          return (
+            <div
+              key={band.from}
+              className="flex items-center justify-center border-r border-[color:var(--color-surface-border)] last:border-r-0"
+              style={{
+                width: `${String(Math.max(end - start, 0))}%`,
+                backgroundColor:
+                  ink === 0
+                    ? 'transparent'
+                    : `color-mix(in oklab, var(--color-ink) ${String(Math.round(ink * 100))}%, transparent)`,
+              }}
+            >
+              <span
+                className={[
+                  'tabular text-xs font-medium',
+                  index === 0
+                    ? 'text-[color:var(--color-ink-secondary)]'
+                    : 'text-[color:var(--color-ink-inverse)]',
+                ].join(' ')}
+              >
+                {band.rate}%
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="relative h-4 text-xs text-[color:var(--color-ink-tertiary)]">
+        {bands.map((band, index) =>
+          index === 0 ? null : (
+            <span
+              key={band.from}
+              className="tabular absolute -translate-x-1/2 whitespace-nowrap"
+              style={{ left: `${String(at(band.from))}%` }}
+            >
+              {round(band.from)}
+            </span>
+          ),
+        )}
+      </div>
+    </figure>
   );
 }
 

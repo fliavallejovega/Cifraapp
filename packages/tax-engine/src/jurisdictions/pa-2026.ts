@@ -124,6 +124,36 @@ export const PANAMA_2026_DRAFT: TaxRuleSet = {
           'Transcribed from the commonly cited rate. Not verified against a primary publication. Prefill only, editable by the household.',
       },
     },
+    /**
+     * Cómo se retiene la renta de una planilla panameña.
+     *
+     * Trece sueldos componen la base porque el decimotercer mes forma parte de
+     * la renta del año, y la retención se reparte entre esos trece: en los doce
+     * pagos ordinarios se retienen doce trecios del impuesto anual y el resto
+     * sale del decimotercero, que esta aplicación todavía no representa como un
+     * ingreso propio.
+     *
+     * Las contribuciones **no** salen de la base. Es la diferencia de método
+     * más cara de todas —decide incluso quién entra al impuesto, porque un
+     * sueldo de mil al mes queda por encima del umbral con este método y por
+     * debajo con el otro— y por eso está escrita como dato, con su fuente, y no
+     * como una decisión enterrada en el motor.
+     */
+    {
+      kind: 'withholding',
+      key: 'income.withholding',
+      taxType: 'income',
+      basePeriodsPerYear: 13,
+      salaryPeriodsPerYear: 12,
+      deductsContributions: false,
+      provenance: {
+        ...UNREVIEWED,
+        sourceReference: 'Calculadora salarial — Grupo SIUMA',
+        sourceUrl: 'https://siumatalent.com/calculadora-salarial/',
+        notes:
+          'Método transcrito de la calculadora de Grupo SIUMA, señalada por el propietario del producto como la que refleja la práctica panameña. No verificado contra una publicación de la DGI, y difiere de otras calculadoras públicas que sí restan las contribuciones de la base. Solo para rellenar campos editables que el hogar confirma contra su recibo.',
+      },
+    },
     {
       kind: 'flat_rate',
       key: 'itbms.general',

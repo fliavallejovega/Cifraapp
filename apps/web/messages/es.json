@@ -957,7 +957,24 @@
         "socialSecurity": "Seguro social",
         "educationTax": "Seguro educativo",
         "incomeTax": "Impuesto sobre la renta"
-      }
+      },
+      "meaningTitle": "¿Qué es ese monto?",
+      "meaningNet": "Lo que me llega",
+      "meaningNetHint": "El depósito, ya con los descuentos hechos. Si no sabes tu bruto, esta es la buena.",
+      "meaningGross": "El bruto del contrato",
+      "meaningGrossHint": "Antes de descuentos. Te pedimos abajo qué te quitan y calculamos lo que llega.",
+      "effectiveSuffix": "efectivo",
+      "legendShow": "Cómo se calcula cada uno",
+      "legendHide": "Ocultar el detalle",
+      "legendContributions": "El seguro social y el seguro educativo son una multiplicación y nada más: {social}% y {education}% del bruto del período. No tienen tramos ni mínimo exento — se aplican desde el primer balboa.",
+      "isrTitle": "La renta no funciona así, y casi nadie lo sabe",
+      "isrIntro": "No hay un porcentaje. Tu sueldo del año se corta en tramos y cada tramo paga el suyo, así que pasar a un tramo más alto solo encarece la parte que lo cruza — nunca el sueldo entero. Por eso un aumento jamás te deja con menos dinero.",
+      "isrChartCaption": "Los tramos del impuesto sobre la renta, sobre el ingreso anual.",
+      "isrBase": "La base es tu sueldo del año: {base} sueldos, no {salaries}, porque el décimo tercer mes también es renta. Y la retención se reparte entre esos {base}, así que en los {salaries} pagos ordinarios se retiene lo que corresponde a {salaries} de ellos.",
+      "isrBaseGross": "Se calcula sobre el bruto entero, sin restarle antes el seguro social ni el educativo.",
+      "isrBaseNet": "Se calcula sobre lo que queda después del seguro social y el educativo.",
+      "isrEffective": "El porcentaje que ves junto a la línea de renta es el efectivo: cuánto acabó siendo sobre tu bruto. No es una tasa de la ley, es la tuya.",
+      "legendSource": "Método y tasas transcritos de: {source}. Es un borrador que nadie calificado revisó. Compáralo con tu recibo — lo que guardamos es lo que tú confirmes."
     },
     "savings": {
       "title": "¿Qué tienes hoy?",

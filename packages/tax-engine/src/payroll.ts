@@ -24,12 +24,18 @@ import type { TaxRuleSet } from './types.js';
  *
  * ## The order of operations, which is where this goes wrong
  *
- * Income tax is not computed on the gross. The two contributions come off
- * first, and the tax bands apply to what is left — get that backwards and the
- * withholding is overstated on every salary, by more the higher it is. And the
- * bands are annual, so a fortnightly salary has to be annualised, taxed, and
+ * The bands are annual, so a fortnightly salary has to be annualised, taxed and
  * divided back down: applying an annual threshold to a fortnight would exempt
- * almost everybody from a tax they actually pay.
+ * almost everybody from a tax they actually pay. That part is arithmetic and is
+ * true everywhere.
+ *
+ * What is *not* arithmetic — and what two public Panamanian calculators answer
+ * differently — is whether the social contributions come out of the base before
+ * the bands apply, and how many salaries make up the fiscal year where a
+ * thirteenth month exists. Both are policy, both change the result by more than
+ * the bands do, and both are read from the rule set here rather than decided in
+ * this file. See `income.withholding` in the Panamanian set for which way it was
+ * answered and on whose authority.
  */
 
 export interface PayrollLine {
@@ -38,6 +44,22 @@ export interface PayrollLine {
   /** A stable key the app maps to its own translated label. */
   readonly key: 'socialSecurity' | 'educationTax' | 'incomeTax';
   readonly amount: Money;
+  /**
+   * El porcentaje que explica esta línea, para que la etiqueta pueda decirlo.
+   *
+   * Sale del conjunto de reglas y no de una constante en la pantalla: una tasa
+   * que cambia y una etiqueta que no la sigue es peor que no mostrar ninguna.
+   * Con hasta dos decimales, que es como se cita.
+   */
+  readonly rate: string;
+  /**
+   * Si esa tasa es la de la ley o la que le tocó a esta persona.
+   *
+   * La renta es progresiva: no tiene un porcentaje, tiene una tabla. Lo que se
+   * puede decir de ella es cuánto acabó siendo sobre este sueldo en concreto, y
+   * llamarlo «9,75%» como a las otras dos sería afirmar una tasa que no existe.
+   */
+  readonly isEffectiveRate: boolean;
 }
 
 export interface PayrollEstimate {
@@ -67,6 +89,31 @@ export interface PayrollInput {
   readonly paymentsPerYear: number;
   readonly rules: TaxRuleSet;
 }
+
+/**
+ * Una tasa como se cita, sin ceros de relleno. `9.750` → `9.75`, `7.000` → `7`.
+ *
+ * El conjunto de reglas las guarda con tres decimales porque una tasa puede
+ * tenerlos; una etiqueta que dice «Seguro social (9.750%)» se lee como un error
+ * del sistema.
+ */
+const asPercent = (rate: string): string => String(Number(rate));
+
+/**
+ * Lo que la renta acabó siendo sobre este sueldo, en porcentaje.
+ *
+ * No es una tasa de la ley: es el cociente entre lo retenido y el bruto, que es
+ * la única cifra en porcentaje que se puede decir con verdad de un impuesto
+ * progresivo. Dos decimales, y cero cuando no hay bruto contra el que dividir.
+ */
+const effectiveRate = (tax: Money, gross: Money): string => {
+  if (!gross.isPositive()) return '0';
+  // En unidades enteras, como el resto del paquete: dividir dos importes en
+  // coma flotante para enseñar un porcentaje es la puerta de atrás por la que
+  // vuelve la aritmética que este proyecto no usa con dinero.
+  const hundredths = (tax.scaledUnits * 10_000n) / gross.scaledUnits;
+  return String(Number(hundredths) / 100);
+};
 
 /** A rate rule, or null when the set does not carry one. */
 function flatRate(set: TaxRuleSet, key: string): string | null {
@@ -101,27 +148,81 @@ export function estimatePayroll(input: PayrollInput): PayrollEstimate | null {
   /**
    * The tax, computed on the year and brought back to the paycheck.
    *
-   * The contributions come off before the bands apply — that is the part that
-   * is easy to get backwards and expensive when it is. The annual round trip is
-   * the other part: the first band is an annual threshold, and testing a
-   * fortnight against it would put almost every salary in Panama at zero.
+   * The annual round trip is not optional: the first band is an annual
+   * threshold, and testing a fortnight against it would put almost every salary
+   * in Panama at zero.
+   *
+   * The two policy questions — whether the contributions come out of the base,
+   * and how many salaries make up the fiscal year — are read from the rule set
+   * rather than decided here. Panama's answer is «no» and «thirteen», and a
+   * jurisdiction that says otherwise gets the other arithmetic without this file
+   * changing. Absent the rule, the conservative reading applies: twelve
+   * salaries, contributions deducted.
    */
+  const policy = findRule(rules, 'income.withholding');
+  const withholding =
+    policy?.kind === 'withholding'
+      ? policy
+      : { basePeriodsPerYear: 12, salaryPeriodsPerYear: 12, deductsContributions: true };
+  if (withholding.basePeriodsPerYear <= 0 || withholding.salaryPeriodsPerYear <= 0) return null;
+
   const perYear = (value: Money) => value.multiply(paymentsPerYear);
-  const taxableYear = perYear(gross).subtract(perYear(social)).subtract(perYear(education));
+  const salaryYear = perYear(gross);
+  const contributions = withholding.deductsContributions
+    ? perYear(social).add(perYear(education))
+    : zero;
+  /**
+   * La base, estirada a los sueldos que componen el año fiscal.
+   *
+   * Trece en Panamá, porque el decimotercer mes es renta del año igual que los
+   * otros doce. Multiplicar por trece doceavos es exactamente eso y no un
+   * recargo: el mismo sueldo, contado las veces que se cobra.
+   */
+  const taxableYear = salaryYear
+    .subtract(contributions)
+    .multiply(withholding.basePeriodsPerYear)
+    .divide(withholding.salaryPeriodsPerYear);
   const { tax: annualTax } = applyBrackets(
     taxableYear.isPositive() ? taxableYear : zero,
     bracketRule.brackets,
     bracketRule.key,
   );
-  const incomeTax = annualTax.isPositive() ? annualTax.divide(paymentsPerYear) : zero;
+  /**
+   * Y de vuelta al recibo, repartida entre los mismos trece.
+   *
+   * De donde se sigue que en los doce pagos ordinarios se retienen doce trecios
+   * del impuesto del año: el trecio que falta sale del decimotercer mes, que
+   * este producto todavía no representa como un ingreso propio.
+   */
+  const perPeriodDivisor =
+    (paymentsPerYear * withholding.basePeriodsPerYear) / withholding.salaryPeriodsPerYear;
+  const incomeTax = annualTax.isPositive() ? annualTax.divide(perPeriodDivisor) : zero;
 
   // Solo las líneas con monto. Una retención de cero no es una línea del
   // recibo: es la ausencia de una, y mostrarla vacía sugiere que se cobró algo.
   const lines: PayrollLine[] = (
     [
-      { key: 'socialSecurity', ruleKey: 'social_security.employee', amount: social },
-      { key: 'educationTax', ruleKey: 'social_security.education_employee', amount: education },
-      { key: 'incomeTax', ruleKey: bracketRule.key, amount: incomeTax },
+      {
+        key: 'socialSecurity',
+        ruleKey: 'social_security.employee',
+        amount: social,
+        rate: asPercent(socialRate),
+        isEffectiveRate: false,
+      },
+      {
+        key: 'educationTax',
+        ruleKey: 'social_security.education_employee',
+        amount: education,
+        rate: asPercent(educationRate),
+        isEffectiveRate: false,
+      },
+      {
+        key: 'incomeTax',
+        ruleKey: bracketRule.key,
+        amount: incomeTax,
+        rate: effectiveRate(incomeTax, gross),
+        isEffectiveRate: true,
+      },
     ] as const satisfies readonly PayrollLine[]
   ).filter((line) => line.amount.isPositive());
 
@@ -139,5 +240,61 @@ export function estimatePayroll(input: PayrollInput): PayrollEstimate | null {
     // field rather than a comment so a caller has to look at it.
     net: net.isPositive() ? net : zero,
     mayPresentAsOwed: rules.status === 'published',
+  };
+}
+
+/**
+ * Las cifras con las que se explica una planilla, sacadas del conjunto de reglas.
+ *
+ * Existe para que una pantalla pueda decir *por qué* sale cada monto sin
+ * escribir «9,75%» ni «11.000» en su propio texto. Una tasa citada en una
+ * plantilla es una tasa que dejará de coincidir con la que se aplica el día que
+ * el conjunto cambie, y ese día nadie se entera: la cuenta seguiría bien y la
+ * explicación empezaría a mentir.
+ *
+ * Devuelve null cuando al conjunto le falta algo, igual que el cálculo. Una
+ * leyenda a medias explica mal, que es peor que no explicar.
+ */
+export interface PayrollReference {
+  /** Tasas como se citan, sin ceros de relleno: `9.75`. */
+  readonly socialRate: string;
+  readonly educationRate: string;
+  /** Los tramos, en importes decimales y con la tasa de cada uno. */
+  readonly bands: readonly {
+    readonly from: string;
+    readonly upTo: string | null;
+    readonly rate: string;
+  }[];
+  readonly basePeriodsPerYear: number;
+  readonly salaryPeriodsPerYear: number;
+  readonly deductsContributions: boolean;
+  /** De dónde salió el método, para poder citarlo. */
+  readonly source: string;
+}
+
+export function payrollReference(rules: TaxRuleSet): PayrollReference | null {
+  const socialRate = flatRate(rules, 'social_security.employee');
+  const educationRate = flatRate(rules, 'social_security.education_employee');
+  const bracketRule = findRule(rules, 'income.brackets');
+  if (!socialRate || !educationRate || bracketRule?.kind !== 'brackets') return null;
+
+  const policy = findRule(rules, 'income.withholding');
+  const withholding =
+    policy?.kind === 'withholding'
+      ? policy
+      : { basePeriodsPerYear: 12, salaryPeriodsPerYear: 12, deductsContributions: true };
+
+  return {
+    socialRate: asPercent(socialRate),
+    educationRate: asPercent(educationRate),
+    bands: bracketRule.brackets.map((band) => ({
+      from: band.from.toDecimalString(),
+      upTo: band.upTo ? band.upTo.toDecimalString() : null,
+      rate: asPercent(band.rate),
+    })),
+    basePeriodsPerYear: withholding.basePeriodsPerYear,
+    salaryPeriodsPerYear: withholding.salaryPeriodsPerYear,
+    deductsContributions: withholding.deductsContributions,
+    source: (policy ?? bracketRule).provenance.sourceReference,
   };
 }
