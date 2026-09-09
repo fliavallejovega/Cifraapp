@@ -5,6 +5,7 @@ import {
   useActionState,
   useEffect,
   useId,
+  useRef,
   useState,
   type Dispatch,
   type ReactNode,
@@ -1934,6 +1935,18 @@ function IncomeDeductions({
    * número, no el ordinal.
    */
   const per = copy(`income.per.${row.frequency}`);
+
+  /**
+   * La etiqueta de una línea calculada, con su porcentaje.
+   *
+   * Una sola forma de escribirla, porque se escribe en dos sitios: cuando la
+   * persona pulsa «Calcular» y cuando el período cambia y hay que rehacerla. Dos
+   * versiones de la misma frase divergen el día que alguien toca una sola.
+   */
+  const labelFor = (line: { key: string; rate: string; isEffectiveRate: boolean }) =>
+    `${copy(`income.line.${line.key}`)} (${line.rate}%${
+      line.isEffectiveRate ? ` ${copy('income.effectiveSuffix')}` : ''
+    })`;
   const anchors = anchorsOf(row);
   const byFortnight = anchors.length === 2;
   const perAnchor = arrivingPerAnchor(row);
@@ -1949,6 +1962,53 @@ function IncomeDeductions({
   const setLines = (next: readonly Deduction[]) => {
     onChange({ deductions: next });
   };
+
+  /**
+   * Las líneas calculadas siguen al sueldo y al período. Las escritas, no.
+   *
+   * Un mismo 1.500 es un sueldo distinto según se cobre al mes o por quincena
+   * —treinta y seis mil al año contra dieciocho mil— y la renta que se retiene
+   * de cada uno no se parece. Dejar la cifra vieja debajo de una etiqueta que
+   * ya dice «por quincena» es enseñar una retención que no le corresponde a
+   * nadie, y es peor que no enseñar ninguna: parece calculada.
+   *
+   * Solo se rehacen las que salieron del motor. Lo que la persona copió de su
+   * recibo es suyo y no se toca — ni siquiera para «corregirlo», porque lo que
+   * este producto guarda es lo que ella confirmó.
+   *
+   * Con retraso, porque el bruto se escribe cifra a cifra y cada tecla no
+   * merece una ida al servidor.
+   */
+  const latest = useRef({ lines, labelFor, onChange });
+  latest.current = { lines, labelFor, onChange };
+
+  useEffect(() => {
+    const calculated = latest.current.lines.filter((line) => line.ruleKey !== undefined);
+    if (calculated.length === 0 || asAmount(row.amount) <= 0) return;
+
+    const timer = setTimeout(() => {
+      void estimatePanamaPayroll(row.amount, row.frequency).then((result) => {
+        if (!result.ok || !result.lines) return;
+        const fresh = new Map(result.lines.map((line) => [line.key, line]));
+        const next = latest.current.lines.flatMap((line) => {
+          if (line.ruleKey === undefined) return [line];
+          const one = fresh.get(line.ruleKey);
+          // Una línea que desapareció del cálculo es una retención que ya no se
+          // cobra —un sueldo que bajó del primer tramo no paga renta— y dejarla
+          // en cero sugeriría que se cobró algo.
+          return one ? [{ ...line, label: latest.current.labelFor(one), amount: one.amount }] : [];
+        });
+        latest.current.onChange({ deductions: next });
+      });
+    }, 400);
+
+    return () => {
+      clearTimeout(timer);
+    };
+    // Solo el sueldo y el período. Las líneas se leen por referencia a
+    // propósito: incluirlas aquí sería pedirle a este efecto que se dispare con
+    // su propio resultado.
+  }, [row.amount, row.frequency]);
 
   return (
     <div className="sm:col-span-2">
@@ -2070,9 +2130,7 @@ function IncomeDeductions({
                         // se puede comprobar contra nada, «292,50 (9,75%)» se
                         // comprueba con el bruto delante. Y sale del conjunto
                         // de reglas, no de una constante de esta pantalla.
-                        label: `${copy(`income.line.${line.key}`)} (${line.rate}%${
-                          line.isEffectiveRate ? ` ${copy('income.effectiveSuffix')}` : ''
-                        })`,
+                        label: labelFor(line),
                         amount: line.amount,
                         // De dónde salió, que es lo que la marca como línea de
                         // ley: sale de todos los pagos y no hay nada que elegir.
