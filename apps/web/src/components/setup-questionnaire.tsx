@@ -68,6 +68,15 @@ interface PersonRow {
   name: string;
   relationship: string;
   isDependent: boolean;
+  /**
+   * Qué parte de los gastos comunes lleva, en porcentaje.
+   *
+   * Vacío mientras nadie lo haya acordado, y entonces se reparte en partes
+   * iguales. El producto no lo deduce de los sueldos: quien gana más suele
+   * poner más, pero en qué proporción es un acuerdo entre las personas de la
+   * casa y no una cuenta que a nadie le pidieron.
+   */
+  expenseShare?: string | undefined;
 }
 
 interface IncomeRow {
@@ -250,6 +259,16 @@ interface GoalRow {
   name: string;
   targetAmount: string;
   targetDate: string;
+  /**
+   * La casa dijo que esta va.
+   *
+   * No se deduce de tener fecha: «algún día en diciembre» es una fecha. Una
+   * meta confirmada con día se llena antes que todo lo que nadie confirmó, así
+   * que la afirmación tiene que salir de una persona y no de una casilla llena.
+   */
+  isCommitted?: boolean | undefined;
+  /** Lo que ya se apartó para ella. */
+  currentAmount?: string | undefined;
 }
 
 /**
@@ -472,7 +491,7 @@ export function SetupQuestionnaire({
       : [],
   );
   const [goalRows, setGoalRows] = useState<GoalRow[]>(
-    start(initial?.goals, { name: '', targetAmount: '', targetDate: '' }),
+    start(initial?.goals, { name: '', targetAmount: '', targetDate: '', isCommitted: false }),
   );
 
   /**
@@ -686,7 +705,13 @@ export function SetupQuestionnaire({
   const namedPeople = people.filter((row) => row.name.trim() !== '');
 
   const payload = {
-    people: namedPeople,
+    // El porcentaje solo de quien lo lleva: un dependiente no paga el alquiler,
+    // y la base rechaza una parte asignada a alguien que no aporta.
+    people: namedPeople.map((row) => ({
+      ...row,
+      expenseShare:
+        row.isDependent || (row.expenseShare ?? '').trim() === '' ? undefined : row.expenseShare,
+    })),
     // Derived, so the figure the plan reads and the list a person can see can
     // never drift apart. A household that skipped the step still counts as one.
     memberCount: String(Math.max(1, namedPeople.length)),
@@ -1498,20 +1523,33 @@ export function SetupQuestionnaire({
                     setCommitments(patch(commitments, at, { amount: value }));
                   }}
                 />
-                <Field label={copy('commitments.dueDay')} hint={copy('commitments.dueDayHint')}>
-                  {({ id, describedBy }) => (
-                    <Input
-                      id={id}
-                      numeric
-                      inputMode="numeric"
-                      value={row.dueDay}
-                      aria-describedby={describedBy}
-                      onChange={(event) => {
-                        setCommitments(patch(commitments, at, { dueDay: event.target.value }));
-                      }}
-                    />
-                  )}
-                </Field>
+                {/*
+                  Un día, o dos, pero no las dos cosas.
+
+                  Un pago quincenal tiene dos vencimientos y más abajo se
+                  preguntan por su nombre —«primer día», «segundo día»—, así que
+                  dejar aquí «día del mes» era preguntar lo mismo tres veces y
+                  quedarse con respuestas que no pueden ser todas ciertas. Con
+                  cadencia quincenal esta casilla desaparece y mandan las dos de
+                  abajo; el valor no se borra, para que volver a mensual no
+                  cueste volver a escribirlo.
+                */}
+                {row.frequency !== 'semimonthly' && (
+                  <Field label={copy('commitments.dueDay')} hint={copy('commitments.dueDayHint')}>
+                    {({ id, describedBy }) => (
+                      <Input
+                        id={id}
+                        numeric
+                        inputMode="numeric"
+                        value={row.dueDay}
+                        aria-describedby={describedBy}
+                        onChange={(event) => {
+                          setCommitments(patch(commitments, at, { dueDay: event.target.value }));
+                        }}
+                      />
+                    )}
+                  </Field>
+                )}
                 <Field label={copy('commitments.category')} hint={copy('commitments.categoryHint')}>
                   {({ id, describedBy }) => (
                     <div className="relative">
@@ -1819,6 +1857,30 @@ export function SetupQuestionnaire({
           />
         )}
 
+        {/*
+          Y cómo se reparte lo que sale del bolsillo común.
+
+          Va junto al total porque necesita el total: repartir antes de saber
+          cuánto es repartir en abstracto. Solo los pagos sin sueldo asignado
+          —los que tienen uno ya son de esa persona— y solo con dos o más.
+        */}
+        {step === 'commitments' && (
+          <SharedSplit
+            people={people}
+            setPeople={setPeople}
+            total={commitments
+              .filter(
+                (row) =>
+                  row.name.trim() !== '' &&
+                  row.amount.trim() !== '' &&
+                  row.paidFromIncome === undefined,
+              )
+              .reduce((all, row) => all + perMonth(row.amount, row.frequency ?? 'monthly'), 0)}
+            money={money}
+            copy={copy}
+          />
+        )}
+
         {step === 'commitments' && (
           <CommitmentsTotal
             rows={commitments}
@@ -1984,7 +2046,10 @@ export function SetupQuestionnaire({
               addFirstLabel={copy('goals.addFirst')}
               emptyHint={copy('goals.empty')}
               onAdd={() => {
-                setGoalRows([...goalRows, { name: '', targetAmount: '', targetDate: '' }]);
+                setGoalRows([
+                  ...goalRows,
+                  { name: '', targetAmount: '', targetDate: '', isCommitted: false },
+                ]);
               }}
               onRemove={(at) => {
                 setGoalRows(goalRows.filter((_, position) => position !== at));
@@ -2024,6 +2089,32 @@ export function SetupQuestionnaire({
                       />
                     )}
                   </Field>
+                  <MoneyField
+                    label={copy('goals.saved')}
+                    hint={copy('goals.savedHint')}
+                    symbol={currencySymbol}
+                    value={row.currentAmount ?? ''}
+                    onChange={(value) => {
+                      setGoalRows(patch(goalRows, at, { currentAmount: value }));
+                    }}
+                  />
+                  {/*
+                    Confirmarla es una afirmación, no una preferencia.
+
+                    Una meta confirmada con fecha se llena antes que todo lo que
+                    nadie confirmó, así que tiene que decirlo una persona. Tener
+                    día no basta: «algún día en diciembre» es una fecha, y mover
+                    el dinero de una casa porque alguien llenó una casilla es
+                    justo lo que este producto no hace.
+                  */}
+                  <Check
+                    label={copy('goals.committed')}
+                    hint={copy('goals.committedHint')}
+                    checked={row.isCommitted === true}
+                    onChange={(checked) => {
+                      setGoalRows(patch(goalRows, at, { isCommitted: checked }));
+                    }}
+                  />
                 </>
               )}
             />
@@ -3214,6 +3305,136 @@ function FortnightPicker({
 }
 
 /**
+ * Cómo se reparten los gastos comunes.
+ *
+ * Un pago sin sueldo asignado sale del bolsillo común, y «del bolsillo común»
+ * casi nunca quiere decir a la mitad: quien gana más suele poner más, y en qué
+ * proporción es un acuerdo entre las personas de la casa. El producto hace la
+ * multiplicación y no propone ninguna cifra que no le hayan dicho — lo único
+ * que ofrece por su cuenta es partes iguales, que no es una opinión sino la
+ * ausencia de una.
+ *
+ * No aparece con una sola persona: repartir entre uno es el cien por ciento y
+ * preguntarlo sería preguntar por deporte. Ni los dependientes entran: un niño
+ * no paga el alquiler.
+ */
+function SharedSplit({
+  people,
+  setPeople,
+  total,
+  money,
+  copy,
+}: {
+  readonly people: readonly PersonRow[];
+  readonly setPeople: Dispatch<SetStateAction<PersonRow[]>>;
+  /** Lo que sale del bolsillo común al mes, ya sumado. */
+  readonly total: number;
+  readonly money: (value: number) => string;
+  readonly copy: (key: string) => string;
+}) {
+  const sharers = people
+    .map((person, at) => ({ person, at }))
+    .filter((entry) => entry.person.name.trim() !== '' && !entry.person.isDependent);
+
+  if (sharers.length < 2) return null;
+
+  const asShare = (value: string | undefined) => Number((value ?? '').replace(/[^\d.]/g, '')) || 0;
+  const stated = sharers.filter((entry) => (entry.person.expenseShare ?? '').trim() !== '');
+  const sum = sharers.reduce((all, entry) => all + asShare(entry.person.expenseShare), 0);
+
+  /**
+   * Sin nada acordado, partes iguales. Con algo acordado, lo acordado — aunque
+   * no sume cien: la pantalla lo dice y no lo corrige sola, porque corregir el
+   * acuerdo de una casa por su cuenta es exactamente lo que no debe hacer.
+   */
+  const shareOf = (entry: (typeof sharers)[number]) =>
+    stated.length === 0 ? 100 / sharers.length : asShare(entry.person.expenseShare);
+
+  const balanced = stated.length === 0 || Math.abs(sum - 100) < 0.01;
+
+  return (
+    <section className="border-t border-[color:var(--color-rule)] pt-8">
+      <h3 className="text-base font-medium">{copy('split.title')}</h3>
+      <p className="mt-1 max-w-[68ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]">
+        {copy('split.detail')}
+      </p>
+
+      <div className="mt-4 flex flex-col gap-3">
+        {sharers.map((entry) => (
+          <div
+            key={entry.at}
+            className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-(--radius-md) border border-[color:var(--color-surface-border)] bg-[color:var(--color-surface)] px-4 py-3"
+          >
+            <span className="min-w-0 flex-1 truncate text-sm font-medium text-[color:var(--color-ink)]">
+              {entry.person.name}
+            </span>
+            <label className="flex items-center gap-2 text-sm">
+              <span className="sr-only">
+                {copy('split.share').replace('{name}', entry.person.name)}
+              </span>
+              <span className="relative">
+                <Input
+                  numeric
+                  inputMode="decimal"
+                  className="h-9 w-24 pr-7 text-right"
+                  placeholder={(100 / sharers.length).toFixed(0)}
+                  value={entry.person.expenseShare ?? ''}
+                  onChange={(event) => {
+                    setPeople((rows) =>
+                      patch(rows, entry.at, { expenseShare: event.target.value }),
+                    );
+                  }}
+                />
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-[color:var(--color-ink-tertiary)]"
+                >
+                  %
+                </span>
+              </span>
+            </label>
+            {total > 0 && (
+              <span className="tabular w-28 text-right text-sm text-[color:var(--color-ink-secondary)]">
+                {money((total * shareOf(entry)) / 100)}
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          onClick={() => {
+            const each = (100 / sharers.length).toFixed(2);
+            setPeople((rows) =>
+              rows.map((person) =>
+                person.name.trim() !== '' && !person.isDependent
+                  ? { ...person, expenseShare: each }
+                  : { ...person, expenseShare: undefined },
+              ),
+            );
+          }}
+        >
+          {copy('split.equal')}
+        </Button>
+        {!balanced && (
+          <p role="status" className="text-sm text-[color:var(--color-caution)]">
+            {copy('split.mismatch').replace('{sum}', sum.toFixed(2).replace(/\.00$/, ''))}
+          </p>
+        )}
+      </div>
+
+      <p className="mt-3 max-w-[68ch] text-xs text-pretty text-[color:var(--color-ink-tertiary)]">
+        {copy('split.note')}
+      </p>
+    </section>
+  );
+}
+
+/**
  * Lo que se lleva sumado, al pie del paso.
  *
  * Un cuestionario que pide diez cifras y no enseña ninguna suma obliga a
@@ -3291,6 +3512,8 @@ const COMMON_CATEGORIES = [
   'transportation',
   'healthcare',
   'education',
+  'insurance',
+  'savings-contribution',
   'subscriptions',
   'debt',
 ] as const;

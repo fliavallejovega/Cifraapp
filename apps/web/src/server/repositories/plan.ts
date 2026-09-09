@@ -3,6 +3,8 @@ import 'server-only';
 import {
   buildAllocationPlan,
   applyRuleActions,
+  goalWeight,
+  receiptsByGoal,
   type AllocationPlan,
   type Claim,
   type RuleNote,
@@ -94,6 +96,23 @@ export interface PlanView {
    * ningún período. Viaja aquí para que la pantalla pueda enseñarlo aparte y el
    * hogar pueda perseguirlo, que es la única gestión que un cobro admite.
    */
+  /**
+   * Qué cobro le sirve a qué meta, para poder enseñarlo al lado de ella.
+   *
+   * Nunca sumado a su saldo: esto dice «viene esto para esta fecha», no «ya lo
+   * tienes». El plan se hace con el dinero que entró.
+   */
+  readonly expectedByGoal: readonly {
+    readonly goalId: string;
+    readonly name: string;
+    readonly total: Money;
+    readonly receipts: readonly {
+      readonly id: string;
+      readonly name: string;
+      readonly amount: Money;
+      readonly expectedOn: PlainDate;
+    }[];
+  }[];
   readonly expected: readonly {
     readonly id: string;
     readonly name: string;
@@ -178,6 +197,7 @@ export async function loadPlan(session: Session, householdId: string): Promise<P
             current: goals.currentAmount,
             priority: goals.priority,
             targetDate: goals.targetDate,
+            isCommitted: goals.isCommitted,
           })
           .from(goals)
           .where(and(eq(goals.householdId, householdId), eq(goals.status, 'active')))
@@ -427,7 +447,15 @@ export async function loadPlan(session: Session, householdId: string): Promise<P
       goals: goalRows.map((row) => ({
         id: row.id,
         name: row.name,
-        priority: row.priority,
+        // El peso que de verdad manda: una meta confirmada con fecha va por
+        // delante de todo lo que nadie confirmó, y entre confirmadas manda el
+        // día. Lo no confirmado conserva el orden que la casa le dio.
+        priority: goalWeight({
+          priority: row.priority,
+          targetDate: (row.targetDate as PlainDate | null) ?? null,
+          isCommitted: row.isCommitted,
+          today,
+        }),
         targetDate: (row.targetDate as PlainDate | null) ?? null,
         remaining: Money.fromDecimalString(row.target, currency).subtract(
           Money.fromDecimalString(row.current, currency),
@@ -474,6 +502,38 @@ export async function loadPlan(session: Session, householdId: string): Promise<P
       today,
       safeToSpend,
       plan,
+      // Y qué cobro le sirve a qué meta: el préstamo que devuelven en diciembre
+      // le sirve al viaje del 20 y no al carro de marzo. Se enseña al lado, no
+      // sumado — el plan se hace con el dinero que entró.
+      expectedByGoal: [
+        ...receiptsByGoal({
+          goals: goalRows.map((row) => ({
+            id: row.id,
+            targetDate: (row.targetDate as PlainDate | null) ?? null,
+          })),
+          receipts: expectedRows
+            .filter((row) => row.expectedOn !== null)
+            .map((row) => ({
+              id: row.id,
+              name: row.name,
+              amount: Money.fromDecimalString(row.amount, currency),
+              expectedOn: row.expectedOn as PlainDate,
+            })),
+        }).entries(),
+      ].map(([goalId, receipts]) => ({
+        goalId,
+        name: goalRows.find((one) => one.id === goalId)?.name ?? goalId,
+        receipts: receipts.map((one) => ({
+          id: one.id,
+          name: one.name,
+          amount: one.amount,
+          expectedOn: one.expectedOn,
+        })),
+        total: Money.sum(
+          receipts.map((one) => one.amount),
+          currency,
+        ),
+      })),
       expected: expectedRows
         .map((row) => ({
           id: row.id,

@@ -44,6 +44,16 @@ export const householdPeople = appSchema.table(
     relationship: text('relationship').notNull().default('other'),
     /** Whether the household income has to cover them. Stated, never inferred. */
     isDependent: boolean('is_dependent').notNull().default(false),
+    /**
+     * Qué parte de los gastos comunes lleva, en porcentaje, según lo acordó la
+     * casa.
+     *
+     * Nulo cuando nadie se lo asignó, y entonces la pantalla reparte en partes
+     * iguales — que es la ausencia de una opinión, no una. Deducirlo de los
+     * sueldos sería opinar sobre un acuerdo que nadie preguntó: quien gana más
+     * suele poner más, pero en qué proporción lo deciden ellos.
+     */
+    expenseShare: numeric('expense_share', { precision: 5, scale: 2, mode: 'string' }),
     /** A year. The month and day buy nothing the product uses. */
     birthYear: smallint('birth_year'),
     notes: text('notes'),

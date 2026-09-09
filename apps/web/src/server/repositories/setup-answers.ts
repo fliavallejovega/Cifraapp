@@ -107,6 +107,7 @@ export async function loadSetupAnswers(
           name: householdPeople.displayName,
           relationship: householdPeople.relationship,
           isDependent: householdPeople.isDependent,
+          expenseShare: householdPeople.expenseShare,
         })
         .from(householdPeople)
         .where(and(eq(householdPeople.householdId, householdId), isNull(householdPeople.deletedAt)))
@@ -217,6 +218,8 @@ export async function loadSetupAnswers(
           name: goals.name,
           targetAmount: goals.targetAmount,
           targetDate: goals.targetDate,
+          currentAmount: goals.currentAmount,
+          isCommitted: goals.isCommitted,
           status: goals.status,
         })
         .from(goals)
@@ -300,6 +303,9 @@ export async function loadSetupAnswers(
         name: row.name,
         relationship: row.relationship,
         isDependent: row.isDependent,
+        // Sin decimales de relleno: «50» y no «50.00», que es como alguien
+        // escribe un porcentaje y como lo va a volver a ver.
+        expenseShare: row.expenseShare ? trimAmount(row.expenseShare) : '',
       })),
       accounts: accountRows.map((row) => ({
         id: row.id,
@@ -388,6 +394,8 @@ export async function loadSetupAnswers(
         name: row.name,
         targetAmount: trimAmount(row.targetAmount),
         targetDate: row.targetDate ?? '',
+        currentAmount: trimAmount(row.currentAmount),
+        isCommitted: row.isCommitted,
       })),
       holdings: holdingRows.map((row) => ({
         id: row.id,

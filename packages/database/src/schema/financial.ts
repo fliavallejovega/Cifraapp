@@ -459,6 +459,14 @@ export const goals = appSchema.table(
       .references(() => currencies.code),
     targetDate: date('target_date'),
     priority: integer('priority').notNull().default(100),
+    /**
+     * La casa dijo que esta va.
+     *
+     * Se declara, nunca se deduce de tener fecha: «algún día en diciembre» es
+     * una fecha, y adivinar el compromiso sería mover el dinero de un hogar
+     * porque alguien escribió un día en una casilla.
+     */
+    isCommitted: boolean('is_committed').notNull().default(false),
     scope: financialScope('scope').notNull().default('household'),
     status: goalStatus('status').notNull().default('active'),
     createdBy: uuid('created_by').references(() => profiles.id, { onDelete: 'set null' }),

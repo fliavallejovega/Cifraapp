@@ -84,6 +84,72 @@ export default async function ReportsPage({ params }: { params: Promise<{ locale
             </Card>
           </section>
 
+          {/*
+            En qué se gastó más y en qué menos que el mes pasado.
+
+            Va antes del estado de resultados porque responde antes: «$340 en
+            restaurantes» no significa nada suelto, y «ciento veinte más que el
+            mes pasado» es una conversación. Y lo que bajó se dice aparte porque
+            es la única mitad que se puede convertir en decisión — ese dinero
+            existe y la casa elige a dónde va.
+          */}
+          <Section title={t('shift.title')} detail={t('shift.detail')} className="mt-16">
+            {!view.shift.comparable ? (
+              <EmptyState title={t('shift.noneTitle')} body={t('shift.noneBody')} />
+            ) : view.shift.spentMore.length === 0 && view.shift.spentLess.length === 0 ? (
+              <EmptyState title={t('shift.sameTitle')} body={t('shift.sameBody')} />
+            ) : (
+              <div className="grid gap-6 sm:grid-cols-2">
+                {(
+                  [
+                    ['more', view.shift.spentMore, view.shift.added],
+                    ['less', view.shift.spentLess, view.shift.freed],
+                  ] as const
+                ).map(([side, lines, total]) =>
+                  lines.length === 0 ? null : (
+                    <Card key={side}>
+                      <h3 className="text-sm font-medium text-[color:var(--color-ink)]">
+                        {t(`shift.${side}Title`)}
+                      </h3>
+                      <div className="mt-3 flex flex-col gap-1.5 text-sm">
+                        {lines.map((line) => (
+                          <div key={line.key} className="flex items-baseline justify-between gap-4">
+                            <span className="min-w-0 truncate text-[color:var(--color-ink-secondary)]">
+                              {line.label}
+                              {line.isNew && ` · ${t('shift.isNew')}`}
+                            </span>
+                            <span className="tabular shrink-0 text-[color:var(--color-ink)]">
+                              {side === 'more' ? '+' : '−'}
+                              {money(line.change.abs())}
+                              {line.changeRate !== null && (
+                                <span className="ml-2 text-[color:var(--color-ink-tertiary)]">
+                                  {Math.abs(line.changeRate).toFixed(0)}%
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="mt-3 border-t border-[color:var(--color-rule)] pt-3 text-sm">
+                        <span className="text-[color:var(--color-ink-secondary)]">
+                          {t(`shift.${side}Total`)}
+                        </span>{' '}
+                        <span className="tabular font-medium text-[color:var(--color-ink)]">
+                          {money(total)}
+                        </span>
+                      </p>
+                      {side === 'less' && (
+                        <p className="mt-2 text-xs text-pretty text-[color:var(--color-ink-tertiary)]">
+                          {t('shift.freedNote')}
+                        </p>
+                      )}
+                    </Card>
+                  ),
+                )}
+              </div>
+            )}
+          </Section>
+
           <Section title={t('income.title')} detail={t('income.detail')} className="mt-16">
             {hasIncomeLines ? (
               <Card padding="none" className="overflow-hidden">

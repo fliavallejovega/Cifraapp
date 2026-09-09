@@ -99,6 +99,14 @@ const setupInput = z.object({
         name,
         relationship: z.enum(RELATIONSHIPS),
         isDependent: z.boolean(),
+        /**
+         * Qué parte de los gastos comunes lleva, en porcentaje.
+         *
+         * Ausente cuando la casa no lo acordó, y entonces la pantalla reparte
+         * en partes iguales. No se deduce de los sueldos: quien gana más suele
+         * poner más, pero en qué proporción lo deciden ellos.
+         */
+        expenseShare: z.coerce.number().min(0).max(100).optional(),
       }),
     )
     .max(20)
@@ -344,7 +352,22 @@ const setupInput = z.object({
     )
     .max(20),
   goals: z
-    .array(z.object({ id: rowId, name, targetAmount: amount, targetDate: z.string().optional() }))
+    .array(
+      z.object({
+        id: rowId,
+        name,
+        targetAmount: amount,
+        targetDate: z.string().optional(),
+        /** Lo que el hogar ya apartó para ella. */
+        currentAmount: optionalAmount,
+        /**
+         * La casa dijo que esta va. Se declara y no se deduce de tener fecha:
+         * «algún día en diciembre» es una fecha, y una meta confirmada se llena
+         * antes que todas las demás.
+         */
+        isCommitted: z.boolean().default(false),
+      }),
+    )
     .max(20),
 });
 
@@ -489,6 +512,13 @@ export async function completeSetup(
           displayName: person.name,
           relationship: person.relationship,
           isDependent: person.isDependent,
+          // Un dependiente no lleva parte de los gastos comunes: un niño no
+          // paga el alquiler, y la base rechaza lo contrario. Se normaliza aquí
+          // para que marcar dependiente a alguien no reviente el guardado.
+          expenseShare:
+            person.isDependent || person.expenseShare === undefined
+              ? null
+              : person.expenseShare.toFixed(2),
         };
         if (person.id) {
           await tx
@@ -1004,6 +1034,13 @@ export async function completeSetup(
           // The order they were written in is the order they matter in, until
           // the person says otherwise.
           priority: 100 + index,
+          // Lo ya apartado. Sin decirlo, cero: una meta empieza vacía y suponer
+          // un avance que nadie declaró sería regalarle dinero en el papel.
+          currentAmount: entry.currentAmount ?? '0',
+          // Confirmarla es una afirmación de la casa; el reparto la usa para
+          // ponerla por delante. Una meta que no está activa no puede estar
+          // confirmada y la base lo rechaza.
+          isCommitted: entry.isCommitted,
           ...(isPlainDateString(entry.targetDate) ? { targetDate: entry.targetDate } : {}),
         };
         if (entry.id) {

@@ -235,6 +235,39 @@ export default async function PlanPage({ params }: { params: Promise<{ locale: s
                   </Ledger>
                 </div>
               </Card>
+              {/*
+                Y a qué meta le sirve cada cobro.
+
+                El préstamo que devuelven el 10 de diciembre le sirve al viaje
+                del 20 y no al carro de marzo: llega a tiempo para el primero, y
+                para cuando llegue marzo ese dinero ya se gastó. Se dice al lado
+                y nunca sumado al saldo de la meta — el plan de arriba se hace
+                con lo que entró.
+              */}
+              {view.expectedByGoal.length > 0 && (
+                <div className="mt-6 flex flex-col gap-2">
+                  <h3 className="text-sm font-medium text-[color:var(--color-ink)]">
+                    {t('expected.towardGoals')}
+                  </h3>
+                  {view.expectedByGoal.map((entry) => (
+                    <div
+                      key={entry.goalId}
+                      className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 rounded-(--radius-md) border border-[color:var(--color-surface-border)] bg-[color:var(--color-surface)] px-4 py-3 text-sm"
+                    >
+                      <span className="min-w-0 flex-1 truncate font-medium text-[color:var(--color-ink)]">
+                        {entry.name}
+                      </span>
+                      <span className="text-[color:var(--color-ink-secondary)]">
+                        {entry.receipts.map((one) => one.name).join(' · ')}
+                      </span>
+                      <span className="tabular shrink-0 text-[color:var(--color-ink)]">
+                        {money(entry.total)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <p className="mt-3 max-w-[68ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]">
                 {t('expected.note')}
               </p>

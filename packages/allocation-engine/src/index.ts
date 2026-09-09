@@ -14,3 +14,11 @@ export {
   type TargetRef,
   type TierPolicy,
 } from './types.js';
+
+export {
+  goalWeight,
+  receiptsByGoal,
+  type DatedReceipt,
+  type ExpectedReceipt,
+  type GoalWithDate,
+} from './goals.js';

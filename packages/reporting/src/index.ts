@@ -48,3 +48,5 @@ export type {
   StatementLine,
   TransactionRow,
 } from './types.js';
+
+export { spendShift, freedLines, type CategoryShift, type SpendShift } from './spend-shift.js';

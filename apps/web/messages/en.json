@@ -540,7 +540,8 @@
         "from": "From",
         "when": "When",
         "amount": "Amount"
-      }
+      },
+      "towardGoals": "This helps these goals"
     }
   },
   "reports": {
@@ -617,7 +618,21 @@
       "incomeCsv": "Income and expenses (CSV)",
       "incomeJson": "Income and expenses (JSON)"
     },
-    "scopeNote": "Statements are computed on demand from your transactions and never stored as a copy. A correction to an old movement moves every later balance with it."
+    "scopeNote": "Statements are computed on demand from your transactions and never stored as a copy. A correction to an old movement moves every later balance with it.",
+    "shift": {
+      "title": "What changed in your spending",
+      "detail": "Against last month, category by category. Whatever moved most is at the top.",
+      "noneTitle": "Nothing to compare against yet",
+      "noneBody": "This is your first month with movements. Next month we can tell you what went up and what went down.",
+      "sameTitle": "Nothing moved",
+      "sameBody": "You spent the same in every category as last month.",
+      "moreTitle": "You spent more on",
+      "lessTitle": "You spent less on",
+      "moreTotal": "More, in total:",
+      "lessTotal": "Freed up, in total:",
+      "isNew": "new",
+      "freedNote": "That money exists. You can send it to a goal, to a debt, or leave it where it is — the plan does not move it on its own."
+    }
   },
   "accountant": {
     "title": "Accountant portal",
@@ -1136,7 +1151,11 @@
       "buffer": "Minimum buffer",
       "bufferHint": "The balance you never want to go below. The plan protects it before anything optional.",
       "empty": "No goals yet. Add the first one: without a goal the plan divides what is left over without knowing where it is going.",
-      "addFirst": "Add the first goal"
+      "addFirst": "Add the first goal",
+      "saved": "Already set aside",
+      "savedHint": "What you have already saved toward it. It comes off what is left.",
+      "committed": "It is confirmed",
+      "committedHint": "Tick this only if it is decided and happening on that date. The plan fills it before the ones that are still an idea."
     },
     "frequency": {
       "daily": "Every day",
@@ -1222,7 +1241,15 @@
     "edit": "Edit",
     "saveAndAdd": "Save and add another",
     "done": "Done",
-    "incomplete": "To save it, this is missing: {fields}. Fill it in or remove it."
+    "incomplete": "To save it, this is missing: {fields}. Fill it in or remove it.",
+    "split": {
+      "title": "How are shared expenses split?",
+      "detail": "What comes out of the common pot — payments with no salary assigned — is divided between you in whatever proportion you agree.",
+      "share": "{name}’s share",
+      "equal": "Split equally",
+      "mismatch": "The shares add up to {sum}%, not 100%. Adjust them before carrying on.",
+      "note": "We do not work this out for you. Whoever earns more usually puts in more, but in what proportion is the household’s agreement, not a sum for us to do."
+    }
   },
   "records": {
     "cancel": "Cancel",

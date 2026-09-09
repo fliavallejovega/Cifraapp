@@ -16,6 +16,7 @@ import {
   incomeStatement,
   netWorth,
   operatingStatement,
+  spendShift,
   type AccountRow,
   type CashFlowStatement,
   type HealthScore,
@@ -23,6 +24,7 @@ import {
   type NetWorthStatement,
   type OperatingStatement,
   type ReportPeriod,
+  type SpendShift,
   type TransactionRow,
 } from '@app/reporting';
 import { and, eq, gte, isNull, lte } from 'drizzle-orm';
@@ -56,6 +58,14 @@ export interface ReportView {
   readonly operating: OperatingStatement;
   readonly health: HealthScore;
   readonly transactions: readonly TransactionRow[];
+  /**
+   * En qué rubros se gastó más y en cuáles menos que el mes anterior.
+   *
+   * `comparable` es falso en el primer mes de un hogar: no gastó «menos que
+   * antes» porque no hay antes, y felicitarlo por no haber existido es la peor
+   * forma de estrenar la aplicación.
+   */
+  readonly shift: SpendShift;
   /** True when the household has nothing to report on yet. */
   readonly isEmpty: boolean;
 }
@@ -179,9 +189,28 @@ export async function loadReport(
     const opening = openingBalance(rows, window, currency);
     const income = incomeStatement(rows, window, currency);
 
+    /**
+     * El mes anterior, para poder comparar contra él.
+     *
+     * Las filas ya están: la consulta alcanza doce meses atrás para el saldo de
+     * apertura, así que la comparación no cuesta una segunda ida a la base.
+     * `hadPrevious` mira si existió movimiento antes de este mes y no si el mes
+     * anterior salió vacío — un mes sin gastos es un dato, y confundirlo con
+     * «no había mes» le diría a la casa que bajó en todo.
+     */
+    const previousWindow = monthPeriod(addMonths(window.start, -1));
+    const within = (row: TransactionRow, from: PlainDate, to: PlainDate) =>
+      row.date >= from && row.date <= to;
+
     return {
       currency,
       period: window,
+      shift: spendShift({
+        currency,
+        current: rows.filter((row) => within(row, window.start, window.end)),
+        previous: rows.filter((row) => within(row, previousWindow.start, previousWindow.end)),
+        hadPrevious: rows.some((row) => row.date < window.start),
+      }),
       netWorth: netWorth(accountViews, window.end, currency),
       income,
       cashFlow: cashFlow(rows, window, opening, currency),

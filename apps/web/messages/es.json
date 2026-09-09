@@ -540,7 +540,8 @@
         "from": "De quién",
         "when": "Cuándo",
         "amount": "Monto"
-      }
+      },
+      "towardGoals": "Le sirve a estas metas"
     }
   },
   "reports": {
@@ -617,7 +618,21 @@
       "incomeCsv": "Ingresos y gastos (CSV)",
       "incomeJson": "Ingresos y gastos (JSON)"
     },
-    "scopeNote": "Los estados se calculan al momento a partir de tus transacciones, nunca se guardan como copia. Una corrección en un movimiento antiguo mueve todos los saldos posteriores."
+    "scopeNote": "Los estados se calculan al momento a partir de tus transacciones, nunca se guardan como copia. Una corrección en un movimiento antiguo mueve todos los saldos posteriores.",
+    "shift": {
+      "title": "En qué cambió el gasto",
+      "detail": "Comparado con el mes anterior, rubro por rubro. Lo que más se movió, arriba.",
+      "noneTitle": "Todavía no hay con qué comparar",
+      "noneBody": "Este es tu primer mes con movimientos. El mes que viene podremos decirte en qué subiste y en qué bajaste.",
+      "sameTitle": "Nada se movió",
+      "sameBody": "Gastaste lo mismo en cada rubro que el mes pasado.",
+      "moreTitle": "Gastaste más en",
+      "lessTitle": "Gastaste menos en",
+      "moreTotal": "En total, de más:",
+      "lessTotal": "En total, liberado:",
+      "isNew": "nuevo",
+      "freedNote": "Ese dinero existe. Puedes mandarlo a una meta, a una deuda o dejarlo donde está — el plan no lo mueve solo."
+    }
   },
   "accountant": {
     "title": "Portal del contador",
@@ -1136,7 +1151,11 @@
       "buffer": "Colchón mínimo",
       "bufferHint": "El saldo por debajo del cual no quieres bajar nunca. El plan lo protege antes que cualquier gasto opcional.",
       "empty": "Ninguna meta cargada. Agrega la primera: sin una meta el plan reparte lo que sobra sin saber hacia dónde.",
-      "addFirst": "Agregar la primera meta"
+      "addFirst": "Agregar la primera meta",
+      "saved": "Ya apartado",
+      "savedHint": "Lo que ya tienes guardado para esta meta. Se descuenta de lo que falta.",
+      "committed": "Ya la confirmé",
+      "committedHint": "Marca esto solo si ya está decidida y va para esa fecha. El plan la llena antes que las que todavía son una idea."
     },
     "frequency": {
       "daily": "Todos los días",
@@ -1222,7 +1241,15 @@
     "edit": "Editar",
     "saveAndAdd": "Guardar y agregar otro",
     "done": "Listo",
-    "incomplete": "Para guardarlo falta: {fields}. Llénalo o quítalo."
+    "incomplete": "Para guardarlo falta: {fields}. Llénalo o quítalo.",
+    "split": {
+      "title": "¿Cómo se reparten los gastos comunes?",
+      "detail": "Lo que sale del bolsillo común —los pagos sin un sueldo asignado— se divide entre ustedes en la proporción que acuerden.",
+      "share": "Parte de {name}",
+      "equal": "Partes iguales",
+      "mismatch": "Las partes suman {sum}%, no 100%. Ajústalas antes de seguir.",
+      "note": "No lo calculamos por ustedes. Quien gana más suele poner más, pero en qué proporción es un acuerdo de la casa, no una cuenta que nos toque hacer."
+    }
   },
   "records": {
     "cancel": "Cancelar",
