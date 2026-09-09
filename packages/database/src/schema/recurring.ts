@@ -89,6 +89,21 @@ export const recurringSeries = appSchema.table(
     /** Calendar days a semimonthly series lands on; 31 means month end. */
     anchorDays: smallint('anchor_days').array(),
 
+    /**
+     * What arrives on each anchor day, when the two are not the same.
+     *
+     * A deduction taken once a month lands on one fortnight, not half on each,
+     * so a salary of $1,500 gross can arrive as $1,203.50 on the 15th and
+     * $1,053.50 on the 30th. Averaging those to $1,128.50 is right about the
+     * month and wrong about both halves — and the fortnight view exists for
+     * exactly the half that runs short.
+     *
+     * `expectedAmount` stays the average, because everything that does not
+     * reason by period reads it as the month's cash. Null means the same figure
+     * every time, which is the ordinary case.
+     */
+    anchorAmounts: numeric('anchor_amounts', { precision: 19, scale: 4, mode: 'string' }).array(),
+
     lastSeenOn: date('last_seen_on').notNull(),
     nextExpectedDate: date('next_expected_date').notNull(),
 
@@ -148,6 +163,17 @@ export const incomeDeductions = appSchema.table(
     currency: char('currency', { length: 3 }).notNull().default('USD'),
     /** The order they appear on the payslip, so the screen reads like the paper. */
     sortOrder: smallint('sort_order').notNull().default(0),
+
+    /**
+     * The days this deduction is actually taken on, when it is not every one.
+     *
+     * Social security, education tax and income tax come off every payment —
+     * they are a percentage of that period's salary and have no other shape.
+     * A co-op subscription or a loan instalment comes off once a month, which
+     * means one of the two fortnights. Null is «every payment», the ordinary
+     * case and what every row stored before this column existed meant.
+     */
+    appliesToAnchors: smallint('applies_to_anchors').array(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },

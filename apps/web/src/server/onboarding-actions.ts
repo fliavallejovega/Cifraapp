@@ -149,7 +149,24 @@ const setupInput = z.object({
          */
         grossAmount: optionalAmount,
         deductions: z
-          .array(z.object({ label: z.string().trim().min(1).max(80), amount }))
+          .array(
+            z.object({
+              label: z.string().trim().min(1).max(80),
+              amount,
+              /**
+               * Los días en que se descuenta, cuando no son todos.
+               *
+               * El seguro social sale de cada pago porque es un porcentaje del
+               * sueldo del período. La cuota de la cooperativa sale una vez al
+               * mes, y una vez al mes es **una** de las dos quincenas. Ausente
+               * significa «en todos los pagos», que es el caso corriente.
+               */
+              appliesToAnchors: z
+                .array(z.coerce.number().int().min(1).max(31))
+                .max(2)
+                .optional(),
+            }),
+          )
           .max(8)
           .default([]),
       }),
@@ -317,6 +334,23 @@ export type SetupInput = z.infer<typeof setupInput>;
  */
 const survivors = (ids: readonly string[]): string[] =>
   ids.length > 0 ? [...ids] : ['00000000-0000-0000-0000-000000000000'];
+
+/**
+ * Los días de un descuento, quedándose solo con los que el sueldo cobra.
+ *
+ * Un día que el ingreso no paga no puede descontar nada, y guardarlo sería
+ * guardar una fecha que ningún cálculo va a encontrar. Si no queda ninguno
+ * —porque el hogar cambió las quincenas después de elegir— vuelve a null, que
+ * significa «en todos los pagos» y es la lectura que no se inventa una fecha.
+ */
+function onlyOn(
+  chosen: readonly number[] | undefined,
+  anchors: readonly number[] | null,
+): number[] | null {
+  if (!anchors || !chosen || chosen.length === 0) return null;
+  const kept = [...new Set(chosen)].filter((day) => anchors.includes(day)).sort((a, b) => a - b);
+  return kept.length > 0 && kept.length < anchors.length ? kept : null;
+}
 
 export async function completeSetup(
   _previous: SetupResult,
@@ -512,17 +546,53 @@ export async function completeSetup(
             ? [...new Set(entry.anchorDays)].sort((a, b) => a - b)
             : null;
 
-        // Lo que llega es lo que el plan usa, siempre. Cuando el hogar declaró
-        // el bruto y las líneas, lo que llega es la resta — guardar el bruto en
-        // su lugar haría que cada quincena prometiera dinero que nunca entró.
-        const deducted = entry.deductions.reduce(
-          (total, line) => total.subtract(Money.fromDecimalString(line.amount, currency)),
-          Money.fromDecimalString(entry.grossAmount ?? entry.amount, currency),
-        );
-        const arrives =
-          entry.grossAmount !== undefined && entry.deductions.length > 0
-            ? (deducted.isNegative() ? Money.zero(currency) : deducted).toDecimalString()
-            : entry.amount;
+        /**
+         * Lo que llega, que ya no es siempre un solo número.
+         *
+         * Cuando el hogar declaró el bruto y las líneas, lo que llega es la
+         * resta — guardar el bruto en su lugar haría que cada quincena
+         * prometiera dinero que nunca entró. Y cuando alguna de esas líneas
+         * sale de una sola quincena, la resta da distinto en cada una: un
+         * préstamo que se paga el día 30 no se paga a medias el 15.
+         *
+         * `expectedAmount` guarda el promedio de las dos, que es lo que
+         * mantiene correcto el total del mes en cada vista que no razona por
+         * período. La verdad de cada quincena va en `anchorAmounts`, y el plan
+         * la lee de ahí.
+         */
+        const gross = Money.fromDecimalString(entry.grossAmount ?? entry.amount, currency);
+        const declared = entry.grossAmount !== undefined && entry.deductions.length > 0;
+
+        const netOn = (day: number | null): Money => {
+          const taken = entry.deductions.reduce((total, line) => {
+            // La misma normalización que se guarda, para que el neto guardado y
+            // las líneas guardadas no puedan contar historias distintas.
+            const only = onlyOn(line.appliesToAnchors, anchors);
+            // Sin días declarados, el descuento sale de todos los pagos. Con
+            // ellos, solo del que nombran: preguntar y luego restarlo igual en
+            // los dos habría sido preguntar por deporte.
+            const applies = only === null || (day !== null && only.includes(day));
+            return applies ? total.subtract(Money.fromDecimalString(line.amount, currency)) : total;
+          }, gross);
+          return taken.isNegative() ? Money.zero(currency) : taken;
+        };
+
+        const perAnchor = declared && anchors ? anchors.map((day) => netOn(day)) : null;
+        // Desiguales o no vale la pena guardarlas: dos cifras idénticas en
+        // `anchorAmounts` no dicen nada que `expectedAmount` no dijera ya, y
+        // dejarlas ahí es dejar dos verdades esperando a divergir.
+        const first = perAnchor?.[0];
+        const uneven =
+          perAnchor && first && perAnchor.some((one) => !one.equals(first))
+            ? perAnchor.map((one) => one.toDecimalString())
+            : null;
+
+        const arrives = declared
+          ? (perAnchor
+              ? Money.sum(perAnchor, currency).divide(perAnchor.length)
+              : netOn(null)
+            ).toDecimalString()
+          : entry.amount;
 
         const values = {
           name: entry.name,
@@ -533,6 +603,7 @@ export async function completeSetup(
           // «quincenal» to «mensual» on a second pass does not leave two
           // anchor days behind to be projected onto a cadence that has none.
           anchorDays: anchors,
+          anchorAmounts: uneven,
           amountVariation: entry.isApproximate ? '0.1500' : '0',
         };
         if (entry.id) {
@@ -589,6 +660,10 @@ export async function completeSetup(
                 amount: line.amount,
                 currency,
                 sortOrder: order,
+                // Solo los días que de verdad son de este ingreso. Un día que
+                // el sueldo no cobra no puede descontar nada, y guardarlo sería
+                // guardar una fecha que ningún cálculo va a encontrar.
+                appliesToAnchors: onlyOn(line.appliesToAnchors, anchors),
               })),
             );
           }

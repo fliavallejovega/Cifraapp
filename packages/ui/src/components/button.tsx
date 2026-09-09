@@ -32,8 +32,14 @@ const VARIANTS: Record<ButtonVariant, string> = {
     'bg-[color:var(--color-panel)] text-[color:var(--color-panel-ink)] shadow-(--shadow-card) hover:bg-[color:var(--color-panel-raised)] active:bg-[color:var(--color-panel)]',
   secondary:
     'border border-[color:var(--color-surface-border)] bg-[color:var(--color-surface)] text-[color:var(--color-ink)] shadow-(--shadow-card) hover:bg-[color:var(--color-ground-sunk)]',
+  /* La acción menor sigue siendo menor, pero se ve que es una acción.
+     Sin contorno era tipografía: «Quitar» y «Cómo se calcula» se leían como
+     texto suelto y nadie los pulsaba. Un filete de un píxel y ningún relleno
+     bastan para que la mano sepa que hay algo ahí, y mantienen la jerarquía
+     intacta — la primaria es tinta sólida, la secundaria tiene fondo y sombra,
+     y esta no tiene ninguno de los dos. */
   ghost:
-    'text-[color:var(--color-ink-secondary)] hover:bg-[color:var(--color-ground-sunk)] hover:text-[color:var(--color-ink)]',
+    'border border-[color:var(--color-rule)] text-[color:var(--color-ink-secondary)] hover:border-[color:var(--color-rule-strong)] hover:bg-[color:var(--color-ground-sunk)] hover:text-[color:var(--color-ink)]',
   destructive:
     'bg-[color:var(--color-negative)] text-[color:var(--color-ink-inverse)] shadow-(--shadow-card) hover:opacity-90 active:opacity-84',
 };

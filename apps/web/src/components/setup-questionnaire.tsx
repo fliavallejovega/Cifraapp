@@ -81,7 +81,7 @@ interface IncomeRow {
    * ley dice que deberían ser.
    */
   grossAmount?: string | undefined;
-  deductions?: readonly { label: string; amount: string }[] | undefined;
+  deductions?: readonly Deduction[] | undefined;
   /**
    * Qué significa el monto de arriba: lo que llega, o el bruto del contrato.
    *
@@ -92,6 +92,22 @@ interface IncomeRow {
    */
   amountIsGross?: boolean | undefined;
 }
+/**
+ * Una línea del recibo: qué te quitan, cuánto, y en qué pagos.
+ *
+ * `appliesToAnchors` vacío significa «en todos», que es el caso corriente y lo
+ * único que existía antes: el seguro social sale de cada pago porque es un
+ * porcentaje del sueldo del período. La cuota de la cooperativa sale una vez al
+ * mes, y una vez al mes es una de las dos quincenas — restarla a medias en cada
+ * una da bien el mes y mal las dos mitades, que es justo lo que la vista por
+ * quincena existe para no hacer.
+ */
+interface Deduction {
+  label: string;
+  amount: string;
+  appliesToAnchors?: readonly number[] | undefined;
+}
+
 interface AccountRow {
   id?: string;
   name: string;
@@ -1782,13 +1798,65 @@ function Check({
 function arrivingAmount(row: {
   amount: string;
   amountIsGross?: boolean | undefined;
-  deductions?: readonly { label: string; amount: string }[] | undefined;
+  frequency?: Frequency | undefined;
+  anchorFirst?: string | undefined;
+  anchorSecond?: string | undefined;
+  deductions?: readonly Deduction[] | undefined;
 }): string {
-  const asNumber = (value: string) => Number((value ?? '').replace(/[^\d.]/g, '')) || 0;
   const lines = row.deductions ?? [];
   if (row.amountIsGross !== true || lines.length === 0) return row.amount;
-  const taken = lines.reduce((total, line) => total + asNumber(line.amount), 0);
-  return Math.max(asNumber(row.amount) - taken, 0).toFixed(2);
+
+  const perAnchor = arrivingPerAnchor(row);
+  if (!perAnchor) return Math.max(asAmount(row.amount) - takenOn(lines, null), 0).toFixed(2);
+
+  // El promedio de las dos, que es lo que mantiene correcto el total del mes en
+  // cada vista que no razona por quincena. Lo que trae cada una vive aparte.
+  return (perAnchor.reduce((total, one) => total + one, 0) / perAnchor.length).toFixed(2);
+}
+
+const asAmount = (value: string) => Number((value ?? '').replace(/[^\d.]/g, '')) || 0;
+
+/** Lo que se descuenta en el día `day`; `null` pregunta por un pago cualquiera. */
+function takenOn(lines: readonly Deduction[], day: number | null): number {
+  return lines.reduce((total, line) => {
+    const only = line.appliesToAnchors ?? [];
+    const applies = only.length === 0 || (day !== null && only.includes(day));
+    return applies ? total + asAmount(line.amount) : total;
+  }, 0);
+}
+
+/** Los dos días que cobra un sueldo quincenal, cuando los declaró enteros. */
+function anchorsOf(row: {
+  frequency?: Frequency | undefined;
+  anchorFirst?: string | undefined;
+  anchorSecond?: string | undefined;
+}): number[] {
+  if (row.frequency !== 'semimonthly') return [];
+  const days = [row.anchorFirst, row.anchorSecond]
+    .map((value) => Number((value ?? '').replace(/[^\d]/g, '')))
+    .filter((day) => day >= 1 && day <= 31);
+  return days.length === 2 ? days : [];
+}
+
+/**
+ * Lo que llega en cada quincena, o `null` cuando no hay dos que distinguir.
+ *
+ * Null no es «cero quincenas»: es «esta pregunta no aplica», y el que llama
+ * vuelve a la resta de siempre. Un sueldo mensual tiene un pago y un sueldo
+ * quincenal sin los dos días declarados no tiene contra qué emparejar nada.
+ */
+function arrivingPerAnchor(row: {
+  amount: string;
+  frequency?: Frequency | undefined;
+  anchorFirst?: string | undefined;
+  anchorSecond?: string | undefined;
+  deductions?: readonly Deduction[] | undefined;
+}): number[] | null {
+  const anchors = anchorsOf(row);
+  if (anchors.length !== 2) return null;
+  const lines = row.deductions ?? [];
+  const gross = asAmount(row.amount);
+  return anchors.map((day) => Math.max(gross - takenOn(lines, day), 0));
 }
 
 /**
@@ -1838,10 +1906,28 @@ function IncomeDeductions({
   const taken = lines.reduce((total, line) => total + asNumber(line.amount), 0);
   const arrives = Math.max(gross - taken, 0);
 
+  /**
+   * Los días que este sueldo cobra, cuando cobra dos veces al mes.
+   *
+   * Solo aquí tiene sentido preguntar en qué quincena sale un descuento: un
+   * sueldo mensual tiene un pago y no hay nada que elegir. Y los días son los
+   * que la persona escribió arriba, no «primera» y «segunda» — el 5 y el 20 son
+   * un calendario distinto del 15 y el 30, y quien lee su recibo reconoce el
+   * número, no el ordinal.
+   */
+  const anchors = anchorsOf(row);
+  const byFortnight = anchors.length === 2;
+  const perAnchor = arrivingPerAnchor(row);
+  const uneven = perAnchor?.some((one) => one !== perAnchor[0]) === true;
+  // El promedio, que es lo que se guarda como la cifra plana del ingreso.
+  const average = perAnchor
+    ? perAnchor.reduce((total, one) => total + one, 0) / perAnchor.length
+    : arrives;
+
   const money = (value: number) =>
     `${currencySymbol}${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-  const setLines = (next: readonly { label: string; amount: string }[]) => {
+  const setLines = (next: readonly Deduction[]) => {
     onChange({ deductions: next });
   };
 
@@ -1895,6 +1981,30 @@ function IncomeDeductions({
             >
               {copy('remove')}
             </Button>
+
+            {/*
+              En qué quincena sale, y solo cuando hay dos.
+
+              Un sueldo mensual tiene un pago y no hay nada que elegir; ofrecer
+              la pregunta ahí sería ofrecer una decisión sin consecuencia. El
+              default son las dos, porque las tres líneas que casi todo el mundo
+              tiene —seguro social, educativo y renta— salen de cada pago.
+            */}
+            {byFortnight && (
+              <FortnightPicker
+                anchors={anchors}
+                chosen={line.appliesToAnchors ?? []}
+                copy={copy}
+                label={line.label}
+                onChange={(next) => {
+                  setLines(
+                    lines.map((one, position) =>
+                      position === at ? { ...one, appliesToAnchors: next } : one,
+                    ),
+                  );
+                }}
+              />
+            )}
           </div>
         ))}
 
@@ -1988,10 +2098,34 @@ function IncomeDeductions({
               <span>{copy('income.deductedLine').replace('{count}', String(lines.length))}</span>
               <span className="tabular">−{money(taken)}</span>
             </div>
-            <div className="mt-1 flex items-baseline justify-between gap-4 border-t border-[color:var(--color-rule)] pt-2 text-base text-[color:var(--color-ink)]">
-              <span className="font-medium">{copy('income.netLine')}</span>
-              <span className="tabular font-medium">{money(arrives)}</span>
-            </div>
+            {/*
+              Uno o dos netos, según lo que de verdad pase.
+
+              Cuando todos los descuentos salen de los dos pagos, las dos
+              quincenas traen lo mismo y un solo número lo dice todo. Cuando no,
+              enseñar el promedio sería enseñar una cifra que ningún día del mes
+              llega a la cuenta.
+            */}
+            {uneven ? (
+              <div className="mt-1 border-t border-[color:var(--color-rule)] pt-2 text-base text-[color:var(--color-ink)]">
+                {anchors.map((day, at) => (
+                  <div key={day} className="flex items-baseline justify-between gap-4 py-1">
+                    <span className="font-medium">
+                      {copy('income.netOnDay').replace('{day}', String(day))}
+                    </span>
+                    <span className="tabular font-medium">{money(perAnchor?.[at] ?? arrives)}</span>
+                  </div>
+                ))}
+                <p className="mt-2 text-xs text-pretty text-[color:var(--color-ink-tertiary)]">
+                  {copy('income.netUnevenNote').replace('{amount}', money(average))}
+                </p>
+              </div>
+            ) : (
+              <div className="mt-1 flex items-baseline justify-between gap-4 border-t border-[color:var(--color-rule)] pt-2 text-base text-[color:var(--color-ink)]">
+                <span className="font-medium">{copy('income.netLine')}</span>
+                <span className="tabular font-medium">{money(arrives)}</span>
+              </div>
+            )}
             <p className="mt-3 text-xs text-[color:var(--color-ink-tertiary)]">
               {copy('income.estimateNote')}
             </p>
@@ -2073,6 +2207,93 @@ function AmountMeaning({
   );
 }
 
+/**
+ * En qué quincenas sale un descuento, con los días que la persona escribió.
+ *
+ * Dos botones y no un menú: son dos opciones, se ven las dos a la vez, y el
+ * estado se lee sin abrir nada. Encendidos los dos significa «en los dos
+ * pagos», que es lo corriente y el default; apagar uno deja el descuento en el
+ * otro. El último encendido no se puede apagar — un descuento que no sale
+ * ningún día no es un descuento, es una fila que habría que borrar, y para eso
+ * está «Quitar» al lado.
+ *
+ * Los botones dicen el día del mes y no «primera» y «segunda» a propósito: el 5
+ * y el 20 son un calendario distinto del 15 y el 30, y quien está mirando su
+ * recibo reconoce el número, no el ordinal.
+ */
+function FortnightPicker({
+  anchors,
+  chosen,
+  copy,
+  label,
+  onChange,
+}: {
+  readonly anchors: readonly number[];
+  readonly chosen: readonly number[];
+  readonly copy: (key: string) => string;
+  readonly label: string;
+  readonly onChange: (next: readonly number[]) => void;
+}) {
+  // Vacío significa «en todos», así que para pintar los botones es lo mismo que
+  // tenerlos todos encendidos. Una sola forma de leerlo evita que el botón diga
+  // una cosa y la cuenta haga otra.
+  const active = chosen.length === 0 ? anchors : chosen;
+
+  return (
+    <div className="sm:col-span-3">
+      <p className="text-sm font-medium text-[color:var(--color-ink)]">
+        {copy('income.deductionWhen')}
+      </p>
+      <div
+        role="group"
+        aria-label={`${copy('income.deductionWhen')} — ${label.trim() || copy('income.deductionLabel')}`}
+        className="mt-2 flex flex-wrap gap-2"
+      >
+        {anchors.map((day) => {
+          const on = active.includes(day);
+          const only = on && active.length === 1;
+          return (
+            <Button
+              key={day}
+              type="button"
+              size="sm"
+              variant={on ? 'primary' : 'secondary'}
+              aria-pressed={on}
+              // `aria-disabled` y no `disabled`: el último encendido no se puede
+              // apagar, pero sigue estando encendido, y atenuarlo al 45% lo
+              // haría parecer apagado y roto a la vez.
+              aria-disabled={only || undefined}
+              className="min-w-24"
+              onClick={() => {
+                if (only) return;
+                const next = on ? active.filter((one) => one !== day) : [...active, day].sort();
+                // Todos encendidos vuelve a ser «en todos los pagos», que es el
+                // mismo hecho escrito de la forma más corta.
+                onChange(next.length === anchors.length ? [] : next);
+              }}
+            >
+              {copy('income.deductionWhenDay').replace('{day}', String(day))}
+            </Button>
+          );
+        })}
+      </div>
+      {/*
+        La explicación solo donde hace falta.
+
+        Con los dos encendidos —el caso corriente y el de casi todas las líneas—
+        el estado ya lo dice todo, y repetir la misma frase debajo de cada
+        descuento es ruido que empuja el resumen fuera de la pantalla. Cuando
+        alguien apaga uno, la consecuencia sí merece una línea.
+      */}
+      {active.length < anchors.length && (
+        <p className="mt-1.5 text-xs text-pretty text-[color:var(--color-ink-secondary)]">
+          {copy('income.deductionWhenOneHint')}
+        </p>
+      )}
+    </div>
+  );
+}
+
 /** Lo que la leyenda necesita saber, tal como sale del conjunto de reglas. */
 export interface PayrollLegendData {
   readonly socialRate: string;
@@ -2127,12 +2348,31 @@ function PayrollLegend({
         type="button"
         variant="ghost"
         size="sm"
-        className="-ml-3"
         aria-expanded={open}
         onClick={() => {
           setOpen(!open);
         }}
       >
+        {/*
+          Un desplegable dice dos cosas —que se pulsa, y que hay algo detrás— y
+          el contorno solo dice la primera. La punta que gira dice la segunda, y
+          de paso dice en cuál de los dos estados está sin tener que leer.
+        */}
+        <svg
+          aria-hidden
+          viewBox="0 0 12 12"
+          className={[
+            'h-3 w-3 transition-transform duration-(--duration-quick) ease-(--ease-settle)',
+            open ? 'rotate-90' : '',
+          ].join(' ')}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.75"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M4.5 2.5 8 6l-3.5 3.5" />
+        </svg>
         {open ? copy('income.legendHide') : copy('income.legendShow')}
       </Button>
 

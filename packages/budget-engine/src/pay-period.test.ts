@@ -60,6 +60,50 @@ describe('deriving the periods a household is paid in', () => {
     expect(periods[2]?.start).toBe('2026-09-30');
   });
 
+  it('trae lo que trae cada quincena, no el promedio de las dos', () => {
+    // Un préstamo que se descuenta el día 30 no se descuenta a medias el 15.
+    // El sueldo llega como 1.203,50 y 1.053,50 —promedio 1.128,50— y usar el
+    // promedio en los dos días daría bien el mes y mal las dos mitades, que es
+    // justo lo que esta vista existe para no hacer.
+    const periods = buildPayPeriods({
+      currency: 'USD',
+      today: on('2026-09-14'),
+      opening: usd('0'),
+      incomes: [
+        salary({
+          amount: usd('1128.50'),
+          anchorDays: [15, 30],
+          anchorAmounts: [usd('1203.50'), usd('1053.50')],
+        }),
+      ],
+      claims: [],
+      horizonDays: 30,
+    });
+
+    const income = periods.map((period) => period.income.toDecimalString());
+    expect(income).toContain('1203.5000');
+    expect(income).toContain('1053.5000');
+    expect(income).not.toContain('1128.5000');
+  });
+
+  it('sigue usando el monto plano cuando las quincenas traen lo mismo', () => {
+    // Sin `anchorAmounts` nada cambia, que es el caso corriente y el de todo lo
+    // que ya estaba guardado antes de que la columna existiera.
+    const periods = buildPayPeriods({
+      currency: 'USD',
+      today: on('2026-09-14'),
+      opening: usd('0'),
+      incomes: [salary({ amount: usd('1000.00'), anchorDays: [15, 30] })],
+      claims: [],
+      horizonDays: 30,
+    });
+
+    expect(periods.filter((period) => period.income.isPositive())).not.toHaveLength(0);
+    for (const period of periods) {
+      if (period.income.isPositive()) expect(period.income.toDecimalString()).toBe('1000.0000');
+    }
+  });
+
   it('uses the days the household stated, not the days we would have guessed', () => {
     // Paid on the 5th and the 20th. A product that assumes «twice a month means
     // the 15th and the 30th» puts the rent in the wrong fortnight, which is the

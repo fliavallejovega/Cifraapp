@@ -51,6 +51,17 @@ export interface IncomeStream {
    * «twice a month» loses the only detail that decides which fortnight is tight.
    */
   readonly anchorDays?: readonly number[] | undefined;
+  /**
+   * What lands on each of those days, when the two are not the same.
+   *
+   * A deduction taken once a month comes off one fortnight, not half off each,
+   * so the same salary can arrive as $1,203.50 on the 15th and $1,053.50 on the
+   * 30th. Using the average for both would be right about the month and wrong
+   * about both halves — and the half that runs short is the whole reason this
+   * type exists. In the same order as `anchorDays`; absent means the same
+   * figure every time.
+   */
+  readonly anchorAmounts?: readonly Money[] | undefined;
   /** A day this income is known to land on. The walk forward starts here. */
   readonly nextPayday: PlainDate;
 }
@@ -194,15 +205,31 @@ export function buildPayPeriods(input: PayPeriodInput): readonly PayPeriod[] {
   // does live in the gaps between four paydays a month.
   const landings = new Map<PlainDate, { amount: Money; from: string[] }>();
   for (const income of input.incomes) {
+    /**
+     * Lo que trae este pago, que no es siempre la misma cifra.
+     *
+     * El monto se empareja con el día del mes en el que cae, igual que ya se
+     * hace con lo que se debe. Sin `anchorAmounts` —el caso corriente— sigue
+     * siendo el mismo número todas las veces.
+     */
+    const amountOn = (day: PlainDate): Money => {
+      const perAnchor = income.anchorAmounts;
+      const days = income.anchorDays;
+      if (!perAnchor || !days) return income.amount;
+      const at = days.indexOf(Number(day.slice(8, 10)));
+      return at >= 0 ? (perAnchor[at] ?? income.amount) : income.amount;
+    };
+
     for (const day of paydaysWithin(income, today, horizon)) {
+      const arriving = amountOn(day);
       const existing = landings.get(day);
       if (existing) {
         landings.set(day, {
-          amount: existing.amount.add(income.amount),
+          amount: existing.amount.add(arriving),
           from: [...existing.from, income.label],
         });
       } else {
-        landings.set(day, { amount: income.amount, from: [income.label] });
+        landings.set(day, { amount: arriving, from: [income.label] });
       }
     }
   }

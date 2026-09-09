@@ -275,7 +275,7 @@ asserting neither.
 
 The consequence to keep in view: spreading the withholding across thirteen
 salaries means twelve ordinary payments carry twelve thirteenths of the year's
-tax. The missing thirteenth comes off the *décimo tercer mes*, which this
+tax. The missing thirteenth comes off the _décimo tercer mes_, which this
 product does not yet model as income of its own.
 
 ---

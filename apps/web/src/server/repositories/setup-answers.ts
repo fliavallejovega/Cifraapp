@@ -234,6 +234,7 @@ export async function loadSetupAnswers(
           seriesId: incomeDeductions.seriesId,
           label: incomeDeductions.label,
           amount: incomeDeductions.amount,
+          appliesToAnchors: incomeDeductions.appliesToAnchors,
         })
         .from(incomeDeductions)
         .where(eq(incomeDeductions.householdId, householdId))
@@ -271,7 +272,14 @@ export async function loadSetupAnswers(
         grossAmount: row.grossAmount ? trimAmount(row.grossAmount) : '',
         deductions: deductionRows
           .filter((line) => line.seriesId === row.id)
-          .map((line) => ({ label: line.label, amount: trimAmount(line.amount) })),
+          .map((line) => ({
+            label: line.label,
+            amount: trimAmount(line.amount),
+            // Nulo es «en todos los pagos». Se devuelve como lista vacía porque
+            // es lo que el formulario entiende, y las dos cosas significan lo
+            // mismo: ningún día en particular.
+            appliesToAnchors: line.appliesToAnchors ?? [],
+          })),
       })),
       commitments: commitmentRows.map((row) => ({
         id: row.id,

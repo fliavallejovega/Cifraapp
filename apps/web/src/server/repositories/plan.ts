@@ -198,6 +198,7 @@ export async function loadPlan(session: Session, householdId: string): Promise<P
             amount: recurringSeries.expectedAmount,
             frequency: recurringSeries.frequency,
             anchorDays: recurringSeries.anchorDays,
+            anchorAmounts: recurringSeries.anchorAmounts,
             nextExpectedDate: recurringSeries.nextExpectedDate,
           })
           .from(recurringSeries)
@@ -299,6 +300,15 @@ export async function loadPlan(session: Session, householdId: string): Promise<P
         amount: Money.fromDecimalString(row.amount, currency),
         frequency: row.frequency,
         anchorDays: row.anchorDays ?? undefined,
+        // Lo que trae cada quincena cuando no traen lo mismo. La base ya
+        // garantiza que la lista tenga tantos montos como días.
+        ...(row.anchorAmounts
+          ? {
+              anchorAmounts: row.anchorAmounts.map((one) =>
+                Money.fromDecimalString(one, currency),
+              ),
+            }
+          : {}),
         nextPayday: row.nextExpectedDate as PlainDate,
       })),
       claims: periodClaims,
