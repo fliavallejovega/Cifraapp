@@ -69,6 +69,8 @@ export interface AccountView {
   readonly name: string;
   readonly type: AccountType;
   readonly maskedNumber: string | null;
+  /** Whose it is, so totals can be read per person. Null is the household's. */
+  readonly personId: string | null;
   readonly balance: Money;
   readonly status: 'active' | 'closed' | 'archived';
   readonly isLiability: boolean;
@@ -97,6 +99,7 @@ export async function loadAccounts(
         name: accounts.name,
         type: accounts.accountType,
         maskedNumber: accounts.maskedNumber,
+        personId: accounts.personId,
         balance: accounts.currentBalance,
         status: accounts.status,
         // Counted in the same query rather than per row: a household with
@@ -115,6 +118,7 @@ export async function loadAccounts(
       name: row.name,
       type: row.type,
       maskedNumber: row.maskedNumber,
+      personId: row.personId,
       balance: Money.fromDecimalString(row.balance, currency),
       status: row.status,
       isLiability: LIABILITY_SET.has(row.type),

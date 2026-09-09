@@ -900,7 +900,10 @@
       "maskHint": "Opcional, para reconocerla. Nunca guardamos el número completo.",
       "submitCreate": "Agregar esta cuenta",
       "submitUpdate": "Guardar los cambios",
-      "cancel": "Cancelar"
+      "cancel": "Cancelar",
+      "person": "¿De quién es?",
+      "personHint": "Para poder ver los totales de cada quien, y para distinguir «Visa Davo» de «Visa Blei» al importar.",
+      "personHousehold": "Del hogar"
     },
     "groups": {
       "liquid": "Donde tienes dinero",
@@ -1579,7 +1582,9 @@
     "detail": "Lo que entra, cada cuánto y cuándo cae el próximo. De aquí sale todo lo que el plan puede repartir.",
     "summary": {
       "monthly": "Al mes, en promedio",
-      "monthlyDetail": "Sumando cada ingreso llevado a su equivalente mensual."
+      "monthlyDetail": "Sumando cada ingreso llevado a su equivalente mensual.",
+      "expected": "Por cobrar",
+      "expectedDetail": "Lo que te deben y no ha entrado. No se suma a lo mensual ni a lo disponible."
     },
     "list": {
       "title": "Ingresos registrados",
@@ -1619,7 +1624,61 @@
       "declared": "Lo declaraste tú",
       "detected": "Lo detectamos"
     },
-    "nextOn": "Próximo: {date}"
+    "nextOn": "Próximo: {date}",
+    "expected": {
+      "title": "Por cobrar",
+      "detail": "Lo que te deben y todavía no entra. Arma el calendario del mes, pero nunca suma a lo disponible.",
+      "add": "Agregar algo por cobrar",
+      "addTitle": "Nuevo cobro esperado",
+      "submitCreate": "Agregar este cobro",
+      "submitUpdate": "Guardar los cambios",
+      "emptyTitle": "No tienes nada registrado por cobrar.",
+      "emptyBody": "Si facturas o vendes, esto es la otra mitad de tus entradas. Una factura, un préstamo que te devuelven, el décimo tercer mes.",
+      "removeConfirm": "Deja de aparecer en el calendario del plan.",
+      "note": "Nada de esto entra en «disponible para gastar», ni siquiera lo confirmado. Un cobro tratado como cierto es la cifra optimista que arruina un presupuesto: el cliente paga tarde y la casa ya gastó contra eso. Lo que sí hace es decirte qué tiene que entrar, y para cuándo.",
+      "onDate": "El {date}",
+      "between": "Entre el {from} y el {to}",
+      "noDate": "Sin fecha estimada",
+      "collected": "Cobrado",
+      "confidences": {
+        "confirmed": "Facturado",
+        "likely": "Acordado",
+        "estimated": "En conversación"
+      },
+      "form": {
+        "name": "¿Qué es?",
+        "source": "¿Quién te lo debe?",
+        "sourceHint": "El nombre que aparecería en el concepto del banco. Sirve para reconocerlo solo cuando importes.",
+        "amount": "¿Cuánto?",
+        "confidence": "¿Qué tan seguro es?",
+        "confidenceHint": "Facturado y aceptado, acordado de palabra, o todavía en conversación. Ninguno lo vuelve disponible para gastar.",
+        "from": "Desde cuándo lo esperas",
+        "fromHint": "Si sabes el día exacto, pon el mismo en las dos.",
+        "to": "Hasta cuándo",
+        "toHint": "Déjalo vacío si es un día exacto.",
+        "notes": "Notas"
+      }
+    },
+    "reconcile": {
+      "title": "Conciliar con lo que entró",
+      "detail": "Cuando importas un estado de cuenta, buscamos cuál de tus cobros pagó cada depósito.",
+      "found": "Esto parece que ya te lo pagaron",
+      "foundDetail": "Cada propuesta trae por qué. Revísala y confirma: marcarlo cobrado por error te haría dejar de perseguir plata que todavía te deben.",
+      "confirm": "Sí, esto lo pagó",
+      "emptyTitle": "Nada por conciliar ahora mismo.",
+      "emptyBody": "Cuando importes un estado de cuenta con depósitos que cuadren con algo por cobrar, aparecen aquí para que los confirmes.",
+      "reasons": {
+        "amountExact": "Monto exacto",
+        "amountClose": "Monto casi igual",
+        "windowInside": "Dentro de la ventana",
+        "windowNear": "Cerca de la ventana",
+        "noWindow": "Sin fecha esperada",
+        "nameMatch": "El concepto lo nombra"
+      },
+      "errors": {
+        "alreadyMatched": "Ese movimiento ya está asignado a otro cobro."
+      }
+    }
   },
   "debts": {
     "title": "Tus deudas",

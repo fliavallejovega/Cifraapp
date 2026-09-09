@@ -42,6 +42,16 @@ const accountInput = z.object({
   accountType: z.enum(ACCOUNT_TYPES),
   balance: amountSchema,
   maskedNumber: z.string().trim().max(4).regex(/^\d*$/).optional(),
+  /**
+   * Whose account this is.
+   *
+   * Empty means the household's, which is a real answer and not a missing one.
+   * Without it a house of two people holding six accounts between them can see
+   * one total and never each person's, which is the number they actually argue
+   * about — and it is also what tells «Visa Davo» from «Visa Blei» when a
+   * statement is imported.
+   */
+  personId: z.union([z.uuid(), z.literal('')]).optional(),
 });
 
 function parse(formData: FormData) {
@@ -50,6 +60,7 @@ function parse(formData: FormData) {
     accountType: formData.get('accountType'),
     balance: normalizeTypedAmount(formData.get('balance')),
     maskedNumber: normalizeMask(formData.get('maskedNumber')),
+    personId: formData.get('personId') ?? '',
   });
 }
 
@@ -79,6 +90,8 @@ export async function createAccount(
   if (!parsed.success) return { error: messageFor(parsed.error.issues[0]?.path[0]) };
 
   const householdId = session.activeHouseholdId;
+  // An empty choice means the household's, which is an answer and not a blank.
+  const owner = parsed.data.personId === '' ? null : (parsed.data.personId ?? null);
   const currency =
     session.households.find((household) => household.id === householdId)?.baseCurrency.trim() ??
     'USD';
@@ -97,6 +110,10 @@ export async function createAccount(
         ...(parsed.data.maskedNumber ? { maskedNumber: parsed.data.maskedNumber } : {}),
         status: 'active',
         source: 'user',
+        personId: owner,
+        // Personal when it belongs to somebody, the household's otherwise. The
+        // two travel together so a screen never has to guess one from the other.
+        scope: owner === null ? 'household' : 'personal',
       })
       .returning({ id: accounts.id }),
   );
@@ -121,6 +138,8 @@ export async function updateAccount(
   if (!parsed.success) return { error: messageFor(parsed.error.issues[0]?.path[0]) };
 
   const householdId = session.activeHouseholdId;
+  // An empty choice means the household's, which is an answer and not a blank.
+  const owner = parsed.data.personId === '' ? null : (parsed.data.personId ?? null);
 
   const [updated] = await queryAsUser(session, (tx) =>
     tx
@@ -130,6 +149,8 @@ export async function updateAccount(
         accountType: parsed.data.accountType,
         currentBalance: parsed.data.balance,
         maskedNumber: parsed.data.maskedNumber ?? null,
+        personId: owner,
+        scope: owner === null ? 'household' : 'personal',
         updatedAt: new Date(),
       })
       .where(

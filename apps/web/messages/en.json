@@ -900,7 +900,10 @@
       "maskHint": "Optional, to recognise it. We never store the full number.",
       "submitCreate": "Add this account",
       "submitUpdate": "Save the changes",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "person": "Whose is it?",
+      "personHint": "So each person's totals can be read, and to tell «Visa Davo» from «Visa Blei» when importing.",
+      "personHousehold": "The household's"
     },
     "groups": {
       "liquid": "Where you hold money",
@@ -1579,7 +1582,9 @@
     "detail": "What comes in, how often, and when the next one lands. Everything the plan can allocate starts here.",
     "summary": {
       "monthly": "Per month, on average",
-      "monthlyDetail": "Each income brought to its monthly equivalent and added up."
+      "monthlyDetail": "Each income brought to its monthly equivalent and added up.",
+      "expected": "To collect",
+      "expectedDetail": "What you are owed and has not arrived. Not added to the monthly figure, nor to what is available."
     },
     "list": {
       "title": "Recorded income",
@@ -1619,7 +1624,61 @@
       "declared": "You stated it",
       "detected": "We detected it"
     },
-    "nextOn": "Next: {date}"
+    "nextOn": "Next: {date}",
+    "expected": {
+      "title": "To collect",
+      "detail": "What you are owed and has not arrived. It builds the month's calendar, and never adds to what is available.",
+      "add": "Add something to collect",
+      "addTitle": "New expected collection",
+      "submitCreate": "Add this collection",
+      "submitUpdate": "Save the changes",
+      "emptyTitle": "Nothing recorded to collect.",
+      "emptyBody": "If you invoice or sell, this is the other half of your income. An invoice, a loan being repaid, the thirteenth month.",
+      "removeConfirm": "It stops appearing in the plan's calendar.",
+      "note": "None of this enters «available to spend», not even the invoiced. A collection treated as certain is the optimistic figure that ruins a budget: the client pays late and the household has already spent against it. What it does do is tell you what has to land, and by when.",
+      "onDate": "On {date}",
+      "between": "Between {from} and {to}",
+      "noDate": "No expected date",
+      "collected": "Collected",
+      "confidences": {
+        "confirmed": "Invoiced",
+        "likely": "Agreed",
+        "estimated": "In conversation"
+      },
+      "form": {
+        "name": "What is it?",
+        "source": "Who owes it?",
+        "sourceHint": "The name that would show in the bank's description. It is what lets us recognise it when you import.",
+        "amount": "How much?",
+        "confidence": "How certain is it?",
+        "confidenceHint": "Invoiced and accepted, agreed verbally, or still in conversation. None of them makes it available to spend.",
+        "from": "Expected from",
+        "fromHint": "If you know the exact day, put the same date in both.",
+        "to": "Expected until",
+        "toHint": "Leave empty if it is an exact day.",
+        "notes": "Notes"
+      }
+    },
+    "reconcile": {
+      "title": "Reconcile with what arrived",
+      "detail": "When you import a statement, we look for which of your expected collections each deposit paid.",
+      "found": "This looks like it has already been paid",
+      "foundDetail": "Every proposal carries its reasons. Check it and confirm: marking one collected by mistake would stop you chasing money you are still owed.",
+      "confirm": "Yes, this paid it",
+      "emptyTitle": "Nothing to reconcile right now.",
+      "emptyBody": "When you import a statement with deposits that line up with something to collect, they appear here for you to confirm.",
+      "reasons": {
+        "amountExact": "Exact amount",
+        "amountClose": "Almost the same amount",
+        "windowInside": "Inside the window",
+        "windowNear": "Near the window",
+        "noWindow": "No expected date",
+        "nameMatch": "The description names it"
+      },
+      "errors": {
+        "alreadyMatched": "That movement is already assigned to another collection."
+      }
+    }
   },
   "debts": {
     "title": "Your debts",

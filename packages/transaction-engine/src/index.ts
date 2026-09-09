@@ -62,3 +62,4 @@ export {
   type RejectedRow,
   type StatementFormat,
 } from './types.js';
+export * from './receivable-match.js';

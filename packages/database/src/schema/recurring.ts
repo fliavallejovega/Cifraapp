@@ -210,7 +210,21 @@ export const setupDrafts = appSchema.table('setup_drafts', {
 });
 
 /** Cobrado o por cobrar, según lo diga el hogar. No lo calcula el producto. */
-export const receivableConfidence = pgEnum('receivable_confidence', ['confirmed', 'estimated']);
+/**
+ * Cuán seguro es un cobro, en los tres grados que un independiente distingue.
+ *
+ *   confirmed  facturado y aceptado; el cliente dijo que paga
+ *   likely     acordado de palabra, sin factura emitida
+ *   estimated  en conversación; puede no ocurrir
+ *
+ * Ninguno suma a «disponible para gastar». El grado decide cuánto peso tiene en
+ * el calendario del plan y con qué fuerza se muestra, nunca si el dinero está.
+ */
+export const receivableConfidence = pgEnum('receivable_confidence', [
+  'confirmed',
+  'likely',
+  'estimated',
+]);
 
 /**
  * Lo que la familia va a cobrar, y cuándo.
@@ -240,9 +254,31 @@ export const receivables = appSchema.table(
     currency: char('currency', { length: 3 }).notNull().default('USD'),
     /** Nula cuando no se sabe: «me deben 500 y no sé cuándo» es una respuesta. */
     expectedOn: date('expected_on'),
+    /**
+     * La ventana en que se espera, para lo que llega seguro pero no en un día
+     * fijo.
+     *
+     * Un independiente sabe que esa factura entra en la primera quincena. No
+     * saber el día no es no saber nada, y tratarlo como si lo fuera dejaba
+     * fuera del calendario la mitad del ingreso de una casa que vive de vender.
+     * Con fecha exacta, ambas son ese mismo día.
+     *
+     * Tener ventana no lo vuelve disponible para gastar: eso sigue siendo sólo
+     * lo que está en la cuenta.
+     */
+    expectedFrom: date('expected_from'),
+    expectedTo: date('expected_to'),
     confidence: receivableConfidence('confidence').notNull().default('estimated'),
     /** Cobrado. No se borra: un cobro que entró es historia del hogar. */
     receivedOn: date('received_on'),
+    /**
+     * El movimiento importado que lo cobró, cuando se concilió contra uno.
+     *
+     * Es lo que hace comprobable «esto ya me lo pagaron» meses después, en vez
+     * de una afirmación. Nulo mientras sea sólo expectativa, y nulo también
+     * cuando el hogar lo dio por recibido a mano sin haber importado nada.
+     */
+    receivedTransactionId: uuid('received_transaction_id'),
     notes: text('notes'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

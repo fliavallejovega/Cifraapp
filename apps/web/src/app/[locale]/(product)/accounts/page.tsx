@@ -4,6 +4,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { AccountsManager, type AccountRowView } from '@/components/accounts-manager';
 import { ACCOUNT_TYPE_GROUPS, ACCOUNT_TYPES, loadAccounts } from '@/server/repositories/accounts';
+import { loadPeople } from '@/server/repositories/administration';
 import { requireHousehold } from '@/server/session';
 
 /**
@@ -27,7 +28,11 @@ export default async function AccountsPage({ params }: { params: Promise<{ local
   const household = session.households.find((entry) => entry.id === session.activeHouseholdId);
   const currency = (household?.baseCurrency.trim() ?? 'USD') as CurrencyCode;
 
-  const view = await loadAccounts(session, session.activeHouseholdId, currency);
+  const [view, people] = await Promise.all([
+    loadAccounts(session, session.activeHouseholdId, currency),
+    loadPeople(session, session.activeHouseholdId),
+  ]);
+  const personNames = new Map(people.map((person) => [person.id, person.displayName]));
 
   const t = await getTranslations('accounts');
   const raw = rawOf(t);
@@ -38,6 +43,8 @@ export default async function AccountsPage({ params }: { params: Promise<{ local
     name: account.name,
     type: account.type,
     maskedNumber: account.maskedNumber,
+    personId: account.personId,
+    personName: account.personId ? (personNames.get(account.personId) ?? null) : null,
     balance: formatMoney(account.balance, { locale: moneyLocale }),
     rawBalance: account.balance.toDecimalString(),
     status: account.status,
@@ -74,6 +81,7 @@ export default async function AccountsPage({ params }: { params: Promise<{ local
       <Section title={t('list.title')} detail={t('list.detail')} className="mt-12">
         <Card>
           <AccountsManager
+            people={people.map((person) => ({ id: person.id, name: person.displayName }))}
             locale={locale}
             currencySymbol={getCurrency(currency).symbol}
             accounts={rows}
@@ -87,6 +95,9 @@ export default async function AccountsPage({ params }: { params: Promise<{ local
                 balanceHintAsset: t('form.balanceHintAsset'),
                 balanceHintDebt: t('form.balanceHintDebt'),
                 mask: t('form.mask'),
+                person: t('form.person'),
+                personHint: t('form.personHint'),
+                personHousehold: t('form.personHousehold'),
                 maskHint: t('form.maskHint'),
                 submitCreate: t('form.submitCreate'),
                 submitUpdate: t('form.submitUpdate'),

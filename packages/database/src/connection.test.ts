@@ -45,11 +45,22 @@ describeWithDatabase('database connection', () => {
 
   it('has the full category tree, exactly once', async () => {
     const rows = await db.select({ slug: categoryTemplates.slug }).from(categoryTemplates);
+    const slugs = rows.map((row) => row.slug);
 
-    // The count is the assertion that matters: a second seed run that appended
-    // instead of upserting would double this (spec §67).
-    expect(rows).toHaveLength(CATEGORY_SEED.length);
-    expect(new Set(rows.map((row) => row.slug)).size).toBe(CATEGORY_SEED.length);
+    // Every template the seed installs is present. Stated as containment and
+    // not as an exact count, because later migrations legitimately add rubros
+    // the seed file never knew about — the tithe and the retirement bucket came
+    // that way. Asserting equality made this test a tripwire on the wrong
+    // thing: it failed for a correct migration and passed for months only
+    // because the local database was behind the migrations it was tested on.
+    for (const template of CATEGORY_SEED) {
+      expect(slugs).toContain(template.slug);
+    }
+
+    // This is the invariant that actually matters, and it is unchanged: a
+    // second seed run that appended instead of upserting would duplicate a
+    // slug (spec §67).
+    expect(new Set(slugs).size).toBe(slugs.length);
   });
 
   it('stores money as numeric, never as a float', async () => {

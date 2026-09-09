@@ -25,6 +25,9 @@ export interface AccountFormLabels {
   readonly balanceHintDebt: string;
   readonly mask: string;
   readonly maskHint: string;
+  readonly person: string;
+  readonly personHint: string;
+  readonly personHousehold: string;
   readonly submitCreate: string;
   readonly submitUpdate: string;
   readonly cancel: string;
@@ -39,6 +42,8 @@ export interface AccountFormProps {
   readonly labels: AccountFormLabels;
   readonly groups: readonly { readonly key: string; readonly types: readonly string[] }[];
   readonly currencySymbol: string;
+  /** Who lives here, so an account can say whose it is. */
+  readonly people: readonly { readonly id: string; readonly name: string }[];
   /** Present when editing; absent when creating. */
   readonly account?: {
     readonly id: string;
@@ -46,6 +51,7 @@ export interface AccountFormProps {
     readonly type: string;
     readonly balance: string;
     readonly maskedNumber: string | null;
+    readonly personId: string | null;
   };
   readonly onDone?: () => void;
 }
@@ -56,6 +62,7 @@ export function AccountForm({
   locale,
   labels,
   groups,
+  people,
   currencySymbol,
   account,
   onDone,
@@ -150,6 +157,30 @@ export function AccountForm({
           )}
         </Field>
       </div>
+
+      {/* Whose it is. A house of two with six accounts between them can see one
+          total and never each person's — which is the number they actually
+          argue about — and it is also what tells «Visa Davo» from «Visa Blei»
+          when a statement is imported. */}
+      {people.length > 0 && (
+        <Field label={labels.person} hint={labels.personHint}>
+          {({ id, describedBy }) => (
+            <Select
+              id={id}
+              name="personId"
+              defaultValue={account?.personId ?? ''}
+              aria-describedby={describedBy}
+            >
+              <option value="">{labels.personHousehold}</option>
+              {people.map((person) => (
+                <option key={person.id} value={person.id}>
+                  {person.name}
+                </option>
+              ))}
+            </Select>
+          )}
+        </Field>
+      )}
 
       <Field label={labels.mask} hint={labels.maskHint}>
         {({ id, describedBy }) => (

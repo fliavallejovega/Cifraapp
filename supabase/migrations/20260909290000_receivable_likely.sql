@@ -1,0 +1,18 @@
+-- Un tercer grado de certeza para un cobro.
+--
+-- Con dos valores, «facturado y aceptado» y «lo hablamos por teléfono» caían en
+-- el mismo saco, y son cosas distintas para quien tiene que decidir si compromete
+-- el alquiler contra eso. Tres grados son los que un independiente distingue de
+-- verdad al mirar su pipeline:
+--
+--   confirmed  facturado y aceptado; el cliente dijo que paga
+--   likely     acordado de palabra, sin factura emitida
+--   estimated  en conversación; puede no ocurrir
+--
+-- Lo existente se queda en `estimated`, que es el lado conservador: ascender
+-- filas por nosotros sería opinar sobre la certeza de un cobro ajeno.
+--
+-- Ninguno de los tres suma a «disponible para gastar». El grado decide cuánto
+-- peso tiene en el calendario y qué tan fuerte se muestra, nunca si el dinero
+-- está.
+alter type app.receivable_confidence add value if not exists 'likely' before 'estimated';

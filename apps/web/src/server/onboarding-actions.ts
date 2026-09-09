@@ -206,7 +206,7 @@ const setupInput = z.object({
           .trim()
           .regex(/^\d{4}-\d{2}-\d{2}$/)
           .optional(),
-        confidence: z.enum(['confirmed', 'estimated']).default('estimated'),
+        confidence: z.enum(['confirmed', 'likely', 'estimated']).default('estimated'),
       }),
     )
     .max(20)

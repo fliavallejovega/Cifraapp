@@ -186,7 +186,13 @@ interface ReceivableRow {
   amount: string;
   /** `YYYY-MM-DD`, o vacío cuando no se sabe. No se inventa una fecha. */
   expectedOn: string;
-  confidence: 'confirmed' | 'estimated';
+  /**
+   * Los tres grados que el sistema distingue. El cuestionario sólo ofrece dos
+   * —al abrir la cuenta nadie tiene pipeline que matizar—, pero el tipo tiene
+   * que admitir el tercero o volver a abrir el borrador de alguien que ya
+   * clasificó un cobro como «acordado» lo degradaría al guardarlo.
+   */
+  confidence: 'confirmed' | 'likely' | 'estimated';
 }
 
 interface AccountRow {

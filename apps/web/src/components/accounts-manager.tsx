@@ -26,6 +26,9 @@ export interface AccountRowView {
   readonly name: string;
   readonly type: string;
   readonly maskedNumber: string | null;
+  /** Whose it is, so a total can be broken down by person. */
+  readonly personId: string | null;
+  readonly personName: string | null;
   /** Formatted for reading. */
   readonly balance: string;
   /** The plain decimal, for the edit form. */
@@ -60,6 +63,7 @@ export interface AccountsManagerProps {
   readonly currencySymbol: string;
   readonly accounts: readonly AccountRowView[];
   readonly groups: readonly { readonly key: string; readonly types: readonly string[] }[];
+  readonly people: readonly { readonly id: string; readonly name: string }[];
   readonly labels: AccountsManagerLabels;
 }
 
@@ -68,6 +72,7 @@ export function AccountsManager({
   currencySymbol,
   accounts,
   groups,
+  people,
   labels,
 }: AccountsManagerProps) {
   // With nothing yet, the form is the screen — hiding the only useful action
@@ -89,6 +94,7 @@ export function AccountsManager({
               {editing === account.id ? (
                 <div className="py-6">
                   <AccountForm
+                    people={people}
                     locale={locale}
                     labels={labels.form}
                     groups={groups}
@@ -99,6 +105,7 @@ export function AccountsManager({
                       type: account.type,
                       balance: account.rawBalance,
                       maskedNumber: account.maskedNumber,
+                      personId: account.personId,
                     }}
                     onDone={() => {
                       setEditing(null);
@@ -127,6 +134,7 @@ export function AccountsManager({
             <h3 className="text-sm font-medium text-[color:var(--color-ink)]">{labels.addTitle}</h3>
           )}
           <AccountForm
+            people={people}
             locale={locale}
             labels={labels.form}
             groups={groups}
