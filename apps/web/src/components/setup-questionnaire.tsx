@@ -332,6 +332,16 @@ export interface SetupQuestionnaireProps {
    * Ana» es la diferencia entre retomar y sospechar que estos números salieron
    * de ninguna parte.
    */
+  /**
+   * Invitar a la otra persona, dibujado en el servidor y colocado aquí.
+   *
+   * Llega como nodo y no como datos porque el formulario de invitación tiene su
+   * propia acción y sus propias etiquetas: esta pantalla no necesita saber nada
+   * de él, solo dónde va. Y va **fuera** del formulario del cuestionario —un
+   * formulario dentro de otro no es HTML válido— y **solo en el primer paso**,
+   * que es donde se decide quién vive en la casa y por tanto quién la lleva.
+   */
+  readonly invite?: ReactNode;
   readonly draft?:
     { readonly answers: unknown; readonly step: number; readonly by: string | null } | undefined;
   /**
@@ -351,6 +361,7 @@ export function SetupQuestionnaire({
   categories,
   initial,
   payroll,
+  invite,
   draft,
   review = false,
 }: SetupQuestionnaireProps) {
@@ -756,205 +767,209 @@ export function SetupQuestionnaire({
   };
 
   return (
-    <form action={formAction} className="flex flex-col gap-8">
-      <input type="hidden" name="locale" value={locale} />
-      <input type="hidden" name="payload" value={JSON.stringify(payload)} />
+    <>
+      <form action={formAction} className="flex flex-col gap-8">
+        <input type="hidden" name="locale" value={locale} />
+        <input type="hidden" name="payload" value={JSON.stringify(payload)} />
 
-      <Progress
-        index={index}
-        total={STEPS.length}
-        label={copy('progress') ?? ''}
-        steps={STEPS.map((name) => copy(`stages.${name}`))}
-      />
+        <Progress
+          index={index}
+          total={STEPS.length}
+          label={copy('progress') ?? ''}
+          steps={STEPS.map((name) => copy(`stages.${name}`))}
+          onGo={setIndex}
+        />
 
-      {review && (
-        <p className="text-sm text-pretty text-[color:var(--color-ink-secondary)]">
-          {copy('review.notice')}
-        </p>
-      )}
+        {review && (
+          <p className="text-sm text-pretty text-[color:var(--color-ink-secondary)]">
+            {copy('review.notice')}
+          </p>
+        )}
 
-      {fromDraft && <Status tone="neutral">{copy('draft.notice')}</Status>}
+        {fromDraft && <Status tone="neutral">{copy('draft.notice')}</Status>}
 
-      {/*
+        {/*
         Retomado, y con la puerta de salida al lado.
 
         Decir «seguimos donde lo dejaste» sin ofrecer empezar de nuevo deja
         encerrado a quien está probando, o a quien contestó por otra persona y
         ahora quiere contestar por sí mismo.
       */}
-      {resumed && (
-        <Status tone="neutral">
-          <span className="flex flex-wrap items-center gap-3">
-            <span>
-              {draft?.by
-                ? copy('draft.resumedBy').replace('{name}', draft.by)
-                : copy('draft.resumed')}
+        {resumed && (
+          <Status tone="neutral">
+            <span className="flex flex-wrap items-center gap-3">
+              <span>
+                {draft?.by
+                  ? copy('draft.resumedBy').replace('{name}', draft.by)
+                  : copy('draft.resumed')}
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  void discardSetupDraft()
+                    .catch(() => undefined)
+                    .finally(() => {
+                      window.location.reload();
+                    });
+                }}
+              >
+                {copy('draft.discard')}
+              </Button>
             </span>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                void discardSetupDraft()
-                  .catch(() => undefined)
-                  .finally(() => {
-                    window.location.reload();
-                  });
-              }}
-            >
-              {copy('draft.discard')}
-            </Button>
-          </span>
-        </Status>
-      )}
+          </Status>
+        )}
 
-      {state.error && (
-        <Problem
-          title={copy('errorTitle') ?? ''}
-          body={copy(`error.${state.error}`) ?? copy('error.generic') ?? ''}
-        />
-      )}
+        {state.error && (
+          <Problem
+            title={copy('errorTitle') ?? ''}
+            body={copy(`error.${state.error}`) ?? copy('error.generic') ?? ''}
+          />
+        )}
 
-      <div>
-        <h2
-          className="text-2xl font-medium text-balance"
-          style={{ letterSpacing: 'var(--tracking-title)', lineHeight: 1.15 }}
-        >
-          {copy(`${step}.title`)}
-        </h2>
-        <p className="mt-2 max-w-[56ch] text-pretty text-[color:var(--color-ink-secondary)]">
-          {copy(`${step}.detail`)}
-        </p>
-      </div>
+        <div>
+          <h2
+            className="text-2xl font-medium text-balance"
+            style={{ letterSpacing: 'var(--tracking-title)', lineHeight: 1.15 }}
+          >
+            {copy(`${step}.title`)}
+          </h2>
+          <p className="mt-2 max-w-[56ch] text-pretty text-[color:var(--color-ink-secondary)]">
+            {copy(`${step}.detail`)}
+          </p>
+        </div>
 
-      {step === 'household' && (
-        <RowEditor
-          rows={people}
-          addLabel={copy('household.add')}
-          itemLabel={copy('household.name')}
-          missing={(row: PersonRow) => needs(row, [{ key: 'name', label: copy('household.name') }])}
-          isBlank={(row: PersonRow) => untouched(row, ['name'])}
-          summarize={(row: PersonRow) => ({
-            title: row.name,
-            detail: copy(`household.relationships.${row.relationship}`),
-          })}
-          removeLabel={copy('remove')}
-          copy={copy}
-          addFirstLabel={copy('household.addFirst')}
-          emptyHint={copy('household.empty')}
-          onAdd={() => {
-            setPeople([...people, { name: '', relationship: 'child', isDependent: true }]);
-          }}
-          onRemove={(at) => {
-            setPeople(people.filter((_, position) => position !== at));
-          }}
-          render={(row, at) => (
-            <>
-              <Field label={copy('household.name')} hint={copy('household.nameHint')}>
-                {({ id, describedBy }) => (
-                  <Input
-                    id={id}
-                    value={row.name}
-                    placeholder={copy('household.namePlaceholder')}
-                    aria-describedby={describedBy}
-                    onChange={(event) => {
-                      setPeople(patch(people, at, { name: event.target.value }));
-                    }}
-                  />
-                )}
-              </Field>
+        {step === 'household' && (
+          <RowEditor
+            rows={people}
+            addLabel={copy('household.add')}
+            itemLabel={copy('household.name')}
+            missing={(row: PersonRow) =>
+              needs(row, [{ key: 'name', label: copy('household.name') }])
+            }
+            isBlank={(row: PersonRow) => untouched(row, ['name'])}
+            summarize={(row: PersonRow) => ({
+              title: row.name,
+              detail: copy(`household.relationships.${row.relationship}`),
+            })}
+            removeLabel={copy('remove')}
+            copy={copy}
+            addFirstLabel={copy('household.addFirst')}
+            emptyHint={copy('household.empty')}
+            onAdd={() => {
+              setPeople([...people, { name: '', relationship: 'child', isDependent: true }]);
+            }}
+            onRemove={(at) => {
+              setPeople(people.filter((_, position) => position !== at));
+            }}
+            render={(row, at) => (
+              <>
+                <Field label={copy('household.name')} hint={copy('household.nameHint')}>
+                  {({ id, describedBy }) => (
+                    <Input
+                      id={id}
+                      value={row.name}
+                      placeholder={copy('household.namePlaceholder')}
+                      aria-describedby={describedBy}
+                      onChange={(event) => {
+                        setPeople(patch(people, at, { name: event.target.value }));
+                      }}
+                    />
+                  )}
+                </Field>
 
-              <Field label={copy('household.relationship')}>
-                {({ id }) => (
-                  <Select
-                    id={id}
-                    value={row.relationship}
-                    onChange={(event) => {
-                      const relationship = event.target.value;
-                      setPeople(
-                        patch(people, at, {
-                          relationship,
-                          // A child is a dependant unless somebody says
-                          // otherwise; «self» and «partner» are not. Choosing
-                          // the common answer is what the household reads as a
-                          // recommendation, and most never change it.
-                          isDependent: relationship === 'child' || relationship === 'parent',
-                        }),
-                      );
-                    }}
-                  >
-                    {['self', 'partner', 'child', 'parent', 'sibling', 'other'].map((value) => (
-                      <option key={value} value={value}>
-                        {copy(`household.relationships.${value}`)}
-                      </option>
-                    ))}
-                  </Select>
-                )}
-              </Field>
+                <Field label={copy('household.relationship')}>
+                  {({ id }) => (
+                    <Select
+                      id={id}
+                      value={row.relationship}
+                      onChange={(event) => {
+                        const relationship = event.target.value;
+                        setPeople(
+                          patch(people, at, {
+                            relationship,
+                            // A child is a dependant unless somebody says
+                            // otherwise; «self» and «partner» are not. Choosing
+                            // the common answer is what the household reads as a
+                            // recommendation, and most never change it.
+                            isDependent: relationship === 'child' || relationship === 'parent',
+                          }),
+                        );
+                      }}
+                    >
+                      {['self', 'partner', 'child', 'parent', 'sibling', 'other'].map((value) => (
+                        <option key={value} value={value}>
+                          {copy(`household.relationships.${value}`)}
+                        </option>
+                      ))}
+                    </Select>
+                  )}
+                </Field>
 
-              <div className="sm:col-span-2">
-                <label className="flex items-start gap-2.5 text-sm text-[color:var(--color-ink-secondary)]">
-                  <input
-                    type="checkbox"
-                    checked={row.isDependent}
-                    onChange={(event) => {
-                      setPeople(patch(people, at, { isDependent: event.target.checked }));
-                    }}
-                    className="mt-0.5 h-4 w-4 shrink-0 accent-[color:var(--color-brand)]"
-                  />
-                  <span>{copy('household.dependent')}</span>
-                </label>
-              </div>
-            </>
-          )}
-        />
-      )}
+                <div className="sm:col-span-2">
+                  <label className="flex items-start gap-2.5 text-sm text-[color:var(--color-ink-secondary)]">
+                    <input
+                      type="checkbox"
+                      checked={row.isDependent}
+                      onChange={(event) => {
+                        setPeople(patch(people, at, { isDependent: event.target.checked }));
+                      }}
+                      className="mt-0.5 h-4 w-4 shrink-0 accent-[color:var(--color-brand)]"
+                    />
+                    <span>{copy('household.dependent')}</span>
+                  </label>
+                </div>
+              </>
+            )}
+          />
+        )}
 
-      {step === 'income' && (
-        <RowEditor
-          rows={incomes}
-          addLabel={copy('income.add')}
-          itemLabel={copy('income.name')}
-          missing={(row: IncomeRow) =>
-            needs(row, [
-              { key: 'name', label: copy('income.name') },
-              { key: 'amount', label: copy('amount') },
-            ])
-          }
-          isBlank={(row: IncomeRow) => untouched(row, ['name', 'amount'])}
-          summarize={(row: IncomeRow) => ({
-            title: row.name,
-            detail: `${money(amountOf(arrivingAmount(row)))} ${copy(`income.per.${row.frequency}`)}`,
-          })}
-          removeLabel={copy('remove')}
-          copy={copy}
-          addFirstLabel={copy('income.addFirst')}
-          emptyHint={copy('income.empty')}
-          onAdd={() => {
-            setIncomes([
-              ...incomes,
-              { name: '', amount: '', frequency: 'monthly', isApproximate: false },
-            ]);
-          }}
-          onRemove={(at) => {
-            setIncomes(incomes.filter((_, position) => position !== at));
-          }}
-          render={(row, at) => (
-            <>
-              <Field label={copy('income.name')} className="sm:col-span-2">
-                {({ id }) => (
-                  <Input
-                    id={id}
-                    value={row.name}
-                    placeholder={copy('income.namePlaceholder')}
-                    onChange={(event) => {
-                      setIncomes(patch(incomes, at, { name: event.target.value }));
-                    }}
-                  />
-                )}
-              </Field>
-              <MoneyField
-                /*
+        {step === 'income' && (
+          <RowEditor
+            rows={incomes}
+            addLabel={copy('income.add')}
+            itemLabel={copy('income.name')}
+            missing={(row: IncomeRow) =>
+              needs(row, [
+                { key: 'name', label: copy('income.name') },
+                { key: 'amount', label: copy('amount') },
+              ])
+            }
+            isBlank={(row: IncomeRow) => untouched(row, ['name', 'amount'])}
+            summarize={(row: IncomeRow) => ({
+              title: row.name,
+              detail: `${money(amountOf(arrivingAmount(row)))} ${copy(`income.per.${row.frequency}`)}`,
+            })}
+            removeLabel={copy('remove')}
+            copy={copy}
+            addFirstLabel={copy('income.addFirst')}
+            emptyHint={copy('income.empty')}
+            onAdd={() => {
+              setIncomes([
+                ...incomes,
+                { name: '', amount: '', frequency: 'monthly', isApproximate: false },
+              ]);
+            }}
+            onRemove={(at) => {
+              setIncomes(incomes.filter((_, position) => position !== at));
+            }}
+            render={(row, at) => (
+              <>
+                <Field label={copy('income.name')} className="sm:col-span-2">
+                  {({ id }) => (
+                    <Input
+                      id={id}
+                      value={row.name}
+                      placeholder={copy('income.namePlaceholder')}
+                      onChange={(event) => {
+                        setIncomes(patch(incomes, at, { name: event.target.value }));
+                      }}
+                    />
+                  )}
+                </Field>
+                <MoneyField
+                  /*
                   El período, dicho en la etiqueta.
 
                   «Monto: 3.000» junto a «Cada cuánto: Quincenal» pide que la
@@ -964,14 +979,14 @@ export function SetupQuestionnaire({
                   redundante y es exactamente la redundancia que evita duplicar
                   un sueldo.
                 */
-                label={`${row.amountIsGross === true ? copy('income.grossLine') : copy('amount')} ${copy(`income.per.${row.frequency}`)}`}
-                symbol={currencySymbol}
-                value={row.amount}
-                onChange={(value) => {
-                  setIncomes(patch(incomes, at, { amount: value }));
-                }}
-              />
-              {/*
+                  label={`${row.amountIsGross === true ? copy('income.grossLine') : copy('amount')} ${copy(`income.per.${row.frequency}`)}`}
+                  symbol={currencySymbol}
+                  value={row.amount}
+                  onChange={(value) => {
+                    setIncomes(patch(incomes, at, { amount: value }));
+                  }}
+                />
+                {/*
                 La nota solo donde se confunden.
 
                 «Quincenal» y «cada 14 días» suenan a lo mismo y no lo son: 24
@@ -981,67 +996,67 @@ export function SetupQuestionnaire({
                 dos está elegida; el resto del tiempo sería ruido bajo un menú
                 que nadie está dudando.
               */}
-              <Field
-                label={copy('income.frequency')}
-                {...(row.frequency === 'semimonthly' || row.frequency === 'biweekly'
-                  ? { hint: copy('income.frequencyHint') }
-                  : {})}
-              >
-                {({ id, describedBy }) => (
-                  <Select
-                    id={id}
-                    value={row.frequency}
-                    aria-describedby={describedBy}
-                    onChange={(event) => {
-                      setIncomes(
-                        patch(incomes, at, { frequency: event.target.value as Frequency }),
-                      );
-                    }}
-                  >
-                    {FREQUENCIES.map((value) => (
-                      <option key={value} value={value}>
-                        {copy(`frequency.${value}`)}
-                      </option>
-                    ))}
-                  </Select>
+                <Field
+                  label={copy('income.frequency')}
+                  {...(row.frequency === 'semimonthly' || row.frequency === 'biweekly'
+                    ? { hint: copy('income.frequencyHint') }
+                    : {})}
+                >
+                  {({ id, describedBy }) => (
+                    <Select
+                      id={id}
+                      value={row.frequency}
+                      aria-describedby={describedBy}
+                      onChange={(event) => {
+                        setIncomes(
+                          patch(incomes, at, { frequency: event.target.value as Frequency }),
+                        );
+                      }}
+                    >
+                      {FREQUENCIES.map((value) => (
+                        <option key={value} value={value}>
+                          {copy(`frequency.${value}`)}
+                        </option>
+                      ))}
+                    </Select>
+                  )}
+                </Field>
+                {row.frequency === 'semimonthly' && (
+                  <>
+                    <Field label={copy('income.firstDay')} hint={copy('income.daysHint')}>
+                      {({ id, describedBy }) => (
+                        <Input
+                          id={id}
+                          numeric
+                          inputMode="numeric"
+                          placeholder="15"
+                          value={row.anchorFirst ?? ''}
+                          aria-describedby={describedBy}
+                          onChange={(event) => {
+                            setIncomes(patch(incomes, at, { anchorFirst: event.target.value }));
+                          }}
+                        />
+                      )}
+                    </Field>
+                    <Field label={copy('income.secondDay')} hint={copy('income.lastDayHint')}>
+                      {({ id, describedBy }) => (
+                        <Input
+                          id={id}
+                          numeric
+                          inputMode="numeric"
+                          placeholder="30"
+                          value={row.anchorSecond ?? ''}
+                          aria-describedby={describedBy}
+                          onChange={(event) => {
+                            setIncomes(patch(incomes, at, { anchorSecond: event.target.value }));
+                          }}
+                        />
+                      )}
+                    </Field>
+                  </>
                 )}
-              </Field>
-              {row.frequency === 'semimonthly' && (
-                <>
-                  <Field label={copy('income.firstDay')} hint={copy('income.daysHint')}>
-                    {({ id, describedBy }) => (
-                      <Input
-                        id={id}
-                        numeric
-                        inputMode="numeric"
-                        placeholder="15"
-                        value={row.anchorFirst ?? ''}
-                        aria-describedby={describedBy}
-                        onChange={(event) => {
-                          setIncomes(patch(incomes, at, { anchorFirst: event.target.value }));
-                        }}
-                      />
-                    )}
-                  </Field>
-                  <Field label={copy('income.secondDay')} hint={copy('income.lastDayHint')}>
-                    {({ id, describedBy }) => (
-                      <Input
-                        id={id}
-                        numeric
-                        inputMode="numeric"
-                        placeholder="30"
-                        value={row.anchorSecond ?? ''}
-                        aria-describedby={describedBy}
-                        onChange={(event) => {
-                          setIncomes(patch(incomes, at, { anchorSecond: event.target.value }));
-                        }}
-                      />
-                    )}
-                  </Field>
-                </>
-              )}
 
-              {/*
+                {/*
                 Qué es el número de arriba, preguntado una vez.
 
                 No es una preferencia ni un modo avanzado: es la única pregunta
@@ -1049,40 +1064,40 @@ export function SetupQuestionnaire({
                 defecto, lo que llega — que es lo que la mayoría sabe de memoria
                 y lo único que el plan necesita para funcionar.
               */}
-              <AmountMeaning
-                isGross={row.amountIsGross === true}
-                copy={copy}
-                onChange={(isGross) => {
-                  setIncomes(patch(incomes, at, { amountIsGross: isGross }));
-                }}
-              />
-
-              {row.amountIsGross === true && (
-                <IncomeDeductions
-                  row={row}
-                  currencySymbol={currencySymbol}
+                <AmountMeaning
+                  isGross={row.amountIsGross === true}
                   copy={copy}
-                  payroll={payroll}
-                  onChange={(change) => {
-                    setIncomes(patch(incomes, at, change));
+                  onChange={(isGross) => {
+                    setIncomes(patch(incomes, at, { amountIsGross: isGross }));
                   }}
                 />
-              )}
 
-              <Check
-                label={copy('income.approximate')}
-                hint={copy('income.approximateHint')}
-                checked={row.isApproximate}
-                onChange={(checked) => {
-                  setIncomes(patch(incomes, at, { isApproximate: checked }));
-                }}
-              />
-            </>
-          )}
-        />
-      )}
+                {row.amountIsGross === true && (
+                  <IncomeDeductions
+                    row={row}
+                    currencySymbol={currencySymbol}
+                    copy={copy}
+                    payroll={payroll}
+                    onChange={(change) => {
+                      setIncomes(patch(incomes, at, change));
+                    }}
+                  />
+                )}
 
-      {/*
+                <Check
+                  label={copy('income.approximate')}
+                  hint={copy('income.approximateHint')}
+                  checked={row.isApproximate}
+                  onChange={(checked) => {
+                    setIncomes(patch(incomes, at, { isApproximate: checked }));
+                  }}
+                />
+              </>
+            )}
+          />
+        )}
+
+        {/*
         Lo que entra al mes, sumado delante de quien lo escribe.
 
         Dos sueldos con cadencias distintas no se suman en la cabeza: una
@@ -1090,27 +1105,27 @@ export function SetupQuestionnaire({
         cuenta mientras teclea. Es también lo que delata el error de tipeo — un
         sueldo con un cero de más no se ve raro en su casilla y sí en el total.
       */}
-      {step === 'income' && incomePerMonth > 0 && (
-        <StepTotals
-          lines={[
-            ...incomes
-              .filter((row) => row.name.trim() !== '' && row.amount.trim() !== '')
-              .map((row) => ({
-                label: row.name,
-                value: money(perMonth(arrivingAmount(row), row.frequency)),
-                indent: true,
-              })),
-            {
-              label: copy('income.totalLabel'),
-              value: money(incomePerMonth),
-              tone: 'strong' as const,
-            },
-          ]}
-          note={copy('income.totalNote')}
-        />
-      )}
+        {step === 'income' && incomePerMonth > 0 && (
+          <StepTotals
+            lines={[
+              ...incomes
+                .filter((row) => row.name.trim() !== '' && row.amount.trim() !== '')
+                .map((row) => ({
+                  label: row.name,
+                  value: money(perMonth(arrivingAmount(row), row.frequency)),
+                  indent: true,
+                })),
+              {
+                label: copy('income.totalLabel'),
+                value: money(incomePerMonth),
+                tone: 'strong' as const,
+              },
+            ]}
+            note={copy('income.totalNote')}
+          />
+        )}
 
-      {/*
+        {/*
         Y lo que está por cobrar, que no es un sueldo.
 
         Una factura del mes que viene, un préstamo que devuelven, el décimo
@@ -1120,51 +1135,357 @@ export function SetupQuestionnaire({
         hermano no paga, y la casa ya gastó contra eso—. Se guarda para poder
         perseguirlo, y la nota del pie lo dice sin rodeos.
       */}
-      {step === 'income' && (
-        <section className="border-t border-[color:var(--color-rule)] pt-8">
-          <h3 className="text-base font-medium">{copy('receivables.title')}</h3>
-          <p className="mt-1 mb-4 max-w-[68ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]">
-            {copy('receivables.detail')}
-          </p>
+        {step === 'income' && (
+          <section className="border-t border-[color:var(--color-rule)] pt-8">
+            <h3 className="text-base font-medium">{copy('receivables.title')}</h3>
+            <p className="mt-1 mb-4 max-w-[68ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]">
+              {copy('receivables.detail')}
+            </p>
 
+            <RowEditor
+              rows={receivableRows}
+              addLabel={copy('receivables.add')}
+              addFirstLabel={copy('receivables.addFirst')}
+              removeLabel={copy('remove')}
+              copy={copy}
+              emptyHint={copy('receivables.empty')}
+              itemLabel={copy('receivables.name')}
+              missing={(row: ReceivableRow) =>
+                needs(row, [
+                  { key: 'name', label: copy('receivables.name') },
+                  { key: 'amount', label: copy('amount') },
+                ])
+              }
+              isBlank={(row: ReceivableRow) => untouched(row, ['name', 'amount', 'source'])}
+              summarize={(row: ReceivableRow) => ({
+                title: row.name,
+                detail: money(amountOf(row.amount)),
+              })}
+              onAdd={() => {
+                setReceivableRows([
+                  ...receivableRows,
+                  { name: '', source: '', amount: '', expectedOn: '', confidence: 'estimated' },
+                ]);
+              }}
+              onRemove={(at) => {
+                setReceivableRows(receivableRows.filter((_, position) => position !== at));
+              }}
+              render={(row, at) => (
+                <>
+                  <Field label={copy('receivables.name')} className="sm:col-span-2">
+                    {({ id }) => (
+                      <Input
+                        id={id}
+                        value={row.name}
+                        placeholder={copy('receivables.namePlaceholder')}
+                        onChange={(event) => {
+                          setReceivableRows(
+                            patch(receivableRows, at, { name: event.target.value }),
+                          );
+                        }}
+                      />
+                    )}
+                  </Field>
+                  <MoneyField
+                    label={copy('amount')}
+                    symbol={currencySymbol}
+                    value={row.amount}
+                    onChange={(value) => {
+                      setReceivableRows(patch(receivableRows, at, { amount: value }));
+                    }}
+                  />
+                  <Field label={copy('receivables.source')} hint={copy('receivables.sourceHint')}>
+                    {({ id, describedBy }) => (
+                      <Input
+                        id={id}
+                        value={row.source}
+                        aria-describedby={describedBy}
+                        placeholder={copy('receivables.sourcePlaceholder')}
+                        onChange={(event) => {
+                          setReceivableRows(
+                            patch(receivableRows, at, { source: event.target.value }),
+                          );
+                        }}
+                      />
+                    )}
+                  </Field>
+                  <Field
+                    label={copy('receivables.expectedOn')}
+                    hint={copy('receivables.expectedOnHint')}
+                  >
+                    {({ id, describedBy }) => (
+                      <Input
+                        id={id}
+                        type="date"
+                        value={row.expectedOn}
+                        aria-describedby={describedBy}
+                        onChange={(event) => {
+                          setReceivableRows(
+                            patch(receivableRows, at, { expectedOn: event.target.value }),
+                          );
+                        }}
+                      />
+                    )}
+                  </Field>
+                  <Field
+                    label={copy('receivables.confidence')}
+                    hint={copy('receivables.confidenceHint')}
+                  >
+                    {({ id, describedBy }) => (
+                      <Select
+                        id={id}
+                        aria-describedby={describedBy}
+                        value={row.confidence}
+                        onChange={(event) => {
+                          setReceivableRows(
+                            patch(receivableRows, at, {
+                              confidence: event.target.value as ReceivableRow['confidence'],
+                            }),
+                          );
+                        }}
+                      >
+                        <option value="confirmed">{copy('receivables.confirmed')}</option>
+                        <option value="estimated">{copy('receivables.estimated')}</option>
+                      </Select>
+                    )}
+                  </Field>
+                </>
+              )}
+            />
+
+            {receivableRows.some((row) => row.name.trim() !== '' && row.amount.trim() !== '') && (
+              <StepTotals
+                lines={[
+                  ...receivableRows
+                    .filter((row) => row.name.trim() !== '' && row.amount.trim() !== '')
+                    .map((row) => ({
+                      label: `${row.name}${row.expectedOn ? ` · ${row.expectedOn}` : ''}`,
+                      value: money(amountOf(row.amount)),
+                      indent: true,
+                    })),
+                  {
+                    label: copy('receivables.totalLabel'),
+                    value: money(
+                      receivableRows.reduce((total, row) => total + amountOf(row.amount), 0),
+                    ),
+                    tone: 'strong' as const,
+                  },
+                ]}
+                note={copy('receivables.totalNote')}
+              />
+            )}
+          </section>
+        )}
+
+        {step === 'savings' && (
+          <div className="flex flex-col gap-10">
+            <RowEditor
+              rows={accountRows}
+              addLabel={copy('savings.add')}
+              itemLabel={copy('savings.name')}
+              missing={(row: AccountRow) =>
+                needs(row, [
+                  { key: 'name', label: copy('savings.name') },
+                  { key: 'balance', label: copy('savings.balance') },
+                ])
+              }
+              isBlank={(row: AccountRow) => untouched(row, ['name', 'balance'])}
+              summarize={(row: AccountRow) => ({
+                title: row.name,
+                detail: money(amountOf(row.balance)),
+              })}
+              removeLabel={copy('remove')}
+              copy={copy}
+              addFirstLabel={copy('savings.addFirst')}
+              emptyHint={copy('savings.empty')}
+              onAdd={() => {
+                setAccountRows([
+                  ...accountRows,
+                  {
+                    name: '',
+                    accountType: 'savings',
+                    balance: '',
+                    institution: '',
+                    interestRate: '',
+                  },
+                ]);
+              }}
+              onRemove={(at) => {
+                setAccountRows(accountRows.filter((_, position) => position !== at));
+              }}
+              render={(row, at) => (
+                <>
+                  <Field label={copy('savings.name')} className="sm:col-span-2">
+                    {({ id }) => (
+                      <Input
+                        id={id}
+                        value={row.name}
+                        placeholder={copy('savings.namePlaceholder')}
+                        onChange={(event) => {
+                          setAccountRows(patch(accountRows, at, { name: event.target.value }));
+                        }}
+                      />
+                    )}
+                  </Field>
+                  <Field label={copy('savings.type')}>
+                    {({ id }) => (
+                      <Select
+                        id={id}
+                        value={row.accountType}
+                        onChange={(event) => {
+                          setAccountRows(
+                            patch(accountRows, at, {
+                              accountType: event.target.value as AccountRow['accountType'],
+                            }),
+                          );
+                        }}
+                      >
+                        {(['checking', 'savings', 'cash', 'digital_wallet'] as const).map(
+                          (value) => (
+                            <option key={value} value={value}>
+                              {copy(`accountType.${value}`)}
+                            </option>
+                          ),
+                        )}
+                      </Select>
+                    )}
+                  </Field>
+                  {row.accountType !== 'cash' && (
+                    <>
+                      <Field
+                        label={copy('savings.institution')}
+                        hint={copy('savings.institutionHint')}
+                      >
+                        {({ id, describedBy }) => (
+                          <Select
+                            id={id}
+                            value={row.institution}
+                            aria-describedby={describedBy}
+                            onChange={(event) => {
+                              setAccountRows(
+                                patch(accountRows, at, { institution: event.target.value }),
+                              );
+                            }}
+                          >
+                            <option value="">{copy('savings.institutionNone')}</option>
+                            {institutions.map((bank) => (
+                              <option key={bank} value={bank}>
+                                {bank}
+                              </option>
+                            ))}
+                          </Select>
+                        )}
+                      </Field>
+                      <Field label={copy('savings.rate')} hint={copy('savings.rateHint')}>
+                        {({ id, describedBy }) => (
+                          <div className="relative">
+                            <Input
+                              id={id}
+                              numeric
+                              inputMode="decimal"
+                              value={row.interestRate}
+                              placeholder="0.0"
+                              aria-describedby={describedBy}
+                              className="pr-8"
+                              onChange={(event) => {
+                                setAccountRows(
+                                  patch(accountRows, at, { interestRate: event.target.value }),
+                                );
+                              }}
+                            />
+                            <span
+                              aria-hidden
+                              className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-[color:var(--color-ink-tertiary)]"
+                            >
+                              %
+                            </span>
+                          </div>
+                        )}
+                      </Field>
+                    </>
+                  )}
+                  <MoneyField
+                    label={copy('savings.balance')}
+                    symbol={currencySymbol}
+                    value={row.balance}
+                    onChange={(value) => {
+                      setAccountRows(patch(accountRows, at, { balance: value }));
+                    }}
+                  />
+                </>
+              )}
+            />
+
+            <HoldingsEditor
+              rows={holdingRows}
+              setRows={setHoldingRows}
+              people={namedPeople.map((person) => person.name)}
+              copy={copy}
+            />
+
+            <FamilyFunds
+              accounts={accountRows}
+              holdings={holdingRows}
+              currencySymbol={currencySymbol}
+              currencyCode={currencyCode}
+              copy={copy}
+            />
+          </div>
+        )}
+
+        {step === 'commitments' && (
           <RowEditor
-            rows={receivableRows}
-            addLabel={copy('receivables.add')}
-            addFirstLabel={copy('receivables.addFirst')}
-            removeLabel={copy('remove')}
-            copy={copy}
-            emptyHint={copy('receivables.empty')}
-            itemLabel={copy('receivables.name')}
-            missing={(row: ReceivableRow) =>
+            rows={commitments}
+            addLabel={copy('commitments.add')}
+            itemLabel={copy('commitments.name')}
+            missing={(row: CommitmentRow) =>
               needs(row, [
-                { key: 'name', label: copy('receivables.name') },
+                { key: 'name', label: copy('commitments.name') },
                 { key: 'amount', label: copy('amount') },
               ])
             }
-            isBlank={(row: ReceivableRow) => untouched(row, ['name', 'amount', 'source'])}
-            summarize={(row: ReceivableRow) => ({
+            isBlank={(row: CommitmentRow) => untouched(row, ['name', 'amount'])}
+            summarize={(row: CommitmentRow) => ({
               title: row.name,
               detail: money(amountOf(row.amount)),
+              icon: (
+                <CategoryIcon
+                  name={categories.find((one) => one.slug === row.categorySlug)?.icon ?? null}
+                />
+              ),
             })}
+            removeLabel={copy('remove')}
+            copy={copy}
+            addFirstLabel={copy('commitments.addFirst')}
+            emptyHint={copy('commitments.empty')}
             onAdd={() => {
-              setReceivableRows([
-                ...receivableRows,
-                { name: '', source: '', amount: '', expectedOn: '', confidence: 'estimated' },
+              setCommitments([
+                ...commitments,
+                {
+                  name: '',
+                  amount: '',
+                  dueDay: '1',
+                  isEssential: true,
+                  frequency: 'monthly',
+                  lateFeeKind: 'none',
+                  lateFee: '',
+                  lateFeeAfterDays: '',
+                },
               ]);
             }}
             onRemove={(at) => {
-              setReceivableRows(receivableRows.filter((_, position) => position !== at));
+              setCommitments(commitments.filter((_, position) => position !== at));
             }}
             render={(row, at) => (
               <>
-                <Field label={copy('receivables.name')} className="sm:col-span-2">
+                <Field label={copy('commitments.name')} className="sm:col-span-2">
                   {({ id }) => (
                     <Input
                       id={id}
                       value={row.name}
-                      placeholder={copy('receivables.namePlaceholder')}
+                      placeholder={copy('commitments.namePlaceholder')}
                       onChange={(event) => {
-                        setReceivableRows(patch(receivableRows, at, { name: event.target.value }));
+                        setCommitments(patch(commitments, at, { name: event.target.value }));
                       }}
                     />
                   )}
@@ -1174,329 +1495,27 @@ export function SetupQuestionnaire({
                   symbol={currencySymbol}
                   value={row.amount}
                   onChange={(value) => {
-                    setReceivableRows(patch(receivableRows, at, { amount: value }));
+                    setCommitments(patch(commitments, at, { amount: value }));
                   }}
                 />
-                <Field label={copy('receivables.source')} hint={copy('receivables.sourceHint')}>
+                <Field label={copy('commitments.dueDay')} hint={copy('commitments.dueDayHint')}>
                   {({ id, describedBy }) => (
                     <Input
                       id={id}
-                      value={row.source}
+                      numeric
+                      inputMode="numeric"
+                      value={row.dueDay}
                       aria-describedby={describedBy}
-                      placeholder={copy('receivables.sourcePlaceholder')}
                       onChange={(event) => {
-                        setReceivableRows(
-                          patch(receivableRows, at, { source: event.target.value }),
-                        );
+                        setCommitments(patch(commitments, at, { dueDay: event.target.value }));
                       }}
                     />
                   )}
                 </Field>
-                <Field
-                  label={copy('receivables.expectedOn')}
-                  hint={copy('receivables.expectedOnHint')}
-                >
+                <Field label={copy('commitments.category')} hint={copy('commitments.categoryHint')}>
                   {({ id, describedBy }) => (
-                    <Input
-                      id={id}
-                      type="date"
-                      value={row.expectedOn}
-                      aria-describedby={describedBy}
-                      onChange={(event) => {
-                        setReceivableRows(
-                          patch(receivableRows, at, { expectedOn: event.target.value }),
-                        );
-                      }}
-                    />
-                  )}
-                </Field>
-                <Field
-                  label={copy('receivables.confidence')}
-                  hint={copy('receivables.confidenceHint')}
-                >
-                  {({ id, describedBy }) => (
-                    <Select
-                      id={id}
-                      aria-describedby={describedBy}
-                      value={row.confidence}
-                      onChange={(event) => {
-                        setReceivableRows(
-                          patch(receivableRows, at, {
-                            confidence: event.target.value as ReceivableRow['confidence'],
-                          }),
-                        );
-                      }}
-                    >
-                      <option value="confirmed">{copy('receivables.confirmed')}</option>
-                      <option value="estimated">{copy('receivables.estimated')}</option>
-                    </Select>
-                  )}
-                </Field>
-              </>
-            )}
-          />
-
-          {receivableRows.some((row) => row.name.trim() !== '' && row.amount.trim() !== '') && (
-            <StepTotals
-              lines={[
-                ...receivableRows
-                  .filter((row) => row.name.trim() !== '' && row.amount.trim() !== '')
-                  .map((row) => ({
-                    label: `${row.name}${row.expectedOn ? ` · ${row.expectedOn}` : ''}`,
-                    value: money(amountOf(row.amount)),
-                    indent: true,
-                  })),
-                {
-                  label: copy('receivables.totalLabel'),
-                  value: money(
-                    receivableRows.reduce((total, row) => total + amountOf(row.amount), 0),
-                  ),
-                  tone: 'strong' as const,
-                },
-              ]}
-              note={copy('receivables.totalNote')}
-            />
-          )}
-        </section>
-      )}
-
-      {step === 'savings' && (
-        <div className="flex flex-col gap-10">
-          <RowEditor
-            rows={accountRows}
-            addLabel={copy('savings.add')}
-            itemLabel={copy('savings.name')}
-            missing={(row: AccountRow) =>
-              needs(row, [
-                { key: 'name', label: copy('savings.name') },
-                { key: 'balance', label: copy('savings.balance') },
-              ])
-            }
-            isBlank={(row: AccountRow) => untouched(row, ['name', 'balance'])}
-            summarize={(row: AccountRow) => ({
-              title: row.name,
-              detail: money(amountOf(row.balance)),
-            })}
-            removeLabel={copy('remove')}
-            copy={copy}
-            addFirstLabel={copy('savings.addFirst')}
-            emptyHint={copy('savings.empty')}
-            onAdd={() => {
-              setAccountRows([
-                ...accountRows,
-                {
-                  name: '',
-                  accountType: 'savings',
-                  balance: '',
-                  institution: '',
-                  interestRate: '',
-                },
-              ]);
-            }}
-            onRemove={(at) => {
-              setAccountRows(accountRows.filter((_, position) => position !== at));
-            }}
-            render={(row, at) => (
-              <>
-                <Field label={copy('savings.name')} className="sm:col-span-2">
-                  {({ id }) => (
-                    <Input
-                      id={id}
-                      value={row.name}
-                      placeholder={copy('savings.namePlaceholder')}
-                      onChange={(event) => {
-                        setAccountRows(patch(accountRows, at, { name: event.target.value }));
-                      }}
-                    />
-                  )}
-                </Field>
-                <Field label={copy('savings.type')}>
-                  {({ id }) => (
-                    <Select
-                      id={id}
-                      value={row.accountType}
-                      onChange={(event) => {
-                        setAccountRows(
-                          patch(accountRows, at, {
-                            accountType: event.target.value as AccountRow['accountType'],
-                          }),
-                        );
-                      }}
-                    >
-                      {(['checking', 'savings', 'cash', 'digital_wallet'] as const).map((value) => (
-                        <option key={value} value={value}>
-                          {copy(`accountType.${value}`)}
-                        </option>
-                      ))}
-                    </Select>
-                  )}
-                </Field>
-                {row.accountType !== 'cash' && (
-                  <>
-                    <Field
-                      label={copy('savings.institution')}
-                      hint={copy('savings.institutionHint')}
-                    >
-                      {({ id, describedBy }) => (
-                        <Select
-                          id={id}
-                          value={row.institution}
-                          aria-describedby={describedBy}
-                          onChange={(event) => {
-                            setAccountRows(
-                              patch(accountRows, at, { institution: event.target.value }),
-                            );
-                          }}
-                        >
-                          <option value="">{copy('savings.institutionNone')}</option>
-                          {institutions.map((bank) => (
-                            <option key={bank} value={bank}>
-                              {bank}
-                            </option>
-                          ))}
-                        </Select>
-                      )}
-                    </Field>
-                    <Field label={copy('savings.rate')} hint={copy('savings.rateHint')}>
-                      {({ id, describedBy }) => (
-                        <div className="relative">
-                          <Input
-                            id={id}
-                            numeric
-                            inputMode="decimal"
-                            value={row.interestRate}
-                            placeholder="0.0"
-                            aria-describedby={describedBy}
-                            className="pr-8"
-                            onChange={(event) => {
-                              setAccountRows(
-                                patch(accountRows, at, { interestRate: event.target.value }),
-                              );
-                            }}
-                          />
-                          <span
-                            aria-hidden
-                            className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-[color:var(--color-ink-tertiary)]"
-                          >
-                            %
-                          </span>
-                        </div>
-                      )}
-                    </Field>
-                  </>
-                )}
-                <MoneyField
-                  label={copy('savings.balance')}
-                  symbol={currencySymbol}
-                  value={row.balance}
-                  onChange={(value) => {
-                    setAccountRows(patch(accountRows, at, { balance: value }));
-                  }}
-                />
-              </>
-            )}
-          />
-
-          <HoldingsEditor
-            rows={holdingRows}
-            setRows={setHoldingRows}
-            people={namedPeople.map((person) => person.name)}
-            copy={copy}
-          />
-
-          <FamilyFunds
-            accounts={accountRows}
-            holdings={holdingRows}
-            currencySymbol={currencySymbol}
-            currencyCode={currencyCode}
-            copy={copy}
-          />
-        </div>
-      )}
-
-      {step === 'commitments' && (
-        <RowEditor
-          rows={commitments}
-          addLabel={copy('commitments.add')}
-          itemLabel={copy('commitments.name')}
-          missing={(row: CommitmentRow) =>
-            needs(row, [
-              { key: 'name', label: copy('commitments.name') },
-              { key: 'amount', label: copy('amount') },
-            ])
-          }
-          isBlank={(row: CommitmentRow) => untouched(row, ['name', 'amount'])}
-          summarize={(row: CommitmentRow) => ({
-            title: row.name,
-            detail: money(amountOf(row.amount)),
-            icon: (
-              <CategoryIcon
-                name={categories.find((one) => one.slug === row.categorySlug)?.icon ?? null}
-              />
-            ),
-          })}
-          removeLabel={copy('remove')}
-          copy={copy}
-          addFirstLabel={copy('commitments.addFirst')}
-          emptyHint={copy('commitments.empty')}
-          onAdd={() => {
-            setCommitments([
-              ...commitments,
-              {
-                name: '',
-                amount: '',
-                dueDay: '1',
-                isEssential: true,
-                frequency: 'monthly',
-                lateFeeKind: 'none',
-                lateFee: '',
-                lateFeeAfterDays: '',
-              },
-            ]);
-          }}
-          onRemove={(at) => {
-            setCommitments(commitments.filter((_, position) => position !== at));
-          }}
-          render={(row, at) => (
-            <>
-              <Field label={copy('commitments.name')} className="sm:col-span-2">
-                {({ id }) => (
-                  <Input
-                    id={id}
-                    value={row.name}
-                    placeholder={copy('commitments.namePlaceholder')}
-                    onChange={(event) => {
-                      setCommitments(patch(commitments, at, { name: event.target.value }));
-                    }}
-                  />
-                )}
-              </Field>
-              <MoneyField
-                label={copy('amount')}
-                symbol={currencySymbol}
-                value={row.amount}
-                onChange={(value) => {
-                  setCommitments(patch(commitments, at, { amount: value }));
-                }}
-              />
-              <Field label={copy('commitments.dueDay')} hint={copy('commitments.dueDayHint')}>
-                {({ id, describedBy }) => (
-                  <Input
-                    id={id}
-                    numeric
-                    inputMode="numeric"
-                    value={row.dueDay}
-                    aria-describedby={describedBy}
-                    onChange={(event) => {
-                      setCommitments(patch(commitments, at, { dueDay: event.target.value }));
-                    }}
-                  />
-                )}
-              </Field>
-              <Field label={copy('commitments.category')} hint={copy('commitments.categoryHint')}>
-                {({ id, describedBy }) => (
-                  <div className="relative">
-                    {/*
+                    <div className="relative">
+                      {/*
                       El dibujo del rubro elegido, delante de su nombre.
 
                       Una lista desplegable nativa no puede llevar dibujos
@@ -1506,37 +1525,39 @@ export function SetupQuestionnaire({
                       usable—. Así que el icono va donde sí cabe: al lado, sobre
                       el elegido, igual que el símbolo de moneda en un monto.
                     */}
-                    <span
-                      aria-hidden
-                      className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[color:var(--color-ink-secondary)]"
-                    >
-                      <CategoryIcon
-                        name={categories.find((one) => one.slug === row.categorySlug)?.icon ?? null}
-                      />
-                    </span>
-                    <Select
-                      id={id}
-                      aria-describedby={describedBy}
-                      className="pl-9"
-                      value={row.categorySlug ?? ''}
-                      onChange={(event) => {
-                        setCommitments(
-                          patch(commitments, at, { categorySlug: event.target.value }),
-                        );
-                      }}
-                    >
-                      <option value="">{copy('commitments.categoryNone')}</option>
-                      {categories.map((category) => (
-                        <option key={category.slug} value={category.slug}>
-                          {category.name}
-                        </option>
-                      ))}
-                    </Select>
-                  </div>
-                )}
-              </Field>
+                      <span
+                        aria-hidden
+                        className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[color:var(--color-ink-secondary)]"
+                      >
+                        <CategoryIcon
+                          name={
+                            categories.find((one) => one.slug === row.categorySlug)?.icon ?? null
+                          }
+                        />
+                      </span>
+                      <Select
+                        id={id}
+                        aria-describedby={describedBy}
+                        className="pl-9"
+                        value={row.categorySlug ?? ''}
+                        onChange={(event) => {
+                          setCommitments(
+                            patch(commitments, at, { categorySlug: event.target.value }),
+                          );
+                        }}
+                      >
+                        <option value="">{copy('commitments.categoryNone')}</option>
+                        {categories.map((category) => (
+                          <option key={category.slug} value={category.slug}>
+                            {category.name}
+                          </option>
+                        ))}
+                      </Select>
+                    </div>
+                  )}
+                </Field>
 
-              {/*
+                {/*
                 Y los que casi todo el mundo usa, a un toque.
 
                 Ocho de veintiocho cubren la mayoría de los pagos de una casa.
@@ -1544,204 +1565,342 @@ export function SetupQuestionnaire({
                 «Vivienda», y el resto sigue estando en la lista para quien
                 necesita «Servicios profesionales».
               */}
-              <CategoryShortcuts
-                categories={categories}
-                chosen={row.categorySlug ?? ''}
-                onChoose={(slug) => {
-                  setCommitments(patch(commitments, at, { categorySlug: slug }));
-                }}
-              />
+                <CategoryShortcuts
+                  categories={categories}
+                  chosen={row.categorySlug ?? ''}
+                  onChoose={(slug) => {
+                    setCommitments(patch(commitments, at, { categorySlug: slug }));
+                  }}
+                />
 
-              {namedIncomes.length > 0 && (
-                <Field label={copy('commitments.paidFrom')} hint={copy('commitments.paidFromHint')}>
+                {namedIncomes.length > 0 && (
+                  <Field
+                    label={copy('commitments.paidFrom')}
+                    hint={copy('commitments.paidFromHint')}
+                  >
+                    {({ id, describedBy }) => (
+                      <Select
+                        id={id}
+                        aria-describedby={describedBy}
+                        value={row.paidFromIncome === undefined ? '' : String(row.paidFromIncome)}
+                        onChange={(event) => {
+                          const chosen =
+                            event.target.value === '' ? undefined : Number(event.target.value);
+                          setCommitments(
+                            patch(commitments, at, {
+                              paidFromIncome: chosen,
+                              // «Se descuenta» solo significa algo contra un
+                              // sueldo. Sin sueldo elegido no hay de dónde
+                              // descontarlo, así que la marca se va con él.
+                              ...(chosen === undefined ? { isDeductedAtSource: false } : {}),
+                            }),
+                          );
+                        }}
+                      >
+                        <option value="">{copy('commitments.paidFromNone')}</option>
+                        {namedIncomes.map((income) => (
+                          <option key={income.at} value={income.at}>
+                            {income.name}
+                          </option>
+                        ))}
+                      </Select>
+                    )}
+                  </Field>
+                )}
+
+                {row.paidFromIncome !== undefined && (
+                  <div className="sm:col-span-2">
+                    <Check
+                      label={copy('commitments.atSource')}
+                      hint={copy('commitments.atSourceHint')}
+                      checked={row.isDeductedAtSource ?? false}
+                      onChange={(checked) => {
+                        setCommitments(patch(commitments, at, { isDeductedAtSource: checked }));
+                      }}
+                    />
+                  </div>
+                )}
+
+                <Field
+                  label={copy('commitments.frequency')}
+                  hint={copy('commitments.frequencyHint')}
+                >
                   {({ id, describedBy }) => (
                     <Select
                       id={id}
                       aria-describedby={describedBy}
-                      value={row.paidFromIncome === undefined ? '' : String(row.paidFromIncome)}
+                      value={row.frequency ?? 'monthly'}
                       onChange={(event) => {
-                        const chosen =
-                          event.target.value === '' ? undefined : Number(event.target.value);
                         setCommitments(
-                          patch(commitments, at, {
-                            paidFromIncome: chosen,
-                            // «Se descuenta» solo significa algo contra un
-                            // sueldo. Sin sueldo elegido no hay de dónde
-                            // descontarlo, así que la marca se va con él.
-                            ...(chosen === undefined ? { isDeductedAtSource: false } : {}),
-                          }),
+                          patch(commitments, at, { frequency: event.target.value as Frequency }),
                         );
                       }}
                     >
-                      <option value="">{copy('commitments.paidFromNone')}</option>
-                      {namedIncomes.map((income) => (
-                        <option key={income.at} value={income.at}>
-                          {income.name}
+                      {FREQUENCIES.map((value) => (
+                        <option key={value} value={value}>
+                          {copy(`frequency.${value}`)}
                         </option>
                       ))}
                     </Select>
                   )}
                 </Field>
-              )}
 
-              {row.paidFromIncome !== undefined && (
-                <div className="sm:col-span-2">
-                  <Check
-                    label={copy('commitments.atSource')}
-                    hint={copy('commitments.atSourceHint')}
-                    checked={row.isDeductedAtSource ?? false}
-                    onChange={(checked) => {
-                      setCommitments(patch(commitments, at, { isDeductedAtSource: checked }));
-                    }}
-                  />
-                </div>
-              )}
+                {row.frequency === 'semimonthly' && (
+                  <>
+                    <Field label={copy('commitments.firstDay')} hint={copy('commitments.daysHint')}>
+                      {({ id, describedBy }) => (
+                        <Input
+                          id={id}
+                          numeric
+                          inputMode="numeric"
+                          placeholder="15"
+                          value={row.anchorFirst ?? ''}
+                          aria-describedby={describedBy}
+                          onChange={(event) => {
+                            setCommitments(
+                              patch(commitments, at, { anchorFirst: event.target.value }),
+                            );
+                          }}
+                        />
+                      )}
+                    </Field>
+                    <Field
+                      label={copy('commitments.secondDay')}
+                      hint={copy('commitments.lastDayHint')}
+                    >
+                      {({ id, describedBy }) => (
+                        <Input
+                          id={id}
+                          numeric
+                          inputMode="numeric"
+                          placeholder="30"
+                          value={row.anchorSecond ?? ''}
+                          aria-describedby={describedBy}
+                          onChange={(event) => {
+                            setCommitments(
+                              patch(commitments, at, { anchorSecond: event.target.value }),
+                            );
+                          }}
+                        />
+                      )}
+                    </Field>
 
-              <Field label={copy('commitments.frequency')} hint={copy('commitments.frequencyHint')}>
-                {({ id, describedBy }) => (
-                  <Select
-                    id={id}
-                    aria-describedby={describedBy}
-                    value={row.frequency ?? 'monthly'}
-                    onChange={(event) => {
-                      setCommitments(
-                        patch(commitments, at, { frequency: event.target.value as Frequency }),
-                      );
-                    }}
-                  >
-                    {FREQUENCIES.map((value) => (
-                      <option key={value} value={value}>
-                        {copy(`frequency.${value}`)}
-                      </option>
-                    ))}
-                  </Select>
-                )}
-              </Field>
-
-              {row.frequency === 'semimonthly' && (
-                <>
-                  <Field label={copy('commitments.firstDay')} hint={copy('commitments.daysHint')}>
-                    {({ id, describedBy }) => (
-                      <Input
-                        id={id}
-                        numeric
-                        inputMode="numeric"
-                        placeholder="15"
-                        value={row.anchorFirst ?? ''}
-                        aria-describedby={describedBy}
-                        onChange={(event) => {
-                          setCommitments(
-                            patch(commitments, at, { anchorFirst: event.target.value }),
-                          );
-                        }}
-                      />
-                    )}
-                  </Field>
-                  <Field
-                    label={copy('commitments.secondDay')}
-                    hint={copy('commitments.lastDayHint')}
-                  >
-                    {({ id, describedBy }) => (
-                      <Input
-                        id={id}
-                        numeric
-                        inputMode="numeric"
-                        placeholder="30"
-                        value={row.anchorSecond ?? ''}
-                        aria-describedby={describedBy}
-                        onChange={(event) => {
-                          setCommitments(
-                            patch(commitments, at, { anchorSecond: event.target.value }),
-                          );
-                        }}
-                      />
-                    )}
-                  </Field>
-
-                  {/* Los montos por quincena, opcionales y en blanco por
+                    {/* Los montos por quincena, opcionales y en blanco por
                       defecto: la mayoría paga lo mismo las dos veces, y pedir
                       dos cifras a quien tiene una sola sería cobrarle a todos
                       el caso de algunos. */}
-                  <MoneyField
-                    label={copy('commitments.firstAmount')}
-                    hint={copy('commitments.unevenHint')}
-                    symbol={currencySymbol}
-                    value={row.anchorFirstAmount ?? ''}
-                    onChange={(value) => {
-                      setCommitments(patch(commitments, at, { anchorFirstAmount: value }));
-                    }}
-                  />
-                  <MoneyField
-                    label={copy('commitments.secondAmount')}
-                    symbol={currencySymbol}
-                    value={row.anchorSecondAmount ?? ''}
-                    onChange={(value) => {
-                      setCommitments(patch(commitments, at, { anchorSecondAmount: value }));
-                    }}
-                  />
-                </>
-              )}
-
-              <Field
-                label={copy('commitments.lateFee')}
-                hint={copy('commitments.lateFeeHint')}
-                {...(row.lateFeeKind === 'none' ? { className: 'sm:col-span-2' } : {})}
-              >
-                {({ id, describedBy }) => (
-                  <Select
-                    id={id}
-                    aria-describedby={describedBy}
-                    value={row.lateFeeKind ?? 'none'}
-                    onChange={(event) => {
-                      const kind = event.target.value as 'none' | 'amount' | 'rate';
-                      setCommitments(
-                        patch(commitments, at, {
-                          lateFeeKind: kind,
-                          // The figure is cleared on *every* change of shape,
-                          // not only on «no cobra recargo». Going from «5%» to
-                          // «un monto fijo» left the 5 sitting there and it
-                          // silently became five dollars — the exact mistake
-                          // the two separate columns exist to prevent, walked
-                          // straight back in through the form. The days of
-                          // grace survive, because they mean the same thing
-                          // whichever shape the charge takes.
-                          lateFee: '',
-                          ...(kind === 'none' ? { lateFeeAfterDays: '' } : {}),
-                        }),
-                      );
-                    }}
-                  >
-                    <option value="none">{copy('commitments.lateFeeNone')}</option>
-                    <option value="amount">{copy('commitments.lateFeeAmount')}</option>
-                    <option value="rate">{copy('commitments.lateFeeRate')}</option>
-                  </Select>
+                    <MoneyField
+                      label={copy('commitments.firstAmount')}
+                      hint={copy('commitments.unevenHint')}
+                      symbol={currencySymbol}
+                      value={row.anchorFirstAmount ?? ''}
+                      onChange={(value) => {
+                        setCommitments(patch(commitments, at, { anchorFirstAmount: value }));
+                      }}
+                    />
+                    <MoneyField
+                      label={copy('commitments.secondAmount')}
+                      symbol={currencySymbol}
+                      value={row.anchorSecondAmount ?? ''}
+                      onChange={(value) => {
+                        setCommitments(patch(commitments, at, { anchorSecondAmount: value }));
+                      }}
+                    />
+                  </>
                 )}
-              </Field>
 
-              {row.lateFeeKind === 'amount' && (
-                <MoneyField
-                  label={copy('commitments.lateFeeHowMuch')}
-                  symbol={currencySymbol}
-                  value={row.lateFee ?? ''}
-                  onChange={(value) => {
-                    setCommitments(patch(commitments, at, { lateFee: value }));
+                <Field
+                  label={copy('commitments.lateFee')}
+                  hint={copy('commitments.lateFeeHint')}
+                  {...(row.lateFeeKind === 'none' ? { className: 'sm:col-span-2' } : {})}
+                >
+                  {({ id, describedBy }) => (
+                    <Select
+                      id={id}
+                      aria-describedby={describedBy}
+                      value={row.lateFeeKind ?? 'none'}
+                      onChange={(event) => {
+                        const kind = event.target.value as 'none' | 'amount' | 'rate';
+                        setCommitments(
+                          patch(commitments, at, {
+                            lateFeeKind: kind,
+                            // The figure is cleared on *every* change of shape,
+                            // not only on «no cobra recargo». Going from «5%» to
+                            // «un monto fijo» left the 5 sitting there and it
+                            // silently became five dollars — the exact mistake
+                            // the two separate columns exist to prevent, walked
+                            // straight back in through the form. The days of
+                            // grace survive, because they mean the same thing
+                            // whichever shape the charge takes.
+                            lateFee: '',
+                            ...(kind === 'none' ? { lateFeeAfterDays: '' } : {}),
+                          }),
+                        );
+                      }}
+                    >
+                      <option value="none">{copy('commitments.lateFeeNone')}</option>
+                      <option value="amount">{copy('commitments.lateFeeAmount')}</option>
+                      <option value="rate">{copy('commitments.lateFeeRate')}</option>
+                    </Select>
+                  )}
+                </Field>
+
+                {row.lateFeeKind === 'amount' && (
+                  <MoneyField
+                    label={copy('commitments.lateFeeHowMuch')}
+                    symbol={currencySymbol}
+                    value={row.lateFee ?? ''}
+                    onChange={(value) => {
+                      setCommitments(patch(commitments, at, { lateFee: value }));
+                    }}
+                  />
+                )}
+
+                {row.lateFeeKind === 'rate' && (
+                  <Field label={copy('commitments.lateFeeHowMuchRate')}>
+                    {({ id }) => (
+                      <div className="relative">
+                        <Input
+                          id={id}
+                          numeric
+                          inputMode="decimal"
+                          placeholder="0.0"
+                          className="pr-8"
+                          value={row.lateFee ?? ''}
+                          onChange={(event) => {
+                            setCommitments(patch(commitments, at, { lateFee: event.target.value }));
+                          }}
+                        />
+                        <span
+                          aria-hidden
+                          className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-[color:var(--color-ink-tertiary)]"
+                        >
+                          %
+                        </span>
+                      </div>
+                    )}
+                  </Field>
+                )}
+
+                {row.lateFeeKind !== 'none' && (
+                  <Field
+                    label={copy('commitments.lateFeeAfter')}
+                    hint={copy('commitments.lateFeeAfterHint')}
+                    className="sm:col-span-2"
+                  >
+                    {({ id, describedBy }) => (
+                      <Input
+                        id={id}
+                        numeric
+                        inputMode="numeric"
+                        placeholder="0"
+                        value={row.lateFeeAfterDays ?? ''}
+                        aria-describedby={describedBy}
+                        onChange={(event) => {
+                          setCommitments(
+                            patch(commitments, at, { lateFeeAfterDays: event.target.value }),
+                          );
+                        }}
+                      />
+                    )}
+                  </Field>
+                )}
+
+                <Check
+                  label={copy('commitments.essential')}
+                  hint={copy('commitments.essentialHint')}
+                  checked={row.isEssential}
+                  onChange={(checked) => {
+                    setCommitments(patch(commitments, at, { isEssential: checked }));
                   }}
                 />
-              )}
+              </>
+            )}
+          />
+        )}
 
-              {row.lateFeeKind === 'rate' && (
-                <Field label={copy('commitments.lateFeeHowMuchRate')}>
+        {step === 'commitments' && (
+          <CommitmentsTotal
+            rows={commitments}
+            incomes={namedIncomes}
+            incomePerMonth={incomePerMonth}
+            categories={categories}
+            currencySymbol={currencySymbol}
+            copy={copy}
+          />
+        )}
+
+        {step === 'debts' && (
+          <RowEditor
+            rows={debtRows}
+            addLabel={copy('debts.add')}
+            itemLabel={copy('debts.name')}
+            missing={(row: DebtRow) =>
+              needs(row, [
+                { key: 'name', label: copy('debts.name') },
+                { key: 'balance', label: copy('debts.balance') },
+              ])
+            }
+            isBlank={(row: DebtRow) => untouched(row, ['name', 'balance'])}
+            summarize={(row: DebtRow) => ({
+              title: row.name,
+              detail: money(amountOf(row.balance)),
+            })}
+            removeLabel={copy('remove')}
+            copy={copy}
+            addFirstLabel={copy('debts.addFirst')}
+            emptyHint={copy('debts.empty')}
+            onAdd={() => {
+              setDebtRows([
+                ...debtRows,
+                {
+                  name: '',
+                  balance: '',
+                  apr: '',
+                  minimumPayment: '',
+                  creditLimit: '',
+                  personName: '',
+                },
+              ]);
+            }}
+            onRemove={(at) => {
+              setDebtRows(debtRows.filter((_, position) => position !== at));
+            }}
+            render={(row, at) => (
+              <>
+                <Field label={copy('debts.name')} className="sm:col-span-2">
                   {({ id }) => (
+                    <Input
+                      id={id}
+                      value={row.name}
+                      placeholder={copy('debts.namePlaceholder')}
+                      onChange={(event) => {
+                        setDebtRows(patch(debtRows, at, { name: event.target.value }));
+                      }}
+                    />
+                  )}
+                </Field>
+                <MoneyField
+                  label={copy('debts.balance')}
+                  symbol={currencySymbol}
+                  value={row.balance}
+                  onChange={(value) => {
+                    setDebtRows(patch(debtRows, at, { balance: value }));
+                  }}
+                />
+                <Field label={copy('debts.apr')} hint={copy('debts.aprHint')}>
+                  {({ id, describedBy }) => (
                     <div className="relative">
                       <Input
                         id={id}
                         numeric
                         inputMode="decimal"
+                        value={row.apr}
                         placeholder="0.0"
+                        aria-describedby={describedBy}
                         className="pr-8"
-                        value={row.lateFee ?? ''}
                         onChange={(event) => {
-                          setCommitments(patch(commitments, at, { lateFee: event.target.value }));
+                          setDebtRows(patch(debtRows, at, { apr: event.target.value }));
                         }}
                       />
                       <span
@@ -1753,317 +1912,195 @@ export function SetupQuestionnaire({
                     </div>
                   )}
                 </Field>
-              )}
-
-              {row.lateFeeKind !== 'none' && (
-                <Field
-                  label={copy('commitments.lateFeeAfter')}
-                  hint={copy('commitments.lateFeeAfterHint')}
-                  className="sm:col-span-2"
-                >
-                  {({ id, describedBy }) => (
-                    <Input
-                      id={id}
-                      numeric
-                      inputMode="numeric"
-                      placeholder="0"
-                      value={row.lateFeeAfterDays ?? ''}
-                      aria-describedby={describedBy}
-                      onChange={(event) => {
-                        setCommitments(
-                          patch(commitments, at, { lateFeeAfterDays: event.target.value }),
-                        );
-                      }}
-                    />
-                  )}
-                </Field>
-              )}
-
-              <Check
-                label={copy('commitments.essential')}
-                hint={copy('commitments.essentialHint')}
-                checked={row.isEssential}
-                onChange={(checked) => {
-                  setCommitments(patch(commitments, at, { isEssential: checked }));
-                }}
-              />
-            </>
-          )}
-        />
-      )}
-
-      {step === 'commitments' && (
-        <CommitmentsTotal
-          rows={commitments}
-          incomes={namedIncomes}
-          incomePerMonth={incomePerMonth}
-          categories={categories}
-          currencySymbol={currencySymbol}
-          copy={copy}
-        />
-      )}
-
-      {step === 'debts' && (
-        <RowEditor
-          rows={debtRows}
-          addLabel={copy('debts.add')}
-          itemLabel={copy('debts.name')}
-          missing={(row: DebtRow) =>
-            needs(row, [
-              { key: 'name', label: copy('debts.name') },
-              { key: 'balance', label: copy('debts.balance') },
-            ])
-          }
-          isBlank={(row: DebtRow) => untouched(row, ['name', 'balance'])}
-          summarize={(row: DebtRow) => ({
-            title: row.name,
-            detail: money(amountOf(row.balance)),
-          })}
-          removeLabel={copy('remove')}
-          copy={copy}
-          addFirstLabel={copy('debts.addFirst')}
-          emptyHint={copy('debts.empty')}
-          onAdd={() => {
-            setDebtRows([
-              ...debtRows,
-              {
-                name: '',
-                balance: '',
-                apr: '',
-                minimumPayment: '',
-                creditLimit: '',
-                personName: '',
-              },
-            ]);
-          }}
-          onRemove={(at) => {
-            setDebtRows(debtRows.filter((_, position) => position !== at));
-          }}
-          render={(row, at) => (
-            <>
-              <Field label={copy('debts.name')} className="sm:col-span-2">
-                {({ id }) => (
-                  <Input
-                    id={id}
-                    value={row.name}
-                    placeholder={copy('debts.namePlaceholder')}
-                    onChange={(event) => {
-                      setDebtRows(patch(debtRows, at, { name: event.target.value }));
-                    }}
-                  />
-                )}
-              </Field>
-              <MoneyField
-                label={copy('debts.balance')}
-                symbol={currencySymbol}
-                value={row.balance}
-                onChange={(value) => {
-                  setDebtRows(patch(debtRows, at, { balance: value }));
-                }}
-              />
-              <Field label={copy('debts.apr')} hint={copy('debts.aprHint')}>
-                {({ id, describedBy }) => (
-                  <div className="relative">
-                    <Input
-                      id={id}
-                      numeric
-                      inputMode="decimal"
-                      value={row.apr}
-                      placeholder="0.0"
-                      aria-describedby={describedBy}
-                      className="pr-8"
-                      onChange={(event) => {
-                        setDebtRows(patch(debtRows, at, { apr: event.target.value }));
-                      }}
-                    />
-                    <span
-                      aria-hidden
-                      className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-[color:var(--color-ink-tertiary)]"
-                    >
-                      %
-                    </span>
-                  </div>
-                )}
-              </Field>
-              <MoneyField
-                label={copy('debts.minimum')}
-                hint={copy('debts.minimumHint')}
-                symbol={currencySymbol}
-                value={row.minimumPayment}
-                onChange={(value) => {
-                  setDebtRows(patch(debtRows, at, { minimumPayment: value }));
-                }}
-              />
-              <MoneyField
-                label={copy('debts.limit')}
-                hint={copy('debts.limitHint')}
-                symbol={currencySymbol}
-                value={row.creditLimit}
-                onChange={(value) => {
-                  setDebtRows(patch(debtRows, at, { creditLimit: value }));
-                }}
-              />
-              <Field label={copy('debts.holder')} hint={copy('debts.holderHint')}>
-                {({ id, describedBy }) => (
-                  <Select
-                    id={id}
-                    value={row.personName}
-                    aria-describedby={describedBy}
-                    onChange={(event) => {
-                      setDebtRows(patch(debtRows, at, { personName: event.target.value }));
-                    }}
-                  >
-                    <option value="">{copy('debts.holderShared')}</option>
-                    {namedPeople.map((person) => (
-                      <option key={person.name} value={person.name}>
-                        {person.name}
-                      </option>
-                    ))}
-                  </Select>
-                )}
-              </Field>
-              {row.creditLimit.trim() !== '' && row.balance.trim() !== '' && (
-                <p className="text-xs text-[color:var(--color-ink-tertiary)] sm:col-span-2">
-                  {copy('debts.available').replace(
-                    '{amount}',
-                    availableOn(row.creditLimit, row.balance, currencySymbol),
-                  )}
-                </p>
-              )}
-            </>
-          )}
-        />
-      )}
-
-      {step === 'goals' && (
-        <div className="flex flex-col gap-8">
-          <RowEditor
-            rows={goalRows}
-            addLabel={copy('goals.add')}
-            itemLabel={copy('goals.name')}
-            missing={(row: GoalRow) =>
-              needs(row, [
-                { key: 'name', label: copy('goals.name') },
-                { key: 'targetAmount', label: copy('goals.amount') },
-              ])
-            }
-            isBlank={(row: GoalRow) => untouched(row, ['name', 'targetAmount'])}
-            summarize={(row: GoalRow) => ({
-              title: row.name,
-              detail: money(amountOf(row.targetAmount)),
-            })}
-            removeLabel={copy('remove')}
-            copy={copy}
-            addFirstLabel={copy('goals.addFirst')}
-            emptyHint={copy('goals.empty')}
-            onAdd={() => {
-              setGoalRows([...goalRows, { name: '', targetAmount: '', targetDate: '' }]);
-            }}
-            onRemove={(at) => {
-              setGoalRows(goalRows.filter((_, position) => position !== at));
-            }}
-            render={(row, at) => (
-              <>
-                <Field label={copy('goals.name')} className="sm:col-span-2">
-                  {({ id }) => (
-                    <Input
-                      id={id}
-                      value={row.name}
-                      placeholder={copy('goals.namePlaceholder')}
-                      onChange={(event) => {
-                        setGoalRows(patch(goalRows, at, { name: event.target.value }));
-                      }}
-                    />
-                  )}
-                </Field>
                 <MoneyField
-                  label={copy('goals.target')}
+                  label={copy('debts.minimum')}
+                  hint={copy('debts.minimumHint')}
                   symbol={currencySymbol}
-                  value={row.targetAmount}
+                  value={row.minimumPayment}
                   onChange={(value) => {
-                    setGoalRows(patch(goalRows, at, { targetAmount: value }));
+                    setDebtRows(patch(debtRows, at, { minimumPayment: value }));
                   }}
                 />
-                <Field label={copy('goals.date')} hint={copy('goals.dateHint')}>
+                <MoneyField
+                  label={copy('debts.limit')}
+                  hint={copy('debts.limitHint')}
+                  symbol={currencySymbol}
+                  value={row.creditLimit}
+                  onChange={(value) => {
+                    setDebtRows(patch(debtRows, at, { creditLimit: value }));
+                  }}
+                />
+                <Field label={copy('debts.holder')} hint={copy('debts.holderHint')}>
                   {({ id, describedBy }) => (
-                    <Input
+                    <Select
                       id={id}
-                      type="date"
-                      value={row.targetDate}
+                      value={row.personName}
                       aria-describedby={describedBy}
                       onChange={(event) => {
-                        setGoalRows(patch(goalRows, at, { targetDate: event.target.value }));
+                        setDebtRows(patch(debtRows, at, { personName: event.target.value }));
                       }}
-                    />
+                    >
+                      <option value="">{copy('debts.holderShared')}</option>
+                      {namedPeople.map((person) => (
+                        <option key={person.name} value={person.name}>
+                          {person.name}
+                        </option>
+                      ))}
+                    </Select>
                   )}
                 </Field>
+                {row.creditLimit.trim() !== '' && row.balance.trim() !== '' && (
+                  <p className="text-xs text-[color:var(--color-ink-tertiary)] sm:col-span-2">
+                    {copy('debts.available').replace(
+                      '{amount}',
+                      availableOn(row.creditLimit, row.balance, currencySymbol),
+                    )}
+                  </p>
+                )}
               </>
             )}
           />
+        )}
 
-          <div className="max-w-xs border-t border-[color:var(--color-rule)] pt-8">
-            <MoneyField
-              label={copy('goals.buffer')}
-              hint={copy('goals.bufferHint')}
-              symbol={currencySymbol}
-              value={bufferMinimum}
-              onChange={setBufferMinimum}
+        {step === 'goals' && (
+          <div className="flex flex-col gap-8">
+            <RowEditor
+              rows={goalRows}
+              addLabel={copy('goals.add')}
+              itemLabel={copy('goals.name')}
+              missing={(row: GoalRow) =>
+                needs(row, [
+                  { key: 'name', label: copy('goals.name') },
+                  { key: 'targetAmount', label: copy('goals.amount') },
+                ])
+              }
+              isBlank={(row: GoalRow) => untouched(row, ['name', 'targetAmount'])}
+              summarize={(row: GoalRow) => ({
+                title: row.name,
+                detail: money(amountOf(row.targetAmount)),
+              })}
+              removeLabel={copy('remove')}
+              copy={copy}
+              addFirstLabel={copy('goals.addFirst')}
+              emptyHint={copy('goals.empty')}
+              onAdd={() => {
+                setGoalRows([...goalRows, { name: '', targetAmount: '', targetDate: '' }]);
+              }}
+              onRemove={(at) => {
+                setGoalRows(goalRows.filter((_, position) => position !== at));
+              }}
+              render={(row, at) => (
+                <>
+                  <Field label={copy('goals.name')} className="sm:col-span-2">
+                    {({ id }) => (
+                      <Input
+                        id={id}
+                        value={row.name}
+                        placeholder={copy('goals.namePlaceholder')}
+                        onChange={(event) => {
+                          setGoalRows(patch(goalRows, at, { name: event.target.value }));
+                        }}
+                      />
+                    )}
+                  </Field>
+                  <MoneyField
+                    label={copy('goals.target')}
+                    symbol={currencySymbol}
+                    value={row.targetAmount}
+                    onChange={(value) => {
+                      setGoalRows(patch(goalRows, at, { targetAmount: value }));
+                    }}
+                  />
+                  <Field label={copy('goals.date')} hint={copy('goals.dateHint')}>
+                    {({ id, describedBy }) => (
+                      <Input
+                        id={id}
+                        type="date"
+                        value={row.targetDate}
+                        aria-describedby={describedBy}
+                        onChange={(event) => {
+                          setGoalRows(patch(goalRows, at, { targetDate: event.target.value }));
+                        }}
+                      />
+                    )}
+                  </Field>
+                </>
+              )}
             />
-          </div>
-        </div>
-      )}
 
-      <div className="flex flex-wrap items-center gap-3 border-t border-[color:var(--color-rule)] pt-6">
-        {/* Distinct keys, and the reason is not cosmetic. Without them React
+            <div className="max-w-xs border-t border-[color:var(--color-rule)] pt-8">
+              <MoneyField
+                label={copy('goals.buffer')}
+                hint={copy('goals.bufferHint')}
+                symbol={currencySymbol}
+                value={bufferMinimum}
+                onChange={setBufferMinimum}
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="flex flex-wrap items-center gap-3 border-t border-[color:var(--color-rule)] pt-6">
+          {/* Distinct keys, and the reason is not cosmetic. Without them React
             reuses one DOM button and only swaps its `type` attribute — so the
             click that advanced to the last step re-rendered the very button
             being clicked into a submit button, and the browser then ran the
             default action for what it now was. The form posted a step early,
             silently dropping whatever the last step would have collected. */}
-        {isLast ? (
-          <Button key="finish" type="submit" size="lg" loading={pending}>
-            {copy(review ? 'review.finish' : 'finish')}
-          </Button>
-        ) : (
-          <Button
-            key="next"
-            type="button"
-            size="lg"
-            onClick={() => {
-              setIndex(index + 1);
-            }}
-          >
-            {copy(`${step}.next`) || copy('next')}
-          </Button>
-        )}
+          {isLast ? (
+            <Button key="finish" type="submit" size="lg" loading={pending}>
+              {copy(review ? 'review.finish' : 'finish')}
+            </Button>
+          ) : (
+            <Button
+              key="next"
+              type="button"
+              size="lg"
+              onClick={() => {
+                setIndex(index + 1);
+              }}
+            >
+              {copy(`${step}.next`) || copy('next')}
+            </Button>
+          )}
 
-        {index > 0 && (
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => {
-              setIndex(index - 1);
-            }}
-          >
-            {copy('back')}
-          </Button>
-        )}
+          {index > 0 && (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setIndex(index - 1);
+              }}
+            >
+              {copy('back')}
+            </Button>
+          )}
 
-        {/* Skipping is a real answer, not an escape hatch. A household with no
+          {/* Skipping is a real answer, not an escape hatch. A household with no
             debts says so by moving on. */}
-        {!isLast && index > 0 && (
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => {
-              setIndex(index + 1);
-            }}
-          >
-            {copy('skipStep')}
-          </Button>
-        )}
-      </div>
-    </form>
+          {!isLast && index > 0 && (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setIndex(index + 1);
+              }}
+            >
+              {copy('skipStep')}
+            </Button>
+          )}
+        </div>
+      </form>
+
+      {/*
+      Y a quién más va a llevar esto contigo, en el paso donde se decide quién
+      vive en la casa. En los otros cinco es una caja de correo pidiendo
+      atención en medio de una pantalla que pide cifras — y arrastrarla por seis
+      pasos la vuelve mobiliario que estorba en vez de una puerta que se abre
+      cuando toca.
+    */}
+      {invite && step === 'household' && !review && invite}
+    </>
   );
 }
 
@@ -2088,11 +2125,23 @@ function Progress({
   total,
   label,
   steps,
+  onGo,
 }: {
   readonly index: number;
   readonly total: number;
   readonly label: string;
   readonly steps: readonly string[];
+  /**
+   * Ir a un paso tocándolo.
+   *
+   * Las seis paradas ya estaban dibujadas y no se podían pulsar, lo que las
+   * convertía en un adorno que parece un control: la forma más rápida de que
+   * alguien piense que la aplicación no responde. Todo el cuestionario vive en
+   * la misma página y cada paso se puede saltar, así que no hay ninguno al que
+   * no se pueda llegar — y volver a uno contestado es la razón por la que
+   * alguien mira esta barra.
+   */
+  readonly onGo: (index: number) => void;
 }) {
   // The track is never empty: creating the household was the first step and it
   // is already done, so the first question starts above zero rather than
@@ -2125,53 +2174,64 @@ function Progress({
             const passed = position < index;
             const current = position === index;
             return (
-              <li key={name} className="flex min-w-0 flex-col items-center gap-2">
-                <span
-                  aria-hidden
-                  className={[
-                    'flex items-center justify-center rounded-full',
-                    'transition-[width,height,background-color,border-color,transform] duration-(--duration-settle) ease-(--ease-settle)',
-                    current
-                      ? 'h-[26px] w-[26px] bg-[color:var(--color-ink)] text-[color:var(--color-ground)]'
-                      : passed
-                        ? 'h-[22px] w-[22px] bg-[color:var(--color-ink)] text-[color:var(--color-ground)]'
-                        : 'h-[22px] w-[22px] border border-[color:var(--color-rule-strong)] bg-[color:var(--color-ground)] text-[color:var(--color-ink-tertiary)]',
-                    // A ring only on the stop being answered, so the eye lands
-                    // where the typing is.
-                    current
-                      ? 'ring-4 ring-[color:color-mix(in_oklch,var(--color-ink)_12%,transparent)]'
-                      : '',
-                  ].join(' ')}
+              <li key={name} className="flex min-w-0">
+                <button
+                  type="button"
+                  aria-current={current ? 'step' : undefined}
+                  className="flex min-w-0 cursor-pointer flex-col items-center gap-2 rounded-(--radius-sm) px-2 py-1 transition-colors duration-(--duration-quick) hover:bg-[color:var(--color-ground-sunk)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-ink)]"
+                  onClick={() => {
+                    onGo(position);
+                  }}
                 >
-                  {passed ? (
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
-                      <path
-                        d="M2.5 6.2 4.8 8.5 9.5 3.8"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  ) : (
-                    <span className="gradation-label text-[10px] text-current">{position + 1}</span>
-                  )}
-                </span>
+                  <span
+                    aria-hidden
+                    className={[
+                      'flex items-center justify-center rounded-full',
+                      'transition-[width,height,background-color,border-color,transform] duration-(--duration-settle) ease-(--ease-settle)',
+                      current
+                        ? 'h-[26px] w-[26px] bg-[color:var(--color-ink)] text-[color:var(--color-ground)]'
+                        : passed
+                          ? 'h-[22px] w-[22px] bg-[color:var(--color-ink)] text-[color:var(--color-ground)]'
+                          : 'h-[22px] w-[22px] border border-[color:var(--color-rule-strong)] bg-[color:var(--color-ground)] text-[color:var(--color-ink-tertiary)]',
+                      // A ring only on the stop being answered, so the eye lands
+                      // where the typing is.
+                      current
+                        ? 'ring-4 ring-[color:color-mix(in_oklch,var(--color-ink)_12%,transparent)]'
+                        : '',
+                    ].join(' ')}
+                  >
+                    {passed ? (
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
+                        <path
+                          d="M2.5 6.2 4.8 8.5 9.5 3.8"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    ) : (
+                      <span className="gradation-label text-[10px] text-current">
+                        {position + 1}
+                      </span>
+                    )}
+                  </span>
 
-                {/* The name of every stop on a desk; only the current one on a
+                  {/* The name of every stop on a desk; only the current one on a
                     phone, where six labels would either wrap into a wall or
                     truncate into nonsense. */}
-                <span
-                  className={[
-                    'max-w-[9ch] text-center text-[11px] leading-tight transition-colors duration-(--duration-settle)',
-                    current
-                      ? 'font-medium text-[color:var(--color-ink)]'
-                      : 'text-[color:var(--color-ink-tertiary)]',
-                    current ? '' : 'hidden sm:block',
-                  ].join(' ')}
-                >
-                  {name}
-                </span>
+                  <span
+                    className={[
+                      'max-w-[9ch] text-center text-[11px] leading-tight transition-colors duration-(--duration-settle)',
+                      current
+                        ? 'font-medium text-[color:var(--color-ink)]'
+                        : 'text-[color:var(--color-ink-tertiary)]',
+                      current ? '' : 'hidden sm:block',
+                    ].join(' ')}
+                  >
+                    {name}
+                  </span>
+                </button>
               </li>
             );
           })}
