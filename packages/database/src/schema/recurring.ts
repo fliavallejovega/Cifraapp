@@ -39,6 +39,16 @@ import { currencies } from './platform.js';
  * transaction while the pattern that produced it carries on.
  */
 
+/**
+ * Si el monto declarado de un ingreso ya trae descontado lo que se descuenta.
+ *
+ * `net` es lo que la gente escribe, porque es lo que ve en el banco, y es el
+ * lado conservador: sobreestimar el ingreso de alguien es el error que hace
+ * daño. Con `gross`, los compromisos marcados «se descuenta de la planilla» y
+ * atados a este ingreso se restan antes de que ningún motor lo use.
+ */
+export const incomeBasis = pgEnum('income_basis', ['net', 'gross']);
+
 export const recurringSeries = appSchema.table(
   'recurring_series',
   {
@@ -56,6 +66,15 @@ export const recurringSeries = appSchema.table(
     name: text('name').notNull(),
     direction: transactionDirection('direction').notNull().default('outflow'),
     scope: financialScope('scope').notNull().default('household'),
+
+    /**
+     * Si el monto ya trae descontado lo que sale de la planilla.
+     *
+     * Decide una cifra financiera y por eso se pregunta en vez de suponerse: con
+     * `gross`, un hogar que declara $3,347 y tiene $700 de descuentos atados a
+     * ese sueldo dispone de $2,647 y no de $3,347.
+     */
+    statedBasis: incomeBasis('stated_basis').notNull().default('net'),
 
     /** A median, so one unusual month does not move it. */
     expectedAmount: numeric('expected_amount', {
@@ -279,6 +298,19 @@ export const receivables = appSchema.table(
      * cuando el hogar lo dio por recibido a mano sin haber importado nada.
      */
     receivedTransactionId: uuid('received_transaction_id'),
+    /**
+     * Lo que se apartó para impuesto en el momento de cobrar esto.
+     *
+     * Congelado: subir la tasa en junio no cambia lo que marzo reservó. Un
+     * porcentaje aplicado hacia atrás reescribe la historia del hogar.
+     */
+    taxReserved: numeric('tax_reserved', { precision: 19, scale: 4, mode: 'string' })
+      .notNull()
+      .default('0'),
+    /** La tasa que lo produjo, para que la cifra siga siendo explicable. */
+    taxReservedRate: numeric('tax_reserved_rate', { precision: 5, scale: 2, mode: 'string' }),
+    /** Cuándo dejó de ser un reclamo, porque el impuesto se pagó. */
+    taxReleasedOn: date('tax_released_on'),
     notes: text('notes'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

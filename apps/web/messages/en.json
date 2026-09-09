@@ -546,6 +546,26 @@
         "amount": "Amount"
       },
       "towardGoals": "This helps these goals"
+    },
+    "coverage": {
+      "title": "What has money behind it",
+      "detail": "Commitment by commitment: covered by what you hold, covered only if a collection arrives, or uncovered.",
+      "summaryCovered": "Your commitments over the next 30 days come to {total}. What you hold covers you through the {through}.",
+      "summaryNone": "Your commitments over the next 30 days come to {total}, and what you hold does not cover the first one.",
+      "summaryNeeds": "To reach the end, {amount} has to arrive before the {by}.",
+      "summaryEnough": "What you hold covers all of them.",
+      "summaryExpected": "You expect {expected} in that window, of which {confirmed} is confirmed.",
+      "dependsOn": "depends on {names}",
+      "columns": {
+        "commitment": "Commitment",
+        "amount": "Amount",
+        "verdict": "How it stands"
+      },
+      "verdicts": {
+        "covered": "Covered",
+        "conditional": "If the collection lands",
+        "uncovered": "{amount} short"
+      }
     }
   },
   "reports": {
@@ -934,6 +954,17 @@
       "notFound": "We could not find this account.",
       "signInRequired": "Your session expired. Sign in again.",
       "generic": "Something went wrong. Try again."
+    },
+    "byPerson": {
+      "title": "Whose is what",
+      "detail": "A couple who pool their finances still have two net worths. This separates them without separating the accounts.",
+      "person": "Person",
+      "liquid": "Available",
+      "owed": "Owes",
+      "net": "Net",
+      "unassigned": "Unassigned",
+      "unassignedHint": "None of your accounts or debts has an owner set, so there is nothing to separate yet. Edit an account and say whose it is.",
+      "counts": "{accounts} account(s) · {debts} debt(s)"
     }
   },
   "setup": {
@@ -1608,7 +1639,9 @@
       "next": "When is the next one?",
       "nextHint": "Leave it empty and we work it out from the frequency.",
       "approximate": "It is approximate",
-      "approximateHint": "«About 2,400 in a good month» and «2,400 on the 15th» are two different claims, and the plan is entitled to know which one it was told."
+      "approximateHint": "«About 2,400 in a good month» and «2,400 on the 15th» are two different claims, and the plan is entitled to know which one it was told.",
+      "basis": "Does the amount already have deductions taken out?",
+      "basisHint": "If a loan comes out of your payslip, this decides whether your income is counted before or after that deduction."
     },
     "frequencies": {
       "weekly": "Every week",
@@ -1622,7 +1655,8 @@
       "approximate": "Approximate",
       "inactive": "Retired",
       "declared": "You stated it",
-      "detected": "We detected it"
+      "detected": "We detected it",
+      "gross": "Gross"
     },
     "nextOn": "Next: {date}",
     "expected": {
@@ -1678,6 +1712,52 @@
       "errors": {
         "alreadyMatched": "That movement is already assigned to another collection."
       }
+    },
+    "floor": {
+      "title": "Your floor and your cushion",
+      "detail": "The salary you pay yourself when you have no salary, and the account that makes it true month after month.",
+      "floorLabel": "Your monthly floor",
+      "measured": "Measured from your collections",
+      "declared": "You stated it",
+      "unknown": "No floor yet",
+      "emptyTitle": "No floor yet",
+      "emptyBody": "The floor is what you collect in your worst months: the number rent can safely be committed against. It gets measured once there are six months of collections; until then, state it below and the system corrects it against reality.",
+      "monthsObserved": "25th percentile of your last {count} months",
+      "monthsNeeded": "You have {count} of the 6 months needed to measure it",
+      "worst": "Worst month",
+      "typical": "Typical month",
+      "best": "Best month",
+      "cushionLabel": "Held in retention",
+      "cushionTarget": "Target: {months} months of floor, {amount}",
+      "cushionGauge": "Cushion held against its target",
+      "cushionFunded": "The cushion is full. Anything spare from here goes to your goals.",
+      "cushionMissing": "{amount} short of full. Until then, the surplus comes here before it reaches any goal.",
+      "cushionShort": "The cushion cannot cover this month’s floor: {amount} short. This month you will have less than the plan divides.",
+      "noRetention": "You have not named a retention account yet. Without one the cushion is a number on a screen: the $8,000 month gets spent like an $8,000 month and the $0 month has nothing behind it.",
+      "retentionHolds": "Each month, {account} passes {amount} to your operating account. Whatever is left stays there.",
+      "release": "Passed each month",
+      "form": {
+        "floor": "Your stated floor",
+        "floorHint": "In your worst month, how much do you collect? Used until there are six months of history.",
+        "percentile": "Percentile",
+        "percentileHint": "0.25 means three months in four bring at least that. Lower is more conservative.",
+        "months": "Months of cushion",
+        "monthsHint": "Leave it blank and your own volatility decides: between 3 and 6 months.",
+        "account": "Retention account",
+        "accountHint": "Where collections land before they become a salary.",
+        "accountNone": "None yet",
+        "submit": "Save floor and cushion",
+        "saved": "Saved"
+      },
+      "errors": {
+        "amountInvalid": "That floor is not a valid amount.",
+        "percentileInvalid": "The percentile has to be between 0 and 0.5.",
+        "monthsInvalid": "Months of cushion run from 1 to 24."
+      }
+    },
+    "bases": {
+      "net": "Net — what lands in my account",
+      "gross": "Gross — before deductions"
     }
   },
   "debts": {
@@ -2111,6 +2191,42 @@
         "signInRequired": "Your session expired. Sign in again.",
         "alreadyEnabled": "It is already on.",
         "generic": "Something failed. Nothing changed; try again."
+      }
+    },
+    "integrations": {
+      "title": "Calendar and Google account",
+      "detail": "Put your commitments where you already look, and let your bank’s alerts come in on their own.",
+      "feed": {
+        "title": "Subscribable calendar",
+        "detail": "A link you paste into Apple Calendar or Google Calendar. It asks for nobody’s account and works on any phone.",
+        "emptyTitle": "No link yet",
+        "emptyBody": "Create one and paste it into your calendar. Your commitments show up as all-day events, with a reminder the day before.",
+        "create": "Create a link",
+        "label": "What it is for",
+        "labelPlaceholder": "My iPhone",
+        "revoke": "Cut it",
+        "never": "Nobody has read it yet",
+        "read": "Last read on {when} · {count} times",
+        "secretTitle": "Copy the link now",
+        "secretBody": "This is the only time it can be seen: it is stored hashed, which is why a leaked database does not hand over your commitments. Lose it and you create another and cut this one.",
+        "howTo": "On iPhone: Calendar → Calendars → Add → Add Subscription Calendar. In Google Calendar: Other calendars → From URL.",
+        "errors": {
+          "tooMany": "You already have five live links. Cut one before creating another.",
+          "horizon": "The horizon runs from 7 to 400 days."
+        }
+      },
+      "google": {
+        "title": "Google account",
+        "detail": "It gives more than the link: events you can touch and tick off, and your bank’s alerts read on their own. In exchange it asks for permissions on your account.",
+        "off": "This deployment has no Google application configured, so the connection is switched off. Missing: {missing}.",
+        "connectCalendar": "Connect the calendar",
+        "connectMail": "Connect the mailbox",
+        "connectBoth": "Both",
+        "disconnect": "Disconnect",
+        "mailScope": "We only read mail from Panamanian banks from the last few days. Nothing else in your mailbox reaches this product.",
+        "calendarScope": "We write to a calendar of our own, never your primary one.",
+        "broken": "Needs reconnecting",
+        "notMine": "Another member of the household connected it"
       }
     }
   },
@@ -2623,7 +2739,39 @@
       "thinking": "Thinking…",
       "hint": "Enter to send · Shift+Enter for a new line"
     },
-    "memory": "It remembers everything said in this conversation. To start fresh, open a new one."
+    "memory": "It remembers everything said in this conversation. To start fresh, open a new one.",
+    "proposals": {
+      "title": "Changes it suggests",
+      "detail": "Ask for a change in your own words. It turns it into a concrete proposal and touches nothing until you approve.",
+      "emptyTitle": "No proposals waiting",
+      "emptyBody": "Write below what you want changed — «raise the cushion to four months», «Luis’s invoice lands between the 1st and the 10th» — and it leaves it here for you to approve.",
+      "modelSays": "The assistant says",
+      "approve": "Approve and apply",
+      "reject": "Discard",
+      "composerLabel": "Ask for a change",
+      "composerPlaceholder": "Raise the cushion to four months",
+      "composerSubmit": "See what it suggests",
+      "errors": {
+        "none": "It found no change from the catalogue in what you asked. Try naming what you want moved.",
+        "expired": "That proposal expired. Ask again and it gets worked out against today’s figures.",
+        "targetGone": "What it was going to change no longer exists."
+      },
+      "kinds": {
+        "set_income_floor": "Set your income floor to {value}",
+        "set_buffer_minimum": "Set your minimum buffer to {value}",
+        "set_cushion_months": "Hold {value} months of floor in retention",
+        "set_tax_reserve_rate": "Set aside {value}% of every collection for tax",
+        "set_debt_strategy": "Attack the debt with the {value} strategy",
+        "set_receivable_window": "Move that collection to the {from}–{to} window",
+        "set_receivable_confidence": "Mark that collection as {value}",
+        "set_goal_priority": "Set that goal to priority {value}",
+        "set_goal_target_date": "Move that goal to {value}",
+        "strategy_avalanche": "avalanche",
+        "strategy_snowball": "snowball",
+        "strategy_custom": "your own",
+        "strategy_hybrid": "hybrid"
+      }
+    }
   },
   "subscription": {
     "title": "Your subscription",
@@ -2938,6 +3086,23 @@
       "detail": "Accounts of type «tax reserve». That is where the product looks for what you have set aside.",
       "empty": "You have no tax reserve account. Create one and move what you set aside into it: separating the money for real is what makes the reserve work.",
       "create": "Create a reserve account"
+    },
+    "reserved": {
+      "title": "What was set aside, collection by collection",
+      "detail": "It does not come from Panama’s tax rules — they are still unpublished — but from your own rate applied to a specific collection on the day it landed.",
+      "emptyTitle": "Nothing set aside yet",
+      "emptyBody": "When you mark a collection as received, your percentage is set aside at that very moment and appears here. It is the only moment when setting tax aside is painless.",
+      "action": "Go to Income",
+      "live": "Set aside, unpaid",
+      "liveDetail": "This is what the plan stops counting as available.",
+      "released": "Already paid",
+      "releasedDetail": "Reserves released because the tax actually went out.",
+      "paid": "paid",
+      "columns": {
+        "receipt": "Collection",
+        "collected": "Collected",
+        "reserved": "Set aside"
+      }
     }
   },
   "scenarios": {

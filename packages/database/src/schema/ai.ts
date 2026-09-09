@@ -33,6 +33,7 @@ export const aiFeature = pgEnum('ai_feature', [
   'budget_suggestion',
   'document_interpretation',
   'rule_proposal',
+  'plan_proposal',
   'scenario_narration',
   'question_answer',
 ]);
@@ -190,3 +191,61 @@ export const scenarioRelations = relations(scenarios, ({ one }) => ({
     references: [households.id],
   }),
 }));
+
+/**
+ * Lo que el copiloto propuso, esperando a que una persona lo confirme.
+ *
+ * Espeja `20260909340000_plan_proposals.sql`. Es la tabla que deja que el chat
+ * pase de explicar a poder pedir cambios sin romper la regla que sostiene el
+ * producto: una propuesta no es un cambio. No le hace nada a nada hasta que
+ * alguien la aprueba, y entonces la fila guarda quién propuso, quién aprobó y
+ * qué valor había antes — la procedencia que `CLAUDE.md` exige de cualquier
+ * cambio automático de estado financiero.
+ */
+export const proposalStatus = pgEnum('proposal_status', [
+  'pending',
+  'applied',
+  'rejected',
+  'expired',
+]);
+
+export const planProposals = appSchema.table(
+  'plan_proposals',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .default(sql`public.uuid_generate_v7()`),
+    householdId: uuid('household_id')
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    /** De qué conversación salió. Nulo si vino de otra superficie. */
+    threadId: uuid('thread_id'),
+    messageId: uuid('message_id'),
+    /**
+     * El tipo del catálogo cerrado de `@app/ai`.
+     *
+     * Texto y no enum a propósito: el catálogo vive en el código, que es donde
+     * se valida, y una fila con un tipo que el código ya no reconoce tiene que
+     * poder leerse para explicarse en vez de desaparecer.
+     */
+    kind: text('kind').notNull(),
+    targetId: text('target_id'),
+    value: text('value').notNull(),
+    /** La frase del modelo. Lo único de esta fila que escribió el modelo. */
+    reason: text('reason').notNull(),
+    status: proposalStatus('status').notNull().default('pending'),
+    proposedBy: uuid('proposed_by').references(() => profiles.id, { onDelete: 'set null' }),
+    decidedBy: uuid('decided_by').references(() => profiles.id, { onDelete: 'set null' }),
+    decidedAt: timestamp('decided_at', { withTimezone: true }),
+    /** Qué había antes. Lo único que hace reversible una aprobación. */
+    previousValue: text('previous_value'),
+    failureReason: text('failure_reason'),
+    /** Una propuesta sobre un cobro de octubre no significa nada en diciembre. */
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('plan_proposals_pending_idx').on(table.householdId, table.createdAt),
+    index('plan_proposals_thread_idx').on(table.threadId),
+  ],
+);

@@ -546,6 +546,26 @@
         "amount": "Monto"
       },
       "towardGoals": "Le sirve a estas metas"
+    },
+    "coverage": {
+      "title": "Qué tiene dinero detrás",
+      "detail": "Compromiso por compromiso: cubierto con lo que hay, cubierto sólo si entra un cobro, o descubierto.",
+      "summaryCovered": "Tus compromisos de los próximos 30 días suman {total}. Con lo que tenés cubrís hasta el {through}.",
+      "summaryNone": "Tus compromisos de los próximos 30 días suman {total}, y lo que tenés no alcanza para el primero.",
+      "summaryNeeds": "Para llegar al final tienen que entrar {amount} antes del {by}.",
+      "summaryEnough": "Lo que tenés alcanza para todos.",
+      "summaryExpected": "Esperás {expected} en ese rango, de los cuales {confirmed} son confirmados.",
+      "dependsOn": "depende de {names}",
+      "columns": {
+        "commitment": "Compromiso",
+        "amount": "Monto",
+        "verdict": "Cómo va"
+      },
+      "verdicts": {
+        "covered": "Cubierto",
+        "conditional": "Si entra el cobro",
+        "uncovered": "Faltan {amount}"
+      }
     }
   },
   "reports": {
@@ -934,6 +954,17 @@
       "notFound": "No encontramos esta cuenta.",
       "signInRequired": "Tu sesión venció. Vuelve a entrar.",
       "generic": "Algo no salió bien. Intenta de nuevo."
+    },
+    "byPerson": {
+      "title": "Lo de cada quien",
+      "detail": "Una pareja que junta las finanzas sigue teniendo dos patrimonios. Esto los separa sin separar las cuentas.",
+      "person": "Persona",
+      "liquid": "Disponible",
+      "owed": "Debe",
+      "net": "Queda",
+      "unassigned": "Sin asignar",
+      "unassignedHint": "Tus cuentas y deudas no tienen dueño asignado, así que no hay nada que separar todavía. Editá una cuenta y elegí de quién es.",
+      "counts": "{accounts} cuenta(s) · {debts} deuda(s)"
     }
   },
   "setup": {
@@ -1608,7 +1639,9 @@
       "next": "¿Cuándo cae el próximo?",
       "nextHint": "Si lo dejas vacío lo calculamos por la frecuencia.",
       "approximate": "Es aproximado",
-      "approximateHint": "«Como 2,400 en un buen mes» y «2,400 el día 15» son dos afirmaciones distintas, y el plan tiene derecho a saber cuál le dijiste."
+      "approximateHint": "«Como 2,400 en un buen mes» y «2,400 el día 15» son dos afirmaciones distintas, y el plan tiene derecho a saber cuál le dijiste.",
+      "basis": "¿El monto ya trae los descuentos?",
+      "basisHint": "Si te descuentan un préstamo de la planilla, esto decide si tu ingreso se cuenta antes o después de ese descuento."
     },
     "frequencies": {
       "weekly": "Cada semana",
@@ -1622,7 +1655,8 @@
       "approximate": "Aproximado",
       "inactive": "Retirado",
       "declared": "Lo declaraste tú",
-      "detected": "Lo detectamos"
+      "detected": "Lo detectamos",
+      "gross": "Bruto"
     },
     "nextOn": "Próximo: {date}",
     "expected": {
@@ -1678,6 +1712,52 @@
       "errors": {
         "alreadyMatched": "Ese movimiento ya está asignado a otro cobro."
       }
+    },
+    "floor": {
+      "title": "El piso y el colchón",
+      "detail": "El sueldo que te pagás a vos mismo cuando no tenés sueldo, y la cuenta que lo hace cierto mes a mes.",
+      "floorLabel": "Tu piso mensual",
+      "measured": "Medido sobre tus cobros",
+      "declared": "Lo declaraste vos",
+      "unknown": "Todavía sin piso",
+      "emptyTitle": "Todavía no hay piso",
+      "emptyBody": "El piso es lo que cobrás en tus peores meses: el número contra el que sí se puede comprometer el alquiler. Se mide solo cuando haya seis meses de cobros; mientras tanto, declaralo abajo y el sistema lo corrige contra la realidad.",
+      "monthsObserved": "Percentil 25 de tus últimos {count} meses",
+      "monthsNeeded": "Llevás {count} de los 6 meses que hacen falta para medirlo",
+      "worst": "Peor mes",
+      "typical": "Mes típico",
+      "best": "Mejor mes",
+      "cushionLabel": "Guardado en retención",
+      "cushionTarget": "Objetivo: {months} meses de piso, {amount}",
+      "cushionGauge": "Colchón guardado contra su objetivo",
+      "cushionFunded": "El colchón está completo. Lo que sobre de ahora en adelante va a tus metas.",
+      "cushionMissing": "Faltan {amount} para completarlo. Hasta entonces, el excedente va acá antes que a las metas.",
+      "cushionShort": "El colchón no llega a cubrir el piso de este mes: faltan {amount}. Este mes vas a tener menos de lo que el plan reparte.",
+      "noRetention": "Todavía no señalaste una cuenta de retención. Sin ella el colchón es un número en pantalla: el mes de $8,000 se gasta como un mes de $8,000 y el de $0 no tiene de dónde salir.",
+      "retentionHolds": "Cada mes, {account} pasa {amount} a tu cuenta operativa. Lo que sobre se queda ahí.",
+      "release": "Pasa cada mes",
+      "form": {
+        "floor": "Tu piso declarado",
+        "floorHint": "En tu peor mes, ¿cuánto cobrás? Se usa hasta que haya seis meses de historia.",
+        "percentile": "Percentil",
+        "percentileHint": "0,25 significa que tres de cada cuatro meses entra al menos eso. Más bajo es más conservador.",
+        "months": "Meses de colchón",
+        "monthsHint": "Dejalo vacío y lo decide tu propia volatilidad: entre 3 y 6 meses.",
+        "account": "Cuenta de retención",
+        "accountHint": "Donde caen los cobros antes de volverse sueldo.",
+        "accountNone": "Ninguna todavía",
+        "submit": "Guardar el piso y el colchón",
+        "saved": "Guardado"
+      },
+      "errors": {
+        "amountInvalid": "Ese piso no es un monto válido.",
+        "percentileInvalid": "El percentil tiene que estar entre 0 y 0,5.",
+        "monthsInvalid": "Los meses de colchón van de 1 a 24."
+      }
+    },
+    "bases": {
+      "net": "Neto — lo que me depositan",
+      "gross": "Bruto — antes de los descuentos"
     }
   },
   "debts": {
@@ -2111,6 +2191,42 @@
         "signInRequired": "Tu sesión venció. Vuelve a entrar.",
         "alreadyEnabled": "Ya está activa.",
         "generic": "Algo falló. Nada cambió; inténtalo de nuevo."
+      }
+    },
+    "integrations": {
+      "title": "Calendario y cuenta de Google",
+      "detail": "Que tus compromisos aparezcan donde ya mirás, y que los avisos del banco entren solos.",
+      "feed": {
+        "title": "Calendario suscribible",
+        "detail": "Un enlace que pegás en Apple Calendar o en Google Calendar. No pide tu cuenta de nadie y funciona en cualquier teléfono.",
+        "emptyTitle": "Todavía no hay ningún enlace",
+        "emptyBody": "Creá uno y pegalo en tu calendario. Tus compromisos aparecen como eventos de día completo, con aviso el día antes.",
+        "create": "Crear un enlace",
+        "label": "Para qué es",
+        "labelPlaceholder": "Mi iPhone",
+        "revoke": "Cortar",
+        "never": "Todavía no lo ha leído nadie",
+        "read": "Leído por última vez el {when} · {count} veces",
+        "secretTitle": "Copiá el enlace ahora",
+        "secretBody": "Es la única vez que se puede ver: se guarda cifrado, y por eso una copia de la base de datos no entrega tus compromisos. Si lo perdés, creás otro y cortás este.",
+        "howTo": "En iPhone: Calendario → Calendarios → Añadir → Añadir calendario de suscripción. En Google Calendar: Otros calendarios → Desde URL.",
+        "errors": {
+          "tooMany": "Ya tenés cinco enlaces vivos. Cortá uno antes de crear otro.",
+          "horizon": "El horizonte va de 7 a 400 días."
+        }
+      },
+      "google": {
+        "title": "Cuenta de Google",
+        "detail": "Da más que el enlace: eventos que podés tocar y marcar hechos, y los avisos de tu banco leídos solos. A cambio pide permisos sobre tu cuenta.",
+        "off": "Este despliegue no tiene configurada la aplicación de Google, así que la conexión está apagada. Falta: {missing}.",
+        "connectCalendar": "Conectar el calendario",
+        "connectMail": "Conectar el correo",
+        "connectBoth": "Los dos",
+        "disconnect": "Desconectar",
+        "mailScope": "Sólo leemos correos de bancos panameños de los últimos días. Nada más de tu buzón llega a este producto.",
+        "calendarScope": "Escribimos en un calendario propio, nunca en el tuyo principal.",
+        "broken": "Hay que reconectarla",
+        "notMine": "La conectó otra persona del hogar"
       }
     }
   },
@@ -2623,7 +2739,39 @@
       "thinking": "Pensando…",
       "hint": "Enter para enviar · Shift+Enter para otra línea"
     },
-    "memory": "Recuerda todo lo hablado en esta conversación. Para empezar de cero, abre una nueva."
+    "memory": "Recuerda todo lo hablado en esta conversación. Para empezar de cero, abre una nueva.",
+    "proposals": {
+      "title": "Cambios que te propone",
+      "detail": "Pedile un cambio en tus palabras. Lo convierte en una propuesta concreta y no toca nada hasta que la apruebes.",
+      "emptyTitle": "No hay propuestas pendientes",
+      "emptyBody": "Escribí abajo qué querés cambiar —«subí el colchón a cuatro meses», «la factura de Luis entra entre el 1 y el 10»— y te lo deja acá para aprobar.",
+      "modelSays": "Dice el asistente",
+      "approve": "Aprobar y aplicar",
+      "reject": "Descartar",
+      "composerLabel": "Pedile un cambio",
+      "composerPlaceholder": "Subí el colchón a cuatro meses",
+      "composerSubmit": "Ver qué propone",
+      "errors": {
+        "none": "No encontró ningún cambio del catálogo en lo que pediste. Probá nombrando qué querés mover.",
+        "expired": "Esa propuesta caducó. Pedila otra vez y se calcula con los datos de hoy.",
+        "targetGone": "Lo que iba a cambiar ya no existe."
+      },
+      "kinds": {
+        "set_income_floor": "Poner tu piso de ingreso en {value}",
+        "set_buffer_minimum": "Poner tu colchón mínimo en {value}",
+        "set_cushion_months": "Guardar {value} meses de piso en retención",
+        "set_tax_reserve_rate": "Apartar {value}% de cada cobro para impuesto",
+        "set_debt_strategy": "Atacar la deuda con la estrategia {value}",
+        "set_receivable_window": "Mover ese cobro a la ventana del {from} al {to}",
+        "set_receivable_confidence": "Marcar ese cobro como {value}",
+        "set_goal_priority": "Poner esa meta en prioridad {value}",
+        "set_goal_target_date": "Mover esa meta al {value}",
+        "strategy_avalanche": "avalancha",
+        "strategy_snowball": "bola de nieve",
+        "strategy_custom": "la tuya",
+        "strategy_hybrid": "híbrida"
+      }
+    }
   },
   "subscription": {
     "title": "Tu suscripción",
@@ -2938,6 +3086,23 @@
       "detail": "Las cuentas de tipo «reserva fiscal». Ahí es donde el producto busca lo que llevas apartado.",
       "empty": "No tienes ninguna cuenta de reserva fiscal. Crea una y mueve ahí lo que apartes: separar el dinero de verdad es lo que hace que la reserva funcione.",
       "create": "Crear una cuenta de reserva"
+    },
+    "reserved": {
+      "title": "Lo apartado, cobro a cobro",
+      "detail": "No sale de las reglas fiscales de Panamá —siguen sin publicar— sino de tu propia tasa aplicada a un cobro concreto el día que entró.",
+      "emptyTitle": "Todavía no apartaste nada",
+      "emptyBody": "Cuando marques un cobro como recibido, se aparta tu porcentaje en ese mismo momento y aparece acá. Es el único momento en que apartar el impuesto no duele.",
+      "action": "Ir a Ingresos",
+      "live": "Apartado y sin pagar",
+      "liveDetail": "Esto es lo que el plan deja de contar como disponible.",
+      "released": "Ya pagado",
+      "releasedDetail": "Reservas que se liberaron porque el impuesto salió de verdad.",
+      "paid": "pagado",
+      "columns": {
+        "receipt": "Cobro",
+        "collected": "Cobrado",
+        "reserved": "Apartado"
+      }
     }
   },
   "scenarios": {

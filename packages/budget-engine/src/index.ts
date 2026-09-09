@@ -8,6 +8,56 @@ export {
 } from './budget.js';
 
 export {
+  buildCommitmentCalendar,
+  DEFAULT_ALARM_DAYS_BEFORE,
+  DEFAULT_REFRESH_MINUTES,
+  escapeText,
+  foldLine,
+  type CalendarCommitment,
+  type CalendarOptions,
+  type CommitmentCoverageHint,
+} from './calendar.js';
+
+export {
+  computeCoverage,
+  COVERAGE_HORIZON_DAYS,
+  type CommitmentCoverage,
+  type CoverageCommitment,
+  type CoverageDependency,
+  type CoverageInput,
+  type CoverageResult,
+  type CoverageVerdict,
+  type ExpectedReceipt,
+  type ReceiptConfidence,
+} from './coverage.js';
+
+export {
+  computeCushion,
+  cushionClaim,
+  cushionMonths,
+  HIGH_VARIATION,
+  MAX_CUSHION_MONTHS,
+  MIN_CUSHION_MONTHS,
+  STABLE_VARIATION,
+  type CushionInput,
+  type CushionState,
+} from './cushion.js';
+
+export {
+  computeIncomeFloor,
+  FLOOR_LOOKBACK_MONTHS,
+  FLOOR_PERCENTILE,
+  MIN_MONTHS_FOR_FLOOR,
+  monthlyIncomeTotals,
+  percentileOf,
+  type FloorSource,
+  type IncomeFloor,
+  type IncomeFloorInput,
+  type IncomeMonth,
+  type IncomeReceipt,
+} from './income-floor.js';
+
+export {
   expectedInMonth,
   expectedOccurrences,
   FORECAST_LOOKBACK_MONTHS,

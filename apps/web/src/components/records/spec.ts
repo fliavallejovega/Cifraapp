@@ -103,6 +103,14 @@ export interface RecordActionResult {
   readonly error?: string;
   readonly created?: string;
   readonly ok?: true;
+  /**
+   * Un valor que se enseña una vez y no se puede volver a leer.
+   *
+   * Un enlace de calendario, un token de invitación: lo que se guarda es su
+   * hash, así que este viaje de vuelta es la única oportunidad de copiarlo. La
+   * pantalla que lo reciba tiene que decirlo con esas palabras.
+   */
+  readonly secret?: string;
 }
 
 export type RecordAction = (

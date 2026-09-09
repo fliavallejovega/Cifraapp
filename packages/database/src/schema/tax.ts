@@ -141,6 +141,7 @@ export const taxProfiles = appSchema.table('tax_profiles', {
   /** `MM-DD`. Assuming a calendar year for a household that has another costs a filing. */
   fiscalYearStart: text('fiscal_year_start').notNull().default('01-01'),
 
+
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });

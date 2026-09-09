@@ -41,6 +41,7 @@ export {
   BUDGET_SUGGESTION_V1,
   DOCUMENT_INTERPRETATION_V1,
   MERCHANT_CLASSIFICATION_V1,
+  PLAN_PROPOSAL_V1,
   PREAMBLE,
   PROMPTS,
   QUESTION_ANSWER_V1,
@@ -53,6 +54,19 @@ export {
   type PromptDefinition,
   type PromptLocale,
 } from './prompts.js';
+
+export {
+  MAX_PROPOSALS,
+  PROPOSAL_KINDS,
+  readProposals,
+  type DebtStrategy,
+  type PlanProposal,
+  type ProposalContext,
+  type ProposalKind,
+  type ProposalReading,
+  type ReceivableConfidence,
+  type RejectedProposal,
+} from './proposal.js';
 
 export {
   collectText,

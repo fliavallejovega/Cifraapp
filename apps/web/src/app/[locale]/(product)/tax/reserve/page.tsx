@@ -1,9 +1,25 @@
 import { formatMoney, Money } from '@app/domain';
-import { Card, EmptyState, Page, PageHeader, Problem, Section, Stat, Status } from '@app/ui';
+import {
+  Amount,
+  Card,
+  EmptyState,
+  Ledger,
+  LedgerBody,
+  LedgerCell,
+  LedgerColumn,
+  LedgerHead,
+  LedgerRow,
+  Page,
+  PageHeader,
+  Problem,
+  Section,
+  Stat,
+  Status,
+} from '@app/ui';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { Link } from '@/i18n/navigation';
-import { trimRate } from '@/lib/format';
+import { formatPlainDate, trimRate } from '@/lib/format';
 import { loadHouseholdContext } from '@/server/household-context';
 import { loadSettings } from '@/server/repositories/administration';
 import { loadReservePosition, loadTaxProfile } from '@/server/repositories/tax-profile';
@@ -166,6 +182,83 @@ export default async function TaxReservePage({ params }: { params: Promise<{ loc
           <p className="mt-6 max-w-[62ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]">
             {t('notPublished.meanwhile')}
           </p>
+        )}
+      </Section>
+
+      {/*
+        La cifra fiscal que sí se puede enseñar, cobro a cobro.
+
+        No sale de las reglas de Panamá —siguen sin publicar, y el aviso de
+        arriba lo dice— sino de la tasa que esta casa declaró, aplicada a un
+        cobro concreto en una fecha concreta y congelada ahí. Eso la hace
+        verificable línea por línea, que es exactamente lo que una cifra sacada
+        de un borrador sin revisar nunca podría ser.
+      */}
+      <Section
+        title={t('reserved.title')}
+        detail={t('reserved.detail')}
+        className="mt-12"
+      >
+        {position.receipts.length === 0 ? (
+          <Card>
+            <EmptyState
+              title={t('reserved.emptyTitle')}
+              body={t('reserved.emptyBody')}
+              action={
+                <Link
+                  href="/income"
+                  className="text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
+                >
+                  {t('reserved.action')}
+                </Link>
+              }
+            />
+          </Card>
+        ) : (
+          <>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Card>
+                <Stat label={t('reserved.live')} detail={t('reserved.liveDetail')}>
+                  {formatMoney(position.reservedLive, { locale: context.moneyLocale })}
+                </Stat>
+              </Card>
+              <Card>
+                <Stat label={t('reserved.released')} detail={t('reserved.releasedDetail')}>
+                  {formatMoney(position.reservedReleased, { locale: context.moneyLocale })}
+                </Stat>
+              </Card>
+            </div>
+
+            <Card padding="none" className="mt-4 overflow-hidden px-5 sm:px-6">
+              <Ledger caption={t('reserved.title')}>
+                <LedgerHead>
+                  <LedgerColumn>{t('reserved.columns.receipt')}</LedgerColumn>
+                  <LedgerColumn align="end">{t('reserved.columns.collected')}</LedgerColumn>
+                  <LedgerColumn align="end">{t('reserved.columns.reserved')}</LedgerColumn>
+                </LedgerHead>
+                <LedgerBody>
+                  {position.receipts.map((receipt) => (
+                    <LedgerRow key={receipt.id} muted={receipt.isReleased}>
+                      <LedgerCell>
+                        <span className="font-medium">{receipt.name}</span>
+                        <span className="mt-1 block text-xs text-[color:var(--color-ink-secondary)]">
+                          {formatPlainDate(receipt.receivedOn, locale)}
+                          {receipt.rate ? ` · ${trimRate(receipt.rate)}%` : ''}
+                          {receipt.isReleased ? ` · ${t('reserved.paid')}` : ''}
+                        </span>
+                      </LedgerCell>
+                      <LedgerCell align="end">
+                        <Amount value={receipt.amount} locale={context.moneyLocale} size="sm" tone="plain" />
+                      </LedgerCell>
+                      <LedgerCell align="end">
+                        <Amount value={receipt.reserved} locale={context.moneyLocale} size="sm" tone="plain" />
+                      </LedgerCell>
+                    </LedgerRow>
+                  ))}
+                </LedgerBody>
+              </Ledger>
+            </Card>
+          </>
         )}
       </Section>
 

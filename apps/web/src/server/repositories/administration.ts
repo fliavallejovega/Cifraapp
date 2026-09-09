@@ -41,6 +41,8 @@ export interface IncomeView {
   readonly nextExpectedDate: PlainDate;
   /** True when the household said «about», rather than «exactly». */
   readonly isApproximate: boolean;
+  /** Si el monto declarado ya trae descontado lo que sale de la planilla. */
+  readonly statedBasis: 'net' | 'gross';
   readonly isActive: boolean;
   readonly declared: boolean;
 }
@@ -62,6 +64,7 @@ export async function loadIncomes(
         frequency: recurringSeries.frequency,
         nextExpectedDate: recurringSeries.nextExpectedDate,
         amountVariation: recurringSeries.amountVariation,
+        statedBasis: recurringSeries.statedBasis,
         isActive: recurringSeries.isActive,
         detectedBy: recurringSeries.detectedBy,
       })
@@ -83,6 +86,7 @@ export async function loadIncomes(
     frequency: row.frequency,
     nextExpectedDate: row.nextExpectedDate as PlainDate,
     isApproximate: Number(row.amountVariation) > APPROXIMATE_THRESHOLD,
+    statedBasis: row.statedBasis,
     isActive: row.isActive,
     declared: row.detectedBy === 'user',
   }));

@@ -2,13 +2,16 @@ import { formatMoney, Money } from '@app/domain';
 import { Card, Page, PageHeader, Section, Stat } from '@app/ui';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
+import { IncomeFloorPanel } from '@/components/income-floor-panel';
 import { RecordsManager } from '@/components/records';
 import type { FieldSpec, RecordRow } from '@/components/records/spec';
 import { createIncome, removeIncome, updateIncome } from '@/server/income-actions';
 import { loadHouseholdContext } from '@/server/household-context';
 import { recordLabels } from '@/server/record-labels';
 import { ReceivableMatches } from '@/components/receivable-matches';
+import { loadAccounts } from '@/server/repositories/accounts';
 import { loadIncomes } from '@/server/repositories/administration';
+import { loadIncomeFloor } from '@/server/repositories/income-floor';
 import { loadMatchCandidates, loadReceivables } from '@/server/repositories/receivables';
 import {
   confirmReceivableMatch,
@@ -50,10 +53,12 @@ export default async function IncomePage({ params }: { params: Promise<{ locale:
 
   const session = await requireHousehold(locale);
   const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
-  const [incomes, receivables, candidates] = await Promise.all([
+  const [incomes, receivables, candidates, floorView, accountsView] = await Promise.all([
     loadIncomes(session, session.activeHouseholdId, context.currency),
     loadReceivables(session, session.activeHouseholdId, context.currency),
     loadMatchCandidates(session, session.activeHouseholdId, context.currency, context.today),
+    loadIncomeFloor(session, session.activeHouseholdId),
+    loadAccounts(session, session.activeHouseholdId, context.currency),
   ]);
 
   const pending = receivables.filter((entry) => entry.receivedOn === null);
@@ -111,6 +116,20 @@ export default async function IncomePage({ params }: { params: Promise<{ locale:
       hint: t('form.approximateHint'),
       half: true,
     },
+    // La pregunta que decide una cifra: lo que escribiste, ¿ya viene con los
+    // descuentos de planilla quitados? Pre-seleccionada en «neto» porque es lo
+    // que casi todo el mundo lee de su banco.
+    {
+      kind: 'select',
+      name: 'statedBasis',
+      label: t('form.basis'),
+      hint: t('form.basisHint'),
+      half: true,
+      options: (['net', 'gross'] as const).map((value) => ({
+        value,
+        label: t(`bases.${value}`),
+      })),
+    },
   ];
 
   const rows: readonly RecordRow[] = incomes.map((income) => ({
@@ -124,6 +143,9 @@ export default async function IncomePage({ params }: { params: Promise<{ locale:
       ...(income.isApproximate
         ? [{ label: t('badges.approximate'), tone: 'caution' as const }]
         : []),
+      ...(income.statedBasis === 'gross'
+        ? [{ label: t('badges.gross'), tone: 'neutral' as const }]
+        : []),
       ...(income.isActive ? [] : [{ label: t('badges.inactive'), tone: 'neutral' as const }]),
     ],
     muted: !income.isActive,
@@ -133,6 +155,7 @@ export default async function IncomePage({ params }: { params: Promise<{ locale:
       frequency: income.frequency,
       nextExpectedDate: income.nextExpectedDate,
       isApproximate: String(income.isApproximate),
+      statedBasis: income.statedBasis,
     },
   }));
 
@@ -242,6 +265,65 @@ export default async function IncomePage({ params }: { params: Promise<{ locale:
         </div>
       )}
 
+      {/* El piso va antes que la lista de cobros porque es lo que decide qué se
+          puede comprometer. La lista dice qué viene; el piso dice contra cuánto
+          se puede vivir, y esa es la pregunta que se hace primero. */}
+      <Section title={t('floor.title')} detail={t('floor.detail')} className="mt-14">
+        <IncomeFloorPanel
+          view={floorView}
+          locale={locale}
+          moneyLocale={context.moneyLocale}
+          currencySymbol={context.currencySymbol}
+          accounts={accountsView.accounts
+            .filter((account) => account.isLiquid && account.status === 'active')
+            .map((account) => ({ id: account.id, name: account.name }))}
+          labels={{
+            floorLabel: t('floor.floorLabel'),
+            floorMeasured: t('floor.measured'),
+            floorDeclared: t('floor.declared'),
+            floorUnknown: t('floor.unknown'),
+            emptyTitle: t('floor.emptyTitle'),
+            emptyBody: t('floor.emptyBody'),
+            monthsObserved: raw(t, 'floor.monthsObserved'),
+            monthsNeeded: raw(t, 'floor.monthsNeeded'),
+            worst: t('floor.worst'),
+            typical: t('floor.typical'),
+            best: t('floor.best'),
+            cushionLabel: t('floor.cushionLabel'),
+            cushionTarget: raw(t, 'floor.cushionTarget'),
+            cushionGauge: t('floor.cushionGauge'),
+            cushionFunded: t('floor.cushionFunded'),
+            cushionMissing: raw(t, 'floor.cushionMissing'),
+            cushionShort: raw(t, 'floor.cushionShort'),
+            noRetention: t('floor.noRetention'),
+            retentionHolds: raw(t, 'floor.retentionHolds'),
+            release: t('floor.release'),
+            form: {
+              floor: t('floor.form.floor'),
+              floorHint: t('floor.form.floorHint'),
+              percentile: t('floor.form.percentile'),
+              percentileHint: t('floor.form.percentileHint'),
+              months: t('floor.form.months'),
+              monthsHint: t('floor.form.monthsHint'),
+              account: t('floor.form.account'),
+              accountHint: t('floor.form.accountHint'),
+              accountNone: t('floor.form.accountNone'),
+              submit: t('floor.form.submit'),
+              saved: t('floor.form.saved'),
+              errorTitle: shared('errorTitle'),
+              errors: {
+                generic: shared('errors.generic'),
+                notFound: shared('errors.notFound'),
+                signInRequired: shared('errors.signInRequired'),
+                amountInvalid: t('floor.errors.amountInvalid'),
+                percentileInvalid: t('floor.errors.percentileInvalid'),
+                monthsInvalid: t('floor.errors.monthsInvalid'),
+              },
+            },
+          }}
+        />
+      </Section>
+
       <Section title={t('expected.title')} detail={t('expected.detail')} className="mt-14">
         <Card>
           <RecordsManager
@@ -334,4 +416,15 @@ export default async function IncomePage({ params }: { params: Promise<{ locale:
       </Section>
     </Page>
   );
+}
+
+/**
+ * Un mensaje con marcadores que se rellenan donde están los valores.
+ *
+ * `t()` intentaría resolverlos aquí y fallaría; la plantilla tiene que viajar
+ * entera hasta quien tiene el número.
+ */
+function raw(t: { raw: (key: string) => unknown }, key: string): string {
+  const value = t.raw(key);
+  return typeof value === 'string' ? value : '';
 }

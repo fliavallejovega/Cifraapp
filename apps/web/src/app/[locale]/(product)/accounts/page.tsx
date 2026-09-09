@@ -1,5 +1,18 @@
 import { formatMoney, getCurrency, type CurrencyCode } from '@app/domain';
-import { Card, Page, PageHeader, Section, Stat } from '@app/ui';
+import {
+  Amount,
+  Card,
+  Ledger,
+  LedgerBody,
+  LedgerCell,
+  LedgerColumn,
+  LedgerHead,
+  LedgerRow,
+  Page,
+  PageHeader,
+  Section,
+  Stat,
+} from '@app/ui';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { AccountsManager, type AccountRowView } from '@/components/accounts-manager';
@@ -76,6 +89,61 @@ export default async function AccountsPage({ params }: { params: Promise<{ local
             </Card>
           )}
         </div>
+      )}
+
+      {/* El desglose por persona. Sólo cuando hay más de un dueño: una tabla de
+          una fila repite la cifra de arriba y no dice nada nuevo. */}
+      {view.byPerson.length > 0 && (
+        <Section
+          title={t('byPerson.title')}
+          detail={t('byPerson.detail')}
+          className="mt-12"
+        >
+          <Card>
+            <Ledger caption={t('byPerson.title')}>
+              <LedgerHead>
+                <LedgerColumn>{t('byPerson.person')}</LedgerColumn>
+                <LedgerColumn align="end">{t('byPerson.liquid')}</LedgerColumn>
+                <LedgerColumn align="end">{t('byPerson.owed')}</LedgerColumn>
+                <LedgerColumn align="end">{t('byPerson.net')}</LedgerColumn>
+              </LedgerHead>
+              <LedgerBody>
+                {view.byPerson.map((entry) => (
+                  <LedgerRow key={entry.personId ?? 'unassigned'}>
+                    <LedgerCell>
+                      <span className="font-medium">
+                        {entry.name === 'unassigned' ? t('byPerson.unassigned') : entry.name}
+                      </span>
+                      <span className="mt-1 block text-xs text-[color:var(--color-ink-secondary)]">
+                        {t('byPerson.counts', {
+                          accounts: entry.accountCount,
+                          debts: entry.debtCount,
+                        })}
+                      </span>
+                    </LedgerCell>
+                    <LedgerCell align="end">
+                      <Amount value={entry.liquid} locale={moneyLocale} tone="plain" />
+                    </LedgerCell>
+                    <LedgerCell align="end">
+                      <Amount value={entry.liabilities} locale={moneyLocale} tone="plain" />
+                    </LedgerCell>
+                    <LedgerCell align="end">
+                      <Amount value={entry.net} locale={moneyLocale} />
+                    </LedgerCell>
+                  </LedgerRow>
+                ))}
+              </LedgerBody>
+            </Ledger>
+          </Card>
+        </Section>
+      )}
+
+      {/* Y cuando hay cuentas pero nadie les puso dueño, se dice qué falta y
+          dónde se hace, en vez de callar una sección que existe. */}
+      {!view.isEmpty && view.byPerson.length === 0 && people.length > 1 && (
+        <p className="mt-12 max-w-[62ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]">
+          {t('byPerson.unassignedHint')}
+        </p>
       )}
 
       <Section title={t('list.title')} detail={t('list.detail')} className="mt-12">

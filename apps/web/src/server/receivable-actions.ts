@@ -1,6 +1,7 @@
 'use server';
 
-import { receivables, transactions } from '@app/database/schema';
+import { householdSettings, receivables, transactions } from '@app/database/schema';
+import { Money, type CurrencyCode } from '@app/domain';
 import { and, eq, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 
@@ -71,6 +72,71 @@ function parse(formData: FormData) {
     confidence: formData.get('confidence') ?? 'estimated',
     notes: formData.get('notes') ?? undefined,
   });
+}
+
+/**
+ * Aparta el impuesto en el mismo movimiento en que se cobra.
+ *
+ * A un asalariado le retienen. A un independiente no le retiene nadie: cobra el
+ * 100% de la factura, la gasta, y descubre en la declaración que una parte de
+ * ese dinero nunca fue suyo. El único momento en que apartarlo es indoloro es
+ * este, y por eso no es un botón aparte: va pegado al acto de dar por cobrado.
+ *
+ * ## De dónde sale el porcentaje
+ *
+ * De `household_settings.tax_reserve_rate`, que la casa fija en Ajustes y que la
+ * pantalla de reserva ya enseñaba. Una sola fuente: un segundo porcentaje en el
+ * perfil fiscal dejaría la pregunta «¿cuál manda?» sin buena respuesta el día
+ * que difieran.
+ *
+ * **No** sale de las reglas de Panamá cargadas en `platform.tax_rule_sets`: son
+ * un borrador que nadie con credenciales revisó, y calcular una reserva con
+ * ellas sería presentar una cifra fiscal sin respaldo — exactamente lo que
+ * `CLAUDE.md` prohíbe. Sin tasa declarada no se aparta nada, y la pantalla lo
+ * dice en vez de fingir que sí.
+ *
+ * ## Por qué se congela la tasa junto al monto
+ *
+ * Porque subir la tasa en junio no puede cambiar lo que marzo reservó. Guardar
+ * sólo el porcentaje y recalcular hacia atrás reescribiría la historia del
+ * hogar cada vez que alguien mueve un ajuste.
+ *
+ * El producto no mueve dinero entre cuentas de un banco real. Lo que hace esta
+ * reserva es dejar de contar ese dinero como disponible —el plan lo deduce— y
+ * nombrar la cuenta a la que la casa dijo que lo pasa.
+ */
+export async function reserveOnReceipt(
+  tx: Parameters<Parameters<typeof queryAsUser<unknown>>[1]>[0],
+  input: {
+    householdId: string;
+    receivableId: string;
+    amount: string;
+    currency: CurrencyCode;
+  },
+): Promise<{ reserved: Money; rate: string | null }> {
+  const zero = Money.zero(input.currency);
+
+  const [settings] = await tx
+    .select({ rate: householdSettings.taxReserveRate })
+    .from(householdSettings)
+    .where(eq(householdSettings.householdId, input.householdId))
+    .limit(1);
+
+  const rate = settings?.rate ?? null;
+  if (!rate || Number(rate) <= 0) return { reserved: zero, rate: null };
+
+  const gross = Money.fromDecimalString(input.amount, input.currency);
+  // El redondeo a favor de la reserva no: `percentage` redondea a la mitad
+  // hacia arriba como todo lo demás del sistema, y una reserva un centavo más
+  // alta que el cobro la rechaza la base. `Money.min` cierra ese borde.
+  const reserved = Money.min(gross.percentage(rate), gross);
+
+  await tx
+    .update(receivables)
+    .set({ taxReserved: reserved.toDecimalString(), taxReservedRate: rate })
+    .where(eq(receivables.id, input.receivableId));
+
+  return { reserved, rate };
 }
 
 export async function createReceivable(
@@ -259,9 +325,21 @@ export async function confirmReceivableMatch(
           isNull(receivables.deletedAt),
         ),
       )
-      .returning({ id: receivables.id });
+      .returning({ id: receivables.id, amount: receivables.amount });
 
-    return updated ? ('ok' as const) : ('notFound' as const);
+    if (!updated) return 'notFound' as const;
+
+    // Y en el mismo paso, la tajada del impuesto. Dentro de la transacción a
+    // propósito: un cobro dado por recibido cuya reserva falló después dejaría
+    // al hogar creyendo que apartó algo que no apartó.
+    await reserveOnReceipt(tx, {
+      householdId,
+      receivableId: updated.id,
+      amount: updated.amount,
+      currency: currencyOf(session, householdId) as CurrencyCode,
+    });
+
+    return 'ok' as const;
   });
 
   if (outcome !== 'ok') return { error: outcome };
@@ -286,11 +364,118 @@ export async function reopenReceivable(
   const [updated] = await queryAsUser(session, (tx) =>
     tx
       .update(receivables)
-      .set({ receivedOn: null, receivedTransactionId: null, updatedAt: new Date() })
+      // La reserva se va con el cobro. Dejarla dejaría al plan deduciendo un
+      // impuesto sobre dinero que el hogar acaba de decir que nunca entró.
+      .set({
+        receivedOn: null,
+        receivedTransactionId: null,
+        taxReserved: '0',
+        taxReservedRate: null,
+        taxReleasedOn: null,
+        updatedAt: new Date(),
+      })
       .where(
         and(
           eq(receivables.id, id.data),
           eq(receivables.householdId, householdId),
+          isNull(receivables.deletedAt),
+        ),
+      )
+      .returning({ id: receivables.id }),
+  );
+
+  if (!updated) return { error: 'notFound' };
+
+  revalidateFinancials(formData);
+  return { ok: true };
+}
+
+/**
+ * Dar por cobrado a mano, sin haber importado nada.
+ *
+ * Casi todo el mundo cobra antes de subir el estado de cuenta, y obligar a
+ * importar para poder marcar un cobro convierte una acción de dos segundos en
+ * una tarea de fin de mes. La diferencia con la conciliación se conserva en la
+ * fila: `receivedTransactionId` queda nulo, y eso es lo que distingue «lo cobré»
+ * de «aquí está el depósito que lo cobró» cuando alguien lo mire en marzo.
+ *
+ * La reserva fiscal se aparta igual. Que el respaldo sea la palabra de la casa y
+ * no un movimiento no cambia que ese dinero entró y que una parte no es suyo.
+ */
+export async function markReceivableReceived(
+  _previous: RecordActionResult,
+  formData: FormData,
+): Promise<RecordActionResult> {
+  const session = await loadSession();
+  if (!session?.activeHouseholdId) return { error: 'signInRequired' };
+
+  const id = z.uuid().safeParse(formData.get('id'));
+  const on = z.iso.date().safeParse(formData.get('receivedOn'));
+  if (!id.success || !on.success) return { error: 'notFound' };
+
+  const householdId = session.activeHouseholdId;
+
+  const outcome = await queryAsUser(session, async (tx) => {
+    const [updated] = await tx
+      .update(receivables)
+      .set({ receivedOn: on.data, updatedAt: new Date() })
+      .where(
+        and(
+          eq(receivables.id, id.data),
+          eq(receivables.householdId, householdId),
+          isNull(receivables.receivedOn),
+          isNull(receivables.deletedAt),
+        ),
+      )
+      .returning({ id: receivables.id, amount: receivables.amount });
+
+    if (!updated) return 'notFound' as const;
+
+    await reserveOnReceipt(tx, {
+      householdId,
+      receivableId: updated.id,
+      amount: updated.amount,
+      currency: currencyOf(session, householdId) as CurrencyCode,
+    });
+
+    return 'ok' as const;
+  });
+
+  if (outcome !== 'ok') return { error: outcome };
+
+  revalidateFinancials(formData);
+  return { ok: true };
+}
+
+/**
+ * Liberar la reserva, porque el impuesto ya se pagó.
+ *
+ * Hasta aquí la reserva era una deducción viva del disponible. Liberarla no
+ * borra el dato —queda cuánto se apartó y a qué tasa, que es la historia fiscal
+ * del hogar— sino que deja de reclamarlo, porque el dinero ya salió de verdad.
+ */
+export async function releaseTaxReserve(
+  _previous: RecordActionResult,
+  formData: FormData,
+): Promise<RecordActionResult> {
+  const session = await loadSession();
+  if (!session?.activeHouseholdId) return { error: 'signInRequired' };
+
+  const id = z.uuid().safeParse(formData.get('id'));
+  const on = z.iso.date().safeParse(formData.get('releasedOn'));
+  if (!id.success || !on.success) return { error: 'notFound' };
+
+  const householdId = session.activeHouseholdId;
+
+  const [updated] = await queryAsUser(session, (tx) =>
+    tx
+      .update(receivables)
+      .set({ taxReleasedOn: on.data, updatedAt: new Date() })
+      .where(
+        and(
+          eq(receivables.id, id.data),
+          eq(receivables.householdId, householdId),
+          isNull(receivables.taxReleasedOn),
           isNull(receivables.deletedAt),
         ),
       )

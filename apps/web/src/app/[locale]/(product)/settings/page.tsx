@@ -2,14 +2,17 @@ import { formatMoney } from '@app/domain';
 import { Card, Page, PageHeader, Section } from '@app/ui';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
+import { IntegrationsPanel } from '@/components/integrations-panel';
 import { SingleForm } from '@/components/records';
 import { TwoFactorSettings } from '@/components/two-factor-settings';
 import type { FieldSpec } from '@/components/records/spec';
 import { Link } from '@/i18n/navigation';
-import { trimRate } from '@/lib/format';
+import { formatMoment, trimRate } from '@/lib/format';
 import { loadHouseholdContext } from '@/server/household-context';
 import { loadTwoFactorState } from '@/server/mfa';
+import { googleIsConfigured, googleMissingPieces } from '@/server/google/config';
 import { loadSettings } from '@/server/repositories/administration';
+import { loadIntegrations } from '@/server/repositories/integrations';
 import { saveSettings } from '@/server/settings-actions';
 import { requireHousehold } from '@/server/session';
 
@@ -32,9 +35,10 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
 
   const session = await requireHousehold(locale);
   const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
-  const [settings, twoFactor] = await Promise.all([
+  const [settings, twoFactor, integrations] = await Promise.all([
     loadSettings(session, session.activeHouseholdId, context.currency),
     loadTwoFactorState(),
+    loadIntegrations(session, session.activeHouseholdId),
   ]);
 
   const t = await getTranslations('settings');
@@ -160,6 +164,69 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
         />
       </Section>
 
+      <Section
+        title={t('integrations.title')}
+        detail={t('integrations.detail')}
+        className="mt-12"
+      >
+        <IntegrationsPanel
+          locale={locale}
+          configured={googleIsConfigured()}
+          feeds={integrations.feeds.map((feed) => ({
+            id: feed.id,
+            label: feed.label,
+            hint: feed.hint,
+            lastRead: feed.lastReadAt
+              ? formatMoment(feed.lastReadAt, locale, context.timeZone)
+              : null,
+            readCount: feed.readCount,
+          }))}
+          connections={integrations.google.map((connection) => ({
+            id: connection.id,
+            googleEmail: connection.googleEmail,
+            capabilities: connection.capabilities,
+            status: connection.status,
+            isMine: connection.isMine,
+          }))}
+          labels={{
+            feedTitle: t('integrations.feed.title'),
+            feedDetail: t('integrations.feed.detail'),
+            feedEmptyTitle: t('integrations.feed.emptyTitle'),
+            feedEmptyBody: t('integrations.feed.emptyBody'),
+            feedCreate: t('integrations.feed.create'),
+            feedLabelField: t('integrations.feed.label'),
+            feedLabelPlaceholder: t('integrations.feed.labelPlaceholder'),
+            feedRevoke: t('integrations.feed.revoke'),
+            feedNever: t('integrations.feed.never'),
+            feedRead: rawOf(t)('integrations.feed.read'),
+            feedSecretTitle: t('integrations.feed.secretTitle'),
+            feedSecretBody: t('integrations.feed.secretBody'),
+            feedHowTo: t('integrations.feed.howTo'),
+            googleTitle: t('integrations.google.title'),
+            googleDetail: t('integrations.google.detail'),
+            googleOff: t('integrations.google.off', {
+              missing: googleMissingPieces().join(', ') || '—',
+            }),
+            googleConnectCalendar: t('integrations.google.connectCalendar'),
+            googleConnectMail: t('integrations.google.connectMail'),
+            googleConnectBoth: t('integrations.google.connectBoth'),
+            googleDisconnect: t('integrations.google.disconnect'),
+            googleMailScope: t('integrations.google.mailScope'),
+            googleCalendarScope: t('integrations.google.calendarScope'),
+            googleBroken: t('integrations.google.broken'),
+            googleNotMine: t('integrations.google.notMine'),
+            errorTitle: shared('errorTitle'),
+            errors: {
+              generic: shared('errors.generic'),
+              notFound: shared('errors.notFound'),
+              signInRequired: shared('errors.signInRequired'),
+              tooManyFeeds: t('integrations.feed.errors.tooMany'),
+              horizonInvalid: t('integrations.feed.errors.horizon'),
+            },
+          }}
+        />
+      </Section>
+
       <Section title={t('currency.title')} detail={t('currency.detail')} className="mt-12">
         <Card>
           <p className="text-sm text-[color:var(--color-ink-secondary)]">{t('currency.current')}</p>
@@ -190,4 +257,12 @@ function isStringRecord(value: unknown): value is Record<string, string> {
     value !== null &&
     Object.values(value).every((entry) => typeof entry === 'string')
   );
+}
+
+/** Una plantilla cuyos marcadores se rellenan donde están los valores. */
+function rawOf(t: { raw: (key: string) => unknown }): (key: string) => string {
+  return (key) => {
+    const value = t.raw(key);
+    return typeof value === 'string' ? value : '';
+  };
 }

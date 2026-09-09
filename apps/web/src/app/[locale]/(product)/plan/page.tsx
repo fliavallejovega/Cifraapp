@@ -19,6 +19,7 @@ import {
 } from '@app/ui';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
+import { formatPlainDate } from '@/lib/format';
 import { Link } from '@/i18n/navigation';
 import { PeriodStrip } from '@/components/period-strip';
 import { explainPlan } from '@/server/repositories/copilot';
@@ -199,6 +200,93 @@ export default async function PlanPage({ params }: { params: Promise<{ locale: s
               </Card>
             )}
           </Section>
+
+          {/*
+            La cobertura, compromiso por compromiso.
+
+            Va justo debajo de la escalera de deducciones porque responde a la
+            pregunta que esa escalera deja abierta: no «cuánto queda» sino «cuál
+            de estos pagos tiene dinero detrás». La frase de arriba es la que se
+            puede leer en voz alta y actuar: hasta qué día llega lo que hay, qué
+            falta, y para cuándo.
+          */}
+          {view.coverage.commitments.length > 0 && (
+            <Section
+              title={t('coverage.title')}
+              detail={t('coverage.detail')}
+              className="mt-16"
+            >
+              <Card>
+                <p className="max-w-[68ch] text-pretty">
+                  {view.coverage.coveredThrough
+                    ? t('coverage.summaryCovered', {
+                        total: money(view.coverage.totalCommitted),
+                        through: formatPlainDate(view.coverage.coveredThrough, locale),
+                      })
+                    : t('coverage.summaryNone', {
+                        total: money(view.coverage.totalCommitted),
+                      })}{' '}
+                  {view.coverage.mustArrive.isPositive() && view.coverage.mustArriveBy
+                    ? t('coverage.summaryNeeds', {
+                        amount: money(view.coverage.mustArrive),
+                        by: formatPlainDate(view.coverage.mustArriveBy, locale),
+                      })
+                    : t('coverage.summaryEnough')}{' '}
+                  {view.coverage.expectedInHorizon.isPositive() &&
+                    t('coverage.summaryExpected', {
+                      expected: money(view.coverage.expectedInHorizon),
+                      confirmed: money(view.coverage.confirmedInHorizon),
+                    })}
+                </p>
+              </Card>
+
+              <Card padding="none" className="mt-4 overflow-hidden px-5 sm:px-6">
+                <Ledger caption={t('coverage.title')}>
+                  <LedgerHead>
+                    <LedgerColumn>{t('coverage.columns.commitment')}</LedgerColumn>
+                    <LedgerColumn align="end">{t('coverage.columns.amount')}</LedgerColumn>
+                    <LedgerColumn>{t('coverage.columns.verdict')}</LedgerColumn>
+                  </LedgerHead>
+                  <LedgerBody>
+                    {view.coverage.commitments.map((line) => (
+                      <LedgerRow key={line.id}>
+                        <LedgerCell>
+                          <span className="font-medium">{line.label}</span>
+                          <span className="mt-1 block text-xs text-[color:var(--color-ink-secondary)]">
+                            {formatPlainDate(line.due, locale)}
+                            {line.dependsOn.length > 0 &&
+                              ` · ${t('coverage.dependsOn', {
+                                names: line.dependsOn.map((one) => one.label).join(', '),
+                              })}`}
+                          </span>
+                        </LedgerCell>
+                        <LedgerCell align="end">
+                          <Amount value={line.amount} locale={moneyLocale} size="sm" tone="plain" />
+                        </LedgerCell>
+                        <LedgerCell>
+                          <Status
+                            tone={
+                              line.verdict === 'covered'
+                                ? 'positive'
+                                : line.verdict === 'conditional'
+                                  ? 'caution'
+                                  : 'negative'
+                            }
+                          >
+                            {line.verdict === 'uncovered'
+                              ? t('coverage.verdicts.uncovered', {
+                                  amount: money(line.shortfall),
+                                })
+                              : t(`coverage.verdicts.${line.verdict}`)}
+                          </Status>
+                        </LedgerCell>
+                      </LedgerRow>
+                    ))}
+                  </LedgerBody>
+                </Ledger>
+              </Card>
+            </Section>
+          )}
 
           {/*
             Lo que viene, al lado y nunca dentro.

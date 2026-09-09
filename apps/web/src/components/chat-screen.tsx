@@ -2,11 +2,14 @@ import { Card, Page, PageHeader, Problem, Section, Status } from '@app/ui';
 import { getTranslations } from 'next-intl/server';
 
 import { ChatRoom } from '@/components/chat-room';
+import { PlanProposals } from '@/components/plan-proposals';
 import { ThreadActions } from '@/components/thread-actions';
 import { Link } from '@/i18n/navigation';
 import { formatMoment } from '@/lib/format';
 import { copilotIsConfigured } from '@/server/ai';
 import { loadChatScreen } from '@/server/repositories/chat-view';
+import { describeProposal } from '@/server/repositories/proposal-copy';
+import { loadPendingProposals } from '@/server/repositories/proposals';
 import { requireHousehold } from '@/server/session';
 
 /**
@@ -67,8 +70,15 @@ export async function ChatScreen({
     fresh ?? false,
   );
 
+  const proposals = await loadPendingProposals(session, session.activeHouseholdId);
+
   const errors = {
     copilotOff: t('errors.copilotOff'),
+    requestRequired: t('errors.questionRequired'),
+    copilotUnavailable: t('errors.generic'),
+    noProposals: t('proposals.errors.none'),
+    expired: t('proposals.errors.expired'),
+    targetGone: t('proposals.errors.targetGone'),
     questionRequired: t('errors.questionRequired'),
     createFailed: t('errors.createFailed'),
     signInRequired: t('errors.signInRequired'),
@@ -135,6 +145,41 @@ export async function ChatScreen({
           errors,
         }}
       />
+
+      {/* Las propuestas van entre la conversación y el historial: son la
+          consecuencia de lo que se acaba de hablar, y ponerlas al final las
+          dejaría fuera de la vista justo cuando hacen falta. */}
+      <Section
+        title={t('proposals.title')}
+        detail={t('proposals.detail')}
+        className="mt-12"
+      >
+        <PlanProposals
+          locale={locale}
+          proposals={await Promise.all(
+            proposals.map(async (proposal) => ({
+              id: proposal.id,
+              description: await describeProposal(proposal, locale),
+              reason: proposal.reason,
+            })),
+          )}
+          labels={{
+            title: t('proposals.title'),
+            detail: t('proposals.detail'),
+            emptyTitle: t('proposals.emptyTitle'),
+            emptyBody: t('proposals.emptyBody'),
+            modelSays: t('proposals.modelSays'),
+            approve: t('proposals.approve'),
+            reject: t('proposals.reject'),
+            composerLabel: t('proposals.composerLabel'),
+            composerPlaceholder: t('proposals.composerPlaceholder'),
+            composerSubmit: t('proposals.composerSubmit'),
+            pending: t('composer.thinking'),
+            errorTitle: t('errorTitle'),
+            errors,
+          }}
+        />
+      </Section>
 
       {screen.threads.length > 0 && (
         <Section title={t('threads.title')} className="mt-12">

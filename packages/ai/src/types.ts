@@ -34,6 +34,11 @@ export type ProviderId = 'anthropic' | 'openai' | 'scripted' | 'none';
  * taxes, overriding a user rule, bypassing a permission, deleting a record and
  * clearing a duplicate are absent because they are forbidden, not because nobody
  * has needed them yet.
+ *
+ * `plan_proposal` is the one member that reaches toward a write, and the shape
+ * of the reach is the point: it produces rows of a closed catalogue that
+ * `proposal.ts` validates against the household's own data and that a person
+ * confirms before anything changes. No code path in this package writes.
  */
 export type AIFeature =
   | 'merchant_classification'
@@ -42,6 +47,7 @@ export type AIFeature =
   | 'budget_suggestion'
   | 'document_interpretation'
   | 'rule_proposal'
+  | 'plan_proposal'
   | 'scenario_narration'
   | 'question_answer';
 

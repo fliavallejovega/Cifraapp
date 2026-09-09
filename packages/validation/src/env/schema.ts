@@ -95,6 +95,32 @@ export const serverEnvSchema = z.object({
   VAPID_PRIVATE_KEY: z.string().min(20).optional(),
   /** A quién escribirle si un servicio de push necesita reportar un abuso. */
   VAPID_SUBJECT: z.string().min(5).optional(),
+
+  /**
+   * La aplicación de Google con la que un hogar conecta su cuenta.
+   *
+   * Sirve para dos cosas distintas y opcionales por separado: leer los avisos de
+   * transacción que manda el banco, y escribir los compromisos en el calendario.
+   * Sin estas dos variables el producto arranca igual y las dos funciones se
+   * enseñan apagadas, con el motivo — que es mejor que una pantalla que falla al
+   * pulsar «Conectar».
+   *
+   * El secreto nunca llega al navegador: el intercambio de código por token
+   * ocurre entero en el servidor.
+   */
+  GOOGLE_CLIENT_ID: z.string().min(10).optional(),
+  GOOGLE_CLIENT_SECRET: z.string().min(10).optional(),
+  /**
+   * La llave con la que se cifra el refresh token antes de guardarlo.
+   *
+   * 32 bytes en base64. Sin ella no se guarda ninguna conexión: un refresh token
+   * en claro en la base es el buzón de alguien en una copia de seguridad, y
+   * `service_role` —que salta toda la seguridad de fila— lo leería entero.
+   *
+   * Rotarla invalida las conexiones existentes, que es el comportamiento
+   * correcto: obliga a reconectar y deja de descifrar lo que se filtró.
+   */
+  GOOGLE_TOKEN_KEY: z.string().min(32).optional(),
 });
 
 /**

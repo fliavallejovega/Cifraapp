@@ -37,6 +37,9 @@ export const documentKind = pgEnum('document_kind', [
   'other',
 ]);
 
+/** De dónde vinieron las filas. `email` no tiene documento que descargar. */
+export const importSource = pgEnum('import_source', ['upload', 'email']);
+
 export const importStatus = pgEnum('import_status', [
   'uploaded',
   'parsing',
@@ -84,13 +87,19 @@ export const imports = appSchema.table(
     householdId: uuid('household_id')
       .notNull()
       .references(() => households.id, { onDelete: 'cascade' }),
-    documentId: uuid('document_id')
-      .notNull()
-      .references(() => documents.id, { onDelete: 'cascade' }),
+    /**
+     * El archivo del que salió, cuando salió de uno.
+     *
+     * Nulo para un aviso de transacción: llega como correo y no como archivo, y
+     * guardar el cuerpo en el almacén de objetos sólo para satisfacer una llave
+     * foránea guardaría de por vida el dato que menos conviene custodiar.
+     */
+    documentId: uuid('document_id').references(() => documents.id, { onDelete: 'cascade' }),
     accountId: uuid('account_id').references(() => accounts.id, { onDelete: 'set null' }),
     startedBy: uuid('started_by').references(() => profiles.id, { onDelete: 'set null' }),
     /** The background job that produced this import, when one did. */
     jobId: uuid('job_id'),
+    source: importSource('source').notNull().default('upload'),
     status: importStatus('status').notNull().default('uploaded'),
     format: text('format'),
     rowsFound: integer('rows_found').notNull().default(0),

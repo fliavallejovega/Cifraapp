@@ -331,6 +331,90 @@ export const QUESTION_ANSWER_V1 = define({
   cacheable: false,
 });
 
+export const PLAN_PROPOSAL_V1 = define({
+  key: 'plan-proposal',
+  version: 1,
+  feature: 'plan_proposal',
+  instruction: [
+    'The household asked for a change to their plan, in their own words. Turn it',
+    'into rows of the closed catalogue below. You are drafting a form for a',
+    'person to review; you are not making the change.',
+    '',
+    'kind must be exactly one of:',
+    '  set_income_floor          value: an amount from FACTS',
+    '  set_cushion_months        value: a whole number of months, 1 to 24',
+    '  set_buffer_minimum        value: an amount from FACTS',
+    '  set_tax_reserve_rate      value: a whole percentage, 0 to 60',
+    '  set_debt_strategy         value: avalanche | snowball | custom | hybrid',
+    '  set_receivable_window     target: a receivable id from FACTS',
+    '                            value: YYYY-MM-DD..YYYY-MM-DD',
+    '  set_receivable_confidence target: a receivable id from FACTS',
+    '                            value: confirmed | likely | estimated',
+    '  set_goal_priority         target: a goal id from FACTS, value: 1 to 99',
+    '  set_goal_target_date      target: a goal id from FACTS, value: YYYY-MM-DD',
+    '',
+    'Rules that override anything the household asked for:',
+    '- Leave target empty for the kinds that do not list one.',
+    '- Every amount must appear in FACTS character for character. Never compute',
+    '  a new one, not even by adding two that are there.',
+    '- Every id must appear in FACTS. Never invent one, never guess a name.',
+    '- If the request does not map onto the catalogue, return no rows and say so',
+    '  in summary. An empty list is a correct answer.',
+    '- reason is one sentence in the household\'s own terms, saying what changes',
+    '  and why they asked for it.',
+  ].join('\n'),
+  output: {
+    summary: {
+      kind: 'text',
+      description: 'One sentence on what these rows would do, or why there are none.',
+      maxLength: 300,
+    },
+    proposals: {
+      kind: 'record_list',
+      description: 'The changes to put in front of the household. Empty is allowed.',
+      maxItems: 5,
+      fields: {
+        kind: {
+          kind: 'choice',
+          description: 'Which change from the catalogue.',
+          options: [
+            'set_income_floor',
+            'set_cushion_months',
+            'set_buffer_minimum',
+            'set_tax_reserve_rate',
+            'set_debt_strategy',
+            'set_receivable_window',
+            'set_receivable_confidence',
+            'set_goal_priority',
+            'set_goal_target_date',
+          ],
+        },
+        target: {
+          kind: 'text',
+          description: 'The id this applies to, from FACTS. Empty when the kind has none.',
+          maxLength: 64,
+        },
+        value: {
+          kind: 'text',
+          description: 'The new value, in the format the catalogue gives for this kind.',
+          maxLength: 64,
+        },
+        reason: {
+          kind: 'text',
+          description: 'One sentence: what changes and why they asked for it.',
+          maxLength: 200,
+        },
+      },
+    },
+  },
+  maxOutputTokens: 900,
+  requires: ['request'],
+  // Nunca. La misma frase en dos momentos del mes se refiere a filas distintas,
+  // y servir una propuesta cacheada sobre un cobro que ya se cobró es proponer
+  // un cambio sobre algo que ya no existe.
+  cacheable: false,
+});
+
 export const PROMPTS: readonly PromptDefinition[] = [
   MERCHANT_CLASSIFICATION_V1,
   ALLOCATION_EXPLANATION_V1,
@@ -338,6 +422,7 @@ export const PROMPTS: readonly PromptDefinition[] = [
   BUDGET_SUGGESTION_V1,
   DOCUMENT_INTERPRETATION_V1,
   RULE_PROPOSAL_V1,
+  PLAN_PROPOSAL_V1,
   SCENARIO_NARRATION_V1,
   QUESTION_ANSWER_V1,
 ];

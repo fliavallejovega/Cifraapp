@@ -28,6 +28,20 @@ export {
 } from './transfers.js';
 
 export {
+  alertToCandidate,
+  flatten,
+  institutionOf,
+  parseBankAlert,
+  readAccountHint,
+  readAmount,
+  readDate,
+  readMerchant,
+  type EmailAlert,
+  type ParseAlertOptions,
+  type ParsedAlert,
+} from './parsers/bank-alert.js';
+
+export {
   detectStatementFormat,
   extractPdfLines,
   findHeaderRow,

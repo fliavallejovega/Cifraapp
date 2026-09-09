@@ -11,10 +11,17 @@ import {
 } from '@app/allocation-engine';
 import {
   buildPayPeriods,
+  computeCoverage,
+  computeCushion,
+  computeIncomeFloor,
   computeSafeToSpend,
+  cushionClaim,
   nextOccurrence,
   PAY_PERIOD_HORIZON_DAYS,
+  type CoverageResult,
+  type CushionState,
   type Frequency,
+  type IncomeFloor,
   type PayPeriod,
   type PeriodClaim,
   type SafeToSpendResult,
@@ -40,7 +47,7 @@ import {
   type FactValue,
   type Rule,
 } from '@app/rule-engine';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, isNotNull, isNull } from 'drizzle-orm';
 
 import { queryAsUser, type Session } from '../session';
 import { penaltyStillAtStake } from './late-fee';
@@ -122,6 +129,23 @@ export interface PlanView {
     readonly expectedOn: PlainDate | null;
     readonly isConfirmed: boolean;
   }[];
+  /**
+   * Compromiso por compromiso: cubierto, condicional o descubierto.
+   *
+   * Es la respuesta accionable a «¿me alcanza?». «Tenés $3,400» es mentira
+   * cuando $1,900 son una factura sin cobrar, y «no se puede saber» es inútil
+   * cuando sí se puede: lo que no se sabe es el día exacto, no el rango.
+   */
+  readonly coverage: CoverageResult;
+  /**
+   * El piso: el sueldo que se paga a sí mismo quien no tiene sueldo.
+   *
+   * Viaja con el plan porque decide contra cuánto se puede comprometer, y
+   * porque la pantalla tiene que poder decir si salió de la historia del hogar
+   * o de lo que la persona declaró mientras esa historia se junta.
+   */
+  readonly floor: IncomeFloor;
+  readonly cushion: CushionState;
   readonly isEmpty: boolean;
 }
 
@@ -141,7 +165,11 @@ export async function loadPlan(session: Session, householdId: string): Promise<P
     const [accountRows, obligationRows, debtRows, goalRows, settingsRows, storedRules, incomeRows] =
       await Promise.all([
         tx
-          .select({ balance: accounts.currentBalance, type: accounts.accountType })
+          .select({
+            id: accounts.id,
+            balance: accounts.currentBalance,
+            type: accounts.accountType,
+          })
           .from(accounts)
           .where(
             and(
@@ -211,6 +239,10 @@ export async function loadPlan(session: Session, householdId: string): Promise<P
             bufferMinimum: householdSettings.bufferMinimum,
             debtStrategy: householdSettings.debtStrategy,
             taxReserveRate: householdSettings.taxReserveRate,
+            incomeFloor: householdSettings.incomeFloor,
+            incomeFloorPercentile: householdSettings.incomeFloorPercentile,
+            cushionMonths: householdSettings.cushionMonths,
+            retentionAccountId: householdSettings.retentionAccountId,
           })
           .from(householdSettings)
           .where(eq(householdSettings.householdId, householdId))
@@ -242,6 +274,7 @@ export async function loadPlan(session: Session, householdId: string): Promise<P
             anchorDays: recurringSeries.anchorDays,
             anchorAmounts: recurringSeries.anchorAmounts,
             nextExpectedDate: recurringSeries.nextExpectedDate,
+            statedBasis: recurringSeries.statedBasis,
           })
           .from(recurringSeries)
           .where(
@@ -256,6 +289,43 @@ export async function loadPlan(session: Session, householdId: string): Promise<P
 
     const settings = settingsRows[0];
     const bufferMinimum = Money.fromDecimalString(settings?.bufferMinimum ?? '0', currency);
+
+    /**
+     * Lo que sale de una planilla antes de que el sueldo llegue.
+     *
+     * Estas filas no son un reclamo contra el saldo —el motor ya las excluye de
+     * los compromisos— pero sí decidían una cifra que nadie estaba restando: si
+     * el monto que la persona escribió como su ingreso es el **bruto**, la casa
+     * cree tener cada mes un dinero que nunca toca su cuenta.
+     *
+     * Cuál de los dos es lo dice la persona, en `stated_basis`, porque las dos
+     * respuestas son legítimas y ninguna se puede deducir del resto de las
+     * filas. Con `net` —el defecto, y lo que casi todo el mundo escribe, porque
+     * es lo que ve en el banco— no se resta nada y el sistema se comporta como
+     * hasta ahora.
+     */
+    const payrollDeductions = await tx
+      .select({
+        seriesId: obligations.paidFromSeriesId,
+        amount: obligations.expectedAmount,
+      })
+      .from(obligations)
+      .where(
+        and(
+          eq(obligations.householdId, householdId),
+          isNull(obligations.deletedAt),
+          eq(obligations.isDeductedAtSource, true),
+          isNotNull(obligations.paidFromSeriesId),
+        ),
+      );
+
+    const deductedFrom = new Map<string, Money>();
+    for (const row of payrollDeductions) {
+      const key = row.seriesId;
+      if (!key) continue;
+      const amount = Money.fromDecimalString(row.amount, currency);
+      deductedFrom.set(key, (deductedFrom.get(key) ?? Money.zero(currency)).add(amount));
+    }
 
     const periodHorizon = addDays(today, PAY_PERIOD_HORIZON_DAYS);
 
@@ -339,6 +409,8 @@ export async function loadPlan(session: Session, householdId: string): Promise<P
         source: receivables.source,
         amount: receivables.amount,
         expectedOn: receivables.expectedOn,
+        expectedFrom: receivables.expectedFrom,
+        expectedTo: receivables.expectedTo,
         confidence: receivables.confidence,
       })
       .from(receivables)
@@ -347,6 +419,31 @@ export async function loadPlan(session: Session, householdId: string): Promise<P
           eq(receivables.householdId, householdId),
           isNull(receivables.deletedAt),
           isNull(receivables.receivedOn),
+        ),
+      );
+
+    /**
+     * Los cobros que ya entraron, para dos cosas distintas.
+     *
+     * La historia con la que se mide el piso, y lo que se apartó de impuesto y
+     * todavía no se ha pagado. La segunda reemplaza al «un porcentaje del saldo
+     * líquido» que había antes, que era una aproximación sin fecha ni origen y
+     * que subía cuando la casa cobraba aunque el cobro no fuera gravado.
+     */
+    const receivedRows = await tx
+      .select({
+        id: receivables.id,
+        receivedOn: receivables.receivedOn,
+        amount: receivables.amount,
+        taxReserved: receivables.taxReserved,
+        taxReleasedOn: receivables.taxReleasedOn,
+      })
+      .from(receivables)
+      .where(
+        and(
+          eq(receivables.householdId, householdId),
+          isNull(receivables.deletedAt),
+          isNotNull(receivables.receivedOn),
         ),
       );
 
@@ -366,7 +463,7 @@ export async function loadPlan(session: Session, householdId: string): Promise<P
       incomes: incomeRows.map((row) => ({
         id: row.id,
         label: row.name,
-        amount: Money.fromDecimalString(row.amount, currency),
+        amount: netOf(row.statedBasis, Money.fromDecimalString(row.amount, currency), deductedFrom.get(row.id)),
         frequency: row.frequency,
         anchorDays: row.anchorDays ?? undefined,
         // Lo que trae cada quincena cuando no traen lo mismo. La base ya
@@ -442,9 +539,72 @@ export async function loadPlan(session: Session, householdId: string): Promise<P
 
     const minimums = totalMinimums(modelDebts, currency);
 
-    // Estimated, never "your tax bill" — the rate is the household's own setting
-    // until the tax engine arrives in Phase 12.
-    const taxReserve = settings?.taxReserveRate ? liquid.percentage(settings.taxReserveRate) : zero;
+    /**
+     * La reserva fiscal: lo que se apartó al cobrar y todavía no se ha pagado.
+     *
+     * Antes era un porcentaje del saldo líquido, que tenía dos defectos. Subía
+     * cuando la casa cobraba algo no gravado —una devolución, un préstamo de un
+     * hermano— y bajaba sola cuando el saldo bajaba, como si pagar el alquiler
+     * redujera el impuesto que se debe. Ahora es la suma de tajadas concretas,
+     * cada una con su cobro, su fecha y su tasa.
+     *
+     * El porcentaje del hogar sigue como respaldo mientras no haya ni un cobro
+     * con reserva: una casa que acaba de configurar la tasa y no ha registrado
+     * cobros todavía merece ver una estimación en vez de un cero.
+     */
+    const reservedLive = Money.sum(
+      receivedRows
+        .filter((row) => row.taxReleasedOn === null)
+        .map((row) => Money.fromDecimalString(row.taxReserved, currency)),
+      currency,
+    );
+
+    const taxReserve = reservedLive.isPositive()
+      ? reservedLive
+      : settings?.taxReserveRate
+        ? liquid.percentage(settings.taxReserveRate)
+        : zero;
+
+    /**
+     * El piso y el colchón, con la historia que haya.
+     *
+     * El colchón entra al plan como un reclamo `emergency_fund`, que la escalera
+     * ya coloca por delante de las metas y por detrás de los esenciales y los
+     * mínimos de deuda. No hizo falta tocar el motor de asignación: el orden que
+     * hacía falta ya estaba, sólo faltaba la cifra.
+     */
+    const floor = computeIncomeFloor({
+      currency,
+      today,
+      receipts: receivedRows.map((row) => ({
+        id: row.id,
+        receivedOn: row.receivedOn as PlainDate,
+        amount: Money.fromDecimalString(row.amount, currency),
+      })),
+      declared: settings?.incomeFloor
+        ? Money.fromDecimalString(settings.incomeFloor, currency)
+        : null,
+      ...(settings?.incomeFloorPercentile
+        ? { percentile: Number(settings.incomeFloorPercentile) }
+        : {}),
+    });
+
+    const retentionHeld = settings?.retentionAccountId
+      ? Money.sum(
+          accountRows
+            .filter((row) => row.id === settings.retentionAccountId)
+            .map((row) => Money.fromDecimalString(row.balance, currency)),
+          currency,
+        )
+      : zero;
+
+    const cushion = computeCushion({
+      currency,
+      floor: floor.amount,
+      held: retentionHeld,
+      variation: floor.variation,
+      monthsTarget: settings?.cushionMonths ?? null,
+    });
 
     const safeToSpend = computeSafeToSpend({
       currency,
@@ -485,6 +645,10 @@ export async function loadPlan(session: Session, householdId: string): Promise<P
       ordered,
       taxReserve,
       bufferMinimum,
+      // Lo que le falta al colchón, acotado a lo que este período puede dar. Un
+      // reclamo por los seis meses enteros se llevaría el período completo y
+      // dejaría sin nada a todo lo que está debajo, que es peor que avanzar.
+      cushionShortfall: cushionClaim(cushion, current ? current.available : liquid),
       goals: goalRows.map((row) => ({
         id: row.id,
         name: row.name,
@@ -522,11 +686,47 @@ export async function loadPlan(session: Session, householdId: string): Promise<P
     // persigue, no lo primero.
     const expectedRows = expectedRowsEarly;
 
+    /**
+     * La cobertura, sobre el efectivo de hoy y los cobros con ventana.
+     *
+     * Se calcula al final a propósito: necesita los mismos compromisos que el
+     * plan repartió —proyectados a sus días reales, no una fila por cadencia— y
+     * los cobros tal como la casa los declaró. Calcularlo antes obligaría a
+     * repetir la proyección, y dos proyecciones son dos oportunidades de que la
+     * pantalla y el plan digan días distintos del mismo pago.
+     */
+    const coverage = computeCoverage({
+      currency,
+      today,
+      cash: liquid,
+      commitments: upcoming.map((claim) => ({
+        id: claim.id,
+        label: claim.name,
+        due: claim.due,
+        amount: claim.amount,
+        isEssential: claim.isEssential,
+      })),
+      expected: expectedRowsEarly.map((row) => ({
+        id: row.id,
+        label: row.name,
+        amount: Money.fromDecimalString(row.amount, currency),
+        // La ventana, con la fecha exacta como respaldo: un cobro cargado
+        // antes de que existieran las ventanas es una ventana de un solo día.
+        from: row.expectedFrom as PlainDate | null,
+        to: (row.expectedTo ?? row.expectedOn) as PlainDate | null,
+        confidence: row.confidence,
+      })),
+      horizonDays: OBLIGATION_HORIZON_DAYS,
+    });
+
     return {
       currency,
       today,
       safeToSpend,
       plan,
+      coverage,
+      floor,
+      cushion,
       // Y qué cobro le sirve a qué meta: el préstamo que devuelven en diciembre
       // le sirve al viaje del 20 y no al carro de marzo. Se enseña al lado, no
       // sumado — el plan se hace con el dinero que entró.
@@ -583,6 +783,20 @@ export async function loadPlan(session: Session, householdId: string): Promise<P
       isEmpty: accountRows.length === 0 && obligationRows.length === 0 && debtRows.length === 0,
     };
   });
+}
+
+/**
+ * Lo que de verdad llega a la cuenta, según lo que la persona declaró.
+ *
+ * Con `net`, el monto ya viene limpio y se devuelve tal cual. Con `gross`, se
+ * restan los descuentos de planilla atados a ese ingreso — acotado a cero, para
+ * que un descuento mal cargado por encima del sueldo produzca un ingreso de cero
+ * y no uno negativo, que rompería todos los períodos hacia abajo.
+ */
+function netOf(basis: 'net' | 'gross', stated: Money, deducted: Money | undefined): Money {
+  if (basis !== 'gross' || !deducted) return stated;
+  const net = stated.subtract(deducted);
+  return net.isNegative() ? Money.zero(stated.currency) : net;
 }
 
 /**
@@ -644,6 +858,7 @@ function buildClaims(input: {
   ordered: readonly { debt: Debt; effectiveApr: string; position: number }[];
   taxReserve: Money;
   bufferMinimum: Money;
+  cushionShortfall: Money;
   goals: readonly {
     id: string;
     name: string;
@@ -695,6 +910,23 @@ function buildClaims(input: {
       label: 'Buffer',
       target: 'goal:buffer',
       requested: input.bufferMinimum,
+    });
+  }
+
+  /**
+   * El colchón, por delante de las metas y por detrás de los mínimos.
+   *
+   * No es una preferencia de producto: una meta de viaje financiada con el
+   * colchón vacío se paga cancelando el viaje el primer mes seco, y haber
+   * pasado por la ilusión de tenerlo no ayudó a nadie.
+   */
+  if (input.cushionShortfall.isPositive()) {
+    claims.push({
+      id: 'income-cushion',
+      kind: 'emergency_fund',
+      label: 'Cushion',
+      target: 'goal:cushion',
+      requested: input.cushionShortfall,
     });
   }
 

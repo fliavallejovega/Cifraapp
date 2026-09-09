@@ -655,6 +655,30 @@ export const householdSettings = appSchema.table('household_settings', {
   bufferMinimum: money('buffer_minimum').notNull().default('0'),
   debtStrategy: debtStrategy('debt_strategy').notNull().default('avalanche'),
   taxReserveRate: numeric('tax_reserve_rate', { precision: 5, scale: 2, mode: 'string' }),
+  /**
+   * El piso que la persona declaró, para usar mientras no haya historia.
+   *
+   * Nunca lo pisa el medido: la diferencia entre lo que alguien cree que cobra
+   * en su peor mes y lo que de verdad cobró es información sobre esa persona.
+   */
+  incomeFloor: money('income_floor'),
+  /** Qué percentil de los meses propios define el piso. 0.25 por defecto. */
+  incomeFloorPercentile: numeric('income_floor_percentile', {
+    precision: 4,
+    scale: 3,
+    mode: 'string',
+  })
+    .notNull()
+    .default('0.250'),
+  /** Meses de piso a guardar, cuando la casa lo fija a mano. Null: lo decide su volatilidad. */
+  cushionMonths: smallint('cushion_months'),
+  /**
+   * Dónde caen los cobros antes de volverse sueldo.
+   *
+   * Sin esto el colchón es un número en una pantalla: el mes de $8,000 se gasta
+   * como un mes de $8,000 y el de $0 no tiene de dónde salir.
+   */
+  retentionAccountId: uuid('retention_account_id'),
   /** People the income has to cover. Stated during setup, never inferred. */
   memberCount: smallint('member_count'),
   /** How many of those do not earn. A subset of `memberCount`. */

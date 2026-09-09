@@ -41,12 +41,24 @@ const FREQUENCIES = [
 const APPROXIMATE_VARIATION = '0.1500';
 const EXACT_VARIATION = '0';
 
+/**
+ * Si el monto declarado ya trae descontado lo que sale de la planilla.
+ *
+ * `net` por defecto porque es lo que la gente escribe —lo que ve en el banco— y
+ * porque es el lado conservador de los dos: sobreestimar el ingreso de alguien
+ * es el error que hace daño. Sólo cambia una cifra para quien tenga compromisos
+ * marcados «se descuenta de la planilla»; para todos los demás, los dos valores
+ * producen exactamente el mismo plan.
+ */
+const BASES = ['net', 'gross'] as const;
+
 const incomeInput = z.object({
   name: recordName,
   amount: positiveAmount,
   frequency: z.enum(FREQUENCIES),
   nextExpectedDate: optionalPlainDate,
   isApproximate: z.preprocess((value) => value === 'true' || value === 'on', z.boolean()),
+  statedBasis: z.enum(BASES).default('net'),
 });
 
 const FIELD_ERRORS = {
@@ -63,6 +75,7 @@ function parse(formData: FormData) {
     frequency: formData.get('frequency'),
     nextExpectedDate: formData.get('nextExpectedDate'),
     isApproximate: formData.get('isApproximate'),
+    statedBasis: formData.get('statedBasis') ?? 'net',
   });
 }
 
@@ -89,6 +102,7 @@ export async function createIncome(
         name: parsed.data.name,
         direction: 'inflow',
         expectedAmount: parsed.data.amount,
+        statedBasis: parsed.data.statedBasis,
         currency: currencyOf(session, householdId),
         frequency: parsed.data.frequency,
         lastSeenOn: today,
@@ -134,6 +148,7 @@ export async function updateIncome(
       .set({
         name: parsed.data.name,
         expectedAmount: parsed.data.amount,
+        statedBasis: parsed.data.statedBasis,
         frequency: parsed.data.frequency,
         amountVariation: parsed.data.isApproximate ? APPROXIMATE_VARIATION : EXACT_VARIATION,
         ...(parsed.data.nextExpectedDate ? { nextExpectedDate: parsed.data.nextExpectedDate } : {}),

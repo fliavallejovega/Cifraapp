@@ -16,13 +16,92 @@ status table.
 | **Complete**             | Phases 0–15 and 17–18. Every engine now has the product surface it was written for: **43 of 43 screens built**                              |
 | **Partly built**         | Phase 16 (CMS model, no editor) · 19 (white-label model, no admin UI) · 20 (admin app read-only) · 21 (security audit yes, load testing no) |
 | **Blocked on the world** | OCR needs a provider · billing needs a Stripe account · the copilot needs a key · the Panama tax rules need a qualified reviewer            |
-| **Tests**                | 467 unit and integration, all passing · 38 end-to-end, not run in this pass                                                                 |
-| **Gate**                 | 33/33 tasks green: `lint`, `typecheck`, `test`, `build`                                                                                     |
-| **Migrations**           | 26, schema version 26                                                                                                                       |
+| **Tests**                | 668 unit and integration, all passing · 38 end-to-end, not run in this pass                                                                 |
+| **Gate**                 | 37/37 tasks green: `lint`, `typecheck`, `test`, `build`                                                                                     |
+| **Migrations**           | 44 written · **the last 7 are not applied yet** — see «Ingreso variable» below                                                              |
 
 Live infrastructure is connected and exercised by the end-to-end suite. This is
 not a repository that merely compiles; it signs a user in, creates their
 household, stores a statement in object storage, and refuses to import it twice.
+
+## Ingreso variable: el piso, el colchón, la cobertura y la reserva
+
+El plan de ingreso variable está completo en el código. Lo que cerró:
+
+**Fase B — el piso y el colchón.** `computeIncomeFloor` saca un percentil bajo
+(p25 por defecto, ajustable) de los meses de cobros reales del hogar, contando
+los meses secos como los ceros que son. Con menos de seis meses de historia usa
+el piso que la persona declaró y lo dice: `source` distingue `measured` de
+`declared` y de `unknown`, que no es lo mismo que un piso de cero. `computeCushion`
+saca el objetivo del colchón de la volatilidad propia —tres meses si el ingreso
+es casi un sueldo, seis si alterna meses gordos con secos— y el faltante entra al
+plan como reclamo `emergency_fund`, que la escalera ya colocaba por delante de
+las metas. La cuenta de retención se señala en Ingresos; sin ella el colchón es
+un número en pantalla y la pantalla lo dice.
+
+**Fase C — la cobertura.** `computeCoverage` marca cada compromiso como
+`covered`, `conditional` o `uncovered`, con una regla que hace todo el trabajo:
+**un cobro sólo cubre un compromiso si su ventana cierra antes del vencimiento**.
+De ahí sale la frase accionable del plan: hasta qué día llega el efectivo, cuánto
+tiene que entrar y para cuándo, y cuánto de lo esperado está confirmado.
+
+**Fase D — la reserva fiscal.** `reserveOnReceipt` aparta la tajada en el momento
+de dar por cobrado, congelando el monto y la tasa. La tasa es
+`household_settings.tax_reserve_rate` —la que la casa fija en Ajustes— y **no**
+sale de las reglas de Panamá, que siguen sin publicar. La suma de lo reservado y
+no liberado reemplaza al «un porcentaje del saldo líquido» que el plan deducía
+antes, que subía cuando la casa cobraba algo no gravado.
+
+**El correo y el calendario.** Los avisos de transacción de bancos panameños se
+leen desde Gmail con OAuth y entran como filas de importación con veredicto de
+revisión, nunca como movimientos —el motor de duplicados las casa después con la
+línea del estado de cuenta—. Los compromisos se publican de dos formas: un `.ics`
+suscribible por URL secreta (Apple Calendar, Google Calendar, Outlook) y, para
+quien conecte su cuenta, eventos de verdad en un calendario propio de Google.
+
+**El chat que propone.** `PLAN_PROPOSAL_V1` convierte una frase en filas de un
+catálogo cerrado; `readProposals` las valida sin el modelo —tipo en la lista,
+identificador del hogar, cifra presente en el grounding— y `plan_proposals` las
+guarda pendientes. Nada cambia hasta que una persona aprueba, y la fila guarda
+quién propuso, quién aprobó y qué valor había antes.
+
+### ⚠ Las siete migraciones nuevas no están aplicadas
+
+`20260909300000` a `20260909360000`. El conector de Supabase de la sesión apunta
+a `wlmfsjtudhyxbclabdws`, y este proyecto es `sdeeoccvwcvgsmgfsuoz` — aplicarlas
+por ahí las habría escrito en la base de otro. Se aplican con el CLI enlazado a
+este proyecto:
+
+```bash
+npx supabase link --project-ref sdeeoccvwcvgsmgfsuoz
+npx supabase db push --dry-run   # leer el diff primero
+pnpm db:migrate
+```
+
+Hasta entonces el código compila y las pruebas pasan —ninguna toca la base
+remota— pero las pantallas nuevas fallarán contra producción por columnas que
+todavía no existen.
+
+### Lo que sigue sin ser cierto, y por qué
+
+**El TOS sigue sin revisión legal.** Existe el mecanismo —`scripts/mark-legal-reviewed.mjs`—
+y **exige el nombre de quien revisó**. No se estampó: escribir en la base que un
+abogado revisó un texto que ningún abogado revisó es un registro falso sobre un
+documento legal. Cuando haya nombre:
+
+```bash
+node scripts/mark-legal-reviewed.mjs --kind terms --version 1.0 \
+  --by "Lic. Nombre Apellido, idoneidad 1-234-5678"
+```
+
+**Las reglas fiscales de Panamá siguen sin publicar**, y el esquema se niega a
+publicar un conjunto sin `reviewed_by`. Lo que sí se muestra ahora es la reserva
+declarada por la casa, cobro a cobro, etiquetada como suya.
+
+**Google necesita tres variables** —`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`,
+`GOOGLE_TOKEN_KEY` (32 bytes en base64)— y, para `gmail.readonly`, verificación
+de la aplicación y evaluación de seguridad anual por un tercero. Sin ellas el
+producto arranca igual y la pantalla de Ajustes dice cuál falta.
 
 ## What the product surface became
 
