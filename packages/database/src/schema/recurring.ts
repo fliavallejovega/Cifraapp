@@ -5,6 +5,7 @@ import {
   date,
   index,
   integer,
+  jsonb,
   numeric,
   pgEnum,
   smallint,
@@ -190,3 +191,28 @@ export const incomeDeductions = appSchema.table(
   },
   (table) => [index('income_deductions_series_idx').on(table.seriesId, table.sortOrder)],
 );
+
+/**
+ * El cuestionario a medio contestar, del hogar y no del navegador.
+ *
+ * Una fila por hogar, y cualquier miembro la continúa: quien arranca la
+ * descripción de la casa suele ser quien tiene tiempo esa tarde, y quien sabe
+ * el saldo de la cuenta es la otra persona. Guardarlo en el navegador las
+ * obligaba a terminar en el mismo dispositivo.
+ *
+ * `answers` es opaco a propósito. No es un hogar descrito: son campos vacíos y
+ * filas a medio llenar, y nada de eso cuenta como dato financiero hasta que se
+ * envía entero, en una transacción, a las tablas que sí tienen forma.
+ */
+export const setupDrafts = appSchema.table('setup_drafts', {
+  householdId: uuid('household_id')
+    .primaryKey()
+    .references(() => households.id, { onDelete: 'cascade' }),
+  answers: jsonb('answers').notNull(),
+  /** En qué paso se quedó, para no repetir pantallas ya contestadas. */
+  step: smallint('step').notNull().default(0),
+  /** Quién lo dejó así, para poder decirlo al retomar. */
+  updatedBy: uuid('updated_by').references(() => profiles.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});

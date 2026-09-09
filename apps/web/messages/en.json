@@ -1122,7 +1122,8 @@
       "minimums": "Card and loan minimums",
       "other": "Other payments this month",
       "resumed": "Picking up where you left off. You can change any answer before you finish.",
-      "discard": "Start over"
+      "discard": "Start over",
+      "resumedBy": "Picking up where {name} left off. You can change any answer before you finish."
     },
     "review": {
       "title": "Review what you told us",

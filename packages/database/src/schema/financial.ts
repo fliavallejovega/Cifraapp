@@ -196,6 +196,8 @@ export const categories = appSchema.table(
     kind: categoryKind('kind').notNull(),
     sortOrder: integer('sort_order').notNull().default(0),
     isSystem: boolean('is_system').notNull().default(false),
+    /** Nombre estable del icono. El dibujo pertenece al sistema de diseño. */
+    icon: text('icon'),
     archivedAt: timestamp('archived_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

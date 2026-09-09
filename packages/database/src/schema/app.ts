@@ -43,6 +43,8 @@ export const categoryTemplates = appSchema.table(
     kind: categoryKind('kind').notNull(),
     sortOrder: integer('sort_order').notNull().default(0),
     isSystem: boolean('is_system').notNull().default(true),
+    /** Nombre estable del icono, copiado al rubro del hogar cuando se siembra. */
+    icon: text('icon'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },

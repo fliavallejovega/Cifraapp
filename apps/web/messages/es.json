@@ -1122,7 +1122,8 @@
       "minimums": "Mínimos de tarjetas y préstamos",
       "other": "Otros pagos del mes",
       "resumed": "Seguimos donde lo dejaste. Puedes cambiar cualquier respuesta antes de terminar.",
-      "discard": "Empezar de nuevo"
+      "discard": "Empezar de nuevo",
+      "resumedBy": "Seguimos donde lo dejó {name}. Puedes cambiar cualquier respuesta antes de terminar."
     },
     "review": {
       "title": "Revisa lo que nos contaste",

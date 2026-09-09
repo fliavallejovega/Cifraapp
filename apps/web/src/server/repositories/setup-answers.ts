@@ -12,7 +12,9 @@ import {
   institutions,
   marketPrices,
   obligations,
+  profiles,
   recurringSeries,
+  setupDrafts,
 } from '@app/database/schema';
 import { and, asc, eq, isNull, ne } from 'drizzle-orm';
 
@@ -55,7 +57,19 @@ export interface SetupAnswers extends SetupInitial {
   /** The banks the accounts step offers, by name. Seeded reference data. */
   readonly institutions: readonly string[];
   /** The household's expense categories, for the «¿en qué rubro?» question. */
-  readonly categories: readonly { readonly slug: string; readonly name: string }[];
+  readonly categories: readonly {
+    readonly slug: string;
+    readonly name: string;
+    readonly icon: string | null;
+  }[];
+  /**
+   * El cuestionario que alguien dejó a medias, si lo hay.
+   *
+   * Del hogar y no del navegador, para que quien lo empezó y quien lo termina
+   * no tengan que ser la misma persona en el mismo dispositivo.
+   */
+  readonly draft:
+    { readonly answers: unknown; readonly step: number; readonly by: string | null } | undefined;
 }
 
 export async function loadSetupAnswers(
@@ -75,6 +89,7 @@ export async function loadSetupAnswers(
       bankRows,
       categoryRows,
       deductionRows,
+      draftRows,
     ] = await Promise.all([
       tx
         .select({
@@ -217,7 +232,7 @@ export async function loadSetupAnswers(
       // «¿en qué rubro va esto?» with the same list every other screen uses
       // rather than a second, private one that would drift.
       tx
-        .select({ slug: categories.templateSlug, name: categories.name })
+        .select({ slug: categories.templateSlug, name: categories.name, icon: categories.icon })
         .from(categories)
         .where(
           and(
@@ -240,6 +255,19 @@ export async function loadSetupAnswers(
         .from(incomeDeductions)
         .where(eq(incomeDeductions.householdId, householdId))
         .orderBy(asc(incomeDeductions.sortOrder)),
+      // Y lo que alguien dejó a medias, con su nombre: retomar el trabajo de
+      // otra persona sin saber de quién es se parece demasiado a encontrarse
+      // cifras que uno no escribió.
+      tx
+        .select({
+          answers: setupDrafts.answers,
+          step: setupDrafts.step,
+          by: profiles.displayName,
+        })
+        .from(setupDrafts)
+        .leftJoin(profiles, eq(profiles.id, setupDrafts.updatedBy))
+        .where(eq(setupDrafts.householdId, householdId))
+        .limit(1),
     ]);
 
     return {
@@ -362,7 +390,14 @@ export async function loadSetupAnswers(
       institutions: bankRows.map((row) => row.name),
       // A category with no template slug is one the household invented; it is
       // still theirs to pick, and its own name is the stable handle for it.
-      categories: categoryRows.map((row) => ({ slug: row.slug ?? row.name, name: row.name })),
+      categories: categoryRows.map((row) => ({
+        slug: row.slug ?? row.name,
+        name: row.name,
+        icon: row.icon,
+      })),
+      draft: draftRows[0]
+        ? { answers: draftRows[0].answers, step: draftRows[0].step, by: draftRows[0].by }
+        : undefined,
     };
   });
 }

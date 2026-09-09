@@ -13,9 +13,11 @@ import {
 } from 'react';
 
 import { LANDING_DRAFT_KEY, type LandingDraft } from '@/components/marketing/try-it';
+import { CategoryIcon } from '@/components/category-icon';
 import { KindIcon, SymbolSearch } from '@/components/symbol-search';
 import { lookupSymbol, type SymbolCandidate } from '@/server/holdings-actions';
 import { estimatePanamaPayroll } from '@/server/payroll-actions';
+import { discardSetupDraft, saveSetupDraft } from '@/server/setup-draft-actions';
 import { completeSetup, type SetupResult } from '@/server/onboarding-actions';
 
 /**
@@ -45,15 +47,6 @@ interface SetupDraft {
   goals: GoalRow[];
   index: number;
 }
-
-/**
- * Dónde vive el cuestionario a medio contestar, por hogar.
- *
- * Con prefijo y no con una llave fija porque dos hogares en el mismo navegador
- * son un caso real —una contadora con el suyo y el de un cliente— y una única
- * llave los haría escribirse encima.
- */
-const SETUP_DRAFT_PREFIX = 'cifra.setup.';
 
 type Frequency =
   'daily' | 'weekly' | 'biweekly' | 'semimonthly' | 'monthly' | 'quarterly' | 'annual';
@@ -287,7 +280,11 @@ export interface SetupQuestionnaireProps {
   /** The banks of Panama, from `app.institutions`. Names only — a rate is not a fact this system has. */
   readonly institutions: readonly string[];
   /** Los rubros del hogar, para preguntar en qué se va cada pago. */
-  readonly categories: readonly { readonly slug: string; readonly name: string }[];
+  readonly categories: readonly {
+    readonly slug: string;
+    readonly name: string;
+    readonly icon?: string | null | undefined;
+  }[];
   readonly initial?: SetupInitial;
   /**
    * Las cifras con las que se explica una planilla, leídas del conjunto de
@@ -307,7 +304,17 @@ export interface SetupQuestionnaireProps {
    * navegador —una contadora que administra el suyo y el de un cliente— no
    * pueden compartir una única llave sin pisarse las respuestas.
    */
-  readonly householdId?: string | undefined;
+  /**
+   * El cuestionario a medio contestar del hogar, si alguien lo dejó empezado.
+   *
+   * Llega leído del servidor y no del navegador: quien arranca la descripción
+   * de la casa suele ser quien tiene tiempo esa tarde, y quien sabe el saldo de
+   * la cuenta es la otra persona. Trae quién lo dejó así, porque «lo empezó
+   * Ana» es la diferencia entre retomar y sospechar que estos números salieron
+   * de ninguna parte.
+   */
+  readonly draft?:
+    { readonly answers: unknown; readonly step: number; readonly by: string | null } | undefined;
   /**
    * Answered before. The questions do not change — the words around them do,
    * and so does what saving means: an update to what is on record rather than
@@ -325,7 +332,7 @@ export function SetupQuestionnaire({
   categories,
   initial,
   payroll,
-  householdId,
+  draft,
   review = false,
 }: SetupQuestionnaireProps) {
   // `noUncheckedIndexedAccess` is on, and rightly: a missing key should not
@@ -451,7 +458,6 @@ export function SetupQuestionnaire({
    * lo que ya está guardado, que es la forma más rápida de resucitar una cifra
    * que alguien acababa de corregir.
    */
-  const draftKey = `${SETUP_DRAFT_PREFIX}${householdId ?? 'anon'}`;
   const [resumed, setResumed] = useState(false);
 
   // The figures a person tried on the home page, if they came from there. Read
@@ -522,32 +528,27 @@ export function SetupQuestionnaire({
    * a hacer.
    */
   useEffect(() => {
-    if (review) return;
-    try {
-      const raw = window.localStorage.getItem(draftKey);
-      if (!raw) return;
-      const draft = JSON.parse(raw) as Partial<SetupDraft>;
-      if (draft.people) setPeople(draft.people);
-      if (draft.bufferMinimum !== undefined) setBufferMinimum(draft.bufferMinimum);
-      if (draft.incomes) setIncomes(draft.incomes);
-      if (draft.accounts) setAccountRows(draft.accounts);
-      if (draft.commitments) setCommitments(draft.commitments);
-      if (draft.debts) setDebtRows(draft.debts);
-      if (draft.holdings) setHoldingRows(draft.holdings);
-      if (draft.goals) setGoalRows(draft.goals);
-      // Al paso donde se quedó, no al primero: volver y tener que pasar cinco
-      // pantallas ya contestadas es casi tan molesto como volver a escribirlas.
-      if (typeof draft.index === 'number' && draft.index >= 0 && draft.index < STEPS.length) {
-        setIndex(draft.index);
-      }
-      setResumed(true);
-    } catch {
-      // Almacenamiento no disponible o ilegible. El formulario abre en blanco,
-      // que es exactamente como abría antes de que esto existiera.
-    }
-    // Corre una vez, al montar. `draftKey` y `review` son fijos durante la vida
-    // de la pantalla, así que declararlos no la hace correr otra vez.
-  }, [review, draftKey]);
+    if (review || !draft) return;
+    const saved = draft.answers as Partial<SetupDraft> | null;
+    if (!saved || typeof saved !== 'object') return;
+
+    if (saved.people) setPeople(saved.people);
+    if (saved.bufferMinimum !== undefined) setBufferMinimum(saved.bufferMinimum);
+    if (saved.incomes) setIncomes(saved.incomes);
+    if (saved.accounts) setAccountRows(saved.accounts);
+    if (saved.commitments) setCommitments(saved.commitments);
+    if (saved.debts) setDebtRows(saved.debts);
+    if (saved.holdings) setHoldingRows(saved.holdings);
+    if (saved.goals) setGoalRows(saved.goals);
+    // Al paso donde se quedó, no al primero: volver y tener que pasar cinco
+    // pantallas ya contestadas es casi tan molesto como volver a escribirlas.
+    if (draft.step >= 0 && draft.step < STEPS.length) setIndex(draft.step);
+    setResumed(true);
+    // Corre una vez, al montar: el borrador es lo que había cuando la página se
+    // armó, y volver a aplicarlo después pisaría lo que se acaba de escribir.
+    // `draft` y `review` llegan como propiedades y no cambian mientras la
+    // pantalla vive, así que declararlos no la hace correr otra vez.
+  }, [draft, review]);
 
   /**
    * Y guardarlo, con retraso, cada vez que algo cambia.
@@ -559,30 +560,27 @@ export function SetupQuestionnaire({
   useEffect(() => {
     if (review) return;
     const timer = setTimeout(() => {
-      try {
-        const draft: SetupDraft = {
-          people,
-          bufferMinimum,
-          incomes,
-          accounts: accountRows,
-          commitments,
-          debts: debtRows,
-          holdings: holdingRows,
-          goals: goalRows,
-          index,
-        };
-        window.localStorage.setItem(draftKey, JSON.stringify(draft));
-      } catch {
-        // Sin almacenamiento no hay borrador, y el formulario sigue funcionando
-        // exactamente como funcionaba. No es un error que reportarle a nadie.
-      }
-    }, 400);
+      const snapshot: SetupDraft = {
+        people,
+        bufferMinimum,
+        incomes,
+        accounts: accountRows,
+        commitments,
+        debts: debtRows,
+        holdings: holdingRows,
+        goals: goalRows,
+        index,
+      };
+      // Falla en silencio a propósito. Un borrador que no se pudo guardar es una
+      // comodidad perdida, no un error que interrumpa a alguien a mitad de una
+      // pantalla: lo escrito sigue entero en memoria y se envía igual.
+      void saveSetupDraft(JSON.stringify(snapshot), index).catch(() => undefined);
+    }, 800);
     return () => {
       clearTimeout(timer);
     };
   }, [
     review,
-    draftKey,
     people,
     bufferMinimum,
     incomes,
@@ -603,12 +601,8 @@ export function SetupQuestionnaire({
    */
   useEffect(() => {
     if (!state.ok) return;
-    try {
-      window.localStorage.removeItem(draftKey);
-    } catch {
-      // Nada que hacer: si no se puede escribir, tampoco se pudo guardar.
-    }
-  }, [state.ok, draftKey]);
+    void discardSetupDraft().catch(() => undefined);
+  }, [state.ok]);
 
   const step: Step = STEPS[index] ?? 'household';
   const isLast = index === STEPS.length - 1;
@@ -719,18 +713,21 @@ export function SetupQuestionnaire({
       {resumed && (
         <Status tone="neutral">
           <span className="flex flex-wrap items-center gap-3">
-            <span>{copy('draft.resumed')}</span>
+            <span>
+              {draft?.by
+                ? copy('draft.resumedBy').replace('{name}', draft.by)
+                : copy('draft.resumed')}
+            </span>
             <Button
               type="button"
               variant="ghost"
               size="sm"
               onClick={() => {
-                try {
-                  window.localStorage.removeItem(draftKey);
-                } catch {
-                  // Sin almacenamiento no había borrador que borrar.
-                }
-                window.location.reload();
+                void discardSetupDraft()
+                  .catch(() => undefined)
+                  .finally(() => {
+                    window.location.reload();
+                  });
               }}
             >
               {copy('draft.discard')}
@@ -1196,23 +1193,62 @@ export function SetupQuestionnaire({
               </Field>
               <Field label={copy('commitments.category')} hint={copy('commitments.categoryHint')}>
                 {({ id, describedBy }) => (
-                  <Select
-                    id={id}
-                    aria-describedby={describedBy}
-                    value={row.categorySlug ?? ''}
-                    onChange={(event) => {
-                      setCommitments(patch(commitments, at, { categorySlug: event.target.value }));
-                    }}
-                  >
-                    <option value="">{copy('commitments.categoryNone')}</option>
-                    {categories.map((category) => (
-                      <option key={category.slug} value={category.slug}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </Select>
+                  <div className="relative">
+                    {/*
+                      El dibujo del rubro elegido, delante de su nombre.
+
+                      Una lista desplegable nativa no puede llevar dibujos
+                      dentro, y cambiarla por un control propio costaría el
+                      teclado, el lector de pantalla y el selector del teléfono
+                      —que en una lista de veintiocho es justo lo que la hace
+                      usable—. Así que el icono va donde sí cabe: al lado, sobre
+                      el elegido, igual que el símbolo de moneda en un monto.
+                    */}
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[color:var(--color-ink-secondary)]"
+                    >
+                      <CategoryIcon
+                        name={categories.find((one) => one.slug === row.categorySlug)?.icon ?? null}
+                      />
+                    </span>
+                    <Select
+                      id={id}
+                      aria-describedby={describedBy}
+                      className="pl-9"
+                      value={row.categorySlug ?? ''}
+                      onChange={(event) => {
+                        setCommitments(
+                          patch(commitments, at, { categorySlug: event.target.value }),
+                        );
+                      }}
+                    >
+                      <option value="">{copy('commitments.categoryNone')}</option>
+                      {categories.map((category) => (
+                        <option key={category.slug} value={category.slug}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
                 )}
               </Field>
+
+              {/*
+                Y los que casi todo el mundo usa, a un toque.
+
+                Ocho de veintiocho cubren la mayoría de los pagos de una casa.
+                Ponerlos delante evita abrir una lista larga para elegir
+                «Vivienda», y el resto sigue estando en la lista para quien
+                necesita «Servicios profesionales».
+              */}
+              <CategoryShortcuts
+                categories={categories}
+                chosen={row.categorySlug ?? ''}
+                onChoose={(slug) => {
+                  setCommitments(patch(commitments, at, { categorySlug: slug }));
+                }}
+              />
 
               {namedIncomes.length > 0 && (
                 <Field label={copy('commitments.paidFrom')} hint={copy('commitments.paidFromHint')}>
@@ -2572,6 +2608,75 @@ function FortnightPicker({
   );
 }
 
+/**
+ * Los rubros que casi todo el mundo usa, a un toque.
+ *
+ * Ocho de veintiocho cubren la mayoría de los pagos de una casa: el techo, la
+ * comida, el carro, la salud, la escuela. Ponerlos delante ahorra abrir una
+ * lista larga para elegir lo obvio, y la lista sigue ahí entera para quien
+ * necesita «Servicios profesionales».
+ *
+ * No es un control aparte del menú: es el mismo dato, elegido de otra forma, y
+ * lo que se toca aquí se ve elegido allá. Un atajo que no refleja el estado del
+ * campo que atajó es una segunda fuente de verdad esperando a discrepar.
+ */
+const COMMON_CATEGORIES = [
+  'housing',
+  'groceries',
+  'dining',
+  'transportation',
+  'healthcare',
+  'education',
+  'subscriptions',
+  'debt',
+] as const;
+
+function CategoryShortcuts({
+  categories,
+  chosen,
+  onChoose,
+}: {
+  readonly categories: readonly {
+    readonly slug: string;
+    readonly name: string;
+    readonly icon?: string | null | undefined;
+  }[];
+  readonly chosen: string;
+  readonly onChoose: (slug: string) => void;
+}) {
+  const quick = COMMON_CATEGORIES.map((slug) => categories.find((one) => one.slug === slug)).filter(
+    (one) => one !== undefined,
+  );
+
+  // Sin rubros no hay atajos, y un renglón de botones vacío no explica nada.
+  if (quick.length === 0) return null;
+
+  return (
+    <div className="flex flex-wrap gap-2 sm:col-span-2">
+      {quick.map((category) => {
+        const on = chosen === category.slug;
+        return (
+          <Button
+            key={category.slug}
+            type="button"
+            size="sm"
+            variant={on ? 'primary' : 'secondary'}
+            aria-pressed={on}
+            onClick={() => {
+              // Volver a tocarlo lo suelta: elegir por error un rubro no debería
+              // costar abrir el menú para encontrar «Sin rubro».
+              onChoose(on ? '' : category.slug);
+            }}
+          >
+            <CategoryIcon name={category.icon} />
+            {category.name}
+          </Button>
+        );
+      })}
+    </div>
+  );
+}
+
 /** Lo que la leyenda necesita saber, tal como sale del conjunto de reglas. */
 export interface PayrollLegendData {
   readonly socialRate: string;
@@ -2824,7 +2929,11 @@ function CommitmentsTotal({
 }: {
   readonly rows: readonly CommitmentRow[];
   readonly incomes: readonly { at: number; name: string }[];
-  readonly categories: readonly { readonly slug: string; readonly name: string }[];
+  readonly categories: readonly {
+    readonly slug: string;
+    readonly name: string;
+    readonly icon?: string | null | undefined;
+  }[];
   readonly currencySymbol: string;
   readonly copy: (key: string) => string;
 }) {

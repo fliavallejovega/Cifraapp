@@ -3,8 +3,11 @@ import { PANAMA_2026_DRAFT, payrollReference } from '@app/tax-engine';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { AuthScreen } from '@/components/auth-screen';
+import { InviteForm } from '@/components/invite-form';
 import { HouseholdForm } from '@/components/household-form';
 import { SetupQuestionnaire } from '@/components/setup-questionnaire';
+import { formatMoment } from '@/lib/format';
+import { isOwner, loadInvitations } from '@/server/repositories/access';
 import { loadSetupAnswers } from '@/server/repositories/setup-answers';
 import { requireSession } from '@/server/session';
 
@@ -51,6 +54,23 @@ export default async function WelcomePage({ params }: { params: Promise<{ locale
   // hay leyenda en vez de una leyenda a medias.
   const payroll = payrollReference(PANAMA_2026_DRAFT);
 
+  /**
+   * Y con quién se lleva la casa, desde la primera pantalla.
+   *
+   * Un hogar de una persona es una hoja de cálculo con mejores tipografías. El
+   * producto entero se apoya en que sean dos: una cifra que las dos creen, un
+   * plan en el que las dos estuvieron de acuerdo. Invitar estaba solo en la
+   * pantalla de accesos, a la que nadie llega antes de terminar el setup — y
+   * ahora que lo contestado se guarda con el hogar, quien invita puede empezar
+   * y quien acepta puede terminar.
+   */
+  const now = new Date();
+  const [owner, invitations] = await Promise.all([
+    isOwner(session, householdId),
+    loadInvitations(session, householdId, now),
+  ]);
+  const access = await getTranslations('access');
+
   return (
     <AuthScreen
       title={review ? t('review.title') : t('title')}
@@ -64,11 +84,75 @@ export default async function WelcomePage({ params }: { params: Promise<{ locale
         t={labels(rawOf(t))}
         institutions={answers.institutions}
         {...(payroll ? { payroll } : {})}
-        householdId={householdId}
+        {...(answers.draft ? { draft: answers.draft } : {})}
         categories={answers.categories}
         initial={answers}
         review={review}
       />
+      {/*
+        Después del cuestionario y no antes: la acción principal de esta
+        pantalla es contestar, y una sola acción principal por pantalla. Quien
+        quiera invitar a alguien lo encuentra al bajar, que es donde se le
+        ocurre —al ver todo lo que hay que contestar— y no antes de empezar.
+      */}
+      {owner && (
+        <div className="mt-12 border-t border-[color:var(--color-rule)] pt-8">
+          <h2 className="text-base font-medium text-[color:var(--color-ink)]">
+            {access('invite.title')}
+          </h2>
+          <p className="mt-1 mb-4 max-w-[60ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]">
+            {access('invite.detail')}
+          </p>
+          <InviteForm
+            locale={locale}
+            roles={(['partner', 'member', 'viewer'] as const).map((value) => ({
+              value,
+              label: access(`roles.${value}`),
+            }))}
+            invitations={invitations.map((invitation) => ({
+              id: invitation.id,
+              email: invitation.email,
+              roleLabel: access(`roles.${invitation.role}`),
+              state: invitation.acceptedAt
+                ? access('invite.accepted')
+                : invitation.isExpired
+                  ? access('invite.expired')
+                  : access('invite.expires', {
+                      date: formatMoment(
+                        invitation.expiresAt,
+                        locale,
+                        household?.timeZone ?? 'America/Panama',
+                      ),
+                    }),
+              isOpen: invitation.acceptedAt === null && !invitation.isExpired,
+            }))}
+            labels={{
+              email: access('invite.email'),
+              role: access('invite.role'),
+              submit: access('invite.submit'),
+              linkTitle: access('invite.linkTitle'),
+              linkNote: access('invite.linkNote'),
+              pending: access('invite.pending'),
+              none: access('invite.none'),
+              cancel: access('invite.cancel'),
+              cancelConfirm: access('invite.cancelConfirm'),
+              dismiss: access('members.revoke'),
+              errorTitle: access('errorTitle'),
+              errors: {
+                notAllowed: access('errors.notAllowed'),
+                emailInvalid: access('errors.emailInvalid'),
+                alreadyMember: access('errors.alreadyMember'),
+                cannotChangeOwner: access('errors.cannotChangeOwner'),
+                cannotRemoveOwner: access('errors.cannotRemoveOwner'),
+                cannotRemoveSelf: access('errors.cannotRemoveSelf'),
+                notFound: access('errors.notFound'),
+                signInRequired: access('errors.signInRequired'),
+                generic: access('errors.generic'),
+              },
+            }}
+          />
+        </div>
+      )}
     </AuthScreen>
   );
 }
@@ -106,6 +190,7 @@ function labels(read: (key: string) => string): Record<string, string> {
   const keys = [
     'draft.notice',
     'draft.resumed',
+    'draft.resumedBy',
     'draft.discard',
     'draft.account',
     'draft.rent',
