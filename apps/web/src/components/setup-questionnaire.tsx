@@ -1773,6 +1773,10 @@ function IncomeDeductions({
   const asNumber = (value: string) => Number((value ?? '').replace(/[^\d.]/g, '')) || 0;
 
   const gross = asNumber(row.grossAmount ?? '');
+  // Un bruto en blanco no es un bruto de cero. La misma condición que usa
+  // `arrivingAmount` para decidir si hay algo que restar, para que el monto que
+  // se guarda y el que se muestra no puedan discrepar.
+  const hasGross = (row.grossAmount ?? '').trim() !== '' && gross > 0;
   const taken = lines.reduce((total, line) => total + asNumber(line.amount), 0);
   const arrives = Math.max(gross - taken, 0);
 
@@ -1783,8 +1787,17 @@ function IncomeDeductions({
     // El monto que el resto del sistema lee se recalcula aquí y no se escribe a
     // mano: dos cifras editables que deben coincidir divergen el día que
     // alguien corrige una sola.
+    //
+    // Recalcular solo cuando hay un bruto escrito. Sin bruto no hay resta que
+    // hacer —el monto de arriba ya es lo que llega, tal como pide el hint— y
+    // restarlo igual convertía «$1.500 al mes» en «$0.00» en el instante en que
+    // la persona tocaba «Agregar un descuento», antes de escribir nada.
+    if (!hasGross) {
+      onChange({ deductions: next });
+      return;
+    }
     const total = next.reduce((sum, line) => sum + asNumber(line.amount), 0);
-    const net = Math.max(asNumber(row.grossAmount ?? '') - total, 0);
+    const net = Math.max(gross - total, 0);
     onChange({ deductions: next, ...(next.length > 0 ? { amount: net.toFixed(2) } : {}) });
   };
 
@@ -1802,18 +1815,28 @@ function IncomeDeductions({
             symbol={currencySymbol}
             value={row.grossAmount ?? ''}
             onChange={(value) => {
+              // Borrar el bruto devuelve el control del monto a la persona en
+              // lugar de dejárselo en cero: mientras el campo está vacío no hay
+              // resta posible, y el monto de arriba vuelve a ser lo que llega.
+              const typed = value.trim() !== '' && asNumber(value) > 0;
               const total = lines.reduce((sum, line) => sum + asNumber(line.amount), 0);
               const net = Math.max(asNumber(value) - total, 0);
               onChange({
                 grossAmount: value,
-                ...(lines.length > 0 ? { amount: net.toFixed(2) } : {}),
+                ...(typed && lines.length > 0 ? { amount: net.toFixed(2) } : {}),
               });
             }}
           />
         </div>
 
         {lines.map((line, at) => (
-          <div key={at} className="grid gap-4 sm:grid-cols-2">
+          <div
+            key={at}
+            // «Quitar» pertenece a la línea que quita, no a un renglón suelto
+            // debajo de ella: alineado al pie de los dos campos, la relación se
+            // lee sin tener que contar filas. En móvil vuelve a apilarse.
+            className="grid items-end gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
+          >
             <Field label={copy('income.deductionLabel')}>
               {({ id }) => (
                 <Input
@@ -1840,18 +1863,21 @@ function IncomeDeductions({
                 );
               }}
             />
-            <div className="sm:col-span-2">
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  setLines(lines.filter((_, position) => position !== at));
-                }}
-              >
-                {copy('remove')}
-              </Button>
-            </div>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="justify-self-start sm:mb-1"
+              // Tres botones «Quitar» idénticos en la misma pantalla no le
+              // dicen nada a un lector de pantalla. El nombre accesible dice
+              // cuál, con la etiqueta que la persona escribió cuando existe.
+              aria-label={`${copy('remove')} — ${line.label.trim() || `${copy('income.deductionLabel')} ${String(at + 1)}`}`}
+              onClick={() => {
+                setLines(lines.filter((_, position) => position !== at));
+              }}
+            >
+              {copy('remove')}
+            </Button>
           </div>
         ))}
 
