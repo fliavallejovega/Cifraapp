@@ -81,6 +81,22 @@ export interface RecordRow {
   readonly values: RecordValues;
   /** Archived, settled, inactive — shown, but not counted. */
   readonly muted?: boolean;
+  /**
+   * One extra thing this row can be told, beside edit and remove.
+   *
+   * The label is computed on the server per row rather than derived in the
+   * client, because it is a sentence about *this* row's state — «Ya lo pagué»
+   * against «Deshacer el pago» — and a client that inferred it from `muted`
+   * would be guessing at the meaning of a flag that means different things on
+   * different screens.
+   */
+  readonly action?:
+    | {
+        readonly label: string;
+        /** Submitted as `intent`, so one action can serve both directions. */
+        readonly intent: string;
+      }
+    | undefined;
 }
 
 export interface RecordActionResult {

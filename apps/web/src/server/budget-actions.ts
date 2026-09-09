@@ -355,7 +355,15 @@ export async function buildSuggestedBudget(
            group by category_id, month
         )
         select category_id,
-               round(percentile_cont(0.5) within group (order by total), 2)::text as suggested,
+               -- Discrete, not continuous. percentile_cont interpolates
+               -- between the two middle months and so returns double
+               -- precision: float arithmetic on an amount, which this codebase
+               -- does not do -- and round(double precision, integer) does not
+               -- exist in Postgres, so this crashed the screen outright.
+               -- percentile_disc returns an actual month total, in numeric,
+               -- which is exact and is also the better suggestion: a month the
+               -- household actually lived through.
+               (percentile_disc(0.5) within group (order by total))::text as suggested,
                count(*)::int as months
           from monthly
          group by category_id

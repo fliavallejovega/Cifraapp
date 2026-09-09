@@ -32,6 +32,8 @@ export interface RecordsManagerProps {
   readonly create: RecordAction;
   readonly update: RecordAction;
   readonly remove: RecordAction;
+  /** Serves every row's `action`, told apart by the `intent` each one submits. */
+  readonly rowAction?: RecordAction | undefined;
   readonly context?: Readonly<Record<string, string>>;
   /** Suppresses the add form when a limit or a precondition blocks it. */
   readonly blocked?: { readonly title: string; readonly body: string };
@@ -46,6 +48,7 @@ export function RecordsManager({
   create,
   update,
   remove,
+  rowAction,
   context,
   blocked,
 }: RecordsManagerProps) {
@@ -82,6 +85,7 @@ export function RecordsManager({
                   row={row}
                   labels={labels}
                   remove={remove}
+                  rowAction={rowAction}
                   {...(context ? { context } : {})}
                   onEdit={() => {
                     setEditing(row.id);
@@ -139,6 +143,7 @@ function ManagedRow({
   row,
   labels,
   remove,
+  rowAction,
   context,
   onEdit,
 }: {
@@ -146,6 +151,7 @@ function ManagedRow({
   readonly row: RecordRow;
   readonly labels: RecordLabels;
   readonly remove: RecordAction;
+  readonly rowAction?: RecordAction | undefined;
   readonly context?: Readonly<Record<string, string>>;
   readonly onEdit: () => void;
 }) {
@@ -234,6 +240,15 @@ function ManagedRow({
           </form>
         ) : (
           <div className="flex items-center gap-2">
+            {row.action && rowAction && (
+              <RowAction
+                locale={locale}
+                row={row}
+                action={rowAction}
+                context={context}
+                labels={labels}
+              />
+            )}
             <Button size="sm" variant="secondary" onClick={onEdit}>
               {labels.edit}
             </Button>
@@ -250,5 +265,48 @@ function ManagedRow({
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * The row's own extra action — «Ya lo pagué», and the way back out of it.
+ *
+ * Its own form and its own pending state, so pressing it on one row does not
+ * dim the whole list, and a failure on the tenth row reports on the tenth row
+ * rather than at the top of a list already scrolled past.
+ */
+function RowAction({
+  locale,
+  row,
+  action,
+  context,
+  labels,
+}: {
+  readonly locale: string;
+  readonly row: RecordRow;
+  readonly action: RecordAction;
+  readonly context?: Readonly<Record<string, string>> | undefined;
+  readonly labels: RecordLabels;
+}) {
+  const [state, formAction, pending] = useActionState<RecordActionResult, FormData>(action, {});
+
+  return (
+    <form action={formAction}>
+      <input type="hidden" name="locale" value={locale} />
+      <input type="hidden" name="id" value={row.id} />
+      <input type="hidden" name="intent" value={row.action?.intent ?? ''} />
+      {Object.entries(context ?? {}).map(([name, value]) => (
+        <input key={name} type="hidden" name={name} value={value} />
+      ))}
+      <Button
+        type="submit"
+        size="sm"
+        variant={row.muted ? 'ghost' : 'secondary'}
+        loading={pending}
+        title={state.error ? labels.errors[state.error] : undefined}
+      >
+        {row.action?.label}
+      </Button>
+    </form>
   );
 }

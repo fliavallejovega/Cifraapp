@@ -3,6 +3,7 @@ import 'server-only';
 import { getClientEnv, getServerEnv } from '@app/validation/env';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { cache } from 'react';
 import type { SupabaseClient, User } from '@supabase/supabase-js';
 
 /**
@@ -66,13 +67,13 @@ export function createAdminClient(): SupabaseClient {
  * client controls, and trusting it would mean trusting a value the browser can
  * edit. `getUser()` validates the token with Supabase before returning.
  */
-export async function getAuthenticatedUser(): Promise<User | null> {
+export const getAuthenticatedUser = cache(async (): Promise<User | null> => {
   const supabase = await createRequestClient();
   const { data, error } = await supabase.auth.getUser();
 
   if (error) return null;
   return data.user;
-}
+});
 
 /** The access token to forward to Postgres so RLS policies see the caller. */
 export async function getAccessToken(): Promise<string | null> {

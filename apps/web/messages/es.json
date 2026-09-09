@@ -1795,11 +1795,24 @@
       "overdue": "Vencido",
       "lateFee": "Mora {fee}",
       "lateFeeRate": "Mora {rate}%",
-      "deductedAtSource": "Descuento de planilla"
+      "deductedAtSource": "Descuento de planilla",
+      "paid": "Pagado"
     },
     "dueOn": "Vence el {date}",
     "overdue": "Venció el {date}",
-    "noCategory": "Sin rubro"
+    "noCategory": "Sin rubro",
+    "catchUp": {
+      "title": "¿Ya pagaste lo de este período?",
+      "detail": "Márcalo y deja de restarse de lo disponible. Cada uno queda registrado con su fecha, y cuando importes el movimiento real se concilia contra él.",
+      "settleAction": "Marcar {count} como pagados · {total}",
+      "confirmQuestion": "Se van a registrar {count} pagos por {total} y cada compromiso pasa a su próximo vencimiento. Puedes deshacer cualquiera después.",
+      "confirmYes": "Sí, ya los pagué",
+      "clearTitle": "Estás al día.",
+      "clearBody": "Nada vence en los próximos 30 días. Cuando importes los movimientos de tus cuentas, lo que pagaste se concilia solo contra cada compromiso."
+    },
+    "markPaid": "Ya lo pagué",
+    "undoPaid": "Deshacer el pago",
+    "paidOn": "Pagado el {date}"
   },
   "categories": {
     "title": "Rubros de gasto",

@@ -1,6 +1,7 @@
 'use server';
 
 import { QUESTION_ANSWER_V1, type PromptLocale } from '@app/ai';
+import type { DeductionKind } from '@app/budget-engine';
 import { chatMessages, chatThreads } from '@app/database/schema';
 import { formatMoney, type Money } from '@app/domain';
 import { and, eq, isNull } from 'drizzle-orm';
@@ -45,6 +46,22 @@ export interface ChatResult {
   readonly ok?: true;
 }
 
+/**
+ * What each claim against the money is called, in the facts block.
+ *
+ * English, like every other grounding name: the facts are the model's input,
+ * not the household's screen. What the household reads is the answer, written
+ * in their own language from these.
+ */
+const DEDUCTION_LABELS: Record<DeductionKind, string> = {
+  committed: 'already-committed spending',
+  obligations: 'bills due in the horizon',
+  debt_minimums: 'minimum debt payments',
+  tax_reserve: 'tax reserve',
+  goals: 'goal contributions',
+  buffer: 'safety buffer',
+};
+
 const questionInput = z.object({
   question: z.string().trim().min(3).max(500),
   threadId: z.preprocess(
@@ -88,6 +105,29 @@ export async function askQuestion(_previous: ChatResult, formData: FormData): Pr
     available: money(plan.safeToSpend.safeToSpend),
     liquid: money(plan.safeToSpend.liquid),
     committed: money(plan.safeToSpend.totalClaimed),
+    // The total on its own cannot answer the question people actually ask,
+    // which is «why that much». Somebody looking at $1,265 of committed money
+    // wants to know it is the sum of five minimum payments, not a figure the
+    // product produced. Without the parts in the facts the assistant cannot
+    // say so — and the guardrail would strike the figures out if it tried,
+    // because a number that is not grounded is not quotable.
+    committedBreakdown:
+      plan.safeToSpend.deductions
+        .filter((deduction) => deduction.claimed.isPositive())
+        .map((deduction) => `${DEDUCTION_LABELS[deduction.kind]} ${money(deduction.claimed)}`)
+        .join(' · ') || 'nothing committed',
+    // The claim each debt makes this month, which is what the committed figure
+    // is built from — separate from the balance, which is what it will cost in
+    // the end. Confusing the two is the whole of the question.
+    debtMinimums:
+      debts.filter((debt) => debt.minimumPayment.isPositive()).length === 0
+        ? 'none'
+        : debts
+            .filter((debt) => debt.minimumPayment.isPositive())
+            .map((debt) => `${debt.name}: ${money(debt.minimumPayment)} per month`)
+            .join(' · '),
+    obligationsCounted: String(plan.safeToSpend.countedObligations.length),
+    obligationsHorizon: plan.safeToSpend.horizon,
     debts:
       debts.length === 0
         ? 'none'

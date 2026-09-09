@@ -6,6 +6,7 @@ import { addDays, Money, todayIn, type PlainDate } from '@app/domain';
 import { and, eq, gte, isNull, lte } from 'drizzle-orm';
 
 import { queryAsUser, type Session } from '../session';
+import { currentOccurrenceUnpaid } from './commitment-settlement';
 
 /**
  * The household's financial position.
@@ -110,6 +111,9 @@ export async function loadPosition(session: Session, householdId: string): Promi
           // Unsettled only: an obligation already paid is a transaction, and
           // counting it twice would understate what is available.
           isNull(obligations.settledTransactionId),
+          // And not already paid for this occurrence — declared by the household or
+          // matched to a real movement. See `currentOccurrenceUnpaid`.
+          currentOccurrenceUnpaid,
           // Deducted at source is not a claim on a balance. The money never
           // arrives, so the stated salary is already net of it; subtracting it
           // here would take the same deduction out twice and understate what

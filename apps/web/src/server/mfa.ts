@@ -1,6 +1,8 @@
 import 'server-only';
 
-import { createRequestClient } from './supabase';
+import { cache } from 'react';
+
+import { createRequestClient, getAuthenticatedUser } from './supabase';
 
 /**
  * Two-step verification, read side.
@@ -12,8 +14,12 @@ import { createRequestClient } from './supabase';
  * simple: if a higher level is reachable, it is required — a second step that
  * exists but is optional protects nobody.
  *
- * Both reads are local to the session's token; neither costs a round trip to
- * the auth server.
+ * The assurance level is local: it decodes the session's own token. The factors
+ * are read off the user object that `getAuthenticatedUser` already verified for
+ * this render — `supabase.auth.mfa.listFactors()` looks like a local read and
+ * is not, because internally it calls `getUser()` and so spends a second round
+ * trip to the auth server on *every* navigation, re-fetching a user the request
+ * had already fetched. Same data, one call.
  */
 
 export interface TwoFactorState {
@@ -27,15 +33,18 @@ export interface TwoFactorState {
   readonly required: boolean;
 }
 
-export async function loadTwoFactorState(): Promise<TwoFactorState> {
+export const loadTwoFactorState = cache(async (): Promise<TwoFactorState> => {
   const supabase = await createRequestClient();
 
-  const [{ data: factors }, { data: level }] = await Promise.all([
-    supabase.auth.mfa.listFactors(),
+  const [user, { data: level }] = await Promise.all([
+    getAuthenticatedUser(),
     supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
   ]);
 
-  const verifiedFactor = factors?.totp.find((factor) => factor.status === 'verified') ?? null;
+  const verifiedFactor =
+    user?.factors?.find(
+      (factor) => factor.factor_type === 'totp' && factor.status === 'verified',
+    ) ?? null;
   const verified = level?.currentLevel === 'aal2';
   const required = level?.nextLevel === 'aal2' && level.currentLevel !== 'aal2';
 
@@ -45,4 +54,4 @@ export async function loadTwoFactorState(): Promise<TwoFactorState> {
     verified,
     required,
   };
-}
+});

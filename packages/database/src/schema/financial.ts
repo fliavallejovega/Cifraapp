@@ -402,6 +402,62 @@ export const obligations = appSchema.table(
   (table) => [index('obligations_household_due_idx').on(table.householdId, table.dueDate)],
 );
 
+/**
+ * One occurrence of a commitment, paid.
+ *
+ * A commitment could only be marked done by linking it to a real transaction,
+ * and nothing in the product created one — so a household that had paid
+ * everything still read that it owed $1,835.99. True to the rows, false to
+ * their life. This is how they say so before a statement has been imported.
+ *
+ * A row rather than a flag on the obligation, because a monthly commitment is
+ * twelve occurrences a year: a flag can only say «the current one is done» and
+ * loses that the moment the commitment rolls forward. And because the real
+ * movement, when it is imported, needs something to attach to — this row is it,
+ * and `method` is what keeps a household's claim distinguishable from a
+ * reconciled fact.
+ */
+export const commitmentSettlements = appSchema.table(
+  'commitment_settlements',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .default(sql`public.uuid_generate_v7()`),
+    householdId: uuid('household_id')
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    obligationId: uuid('obligation_id')
+      .notNull()
+      .references(() => obligations.id, { onDelete: 'cascade' }),
+    /** Which occurrence — the due date, not the day it was recorded. */
+    dueOn: date('due_on').notNull(),
+    /**
+     * What was actually paid. Its own column and not the obligation's expected
+     * amount: the $100 light bill that came in at $118 is a fact, and folding
+     * it back into the estimate erases it.
+     */
+    amount: money('amount').notNull(),
+    currency: char('currency', { length: 3 })
+      .notNull()
+      .default('USD')
+      .references(() => currencies.code),
+    /** `declared` by the household, or `matched` to a real transaction. */
+    method: text('method').notNull().default('declared'),
+    transactionId: uuid('transaction_id').references(() => transactions.id, {
+      onDelete: 'set null',
+    }),
+    settledOn: date('settled_on').notNull(),
+    declaredBy: uuid('declared_by').references(() => profiles.id, { onDelete: 'set null' }),
+    note: text('note'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('commitment_settlements_household_idx').on(table.householdId, table.dueOn),
+    index('commitment_settlements_obligation_idx').on(table.obligationId, table.dueOn),
+  ],
+);
+
 export const budgets = appSchema.table('budgets', {
   id: uuid('id')
     .primaryKey()

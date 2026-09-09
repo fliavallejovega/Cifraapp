@@ -242,6 +242,20 @@ export interface CommitmentView {
   readonly lateFee: Money | null;
   readonly lateFeeRate: string | null;
   readonly lateFeeAfterDays: number | null;
+  /**
+   * The most recent occurrence the household has recorded as paid.
+   *
+   * Not the same as `isSettled`, and the difference is the whole point. A
+   * recurring commitment that is paid gets rolled on to its next occurrence, so
+   * asking «is this one settled» about the row's *current* date will always say
+   * no — the payment lives one occurrence back. This is what lets the screen
+   * say «pagado, el 11 de septiembre» about a commitment that is now showing an
+   * October date, instead of showing nothing and looking like the payment was
+   * lost.
+   */
+  readonly lastPaidDueOn: PlainDate | null;
+  /** When the household recorded it, which is not always when it fell due. */
+  readonly lastPaidOn: PlainDate | null;
 }
 
 export async function loadCommitments(
@@ -265,6 +279,21 @@ export async function loadCommitments(
         lateFeeAmount: obligations.lateFeeAmount,
         lateFeeRate: obligations.lateFeeRate,
         lateFeeAfterDays: obligations.lateFeeAfterDays,
+        // The latest recorded payment, by correlated subquery rather than a
+        // join: a join would multiply the commitment by its whole payment
+        // history and every total on the screen would count it that many times.
+        lastPaidDueOn: sql<string | null>`(
+          select max(s.due_on)
+            from app.commitment_settlements s
+           where s.obligation_id = ${obligations.id}
+        )`,
+        lastPaidOn: sql<string | null>`(
+          select s.settled_on
+            from app.commitment_settlements s
+           where s.obligation_id = ${obligations.id}
+           order by s.due_on desc
+           limit 1
+        )`,
       })
       .from(obligations)
       .where(and(eq(obligations.householdId, householdId), isNull(obligations.deletedAt)))
@@ -286,6 +315,8 @@ export async function loadCommitments(
       row.lateFeeAmount === null ? null : Money.fromDecimalString(row.lateFeeAmount, currency),
     lateFeeRate: row.lateFeeRate,
     lateFeeAfterDays: row.lateFeeAfterDays,
+    lastPaidDueOn: (row.lastPaidDueOn as PlainDate | null) ?? null,
+    lastPaidOn: (row.lastPaidOn as PlainDate | null) ?? null,
   }));
 }
 

@@ -269,7 +269,11 @@ async function spikeAlerts(
       ),
       baseline as (
         select category_id,
-               percentile_cont(0.5) within group (order by total) as usual
+               -- Discrete, not continuous: the continuous variant returns
+               -- double precision, and a spending baseline that reaches the
+               -- screen as 412.30000000000007 is a float that escaped into
+               -- money. The discrete median stays numeric.
+               percentile_disc(0.5) within group (order by total) as usual
           from monthly
          where month < ${monthStart.slice(0, 7)}
          group by category_id

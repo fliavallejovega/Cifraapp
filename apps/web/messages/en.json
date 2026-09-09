@@ -1795,11 +1795,24 @@
       "overdue": "Overdue",
       "lateFee": "Late fee {fee}",
       "lateFeeRate": "Late fee {rate}%",
-      "deductedAtSource": "Payroll deduction"
+      "deductedAtSource": "Payroll deduction",
+      "paid": "Paid"
     },
     "dueOn": "Due on {date}",
     "overdue": "Was due on {date}",
-    "noCategory": "No category"
+    "noCategory": "No category",
+    "catchUp": {
+      "title": "Have you paid this period already?",
+      "detail": "Mark it and it stops coming off what is available. Each one is recorded with its date, and the real movement reconciles against it when you import it.",
+      "settleAction": "Mark {count} as paid · {total}",
+      "confirmQuestion": "This records {count} payments totalling {total} and rolls each commitment on to its next due date. Any of them can be undone afterwards.",
+      "confirmYes": "Yes, I paid them",
+      "clearTitle": "You are up to date.",
+      "clearBody": "Nothing falls due in the next 30 days. When you import your account movements, what you paid reconciles against each commitment on its own."
+    },
+    "markPaid": "I paid this",
+    "undoPaid": "Undo the payment",
+    "paidOn": "Paid on {date}"
   },
   "categories": {
     "title": "Spending categories",

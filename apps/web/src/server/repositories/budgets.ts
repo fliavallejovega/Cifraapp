@@ -11,6 +11,7 @@ import { endOfMonth, Money, startOfMonth, type CurrencyCode, type PlainDate } fr
 import { and, desc, eq, gte, inArray, isNull, lte, sql } from 'drizzle-orm';
 
 import { queryAsUser, type Session } from '../session';
+import { currentOccurrenceUnpaid } from './commitment-settlement';
 
 /**
  * Budgets, on real spending.
@@ -125,6 +126,9 @@ async function spendingFor(
           eq(obligations.householdId, householdId),
           isNull(obligations.deletedAt),
           isNull(obligations.settledTransactionId),
+          // And not already paid for this occurrence — declared by the household or
+          // matched to a real movement. See `currentOccurrenceUnpaid`.
+          currentOccurrenceUnpaid,
           // A deduction at source consumes no budget: nothing will leave the
           // account for it, so it must not eat a category's headroom.
           eq(obligations.isDeductedAtSource, false),

@@ -44,6 +44,7 @@ import { and, eq, isNull } from 'drizzle-orm';
 
 import { queryAsUser, type Session } from '../session';
 import { penaltyStillAtStake } from './late-fee';
+import { currentOccurrenceUnpaid } from './commitment-settlement';
 
 /**
  * The allocation plan, on real rows.
@@ -169,6 +170,9 @@ export async function loadPlan(session: Session, householdId: string): Promise<P
               eq(obligations.householdId, householdId),
               isNull(obligations.deletedAt),
               isNull(obligations.settledTransactionId),
+              // And not already paid for this occurrence — declared by the household or
+              // matched to a real movement. See `currentOccurrenceUnpaid`.
+              currentOccurrenceUnpaid,
               // Not a claim on money the household holds: it is taken out of a
               // salary before that salary arrives. See the column's own note.
               eq(obligations.isDeductedAtSource, false),

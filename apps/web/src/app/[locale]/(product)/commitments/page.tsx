@@ -1,11 +1,18 @@
-import { formatMoney, Money } from '@app/domain';
+import { addDays, formatMoney, Money } from '@app/domain';
 import { Card, Page, PageHeader, Section, Stat } from '@app/ui';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
+import { CommitmentCatchUp } from '@/components/commitment-catch-up';
 import { RecordsManager } from '@/components/records';
 import type { FieldSpec, RecordRow } from '@/components/records/spec';
 import { formatPlainDate, trimAmount } from '@/lib/format';
-import { createCommitment, removeCommitment, updateCommitment } from '@/server/commitment-actions';
+import {
+  createCommitment,
+  removeCommitment,
+  settleCommitment,
+  settleDueCommitments,
+  updateCommitment,
+} from '@/server/commitment-actions';
 import { loadHouseholdContext } from '@/server/household-context';
 import { recordLabels } from '@/server/record-labels';
 import { loadCategories, loadCommitments } from '@/server/repositories/administration';
@@ -44,6 +51,23 @@ export default async function CommitmentsPage({ params }: { params: Promise<{ lo
   );
   const essential = Money.sum(
     open.filter((entry) => entry.isEssential).map((entry) => entry.expectedAmount),
+    context.currency,
+  );
+
+  // Exactly what «estoy al día» would settle, computed here so the button can
+  // state the count and the total before anybody presses it. The window and the
+  // exclusions are the same ones `settleDueCommitments` applies — if these two
+  // ever disagreed the button would promise one thing and do another.
+  const catchUpHorizon = addDays(context.today, 30);
+  const dueNow = commitments.filter(
+    (commitment) =>
+      !commitment.isSettled &&
+      !commitment.isDeductedAtSource &&
+      commitment.dueDate <= catchUpHorizon &&
+      commitment.lastPaidDueOn !== commitment.dueDate,
+  );
+  const dueTotal = Money.sum(
+    dueNow.map((entry) => entry.expectedAmount),
     context.currency,
   );
 
@@ -142,8 +166,30 @@ export default async function CommitmentsPage({ params }: { params: Promise<{ lo
         ...(commitment.isSettled
           ? [{ label: t('badges.settled'), tone: 'positive' as const }]
           : []),
+        // A recorded payment, said with the occurrence it covers. A recurring
+        // commitment rolls on to its next date when it is paid, so without this
+        // the screen would show an October date and no sign that September was
+        // ever settled — which reads as the payment having been lost.
+        ...(commitment.lastPaidDueOn
+          ? [
+              {
+                label: t('paidOn', {
+                  date: formatPlainDate(commitment.lastPaidDueOn, locale),
+                }),
+                tone: 'positive' as const,
+              },
+            ]
+          : []),
       ],
       muted: commitment.isSettled,
+      // Undo is offered only while the payment is recent enough to be a
+      // correction. Six months on, «deshacer» would silently roll the
+      // commitment back half a year, which is not what anybody means by it.
+      action: commitment.isSettled
+        ? undefined
+        : commitment.lastPaidOn && commitment.lastPaidOn >= addDays(context.today, -35)
+          ? { label: t('undoPaid'), intent: 'unsettle' }
+          : { label: t('markPaid'), intent: 'settle' },
       values: {
         name: commitment.name,
         expectedAmount: commitment.expectedAmount.toDecimalString(),
@@ -158,6 +204,32 @@ export default async function CommitmentsPage({ params }: { params: Promise<{ lo
   return (
     <Page>
       <PageHeader title={t('title')} detail={t('detail')} />
+
+      <div className="mb-8">
+        <CommitmentCatchUp
+          locale={locale}
+          action={settleDueCommitments}
+          dueCount={dueNow.length}
+          labels={{
+            title: t('catchUp.title'),
+            detail: t('catchUp.detail'),
+            settleAction: t('catchUp.settleAction', {
+              count: dueNow.length,
+              total: formatMoney(dueTotal, { locale: context.moneyLocale }),
+            }),
+            confirmQuestion: t('catchUp.confirmQuestion', {
+              count: dueNow.length,
+              total: formatMoney(dueTotal, { locale: context.moneyLocale }),
+            }),
+            confirmYes: t('catchUp.confirmYes'),
+            cancel: shared('cancel'),
+            clearTitle: t('catchUp.clearTitle'),
+            clearBody: t('catchUp.clearBody'),
+            errorTitle: shared('errorTitle'),
+            errors: { generic: shared('errors.generic') },
+          }}
+        />
+      </div>
 
       {open.length > 0 && (
         <div className="grid gap-4 sm:grid-cols-2">
@@ -184,6 +256,7 @@ export default async function CommitmentsPage({ params }: { params: Promise<{ lo
             create={createCommitment}
             update={updateCommitment}
             remove={removeCommitment}
+            rowAction={settleCommitment}
             labels={recordLabels(shared, {
               addAction: t('add'),
               addTitle: t('addTitle'),
