@@ -30,6 +30,26 @@ describe('the kinds a holding can be', () => {
     expect(action).not.toMatch(/z\.enum\(\[\s*'(equity|etf|crypto|fund|index)'/);
   });
 
+  /**
+   * Y la misma lista que acepta la pantalla de Cuentas, que llegó después.
+   *
+   * Registrar una posición dejó de ser algo que sólo el cuestionario podía
+   * hacer, y con la segunda puerta llegó la segunda oportunidad de que alguien
+   * escribiera las cuatro clases viejas a mano. El fallo sería el mismo: un
+   * hogar con un fondo mutuo, un formulario rechazado, y un mensaje que no
+   * nombra nada sobre lo que se pueda actuar.
+   */
+  it('is the same list the accounts screen accepts and labels', () => {
+    const action = read('./holdings-actions.ts');
+    expect(action).toContain('z.enum(HOLDING_KINDS)');
+    expect(action).not.toMatch(/z\.enum\(\[\s*'(equity|etf|crypto|fund|index)'/);
+
+    // Y la pantalla etiqueta leyendo el paquete, no una copia literal.
+    const page = read('../app/[locale]/(product)/accounts/page.tsx');
+    expect(page).toContain('HOLDING_KINDS.map');
+    expect(page).not.toMatch(/\[\s*'equity',\s*'etf'/);
+  });
+
   it('is the same list the database will accept', () => {
     const migration = read('../../../../supabase/migrations/20260908230000_holding_kinds.sql');
     const constraints = [...migration.matchAll(/check \(kind in \(([^)]+)\)\)/g)].map((match) =>

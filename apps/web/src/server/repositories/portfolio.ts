@@ -32,6 +32,10 @@ export interface Position {
   readonly kind: string;
   readonly quantity: string;
   readonly holder: string | null;
+  /** Quién es, por identificador, para que un formulario pueda pre-rellenarlo. */
+  readonly holderId: string | null;
+  /** Lo que costó, cuando la casa lo sabe. Nulo es «nadie lo dijo», no cero. */
+  readonly costBasis: string | null;
   /** Absent when nothing has ever quoted this symbol. */
   readonly valuation: Valuation | null;
   readonly stale: boolean;
@@ -61,6 +65,8 @@ export async function loadPortfolio(
         kind: holdings.kind,
         quantity: holdings.quantity,
         holder: householdPeople.displayName,
+        holderId: holdings.personId,
+        costBasis: holdings.costBasis,
         price: marketPrices.price,
         priceCurrency: marketPrices.currency,
         previousClose: marketPrices.previousClose,
@@ -153,6 +159,8 @@ export async function loadPortfolio(
       kind: row.kind,
       quantity: row.quantity,
       holder: row.holder,
+      holderId: row.holderId,
+      costBasis: row.costBasis,
       valuation: quote ? valueOf(row.quantity, quote) : null,
       stale: quote ? isStale(quote) : false,
     };

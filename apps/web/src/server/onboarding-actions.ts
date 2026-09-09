@@ -218,6 +218,23 @@ const setupInput = z.object({
         name,
         accountType: z.enum(['checking', 'savings', 'cash', 'digital_wallet']),
         balance: amount,
+        /**
+         * Los últimos cuatro dígitos, para reconocerla.
+         *
+         * Es lo que distingue «Visa Davo» de «Visa Blei» cuando llega un estado
+         * de cuenta que no trae nombres, y lo que permite que un aviso del banco
+         * caiga en la cuenta correcta en vez de quedarse sin asignar. Nunca el
+         * número completo: cuatro dígitos identifican y no sirven para cobrar.
+         */
+        maskedNumber: z.preprocess(
+          (value) => (value === '' || value === undefined || value === null ? undefined : value),
+          z
+            .string()
+            .trim()
+            .regex(/^\d{4}$/)
+            .optional(),
+        ),
+
         /** The institution by name, matched against the seeded list. */
         institution: z.string().trim().max(120).optional(),
         /** What it pays annually, as the household's statement reports it. */
@@ -336,6 +353,23 @@ const setupInput = z.object({
         balance: amount,
         /** Present when the debt is a credit card: what it can be spent up to. */
         creditLimit: optionalAmount,
+        /**
+         * Los últimos cuatro dígitos, para reconocerla.
+         *
+         * Es lo que distingue «Visa Davo» de «Visa Blei» cuando llega un estado
+         * de cuenta que no trae nombres, y lo que permite que un aviso del banco
+         * caiga en la cuenta correcta en vez de quedarse sin asignar. Nunca el
+         * número completo: cuatro dígitos identifican y no sirven para cobrar.
+         */
+        maskedNumber: z.preprocess(
+          (value) => (value === '' || value === undefined || value === null ? undefined : value),
+          z
+            .string()
+            .trim()
+            .regex(/^\d{4}$/)
+            .optional(),
+        ),
+
         /**
          * Qué clase de deuda es. Lo que decide si tiene cupo o tiene cuotas —
          * una tarjeta no termina y una hipoteca no tiene límite.
@@ -624,6 +658,7 @@ export async function completeSetup(
           // Null, not zero, when nothing was said. «Pays nothing» and «nobody
           // told us» are different facts and only one of them is a rate.
           interestRate: entry.interestRate ?? null,
+          maskedNumber: entry.maskedNumber ?? null,
         };
         if (entry.id) {
           await tx
@@ -1034,6 +1069,10 @@ export async function completeSetup(
           currentBalance: `-${entry.balance}`,
           creditLimit: entry.creditLimit ?? null,
           personId: holder,
+          // Lo que hace reconocible la tarjeta en un estado de cuenta que no
+          // trae nombres, y lo que permite que un aviso del banco caiga en la
+          // cuenta correcta en vez de quedarse sin asignar.
+          maskedNumber: entry.maskedNumber ?? null,
         };
 
         if (existing) {

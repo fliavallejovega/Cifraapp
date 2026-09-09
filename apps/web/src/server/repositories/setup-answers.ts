@@ -120,6 +120,7 @@ export async function loadSetupAnswers(
           balance: accounts.currentBalance,
           institution: institutions.name,
           interestRate: accounts.interestRate,
+          maskedNumber: accounts.maskedNumber,
         })
         .from(accounts)
         .leftJoin(institutions, eq(institutions.id, accounts.institutionId))
@@ -196,6 +197,10 @@ export async function loadSetupAnswers(
           termMonths: debts.termMonths,
           paidMonths: debts.paidMonths,
           personName: householdPeople.displayName,
+          // Los últimos cuatro viven en la cuenta que respalda la tarjeta, que
+          // es donde se concilia. Una deuda que no es tarjeta no tiene cuenta y
+          // esto llega nulo, que es la respuesta correcta.
+          maskedNumber: accounts.maskedNumber,
         })
         .from(debts)
         .leftJoin(accounts, eq(accounts.id, debts.accountId))
@@ -321,6 +326,7 @@ export async function loadSetupAnswers(
         balance: trimAmount(row.balance),
         institution: row.institution ?? '',
         interestRate: row.interestRate ? trimAmount(row.interestRate) : '',
+        maskedNumber: row.maskedNumber ?? '',
       })),
       incomes: incomeRows.map((row) => ({
         id: row.id,
@@ -394,6 +400,7 @@ export async function loadSetupAnswers(
         apr: trimAmount(row.apr),
         minimumPayment: trimAmount(row.minimumPayment),
         creditLimit: row.creditLimit ? trimAmount(row.creditLimit) : '',
+        maskedNumber: row.maskedNumber ?? '',
         personName: row.personName ?? '',
         kind: row.kind,
         repayment: row.repayment ?? 'fixed_instalment',

@@ -965,6 +965,38 @@
       "unassigned": "Unassigned",
       "unassignedHint": "None of your accounts or debts has an owner set, so there is nothing to separate yet. Edit an account and say whose it is.",
       "counts": "{accounts} account(s) · {debts} debt(s)"
+    },
+    "investments": {
+      "title": "Investments",
+      "detail": "Shares, ETFs, funds and crypto. They live here because they answer the same question an account does: where your money is.",
+      "total": "Today's value",
+      "totalDetail": "Quantity times market price. Only what could be quoted.",
+      "change": "Against the previous close",
+      "changeDetail": "How much it moved since the last close, summed.",
+      "add": "Add an investment",
+      "addTitle": "New investment",
+      "remove": "Remove",
+      "removeConfirm": "Remove this position?",
+      "submitCreate": "Add this investment",
+      "submitUpdate": "Save the changes",
+      "emptyTitle": "No investments recorded yet",
+      "emptyBody": "If you hold shares, ETFs or crypto, add them here. Search the instrument, say how many units you hold, and the product quotes it and adds it to your position. The price comes from the market, never from you.",
+      "symbol": "What you hold",
+      "symbolHint": "Search by name or symbol and pick from the list. Picking it stops a coin being confused with the fund named after it.",
+      "quantity": "How many units",
+      "quantityHint": "The units you hold, not what they are worth. Crypto takes decimals.",
+      "label": "What you call it",
+      "labelHint": "Filled in with the instrument's name. Change it if you call your position something else.",
+      "holder": "Whose is it?",
+      "holderShared": "The household's",
+      "cost": "What it cost you",
+      "costHint": "Optional. If you do not know, leave it blank: inventing it turns an unknown gain into a stated one.",
+      "unpriced": "Not quoted",
+      "stale": "Stale price",
+      "errors": {
+        "symbolInvalid": "That symbol is not a shape a market uses.",
+        "quantityInvalid": "The quantity has to be greater than zero."
+      }
     }
   },
   "setup": {
@@ -1125,7 +1157,9 @@
       "totalOtherCurrency": "In {currency}, separately",
       "totalLabel": "Total",
       "totalUnpriced": "{count} still has no price. That value is not added in here yet.",
-      "addFirst": "Add the first account"
+      "addFirst": "Add the first account",
+      "mask": "Last 4 digits",
+      "maskHint": "Optional. So the account is recognisable on a statement, and so a movement knows which one it belongs to. We never store the full number."
     },
     "commitments": {
       "title": "What do you have to pay every month?",
@@ -1240,7 +1274,9 @@
       "dueDayHint": "The day the instalment is charged. If it falls on the last day of the month, use 31.",
       "firstDay": "First charge day",
       "secondDay": "Second charge day",
-      "secondDayHint": "The other day of the month half the instalment falls on."
+      "secondDayHint": "The other day of the month half the instalment falls on.",
+      "mask": "Last 4 digits",
+      "maskHint": "Optional. It is what tells one Visa from another when the statement arrives. We never store the full number."
     },
     "goals": {
       "title": "What is all this for?",

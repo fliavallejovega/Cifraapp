@@ -204,6 +204,13 @@ interface AccountRow {
   institution: string;
   /** What it pays, annually, as a percentage. Asked, never assumed. */
   interestRate: string;
+  /**
+   * Los últimos cuatro dígitos, para reconocerla.
+   *
+   * Es lo que distingue «Visa Davo» de «Visa Blei» cuando llega un estado de
+   * cuenta que no trae nombres. Nunca el número completo.
+   */
+  maskedNumber: string;
 }
 
 /**
@@ -287,6 +294,13 @@ interface DebtRow {
    * limit the position has to know about. Blank means «a loan, not a card».
    */
   creditLimit: string;
+  /**
+   * Los últimos cuatro dígitos, para reconocerla.
+   *
+   * Es lo que distingue «Visa Davo» de «Visa Blei» cuando llega un estado de
+   * cuenta que no trae nombres. Nunca el número completo.
+   */
+  maskedNumber: string;
   /**
    * Qué clase de deuda es.
    *
@@ -523,6 +537,7 @@ export function SetupQuestionnaire({
       balance: '',
       institution: '',
       interestRate: '',
+      maskedNumber: '',
     }),
   );
   /**
@@ -567,6 +582,7 @@ export function SetupQuestionnaire({
       apr: '',
       minimumPayment: '',
       creditLimit: '',
+      maskedNumber: '',
       personName: '',
       kind: 'credit_card' as const,
       termMonths: '',
@@ -634,6 +650,7 @@ export function SetupQuestionnaire({
             balance: draft.balance,
             institution: '',
             interestRate: '',
+            maskedNumber: '',
           },
         ]);
       }
@@ -1523,6 +1540,7 @@ export function SetupQuestionnaire({
                     balance: '',
                     institution: '',
                     interestRate: '',
+                    maskedNumber: '',
                   },
                 ]);
               }}
@@ -1616,6 +1634,39 @@ export function SetupQuestionnaire({
                               %
                             </span>
                           </div>
+                        )}
+                      </Field>
+                      {/*
+                        Los últimos cuatro, opcionales.
+
+                        No es un dato decorativo: es lo que permite que un estado
+                        de cuenta que no trae nombres caiga en la cuenta correcta,
+                        y lo que distingue dos cuentas del mismo banco. Se pide
+                        aquí y no después porque quien está mirando su banca en
+                        línea para copiar el saldo ya tiene el número delante.
+                      */}
+                      <Field label={copy('savings.mask')} hint={copy('savings.maskHint')}>
+                        {({ id, describedBy }) => (
+                          <Input
+                            id={id}
+                            numeric
+                            inputMode="numeric"
+                            maxLength={4}
+                            value={row.maskedNumber}
+                            placeholder="0000"
+                            aria-describedby={describedBy}
+                            onChange={(event) => {
+                              setAccountRows(
+                                patch(accountRows, at, {
+                                  // Sólo dígitos, y como mucho cuatro. Pegar el
+                                  // número entero de la tarjeta es el accidente
+                                  // que hay que hacer imposible, no corregir
+                                  // después con un mensaje de error.
+                                  maskedNumber: event.target.value.replace(/\D/g, '').slice(0, 4),
+                                }),
+                              );
+                            }}
+                          />
                         )}
                       </Field>
                     </>
@@ -2112,6 +2163,7 @@ export function SetupQuestionnaire({
                   apr: '',
                   minimumPayment: '',
                   creditLimit: '',
+                  maskedNumber: '',
                   personName: '',
                   kind: 'credit_card' as const,
                   termMonths: '',
@@ -2242,15 +2294,46 @@ export function SetupQuestionnaire({
                   así que la pantalla tampoco lo ofrece.
                 */}
                 {row.kind === 'credit_card' && (
-                  <MoneyField
-                    label={copy('debts.limit')}
-                    hint={copy('debts.limitHint')}
-                    symbol={currencySymbol}
-                    value={row.creditLimit}
-                    onChange={(value) => {
-                      setDebtRows(patch(debtRows, at, { creditLimit: value }));
-                    }}
-                  />
+                  <>
+                    <MoneyField
+                      label={copy('debts.limit')}
+                      hint={copy('debts.limitHint')}
+                      symbol={currencySymbol}
+                      value={row.creditLimit}
+                      onChange={(value) => {
+                        setDebtRows(patch(debtRows, at, { creditLimit: value }));
+                      }}
+                    />
+                    {/*
+                      Y los últimos cuatro, sólo en la tarjeta.
+
+                      Una tarjeta se vuelve cuenta en el sistema —es lo único que
+                      permite conciliar sus movimientos— y esos cuatro dígitos son
+                      lo que hace que el estado de cuenta de «Visa» sepa cuál de
+                      las dos Visas de la casa es. Un préstamo no los tiene porque
+                      no tiene cuenta que conciliar, y por eso no se le preguntan.
+                    */}
+                    <Field label={copy('debts.mask')} hint={copy('debts.maskHint')}>
+                      {({ id, describedBy }) => (
+                        <Input
+                          id={id}
+                          numeric
+                          inputMode="numeric"
+                          maxLength={4}
+                          value={row.maskedNumber}
+                          placeholder="0000"
+                          aria-describedby={describedBy}
+                          onChange={(event) => {
+                            setDebtRows(
+                              patch(debtRows, at, {
+                                maskedNumber: event.target.value.replace(/\D/g, '').slice(0, 4),
+                              }),
+                            );
+                          }}
+                        />
+                      )}
+                    </Field>
+                  </>
                 )}
 
                 {/*

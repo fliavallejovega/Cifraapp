@@ -1,4 +1,5 @@
 import { formatMoney, getCurrency, type CurrencyCode } from '@app/domain';
+import { HOLDING_KINDS } from '@app/market-data';
 import {
   Amount,
   Card,
@@ -16,8 +17,10 @@ import {
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { AccountsManager, type AccountRowView } from '@/components/accounts-manager';
+import { HoldingsManager } from '@/components/holdings-manager';
 import { ACCOUNT_TYPE_GROUPS, ACCOUNT_TYPES, loadAccounts } from '@/server/repositories/accounts';
 import { loadPeople } from '@/server/repositories/administration';
+import { loadPortfolio } from '@/server/repositories/portfolio';
 import { requireHousehold } from '@/server/session';
 
 /**
@@ -41,13 +44,15 @@ export default async function AccountsPage({ params }: { params: Promise<{ local
   const household = session.households.find((entry) => entry.id === session.activeHouseholdId);
   const currency = (household?.baseCurrency.trim() ?? 'USD') as CurrencyCode;
 
-  const [view, people] = await Promise.all([
+  const [view, people, portfolio] = await Promise.all([
     loadAccounts(session, session.activeHouseholdId, currency),
     loadPeople(session, session.activeHouseholdId),
+    loadPortfolio(session, session.activeHouseholdId, currency),
   ]);
   const personNames = new Map(people.map((person) => [person.id, person.displayName]));
 
   const t = await getTranslations('accounts');
+  const setup = await getTranslations('setup');
   const raw = rawOf(t);
   const moneyLocale = locale === 'en' ? 'en-US' : 'es-PA';
 
@@ -199,6 +204,104 @@ export default async function AccountsPage({ params }: { params: Promise<{ local
             }}
           />
         </Card>
+      </Section>
+
+      {/*
+        Lo que la casa tiene invertido.
+
+        Va en Cuentas y no en una pantalla aparte porque responde a la misma
+        pregunta —«¿dónde está mi dinero?»— y porque la pantalla de inversiones
+        es para mirar la posición, no para administrarla. Aquí se registra, se
+        corrige y se quita, igual que una cuenta de banco.
+
+        Sumado al total sólo cuando hay cotización: una posición que nadie pudo
+        cotizar se enseña sin valor y se dice, en vez de contarse como cero.
+      */}
+      <Section
+        title={t('investments.title')}
+        detail={t('investments.detail')}
+        className="mt-12"
+      >
+        {portfolio.positions.length > 0 && (
+          <div className="mb-4 grid gap-4 sm:grid-cols-2">
+            <Card>
+              <Stat label={t('investments.total')} detail={t('investments.totalDetail')}>
+                {formatMoney(portfolio.total, { locale: moneyLocale })}
+              </Stat>
+            </Card>
+            {portfolio.change && (
+              <Card>
+                <Stat label={t('investments.change')} detail={t('investments.changeDetail')}>
+                  {formatMoney(portfolio.change, { locale: moneyLocale, signDisplay: 'always' })}
+                </Stat>
+              </Card>
+            )}
+          </div>
+        )}
+
+        <HoldingsManager
+          locale={locale}
+          currencySymbol={getCurrency(currency).symbol}
+          people={people.map((person) => ({ id: person.id, name: person.displayName }))}
+          rows={portfolio.positions.map((position) => ({
+            id: position.id,
+            symbol: position.symbol,
+            label: position.label,
+            kind: position.kind,
+            quantity: position.quantity,
+            holderId: position.holderId,
+            holderName: position.holder,
+            costBasis: position.costBasis,
+            value: position.valuation
+              ? formatMoney(position.valuation.value, { locale: moneyLocale })
+              : null,
+            price: position.valuation ? position.valuation.quote.price : null,
+            stale: position.stale,
+          }))}
+          labels={{
+            addAction: t('investments.add'),
+            addTitle: t('investments.addTitle'),
+            edit: t('list.edit'),
+            remove: t('investments.remove'),
+            removeConfirm: t('investments.removeConfirm'),
+            removeConfirmYes: t('list.archiveConfirmYes'),
+            cancel: t('form.cancel'),
+            submitCreate: t('investments.submitCreate'),
+            submitUpdate: t('investments.submitUpdate'),
+            emptyTitle: t('investments.emptyTitle'),
+            emptyBody: t('investments.emptyBody'),
+            symbol: t('investments.symbol'),
+            symbolHint: t('investments.symbolHint'),
+            quantity: t('investments.quantity'),
+            quantityHint: t('investments.quantityHint'),
+            label: t('investments.label'),
+            labelHint: t('investments.labelHint'),
+            holder: t('investments.holder'),
+            holderShared: t('investments.holderShared'),
+            cost: t('investments.cost'),
+            costHint: t('investments.costHint'),
+            unpriced: t('investments.unpriced'),
+            stale: t('investments.stale'),
+            // Leída del paquete, no copiada. Una lista de seis clases repetida
+            // a mano es la que se queda en cuatro cuando el proveedor aprende a
+            // distinguir dos más.
+            kinds: Object.fromEntries(
+              HOLDING_KINDS.map((kind) => [kind, setup(`holdings.kind.${kind}`)]),
+            ),
+            errorTitle: t('errors.title'),
+            errors: {
+              ...errorLabels(t),
+              symbolInvalid: t('investments.errors.symbolInvalid'),
+              quantityInvalid: t('investments.errors.quantityInvalid'),
+              amountInvalid: t('errors.balanceInvalid'),
+            },
+            // El buscador de símbolos trae su propio catálogo, que vive con el
+            // cuestionario porque nació ahí. Se pasa tal cual en vez de copiarse:
+            // dos copias de quince cadenas se separan, y el día que se separen la
+            // pantalla nueva es la que enseña la versión vieja.
+            search: (key: string) => setup(key),
+          }}
+        />
       </Section>
 
       <p className="mt-12 max-w-[62ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]">

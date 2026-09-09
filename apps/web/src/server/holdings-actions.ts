@@ -1,9 +1,20 @@
 'use server';
 
-import { marketPrices } from '@app/database/schema';
-import { lookup, search, type SearchScope } from '@app/market-data';
+import { holdings, householdPeople, marketPrices } from '@app/database/schema';
+import type { CurrencyCode } from '@app/domain';
+import { HOLDING_KINDS, lookup, search, type SearchScope } from '@app/market-data';
 import { getServerEnv } from '@app/validation/env';
 import { getPlatformDb } from '@app/database';
+import { and, eq, isNull } from 'drizzle-orm';
+import { z } from 'zod';
+
+import { currencyOf } from './household-context';
+import { firstIssueKey } from './record-input';
+import { revalidateFinancials } from './revalidate';
+import { loadSession, queryAsUser } from './session';
+import type { RecordActionResult } from '@/components/records/spec';
+
+type Tx = Parameters<Parameters<typeof queryAsUser<unknown>>[1]>[0];
 
 /**
  * Finding an instrument, and pricing the one that was chosen.
@@ -125,4 +136,254 @@ export async function searchSymbols(term: string, rawScope: string): Promise<Sym
       exchange: candidate.exchange,
     })),
   };
+}
+
+/**
+ * Registrar, corregir y quitar lo que la casa tiene invertido.
+ *
+ * El cuestionario inicial creaba estas filas y después nada en el producto
+ * podía tocarlas: una cantidad tecleada con un cero de más, una posición
+ * vendida, una compra nueva — todo permanente. Es exactamente el mismo hueco
+ * que tenían los ingresos y las cuentas antes de que existiera su pantalla, y
+ * se cierra igual.
+ *
+ * ## Qué se guarda y qué no
+ *
+ * El símbolo y la cantidad. **El precio no**: pertenece a quien lo cotizó, vive
+ * en `market_prices` con su momento y su fuente, y aceptarlo de un formulario
+ * dejaría que una pantalla afirme lo que dijo un mercado.
+ *
+ * `kind` tampoco se acepta a ciegas. Llega del formulario porque el buscador ya
+ * lo sabe, pero si hay una cotización guardada para ese símbolo, manda la del
+ * proveedor: la clase de un instrumento es un hecho suyo, no del hogar. Esa
+ * distinción es la que impide que alguien registre bitcoin como si fuera una
+ * acción y luego lea un total que no significa nada.
+ */
+
+const HOLDING_SYMBOL = z
+  .string()
+  .trim()
+  .min(1)
+  .max(20)
+  .regex(/^[A-Za-z0-9.\-^=]+$/);
+
+/** Diez decimales: una cripto se divide mucho más allá de un centavo. */
+const QUANTITY = z
+  .string()
+  .trim()
+  .regex(/^\d+(\.\d{1,10})?$/)
+  .refine((value) => Number(value) > 0, { message: 'quantityInvalid' });
+
+const holdingInput = z.object({
+  symbol: HOLDING_SYMBOL,
+  label: z.string().trim().min(1).max(120),
+  quantity: QUANTITY,
+  kind: z.enum(HOLDING_KINDS).default('other'),
+  personId: z.preprocess(
+    (value) => (value === '' || value === null || value === undefined ? undefined : value),
+    z.uuid().optional(),
+  ),
+  costBasis: z.preprocess(
+    (value) => (value === '' || value === null || value === undefined ? undefined : value),
+    z
+      .string()
+      .trim()
+      .regex(/^\d+(\.\d{1,4})?$/)
+      .optional(),
+  ),
+  notes: z.string().trim().max(500).optional(),
+});
+
+const FIELD_ERRORS = {
+  symbol: 'symbolInvalid',
+  label: 'nameRequired',
+  quantity: 'quantityInvalid',
+  costBasis: 'amountInvalid',
+  personId: 'notFound',
+} as const;
+
+function parseHolding(formData: FormData) {
+  return holdingInput.safeParse({
+    symbol: formData.get('symbol'),
+    label: formData.get('label'),
+    quantity: formData.get('quantity'),
+    kind: formData.get('kind') ?? 'other',
+    personId: formData.get('personId'),
+    costBasis: formData.get('costBasis'),
+    notes: formData.get('notes') ?? undefined,
+  });
+}
+
+/**
+ * La clase que manda: la del proveedor si existe, la del formulario si no.
+ *
+ * Un símbolo que nadie ha cotizado todavía no tiene fila en `market_prices`, y
+ * en ese caso lo que dijo el buscador es lo mejor que hay. En cuanto haya
+ * cotización, la del proveedor gana.
+ */
+async function kindOf(tx: Tx, symbol: string, stated: string): Promise<string> {
+  const [quoted] = await tx
+    .select({ kind: marketPrices.kind })
+    .from(marketPrices)
+    .where(eq(marketPrices.symbol, symbol))
+    .limit(1);
+
+  return quoted?.kind ?? stated;
+}
+
+/**
+ * La persona tiene que ser de este hogar, o no hay dueño que asignar.
+ *
+ * `INVALID` es un centinela y no la cadena `'invalid'`: un identificador es
+ * texto, y confundir un valor con un fallo es el error que este tipo evita.
+ */
+const INVALID = Symbol('invalid');
+
+async function personOf(
+  tx: Tx,
+  householdId: string,
+  personId: string | undefined,
+): Promise<string | null | typeof INVALID> {
+  if (!personId) return null;
+
+  const [person] = await tx
+    .select({ id: householdPeople.id })
+    .from(householdPeople)
+    .where(
+      and(
+        eq(householdPeople.id, personId),
+        eq(householdPeople.householdId, householdId),
+        isNull(householdPeople.deletedAt),
+      ),
+    )
+    .limit(1);
+
+  return person ? person.id : INVALID;
+}
+
+export async function createHolding(
+  _previous: RecordActionResult,
+  formData: FormData,
+): Promise<RecordActionResult> {
+  const session = await loadSession();
+  if (!session?.activeHouseholdId) return { error: 'signInRequired' };
+
+  const parsed = parseHolding(formData);
+  if (!parsed.success) return { error: firstIssueKey(parsed.error, FIELD_ERRORS) };
+
+  const householdId = session.activeHouseholdId;
+
+  const outcome = await queryAsUser(session, async (tx) => {
+    const holder = await personOf(tx, householdId, parsed.data.personId);
+    if (holder === INVALID) return 'notFound' as const;
+
+    const [created] = await tx
+      .insert(holdings)
+      .values({
+        householdId,
+        personId: holder,
+        symbol: parsed.data.symbol.toUpperCase(),
+        label: parsed.data.label,
+        quantity: parsed.data.quantity,
+        kind: await kindOf(tx, parsed.data.symbol.toUpperCase(), parsed.data.kind),
+        costBasis: parsed.data.costBasis ?? null,
+        notes: parsed.data.notes ?? null,
+        currency: currencyOf(session, householdId) as CurrencyCode,
+        createdBy: session.profile.id,
+      })
+      .returning({ id: holdings.id });
+
+    return created ? created.id : ('createFailed' as const);
+  });
+
+  if (outcome === 'notFound' || outcome === 'createFailed') return { error: outcome };
+
+  revalidateFinancials(formData);
+  return { created: outcome };
+}
+
+export async function updateHolding(
+  _previous: RecordActionResult,
+  formData: FormData,
+): Promise<RecordActionResult> {
+  const session = await loadSession();
+  if (!session?.activeHouseholdId) return { error: 'signInRequired' };
+
+  const id = z.uuid().safeParse(formData.get('id'));
+  if (!id.success) return { error: 'notFound' };
+
+  const parsed = parseHolding(formData);
+  if (!parsed.success) return { error: firstIssueKey(parsed.error, FIELD_ERRORS) };
+
+  const householdId = session.activeHouseholdId;
+
+  const outcome = await queryAsUser(session, async (tx) => {
+    const holder = await personOf(tx, householdId, parsed.data.personId);
+    if (holder === INVALID) return 'notFound' as const;
+
+    const [updated] = await tx
+      .update(holdings)
+      .set({
+        personId: holder,
+        symbol: parsed.data.symbol.toUpperCase(),
+        label: parsed.data.label,
+        quantity: parsed.data.quantity,
+        kind: await kindOf(tx, parsed.data.symbol.toUpperCase(), parsed.data.kind),
+        costBasis: parsed.data.costBasis ?? null,
+        notes: parsed.data.notes ?? null,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(holdings.id, id.data),
+          eq(holdings.householdId, householdId),
+          isNull(holdings.deletedAt),
+        ),
+      )
+      .returning({ id: holdings.id });
+
+    return updated ? ('ok' as const) : ('notFound' as const);
+  });
+
+  if (outcome !== 'ok') return { error: outcome };
+
+  revalidateFinancials(formData);
+  return { ok: true };
+}
+
+/**
+ * Quitar una posición.
+ *
+ * Borrado suave, como todo lo demás que este esquema fecha: haber tenido una
+ * posición es historia del hogar, y el mes en que se vendió deja de tener
+ * explicación si la fila desaparece.
+ */
+export async function removeHolding(
+  _previous: RecordActionResult,
+  formData: FormData,
+): Promise<RecordActionResult> {
+  const session = await loadSession();
+  if (!session?.activeHouseholdId) return { error: 'signInRequired' };
+
+  const id = z.uuid().safeParse(formData.get('id'));
+  if (!id.success) return { error: 'notFound' };
+
+  const [removed] = await queryAsUser(session, (tx) =>
+    tx
+      .update(holdings)
+      .set({ deletedAt: new Date(), updatedAt: new Date() })
+      .where(
+        and(
+          eq(holdings.id, id.data),
+          eq(holdings.householdId, session.activeHouseholdId ?? ''),
+          isNull(holdings.deletedAt),
+        ),
+      )
+      .returning({ id: holdings.id }),
+  );
+
+  if (!removed) return { error: 'notFound' };
+
+  revalidateFinancials(formData);
+  return { ok: true };
 }

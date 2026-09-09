@@ -965,6 +965,38 @@
       "unassigned": "Sin asignar",
       "unassignedHint": "Tus cuentas y deudas no tienen dueño asignado, así que no hay nada que separar todavía. Editá una cuenta y elegí de quién es.",
       "counts": "{accounts} cuenta(s) · {debts} deuda(s)"
+    },
+    "investments": {
+      "title": "Inversiones",
+      "detail": "Acciones, ETFs, fondos y criptomonedas. Se registran acá porque responden a la misma pregunta que una cuenta: dónde está tu dinero.",
+      "total": "Valor de hoy",
+      "totalDetail": "Cantidad por precio de mercado. Sólo lo que se pudo cotizar.",
+      "change": "Contra el cierre anterior",
+      "changeDetail": "Cuánto se movió desde el último cierre, sumado.",
+      "add": "Agregar una inversión",
+      "addTitle": "Nueva inversión",
+      "remove": "Quitar",
+      "removeConfirm": "¿Quitar esta posición?",
+      "submitCreate": "Agregar esta inversión",
+      "submitUpdate": "Guardar los cambios",
+      "emptyTitle": "Todavía no registraste inversiones",
+      "emptyBody": "Si tenés acciones, ETFs o criptomonedas, agregalas acá. Buscás el instrumento, decís cuántas unidades tenés, y el producto lo cotiza y lo suma a tu posición. El precio lo pone el mercado, nunca vos.",
+      "symbol": "Qué tenés",
+      "symbolHint": "Buscá por nombre o por símbolo y elegí de la lista. Elegirlo evita confundir una moneda con el fondo que lleva su nombre.",
+      "quantity": "Cuántas unidades",
+      "quantityHint": "Las que tenés, no lo que valen. Las criptos admiten decimales.",
+      "label": "Cómo lo llamás vos",
+      "labelHint": "Se rellena con el nombre del instrumento. Cambialo si a tu posición le decís de otra forma.",
+      "holder": "¿De quién es?",
+      "holderShared": "Del hogar",
+      "cost": "Lo que te costó",
+      "costHint": "Opcional. Si no lo sabés, dejalo vacío: inventarlo convierte una ganancia desconocida en una declarada.",
+      "unpriced": "Sin cotizar",
+      "stale": "Precio viejo",
+      "errors": {
+        "symbolInvalid": "Ese símbolo no tiene una forma que un mercado use.",
+        "quantityInvalid": "La cantidad tiene que ser mayor que cero."
+      }
     }
   },
   "setup": {
@@ -1125,7 +1157,9 @@
       "totalOtherCurrency": "En {currency}, aparte",
       "totalLabel": "Total",
       "totalUnpriced": "Falta el precio de {count}. Ese valor todavía no está sumado aquí.",
-      "addFirst": "Agregar la primera cuenta"
+      "addFirst": "Agregar la primera cuenta",
+      "mask": "Últimos 4 dígitos",
+      "maskHint": "Opcional. Para reconocer la cuenta en un estado de cuenta y para saber a cuál pertenece un movimiento. Nunca guardamos el número completo."
     },
     "commitments": {
       "title": "¿Qué tienes que pagar todos los meses?",
@@ -1240,7 +1274,9 @@
       "dueDayHint": "El día en que se cobra la cuota. Si cae el último día del mes, pon 31.",
       "firstDay": "Primer día de cobro",
       "secondDay": "Segundo día de cobro",
-      "secondDayHint": "El otro día del mes en que cae la mitad de la cuota."
+      "secondDayHint": "El otro día del mes en que cae la mitad de la cuota.",
+      "mask": "Últimos 4 dígitos",
+      "maskHint": "Opcional. Es lo que distingue una Visa de otra cuando llega el estado de cuenta. Nunca guardamos el número completo."
     },
     "goals": {
       "title": "¿Para qué es todo esto?",
