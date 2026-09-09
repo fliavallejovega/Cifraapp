@@ -20,6 +20,7 @@ export const PROTECTED_SEGMENTS = [
   '/overview',
   '/welcome',
   '/accounts',
+  '/cards',
   '/movements',
 
   '/commitments',

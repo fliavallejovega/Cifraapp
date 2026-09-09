@@ -53,6 +53,23 @@ export function IconAccounts() {
   );
 }
 
+/**
+ * Tarjetas: dos rectángulos escalonados, no uno.
+ *
+ * Uno solo ya lo usa Cuentas, y dos destinos vecinos con la misma silueta se
+ * eligen mal. El escalón dice «varias» sin salirse de la familia: mismo trazo,
+ * mismo radio, misma retícula de veinte.
+ */
+export function IconCards() {
+  return (
+    <Icon>
+      <rect x="2.5" y="7" width="12" height="9" rx="2" />
+      <path d="M2.5 10.5h12" />
+      <path d="M6 4h9a2 2 0 0 1 2 2v7" />
+    </Icon>
+  );
+}
+
 /** Import: a statement arriving into the tray. */
 export function IconImport() {
   return (

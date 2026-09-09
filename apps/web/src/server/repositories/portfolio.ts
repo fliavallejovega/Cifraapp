@@ -36,6 +36,17 @@ export interface Position {
   readonly holderId: string | null;
   /** Lo que costó, cuando la casa lo sabe. Nulo es «nadie lo dijo», no cero. */
   readonly costBasis: string | null;
+  /**
+   * Qué decidió la casa hacer con esta posición.
+   *
+   * Nulo es «nadie lo ha dicho», que no es lo mismo que «la mantengo». La
+   * pantalla las distingue porque el plan las lee distinto: lo que no se toca
+   * no está disponible, y lo que va a salir sí va a estarlo.
+   */
+  readonly intent: 'long_term' | 'hold' | 'exit' | 'reallocate' | null;
+  readonly intentHorizon: string | null;
+  readonly intentNote: string | null;
+  readonly intentSetAt: Date | null;
   /** Absent when nothing has ever quoted this symbol. */
   readonly valuation: Valuation | null;
   readonly stale: boolean;
@@ -44,6 +55,21 @@ export interface Position {
 export interface Portfolio {
   readonly positions: readonly Position[];
   readonly total: Money;
+  /**
+   * Lo que la casa decidió no tocar, y lo que decidió convertir en efectivo.
+   *
+   * Es la lectura que el total general no puede dar: medio bitcoin y diez
+   * acciones valen lo que valen, pero una es la reserva de cinco años y la otra
+   * es lo que se piensa vender el mes que viene. Sumadas en una sola cifra, esa
+   * diferencia —que es la que decide si el fondo de emergencia está resuelto—
+   * desaparece.
+   *
+   * Sólo cuenta lo que se pudo cotizar, igual que el total.
+   */
+  readonly untouchable: Money;
+  readonly leaving: Money;
+  /** Cuántas posiciones nadie ha decidido todavía. */
+  readonly undecided: number;
   /** Movement against the previous close, summed. Null when nothing had one. */
   readonly change: Money | null;
   /** Symbols nothing could price. Named, so the total can be read honestly. */
@@ -67,6 +93,10 @@ export async function loadPortfolio(
         holder: householdPeople.displayName,
         holderId: holdings.personId,
         costBasis: holdings.costBasis,
+        intent: holdings.intent,
+        intentHorizon: holdings.intentHorizon,
+        intentNote: holdings.intentNote,
+        intentSetAt: holdings.intentSetAt,
         price: marketPrices.price,
         priceCurrency: marketPrices.currency,
         previousClose: marketPrices.previousClose,
@@ -87,6 +117,9 @@ export async function loadPortfolio(
       positions: [],
       total: Money.zero(currency),
       change: null,
+      untouchable: Money.zero(currency),
+      leaving: Money.zero(currency),
+      undecided: 0,
       unpriced: [],
       currency,
     };
@@ -161,6 +194,10 @@ export async function loadPortfolio(
       holder: row.holder,
       holderId: row.holderId,
       costBasis: row.costBasis,
+      intent: row.intent,
+      intentHorizon: row.intentHorizon,
+      intentNote: row.intentNote,
+      intentSetAt: row.intentSetAt,
       valuation: quote ? valueOf(row.quantity, quote) : null,
       stale: quote ? isStale(quote) : false,
     };
@@ -172,10 +209,26 @@ export async function loadPortfolio(
 
   const { value, change } = totalOf(valuations, currency);
 
+  /** Lo que vale un conjunto de posiciones, contando sólo lo cotizado. */
+  const valueOfThose = (matches: (position: Position) => boolean): Money =>
+    Money.sum(
+      positions
+        .filter((position) => matches(position))
+        .map((position) => position.valuation?.value)
+        .filter((amount): amount is Money => amount !== undefined),
+      currency,
+    );
+
   return {
     positions,
     total: value,
     change,
+    // `long_term` es lo que la casa dijo que no toca. `hold` no entra: mantener
+    // algo por ahora no es comprometerse a no venderlo, y contarlo como
+    // intocable sería endurecer una decisión que nadie tomó.
+    untouchable: valueOfThose((position) => position.intent === 'long_term'),
+    leaving: valueOfThose((position) => position.intent === 'exit'),
+    undecided: positions.filter((position) => position.intent === null).length,
     // Named rather than silently dropped. A total that quietly excludes two
     // holdings is a total nobody can reconcile against their own broker.
     unpriced: positions

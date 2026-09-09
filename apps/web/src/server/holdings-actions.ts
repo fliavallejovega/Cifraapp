@@ -387,3 +387,124 @@ export async function removeHolding(
   revalidateFinancials(formData);
   return { ok: true };
 }
+
+/**
+ * Qué piensa hacer la casa con una posición.
+ *
+ * La decisión es suya y el producto no la sugiere. Recomendar vender, mantener
+ * o cambiar de instrumento es asesoría de inversión: hace falta licencia para
+ * darla y los términos de servicio dicen con todas sus letras que Cifraapp no es
+ * un asesor. Lo que hace esta acción es **guardar lo que la persona decidió**,
+ * para que el resto del sistema deje de adivinarlo.
+ *
+ * El orden importa y es el que separa una cosa de la otra: primero la casa
+ * declara, después el producto calcula la consecuencia —cuánto liberaría salir,
+ * qué deja de estar disponible si no se toca—. Al revés sería el producto
+ * proponiendo una operación y la casa confirmándola.
+ *
+ * `intent_set_at` se estampa aquí. Una decisión de hace dos años sobre un
+ * mercado que se movió no es la misma decisión, y sin la fecha la pantalla no
+ * puede decirlo.
+ */
+const INTENTS = ['long_term', 'hold', 'exit', 'reallocate'] as const;
+
+const intentInput = z.object({
+  intent: z.enum(INTENTS),
+  horizon: z.preprocess(
+    (value) => (value === '' || value === null || value === undefined ? undefined : value),
+    z.iso.date().optional(),
+  ),
+  note: z.preprocess(
+    (value) => (value === '' || value === null || value === undefined ? undefined : value),
+    z.string().trim().max(500).optional(),
+  ),
+});
+
+export async function setHoldingIntent(
+  _previous: RecordActionResult,
+  formData: FormData,
+): Promise<RecordActionResult> {
+  const session = await loadSession();
+  if (!session?.activeHouseholdId) return { error: 'signInRequired' };
+
+  const id = z.uuid().safeParse(formData.get('id'));
+  if (!id.success) return { error: 'notFound' };
+
+  const parsed = intentInput.safeParse({
+    intent: formData.get('intent'),
+    horizon: formData.get('horizon'),
+    note: formData.get('note'),
+  });
+  if (!parsed.success) return { error: firstIssueKey(parsed.error, { intent: 'intentInvalid' }) };
+
+  const [updated] = await queryAsUser(session, (tx) =>
+    tx
+      .update(holdings)
+      .set({
+        intent: parsed.data.intent,
+        intentHorizon: parsed.data.horizon ?? null,
+        intentNote: parsed.data.note ?? null,
+        intentSetAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(holdings.id, id.data),
+          eq(holdings.householdId, session.activeHouseholdId ?? ''),
+          isNull(holdings.deletedAt),
+        ),
+      )
+      .returning({ id: holdings.id }),
+  );
+
+  if (!updated) return { error: 'notFound' };
+
+  revalidateFinancials(formData);
+  return { ok: true };
+}
+
+/**
+ * Retirar la decisión, volviendo a «nadie lo ha dicho».
+ *
+ * No es lo mismo que decir «la mantengo»: una es una decisión y la otra es su
+ * ausencia, y el plan las lee distinto. Que se pueda deshacer importa porque una
+ * decisión sobre dinero tomada en un mal día tiene que poder retirarse sin
+ * dejar rastro de una intención que ya no existe.
+ */
+export async function clearHoldingIntent(
+  _previous: RecordActionResult,
+  formData: FormData,
+): Promise<RecordActionResult> {
+  const session = await loadSession();
+  if (!session?.activeHouseholdId) return { error: 'signInRequired' };
+
+  const id = z.uuid().safeParse(formData.get('id'));
+  if (!id.success) return { error: 'notFound' };
+
+  const [updated] = await queryAsUser(session, (tx) =>
+    tx
+      .update(holdings)
+      // Los tres juntos: la base rechaza una nota o una fecha sin decisión, que
+      // es exactamente el estado huérfano que un borrado a medias produciría.
+      .set({
+        intent: null,
+        intentHorizon: null,
+        intentNote: null,
+        intentSetAt: null,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(holdings.id, id.data),
+          eq(holdings.householdId, session.activeHouseholdId ?? ''),
+          isNull(holdings.deletedAt),
+        ),
+      )
+      .returning({ id: holdings.id }),
+  );
+
+  if (!updated) return { error: 'notFound' };
+
+  revalidateFinancials(formData);
+  return { ok: true };
+}

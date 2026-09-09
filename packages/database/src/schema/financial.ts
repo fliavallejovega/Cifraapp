@@ -51,6 +51,21 @@ export const accountType = pgEnum('account_type', [
 
 export const accountStatus = pgEnum('account_status', ['active', 'closed', 'archived']);
 
+/**
+ * Qué piensa hacer la casa con una posición.
+ *
+ * `long_term` no se toca; `hold` se mantiene sin plazo; `exit` va a volverse
+ * efectivo; `reallocate` se mueve a otro instrumento. La diferencia entre las
+ * dos primeras y las dos últimas es la que permite leer «qué tengo disponible»
+ * sin equivocarse con la mitad de la cartera.
+ */
+export const holdingIntent = pgEnum('holding_intent', [
+  'long_term',
+  'hold',
+  'exit',
+  'reallocate',
+]);
+
 export const financialScope = pgEnum('financial_scope', [
   'personal',
   'partner',
@@ -752,6 +767,18 @@ export const holdings = appSchema.table(
     /** Optional: plenty of people do not know it, and inventing one turns an
         unknown gain into a stated one. */
     costBasis: money('cost_basis'),
+    /**
+     * Qué piensa hacer la casa con esta posición.
+     *
+     * Lo dice ella, no lo sugiere el producto: recomendar una operación es
+     * asesoría de inversión y esto no es un asesor. Nulo es «nadie lo ha
+     * dicho», que no es lo mismo que «la mantengo» — un valor por defecto
+     * convertiría el silencio de todos en una decisión que nadie tomó.
+     */
+    intent: holdingIntent('intent'),
+    intentHorizon: date('intent_horizon'),
+    intentNote: text('intent_note'),
+    intentSetAt: timestamp('intent_set_at', { withTimezone: true }),
     currency: char('currency', { length: 3 })
       .notNull()
       .default('USD')

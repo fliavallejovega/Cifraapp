@@ -878,7 +878,8 @@
       "dark": "Oscuro"
     },
     "investments": "Inversiones",
-    "console": "Consola SaaS"
+    "console": "Consola SaaS",
+    "cards": "Tarjetas"
   },
   "accounts": {
     "title": "Tus cuentas",
@@ -995,8 +996,40 @@
       "stale": "Precio viejo",
       "errors": {
         "symbolInvalid": "Ese símbolo no tiene una forma que un mercado use.",
-        "quantityInvalid": "La cantidad tiene que ser mayor que cero."
-      }
+        "quantityInvalid": "La cantidad tiene que ser mayor que cero.",
+        "intentInvalid": "Esa no es una de las decisiones que se pueden guardar."
+      },
+      "intent": {
+        "open": "¿Qué hacés con esto?",
+        "title": "Tu decisión sobre esta posición",
+        "detail": "Guardá lo que ya decidiste. El producto no te va a decir qué conviene: eso es asesoría de inversión y hace falta licencia. Lo que sí hace es decirte qué le pasa a tu plan según lo que decidas.",
+        "none": "Elegí una",
+        "options": {
+          "long_term": "No la toco — largo plazo",
+          "hold": "La mantengo por ahora",
+          "exit": "Quiero salir de esta",
+          "reallocate": "La quiero mover a otra cosa"
+        },
+        "consequence": {
+          "long_term": "Deja de contar como disponible. Tus {value} siguen siendo tuyos, pero el plan no va a apoyarse en ellos para cubrir un compromiso ni para completar el colchón.",
+          "hold": "Sigue como está. Mantener algo por ahora no es comprometerse a no venderlo, así que el plan no cambia nada.",
+          "exit": "El plan cuenta con que {value} van a volverse efectivo. Cuándo lo hagas y a qué precio es tuyo; el producto sólo registra que lo decidiste.",
+          "reallocate": "Se queda invertido, en otra cosa. El valor no sale de tu cartera, así que el plan no cambia — pero la posición queda marcada para que no se te pase."
+        },
+        "horizon": "¿Para cuándo?",
+        "horizonHint": "Opcional. Si es «cuando termine el semestre», dejalo vacío en vez de inventar un día.",
+        "note": "¿Por qué?",
+        "noteHint": "Opcional, en tus palabras. Es lo que hace que la decisión siga teniendo sentido cuando la releas en marzo.",
+        "save": "Guardar esta decisión",
+        "clear": "Retirar la decisión",
+        "decidedOn": "Decidido el {date}",
+        "notAdvice": "Cifraapp no es un asesor de inversiones y no opina sobre si comprar, vender o mantener. Esto guarda lo que vos decidiste y calcula qué significa para tu plan."
+      },
+      "untouchable": "No se toca",
+      "untouchableDetail": "Lo que decidiste dejar a largo plazo. El plan no se apoya en esto.",
+      "leaving": "Va a volverse efectivo",
+      "leavingDetail": "Lo que decidiste vender. El plan cuenta con que entra.",
+      "undecided": "Sin decidir: {count}"
     }
   },
   "setup": {
@@ -3439,6 +3472,42 @@
         "body": "Si tienes acciones, fondos o monedas, ponlas en el cuestionario y aparecen aquí con su valor y su movimiento. Registrarlas no es una recomendación de comprarlas.",
         "action": "Ir al cuestionario"
       }
+    }
+  },
+  "cards": {
+    "title": "Tarjetas",
+    "detail": "Cuánto debés, cuánto te queda de cupo, cuándo se paga y en qué la venís usando.",
+    "note": "El saldo es el que declaraste o el que trajo el último estado de cuenta importado. Los movimientos son el detalle de cómo llegó ahí; no cambian este número por su cuenta.",
+    "empty": {
+      "title": "Todavía no hay tarjetas",
+      "body": "Una tarjeta se registra como deuda —con su saldo, su tasa y su mínimo— y el producto la convierte también en cuenta, para que su estado de cuenta tenga contra qué importarse.",
+      "action": "Ir a Deudas"
+    },
+    "summary": {
+      "owed": "Debés en tarjetas",
+      "owedDetail": "La suma de todas las activas, en positivo.",
+      "available": "Te queda de cupo",
+      "availableDetail": "Sólo cuenta las tarjetas en las que declaraste el límite.",
+      "utilization": "Cupo usado",
+      "utilizationDetail": "Es la cifra que mueve un puntaje de crédito y la que nadie mira hasta que ya está alta."
+    },
+    "list": {
+      "title": "Una por una",
+      "detail": "Con su cupo, su mínimo y su último movimiento.",
+      "mask": "···· {mask}",
+      "archived": "Archivada",
+      "noDebt": "Sin deuda ligada",
+      "gauge": "Cupo usado de {name}",
+      "threshold": "30%",
+      "availableOf": "Te quedan {available} de {limit}. Vas por el {used}.",
+      "apr": "Tasa",
+      "minimum": "Pago mínimo",
+      "dueDay": "Vence",
+      "dayOfMonth": "día {day}",
+      "movements": "Movimientos",
+      "noMovements": "Ninguno",
+      "lastMovement": "Último movimiento el {date}: {description}",
+      "mismatch": "El banco dice {bank} y vos estás gestionando {managed}. No es un error del sistema: es la diferencia, y vale la pena mirarla."
     }
   }
 }

@@ -26,6 +26,9 @@ import { IconSignOut } from './shell-icons';
 const DESTINATIONS = [
   { href: '/overview', key: 'overview', group: 'money' },
   { href: '/accounts', key: 'accounts', group: 'money' },
+  // Detrás de Cuentas y delante de Movimientos: una tarjeta es una cuenta, y lo
+  // que se mira en ella —cupo, mínimo, en qué se está usando— está entre las dos.
+  { href: '/cards', key: 'cards', group: 'money' },
   { href: '/movements', key: 'movements', group: 'money' },
 
   { href: '/commitments', key: 'commitments', group: 'claims' },

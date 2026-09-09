@@ -11,6 +11,7 @@ import {
   IconAdvice,
   IconAlerts,
   IconBudget,
+  IconCards,
   IconCategories,
   IconChat,
   IconClose,
@@ -61,6 +62,7 @@ import {
 export type DestinationKey =
   | 'overview'
   | 'accounts'
+  | 'cards'
   | 'movements'
   | 'income'
   | 'commitments'
@@ -122,6 +124,7 @@ export interface ShellChromeProps {
 const ICONS: Record<DestinationKey, () => ReactNode> = {
   overview: IconPosition,
   accounts: IconAccounts,
+  cards: IconCards,
   movements: IconMovements,
   income: IconIncome,
   commitments: IconCommitments,

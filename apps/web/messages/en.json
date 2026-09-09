@@ -878,7 +878,8 @@
       "dark": "Dark"
     },
     "investments": "Investing",
-    "console": "SaaS console"
+    "console": "SaaS console",
+    "cards": "Cards"
   },
   "accounts": {
     "title": "Your accounts",
@@ -995,8 +996,40 @@
       "stale": "Stale price",
       "errors": {
         "symbolInvalid": "That symbol is not a shape a market uses.",
-        "quantityInvalid": "The quantity has to be greater than zero."
-      }
+        "quantityInvalid": "The quantity has to be greater than zero.",
+        "intentInvalid": "That is not one of the decisions that can be recorded."
+      },
+      "intent": {
+        "open": "What are you doing with this?",
+        "title": "Your decision on this position",
+        "detail": "Record what you already decided. The product will not tell you what is best: that is investment advice and it takes a licence. What it does do is tell you what happens to your plan given your decision.",
+        "none": "Pick one",
+        "options": {
+          "long_term": "I do not touch it — long term",
+          "hold": "I hold it for now",
+          "exit": "I want out of this one",
+          "reallocate": "I want to move it to something else"
+        },
+        "consequence": {
+          "long_term": "It stops counting as available. Your {value} is still yours, but the plan will not lean on it to cover a commitment or to fill the cushion.",
+          "hold": "Nothing changes. Holding something for now is not committing to never sell it, so the plan leaves it alone.",
+          "exit": "The plan counts on {value} becoming cash. When you do it and at what price is yours; the product only records that you decided.",
+          "reallocate": "It stays invested, in something else. The value does not leave your portfolio, so the plan does not change — but the position is marked so it does not slip."
+        },
+        "horizon": "By when?",
+        "horizonHint": "Optional. If it is «when the term ends», leave it blank rather than invent a day.",
+        "note": "Why?",
+        "noteHint": "Optional, in your words. It is what makes the decision still make sense when you reread it in March.",
+        "save": "Save this decision",
+        "clear": "Withdraw the decision",
+        "decidedOn": "Decided on {date}",
+        "notAdvice": "Cifraapp is not an investment adviser and has no opinion on buying, selling or holding. This records what you decided and works out what it means for your plan."
+      },
+      "untouchable": "Untouched",
+      "untouchableDetail": "What you decided to leave long term. The plan does not lean on this.",
+      "leaving": "Becoming cash",
+      "leavingDetail": "What you decided to sell. The plan counts on it arriving.",
+      "undecided": "Undecided: {count}"
     }
   },
   "setup": {
@@ -3439,6 +3472,42 @@
         "body": "If you hold shares, funds or coins, add them in the questionnaire and they appear here with their value and their movement. Recording one is not a recommendation to buy it.",
         "action": "Go to the questionnaire"
       }
+    }
+  },
+  "cards": {
+    "title": "Cards",
+    "detail": "What you owe, how much room is left, when it is due, and what you have been using it for.",
+    "note": "The balance is the one you stated or the one the last imported statement brought. Movements are the detail of how it got there; they do not change this number on their own.",
+    "empty": {
+      "title": "No cards yet",
+      "body": "A card is recorded as a debt — with its balance, its rate and its minimum — and the product also turns it into an account, so its statement has something to be imported against.",
+      "action": "Go to Debts"
+    },
+    "summary": {
+      "owed": "Owed on cards",
+      "owedDetail": "The sum of every active one, as a positive figure.",
+      "available": "Room left",
+      "availableDetail": "Only counts the cards whose limit you stated.",
+      "utilization": "Limit used",
+      "utilizationDetail": "It is the figure that moves a credit score, and the one nobody looks at until it is already high."
+    },
+    "list": {
+      "title": "One by one",
+      "detail": "With its limit, its minimum and its last movement.",
+      "mask": "···· {mask}",
+      "archived": "Archived",
+      "noDebt": "No debt linked",
+      "gauge": "Limit used on {name}",
+      "threshold": "30%",
+      "availableOf": "{available} left of {limit}. You are at {used}.",
+      "apr": "Rate",
+      "minimum": "Minimum payment",
+      "dueDay": "Due",
+      "dayOfMonth": "day {day}",
+      "movements": "Movements",
+      "noMovements": "None",
+      "lastMovement": "Last movement on {date}: {description}",
+      "mismatch": "The bank says {bank} and you are managing {managed}. This is not a system error: it is the gap, and it is worth a look."
     }
   }
 }

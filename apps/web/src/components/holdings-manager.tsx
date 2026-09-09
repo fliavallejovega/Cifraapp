@@ -5,7 +5,15 @@ import { useActionState, useEffect, useState } from 'react';
 
 import { KindIcon, SymbolSearch } from '@/components/symbol-search';
 import type { RecordActionResult } from '@/components/records/spec';
-import { createHolding, removeHolding, updateHolding } from '@/server/holdings-actions';
+import { quotedValue, readablePrice } from '@/lib/quoted-value';
+import {
+  clearHoldingIntent,
+  createHolding,
+  lookupSymbol,
+  removeHolding,
+  setHoldingIntent,
+  updateHolding,
+} from '@/server/holdings-actions';
 import type { SymbolCandidate } from '@/server/holdings-actions';
 
 /**
@@ -37,6 +45,8 @@ import type { SymbolCandidate } from '@/server/holdings-actions';
  * ganancia desconocida en una declarada.
  */
 
+export type HoldingIntent = 'long_term' | 'hold' | 'exit' | 'reallocate';
+
 export interface HoldingRowView {
   readonly id: string;
   readonly symbol: string;
@@ -50,6 +60,12 @@ export interface HoldingRowView {
   readonly value: string | null;
   readonly price: string | null;
   readonly stale: boolean;
+  /** Qué decidió la casa. Nulo es «nadie lo ha dicho», no «la mantengo». */
+  readonly intent: HoldingIntent | null;
+  readonly intentHorizon: string | null;
+  readonly intentNote: string | null;
+  /** Cuándo se decidió, ya formateado. Una decisión vieja se dice vieja. */
+  readonly intentDecidedOn: string | null;
 }
 
 export interface HoldingsLabels {
@@ -76,6 +92,28 @@ export interface HoldingsLabels {
   readonly costHint: string;
   readonly unpriced: string;
   readonly stale: string;
+  /** «{quantity} × {price} = {value}», la vista previa del valor. */
+  readonly quoted: string;
+  readonly checking: string;
+  readonly unknownSymbol: string;
+  readonly unavailable: string;
+  /** El bloque de «¿qué vas a hacer con esto?». */
+  readonly intent: {
+    readonly open: string;
+    readonly title: string;
+    readonly detail: string;
+    readonly none: string;
+    readonly options: Readonly<Record<HoldingIntent, string>>;
+    readonly consequence: Readonly<Record<HoldingIntent, string>>;
+    readonly horizon: string;
+    readonly horizonHint: string;
+    readonly note: string;
+    readonly noteHint: string;
+    readonly save: string;
+    readonly clear: string;
+    readonly decidedOn: string;
+    readonly notAdvice: string;
+  };
   readonly kinds: Readonly<Record<string, string>>;
   readonly errorTitle: string;
   readonly errors: Readonly<Record<string, string>>;
@@ -96,6 +134,7 @@ export interface HoldingsLabels {
 
 export interface HoldingsManagerProps {
   readonly locale: string;
+  readonly moneyLocale: 'es-PA' | 'en-US';
   readonly currencySymbol: string;
   readonly rows: readonly HoldingRowView[];
   readonly people: readonly { readonly id: string; readonly name: string }[];
@@ -109,6 +148,7 @@ type Editing = { readonly mode: 'closed' } | { readonly mode: 'new' } | {
 
 export function HoldingsManager({
   locale,
+  moneyLocale,
   currencySymbol,
   rows,
   people,
@@ -116,6 +156,8 @@ export function HoldingsManager({
 }: HoldingsManagerProps) {
   const [editing, setEditing] = useState<Editing>({ mode: 'closed' });
   const [confirming, setConfirming] = useState<string | null>(null);
+  /** Qué posición tiene abierto su bloque de decisión. Una a la vez. */
+  const [deciding, setDeciding] = useState<string | null>(null);
 
   return (
     <div className="flex flex-col gap-4">
@@ -159,6 +201,22 @@ export function HoldingsManager({
                           <span className="tabular">{row.quantity}</span>
                           {row.holderName && <span>{row.holderName}</span>}
                           {row.stale && <Status tone="caution">{labels.stale}</Status>}
+                          {/* La decisión, si la hay. `long_term` en positivo
+                              porque es la que sostiene un plan; `exit` en
+                              señal porque es la que va a mover dinero. */}
+                          {row.intent && (
+                            <Status
+                              tone={
+                                row.intent === 'long_term'
+                                  ? 'positive'
+                                  : row.intent === 'exit'
+                                    ? 'signal'
+                                    : 'neutral'
+                              }
+                            >
+                              {labels.intent.options[row.intent]}
+                            </Status>
+                          )}
                         </span>
                       </div>
                     </div>
@@ -180,6 +238,18 @@ export function HoldingsManager({
                         size="sm"
                         onClick={() => {
                           setConfirming(null);
+                          setDeciding(deciding === row.id ? null : row.id);
+                        }}
+                      >
+                        {labels.intent.open}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setConfirming(null);
+                          setDeciding(null);
                           setEditing({ mode: 'edit', row });
                         }}
                       >
@@ -207,6 +277,19 @@ export function HoldingsManager({
                         </Button>
                       )}
                     </div>
+
+                    {deciding === row.id && (
+                      <div className="w-full">
+                        <IntentPanel
+                          locale={locale}
+                          row={row}
+                          labels={labels}
+                          onDone={() => {
+                            setDeciding(null);
+                          }}
+                        />
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -233,6 +316,7 @@ export function HoldingsManager({
         <HoldingForm
           key={editing.mode === 'edit' ? editing.row.id : 'new'}
           locale={locale}
+          moneyLocale={moneyLocale}
           currencySymbol={currencySymbol}
           people={people}
           labels={labels}
@@ -286,6 +370,7 @@ function RemoveForm({
 
 function HoldingForm({
   locale,
+  moneyLocale,
   currencySymbol,
   people,
   labels,
@@ -293,6 +378,7 @@ function HoldingForm({
   onDone,
 }: {
   readonly locale: string;
+  readonly moneyLocale: 'es-PA' | 'en-US';
   readonly currencySymbol: string;
   readonly people: readonly { readonly id: string; readonly name: string }[];
   readonly labels: HoldingsLabels;
@@ -328,6 +414,48 @@ function HoldingForm({
   const [symbol, setSymbol] = useState(row?.symbol ?? '');
   const [label, setLabel] = useState(row?.label ?? '');
   const [kind, setKind] = useState(row?.kind ?? 'other');
+  const [quantity, setQuantity] = useState(row?.quantity ?? '');
+
+  /**
+   * La cotización del instrumento elegido, para poder decir cuánto vale lo que
+   * se está tecleando.
+   *
+   * `checking` mientras se pregunta, `unknown` cuando el proveedor no lo
+   * reconoce, `unavailable` cuando no contesta. Los tres se dicen: un campo que
+   * no muestra nada después de elegir algo parece roto, y «no pude cotizarlo»
+   * es una respuesta que deja seguir —la posición se guarda igual, sin valor—.
+   */
+  const [quote, setQuote] = useState<
+    | { readonly status: 'idle' }
+    | { readonly status: 'checking' }
+    | { readonly status: 'unknown' | 'unavailable' }
+    | {
+        readonly status: 'ok';
+        readonly price: string;
+        readonly currency: string;
+        readonly name: string;
+      }
+  >({ status: 'idle' });
+
+  const priceOf = async (value: string) => {
+    if (value.trim() === '') {
+      setQuote({ status: 'idle' });
+      return;
+    }
+    setQuote({ status: 'checking' });
+    const result = await lookupSymbol(value);
+    if (result.ok && result.price && result.currency) {
+      setQuote({
+        status: 'ok',
+        price: result.price,
+        currency: result.currency,
+        name: result.name ?? value,
+      });
+      if (result.kind) setKind(result.kind);
+    } else {
+      setQuote({ status: result.reason === 'unavailable' ? 'unavailable' : 'unknown' });
+    }
+  };
 
   /**
    * Elegir de la lista rellena el nombre y la clase.
@@ -340,6 +468,7 @@ function HoldingForm({
     setSymbol(candidate.symbol);
     setKind(candidate.kind);
     if (label.trim() === '' || label === row?.label) setLabel(candidate.name);
+    void priceOf(candidate.symbol);
   };
 
   return (
@@ -365,12 +494,18 @@ function HoldingForm({
                   describedBy={describedBy}
                   value={symbol}
                   copy={searchCopy}
-                  onType={setSymbol}
+                  onType={(value) => {
+                    setSymbol(value);
+                    // Lo tecleado deja de corresponder a lo cotizado en cuanto
+                    // cambia una letra. Dejar el precio viejo en pantalla
+                    // mostraría el valor de otro instrumento.
+                    setQuote({ status: 'idle' });
+                  }}
                   onChoose={choose}
-                  onCommit={() => {
-                    /* El servidor vuelve a leer la clase de la cotización, así
-                       que un símbolo tecleado a mano no necesita otra consulta
-                       aquí para guardarse bien. */
+                  onCommit={(value) => {
+                    // Quien ya sabe el símbolo exacto no pasa por la lista, y
+                    // su posición merece la misma vista previa que las demás.
+                    void priceOf(value);
                   }}
                 />
                 <input type="hidden" name="symbol" value={symbol} />
@@ -386,9 +521,12 @@ function HoldingForm({
                 numeric
                 inputMode="decimal"
                 required
-                defaultValue={row?.quantity ?? ''}
+                value={quantity}
                 placeholder="0"
                 aria-describedby={describedBy}
+                onChange={(event) => {
+                  setQuantity(event.target.value);
+                }}
               />
             )}
           </Field>
@@ -448,18 +586,46 @@ function HoldingForm({
           </Field>
         </div>
 
-        {/* La clase, a la vista y no editable: es un hecho del proveedor, y
-            verla al lado del símbolo es la confirmación de que se eligió el
-            instrumento correcto y no el fondo que lleva su nombre. */}
+        {/*
+          La clase, el precio y el total: la confirmación de que se eligió el
+          instrumento correcto y de que la cantidad significa lo que se cree.
+
+          Un cero de más en una cripto no se nota mirando el campo; se nota
+          mirando el total. Por eso va aquí, al lado, y no en la lista de
+          después — donde ya sería tarde para corregirlo sin volver a entrar.
+        */}
         {symbol.trim() !== '' && (
-          <p className="flex items-center gap-2 text-xs text-[color:var(--color-ink-secondary)]">
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[color:var(--color-ink-secondary)]">
             <span
               aria-hidden
               className="flex h-6 w-6 shrink-0 items-center justify-center rounded-(--radius-xs) bg-[color:var(--color-ground-sunk)]"
             >
               <KindIcon kind={kind} />
             </span>
-            {labels.kinds[kind] ?? kind}
+            <span>{labels.kinds[kind] ?? kind}</span>
+
+            {quote.status === 'checking' && (
+              <span className="text-[color:var(--color-ink-tertiary)]">{labels.checking}</span>
+            )}
+            {quote.status === 'unknown' && (
+              <span className="text-[color:var(--color-negative)]">{labels.unknownSymbol}</span>
+            )}
+            {quote.status === 'unavailable' && (
+              <span className="text-[color:var(--color-caution)]">{labels.unavailable}</span>
+            )}
+            {quote.status === 'ok' && (
+              <>
+                <Status tone="positive">{quote.name}</Status>
+                <span className="tabular">
+                  {labels.quoted
+                    .replace('{price}', `${quote.currency} ${readablePrice(quote.price)}`)
+                    .replace(
+                      '{value}',
+                      quotedValue(quantity, quote.price, quote.currency, moneyLocale) ?? '—',
+                    )}
+                </span>
+              </>
+            )}
           </p>
         )}
 
@@ -472,6 +638,167 @@ function HoldingForm({
           </Button>
         </div>
       </form>
+    </Card>
+  );
+}
+
+/**
+ * Qué va a hacer la casa con esta posición.
+ *
+ * ## Por qué el producto no sugiere nada aquí
+ *
+ * Recomendar vender, mantener o cambiar de instrumento es asesoría de
+ * inversión: hace falta licencia para darla y los términos de servicio dicen con
+ * todas sus letras que Cifraapp no es un asesor. Así que ninguna opción viene
+ * marcada, ninguna se presenta como la recomendable, y el bloque lo dice en voz
+ * alta debajo.
+ *
+ * Lo que sí hace el producto es la mitad que sí le toca: **decir la
+ * consecuencia** de cada decisión sobre el resto del plan. «Esto deja de contar
+ * como disponible» y «esto va a volverse efectivo» son aritmética sobre lo que
+ * la casa acaba de declarar, no una opinión sobre si conviene.
+ *
+ * ## Por qué no se guarda al cambiar el selector
+ *
+ * Porque es una decisión sobre dinero. Un `onChange` que guarda solo convierte
+ * un roce del dedo en «voy a vender medio bitcoin», y deshacerlo exige darse
+ * cuenta primero. Hay un botón, y dice qué va a pasar.
+ */
+function IntentPanel({
+  locale,
+  row,
+  labels,
+  onDone,
+}: {
+  readonly locale: string;
+  readonly row: HoldingRowView;
+  readonly labels: HoldingsLabels;
+  readonly onDone: () => void;
+}) {
+  const [state, formAction, pending] = useActionState<RecordActionResult, FormData>(
+    setHoldingIntent,
+    {},
+  );
+  const [cleared, clearAction, clearing] = useActionState<RecordActionResult, FormData>(
+    clearHoldingIntent,
+    {},
+  );
+
+  const [choice, setChoice] = useState<HoldingIntent | ''>(row.intent ?? '');
+
+  useEffect(() => {
+    if (state.ok || cleared.ok) onDone();
+  }, [state.ok, cleared.ok, onDone]);
+
+  const failure = state.error ?? cleared.error;
+
+  return (
+    <Card tone="sunk" className="mt-3">
+      <p className="text-sm font-medium">{labels.intent.title}</p>
+      <p className="mt-1 max-w-[68ch] text-xs text-pretty text-[color:var(--color-ink-secondary)]">
+        {labels.intent.detail}
+      </p>
+
+      {failure && (
+        <div className="mt-3">
+          <Problem
+            title={labels.errorTitle}
+            body={labels.errors[failure] ?? labels.errors['generic'] ?? ''}
+          />
+        </div>
+      )}
+
+      <form action={formAction} className="mt-4 flex flex-col gap-4">
+        <input type="hidden" name="locale" value={locale} />
+        <input type="hidden" name="id" value={row.id} />
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label={labels.intent.title}>
+            {({ id }) => (
+              <Select
+                id={id}
+                name="intent"
+                required
+                value={choice}
+                onChange={(event) => {
+                  setChoice(event.target.value as HoldingIntent | '');
+                }}
+              >
+                {/* Ninguna preseleccionada cuando no hay decisión: un valor por
+                    defecto en esta lista es el producto opinando. */}
+                <option value="" disabled>
+                  {labels.intent.none}
+                </option>
+                {(['long_term', 'hold', 'exit', 'reallocate'] as const).map((option) => (
+                  <option key={option} value={option}>
+                    {labels.intent.options[option]}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
+
+          <Field label={labels.intent.horizon} hint={labels.intent.horizonHint}>
+            {({ id, describedBy }) => (
+              <Input
+                id={id}
+                name="horizon"
+                type="date"
+                defaultValue={row.intentHorizon ?? ''}
+                aria-describedby={describedBy}
+              />
+            )}
+          </Field>
+
+          <Field label={labels.intent.note} hint={labels.intent.noteHint} className="sm:col-span-2">
+            {({ id, describedBy }) => (
+              <Input
+                id={id}
+                name="note"
+                maxLength={500}
+                defaultValue={row.intentNote ?? ''}
+                aria-describedby={describedBy}
+              />
+            )}
+          </Field>
+        </div>
+
+        {/* La consecuencia, que es lo único que el producto puede aportar sobre
+            una decisión de inversión: qué le pasa al resto del plan. */}
+        {choice !== '' && (
+          <p className="max-w-[68ch] text-xs text-pretty text-[color:var(--color-ink-secondary)]">
+            {labels.intent.consequence[choice].replace('{value}', row.value ?? labels.unpriced)}
+          </p>
+        )}
+
+        <div className="flex flex-wrap items-center gap-3">
+          <Button type="submit" size="sm" disabled={pending || choice === ''}>
+            {labels.intent.save}
+          </Button>
+          <Button type="button" variant="ghost" size="sm" onClick={onDone}>
+            {labels.cancel}
+          </Button>
+        </div>
+      </form>
+
+      {row.intent && (
+        <form action={clearAction} className="mt-3 flex flex-wrap items-center gap-3">
+          <input type="hidden" name="locale" value={locale} />
+          <input type="hidden" name="id" value={row.id} />
+          {row.intentDecidedOn && (
+            <span className="text-xs text-[color:var(--color-ink-tertiary)]">
+              {labels.intent.decidedOn.replace('{date}', row.intentDecidedOn)}
+            </span>
+          )}
+          <Button type="submit" variant="ghost" size="sm" disabled={clearing}>
+            {labels.intent.clear}
+          </Button>
+        </form>
+      )}
+
+      <p className="mt-4 max-w-[68ch] text-xs text-pretty text-[color:var(--color-ink-tertiary)]">
+        {labels.intent.notAdvice}
+      </p>
     </Card>
   );
 }

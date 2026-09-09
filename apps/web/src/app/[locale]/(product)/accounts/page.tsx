@@ -18,7 +18,9 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { AccountsManager, type AccountRowView } from '@/components/accounts-manager';
 import { HoldingsManager } from '@/components/holdings-manager';
+import { formatMoment } from '@/lib/format';
 import { ACCOUNT_TYPE_GROUPS, ACCOUNT_TYPES, loadAccounts } from '@/server/repositories/accounts';
+import { loadHouseholdContext } from '@/server/household-context';
 import { loadPeople } from '@/server/repositories/administration';
 import { loadPortfolio } from '@/server/repositories/portfolio';
 import { requireHousehold } from '@/server/session';
@@ -43,6 +45,7 @@ export default async function AccountsPage({ params }: { params: Promise<{ local
   const session = await requireHousehold(locale);
   const household = session.households.find((entry) => entry.id === session.activeHouseholdId);
   const currency = (household?.baseCurrency.trim() ?? 'USD') as CurrencyCode;
+  const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
 
   const [view, people, portfolio] = await Promise.all([
     loadAccounts(session, session.activeHouseholdId, currency),
@@ -236,11 +239,40 @@ export default async function AccountsPage({ params }: { params: Promise<{ local
                 </Stat>
               </Card>
             )}
+            {/* Los dos totales que el total general no puede dar. Sólo cuando
+                hay una decisión detrás: una cifra en cero sobre algo que nadie
+                decidió no es un dato, es una casilla vacía con aspecto de dato. */}
+            {portfolio.untouchable.isPositive() && (
+              <Card>
+                <Stat
+                  label={t('investments.untouchable')}
+                  detail={t('investments.untouchableDetail')}
+                >
+                  {formatMoney(portfolio.untouchable, { locale: moneyLocale })}
+                </Stat>
+              </Card>
+            )}
+            {portfolio.leaving.isPositive() && (
+              <Card>
+                <Stat label={t('investments.leaving')} detail={t('investments.leavingDetail')}>
+                  {formatMoney(portfolio.leaving, { locale: moneyLocale })}
+                </Stat>
+              </Card>
+            )}
           </div>
+        )}
+
+        {/* Cuántas quedan sin decidir, dicho una vez y sin alarma: es una
+            invitación a completar, no un error. */}
+        {portfolio.undecided > 0 && portfolio.positions.length > 0 && (
+          <p className="mb-4 text-sm text-[color:var(--color-ink-secondary)]">
+            {t('investments.undecided', { count: portfolio.undecided })}
+          </p>
         )}
 
         <HoldingsManager
           locale={locale}
+          moneyLocale={moneyLocale}
           currencySymbol={getCurrency(currency).symbol}
           people={people.map((person) => ({ id: person.id, name: person.displayName }))}
           rows={portfolio.positions.map((position) => ({
@@ -257,6 +289,12 @@ export default async function AccountsPage({ params }: { params: Promise<{ local
               : null,
             price: position.valuation ? position.valuation.quote.price : null,
             stale: position.stale,
+            intent: position.intent,
+            intentHorizon: position.intentHorizon,
+            intentNote: position.intentNote,
+            intentDecidedOn: position.intentSetAt
+              ? formatMoment(position.intentSetAt, locale, context.timeZone)
+              : null,
           }))}
           labels={{
             addAction: t('investments.add'),
@@ -282,6 +320,44 @@ export default async function AccountsPage({ params }: { params: Promise<{ local
             costHint: t('investments.costHint'),
             unpriced: t('investments.unpriced'),
             stale: t('investments.stale'),
+            // Las cuatro del buscador, reutilizadas del catálogo del
+            // cuestionario: dicen exactamente lo mismo y ya están traducidas.
+            // `raw`, no `t`: lleva {price} y {value} dentro y los rellena el
+            // navegador con lo que se está tecleando. `t()` intentaría
+            // resolverlos aquí y lanzaría, que es cómo una plantilla se lleva
+            // una pantalla por delante.
+            quoted: rawOf(setup)('holdings.quoted'),
+            intent: {
+              open: t('investments.intent.open'),
+              title: t('investments.intent.title'),
+              detail: t('investments.intent.detail'),
+              none: t('investments.intent.none'),
+              options: {
+                long_term: t('investments.intent.options.long_term'),
+                hold: t('investments.intent.options.hold'),
+                exit: t('investments.intent.options.exit'),
+                reallocate: t('investments.intent.options.reallocate'),
+              },
+              // Llevan {value} dentro y lo rellena el navegador con el valor
+              // de la posición: `raw`, no `t`.
+              consequence: {
+                long_term: rawOf(t)('investments.intent.consequence.long_term'),
+                hold: rawOf(t)('investments.intent.consequence.hold'),
+                exit: rawOf(t)('investments.intent.consequence.exit'),
+                reallocate: rawOf(t)('investments.intent.consequence.reallocate'),
+              },
+              horizon: t('investments.intent.horizon'),
+              horizonHint: t('investments.intent.horizonHint'),
+              note: t('investments.intent.note'),
+              noteHint: t('investments.intent.noteHint'),
+              save: t('investments.intent.save'),
+              clear: t('investments.intent.clear'),
+              decidedOn: rawOf(t)('investments.intent.decidedOn'),
+              notAdvice: t('investments.intent.notAdvice'),
+            },
+            checking: setup('holdings.checking'),
+            unknownSymbol: setup('holdings.unknown'),
+            unavailable: setup('holdings.unavailable'),
             // Leída del paquete, no copiada. Una lista de seis clases repetida
             // a mano es la que se queda en cuatro cuando el proveedor aprende a
             // distinguir dos más.
@@ -293,6 +369,7 @@ export default async function AccountsPage({ params }: { params: Promise<{ local
               ...errorLabels(t),
               symbolInvalid: t('investments.errors.symbolInvalid'),
               quantityInvalid: t('investments.errors.quantityInvalid'),
+              intentInvalid: t('investments.errors.intentInvalid'),
               amountInvalid: t('errors.balanceInvalid'),
             },
             // El buscador de símbolos trae su propio catálogo, que vive con el
