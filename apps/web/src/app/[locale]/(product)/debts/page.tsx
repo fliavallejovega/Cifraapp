@@ -4,10 +4,10 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { RecordsManager } from '@/components/records';
 import type { FieldSpec, RecordRow } from '@/components/records/spec';
-import { createDebt, removeDebt, updateDebt } from '@/server/debt-actions';
+import { backDebtWithAccount, createDebt, removeDebt, updateDebt } from '@/server/debt-actions';
 import { loadHouseholdContext } from '@/server/household-context';
 import { recordLabels } from '@/server/record-labels';
-import { loadDebts } from '@/server/repositories/administration';
+import { loadDebts, loadPeople } from '@/server/repositories/administration';
 import { requireHousehold } from '@/server/session';
 import { percentOf, trimRate } from '@/lib/format';
 
@@ -27,7 +27,10 @@ export default async function DebtsPage({ params }: { params: Promise<{ locale: 
 
   const session = await requireHousehold(locale);
   const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
-  const debts = await loadDebts(session, session.activeHouseholdId, context.currency);
+  const [debts, people] = await Promise.all([
+    loadDebts(session, session.activeHouseholdId, context.currency),
+    loadPeople(session, session.activeHouseholdId),
+  ]);
 
   const t = await getTranslations('debts');
   const shared = await getTranslations('records');
@@ -85,6 +88,37 @@ export default async function DebtsPage({ params }: { params: Promise<{ locale: 
       max: 31,
       half: true,
     },
+    // The class is what decides the kind of account this becomes when it is
+    // carried as one, so it is asked rather than guessed from the name.
+    {
+      kind: 'select',
+      name: 'kind',
+      label: t('form.kind'),
+      hint: t('form.kindHint'),
+      half: true,
+      options: (
+        [
+          'credit_card',
+          'auto_loan',
+          'mortgage',
+          'personal_loan',
+          'student_loan',
+          'other',
+          'informal',
+        ] as const
+      ).map((value) => ({ value, label: t(`kinds.${value}`) })),
+    },
+    {
+      kind: 'select',
+      name: 'personId',
+      label: t('form.person'),
+      hint: t('form.personHint'),
+      half: true,
+      options: [
+        { value: '', label: t('form.personHousehold') },
+        ...people.map((person) => ({ value: person.id, label: person.displayName })),
+      ],
+    },
   ];
 
   const rows: readonly RecordRow[] = debts.map((debt) => ({
@@ -102,6 +136,18 @@ export default async function DebtsPage({ params }: { params: Promise<{ locale: 
         : []),
     ].join(' · '),
     amount: formatMoney(debt.currentBalance, { locale: context.moneyLocale }),
+    badges: [
+      ...(debt.personName ? [{ label: debt.personName, tone: 'neutral' as const }] : []),
+      ...(debt.accountId
+        ? [{ label: t('badges.carried'), tone: 'positive' as const }]
+        : debt.kind === 'credit_card'
+          ? [{ label: t('badges.notCarried'), tone: 'caution' as const }]
+          : []),
+    ],
+    // Offered only while there is nothing carrying it yet. A debt already
+    // backed by an account must not be able to open a second one holding the
+    // same money.
+    action: debt.accountId ? undefined : { label: t('carry'), intent: 'carry' },
     values: {
       name: debt.name,
       currentBalance: debt.currentBalance.toDecimalString(),
@@ -110,6 +156,8 @@ export default async function DebtsPage({ params }: { params: Promise<{ locale: 
       creditLimit: debt.creditLimit?.toDecimalString() ?? '',
       dueDay: debt.dueDay === null ? '' : String(debt.dueDay),
       statementDay: debt.statementDay === null ? '' : String(debt.statementDay),
+      kind: debt.kind,
+      personId: debt.personId ?? '',
     },
   }));
 
@@ -142,6 +190,7 @@ export default async function DebtsPage({ params }: { params: Promise<{ locale: 
             create={createDebt}
             update={updateDebt}
             remove={removeDebt}
+            rowAction={backDebtWithAccount}
             labels={recordLabels(shared, {
               addAction: t('add'),
               addTitle: t('addTitle'),

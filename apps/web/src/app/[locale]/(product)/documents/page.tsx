@@ -88,7 +88,13 @@ export default async function DocumentsPage({ params }: { params: Promise<{ loca
       <Card padding="lg">
         <ImportForm
           locale={locale}
-          accounts={importAccounts.map((account) => ({ id: account.id, name: account.name }))}
+          accounts={importAccounts.map((account) => ({
+            id: account.id,
+            name: account.name,
+            typeLabel: t(`accountTypes.${account.type}`),
+            group: t(`accountGroups.${groupForAccountType(account.type)}`),
+            personName: account.personName,
+          }))}
           labels={{
             file: t('form.file'),
             fileHint: t('form.fileHint'),
@@ -178,3 +184,18 @@ export default async function DocumentsPage({ params }: { params: Promise<{ loca
 
 void Amount;
 void Money;
+
+/**
+ * Which heading an account sits under in the import picker.
+ *
+ * Three groups and not twelve: somebody holding a statement is asking «is this
+ * the card or the bank account», and a list split by every type in the schema
+ * answers a question they did not ask.
+ */
+function groupForAccountType(type: string): 'cards' | 'bank' | 'other' {
+  if (type === 'credit_card') return 'cards';
+  if (type === 'checking' || type === 'savings' || type === 'cash' || type === 'digital_wallet') {
+    return 'bank';
+  }
+  return 'other';
+}

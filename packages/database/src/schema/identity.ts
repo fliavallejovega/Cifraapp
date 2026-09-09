@@ -128,6 +128,16 @@ export const householdInvitations = appSchema.table(
     /** Hashed. A database dump must not hand anyone a working invitation link. */
     tokenHash: text('token_hash').notNull().unique(),
     invitedBy: uuid('invited_by').references(() => profiles.id, { onDelete: 'set null' }),
+    /**
+     * Which person of the household this invitation is for.
+     *
+     * So that accepting it links the new membership to the name already on the
+     * people screen, in the same transaction that creates it. Declared without
+     * a reference because the people table imports from this file; the database
+     * holds the foreign key. Null is an ordinary invitation to an address
+     * nobody has named yet.
+     */
+    personId: uuid('person_id'),
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
     acceptedAt: timestamp('accepted_at', { withTimezone: true }),
     acceptedBy: uuid('accepted_by').references(() => profiles.id, { onDelete: 'set null' }),

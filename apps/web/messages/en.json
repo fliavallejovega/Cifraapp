@@ -320,7 +320,10 @@
       "submit": "Create account",
       "haveAccount": "Already have an account?",
       "signInInstead": "Sign in",
-      "checkYourEmail": "We sent you an email to confirm your address. Open it to finish creating your account."
+      "checkYourEmail": "We sent you an email to confirm your address. Open it to finish creating your account.",
+      "acceptTerms": "I have read and accept the",
+      "acceptTermsLink": "Terms of service",
+      "acceptTermsSummary": "I understand that Cifraapp is not a financial institution, an accountant, or a licensed adviser; that it is a reference system and never replaces a certified public accountant; and that every figure must be reviewed by a licensed professional before it is used to file taxes, invest, or meet any legal obligation."
     },
     "forgot": {
       "title": "Recover your password",
@@ -347,7 +350,8 @@
       "passwordTooShort": "The password needs at least 8 characters.",
       "invalidEmail": "That email doesn't look valid.",
       "linkExpired": "That link has expired. Request a new one.",
-      "generic": "Something went wrong. Please try again."
+      "generic": "Something went wrong. Please try again.",
+      "termsRequired": "You have to accept the Terms of service to open an account."
     },
     "mfa": {
       "title": "Second step",
@@ -781,6 +785,25 @@
         "signInRequired": "Your session expired. Sign in again.",
         "generic": "Something went wrong. Try again."
       }
+    },
+    "accountGroups": {
+      "cards": "Cards",
+      "bank": "Bank accounts",
+      "other": "Other accounts"
+    },
+    "accountTypes": {
+      "credit_card": "Credit card",
+      "checking": "Checking",
+      "savings": "Savings",
+      "cash": "Cash",
+      "digital_wallet": "Digital wallet",
+      "loan": "Loan",
+      "mortgage": "Mortgage",
+      "investment": "Investment",
+      "business": "Business",
+      "tax_reserve": "Tax reserve",
+      "other_asset": "Other asset",
+      "other_liability": "Other liability"
     }
   },
   "nav": {
@@ -1632,13 +1655,32 @@
       "dueDayHint": "The day of the month it falls due.",
       "statementDay": "Statement day",
       "limit": "Card limit",
-      "limitHint": "Optional. It tells you how much of the limit you are using."
+      "limitHint": "Optional. It tells you how much of the limit you are using.",
+      "kind": "What kind of debt is it?",
+      "kindHint": "Decides the type of account opened if you carry it with its movements.",
+      "person": "Whose is it?",
+      "personHint": "This is what tells «Visa Davo» from «Visa Blei» when a statement is imported.",
+      "personHousehold": "The household's"
     },
     "row": {
       "apr": "{apr}% a year",
       "minimum": "minimum {amount}",
       "dueDay": "due on the {day}",
       "used": "{percent}% of the limit"
+    },
+    "carry": "Carry it as an account",
+    "badges": {
+      "carried": "Carried as an account",
+      "notCarried": "No account carries it"
+    },
+    "kinds": {
+      "credit_card": "Credit card",
+      "auto_loan": "Auto loan",
+      "mortgage": "Mortgage",
+      "personal_loan": "Personal loan",
+      "student_loan": "Student loan",
+      "other": "Other",
+      "informal": "Informal (owed to a person)"
     }
   },
   "debt": {
@@ -1899,7 +1941,51 @@
       "dependent": "Depends",
       "signsIn": "Signs in"
     },
-    "syncNote": "This list is what counts. The number the plan uses updates itself whenever you change it."
+    "syncNote": "This list is what counts. The number the plan uses updates itself whenever you change it.",
+    "access": {
+      "title": "Who can get in",
+      "detail": "A person of the household and an account that signs in are not the same thing. This is where they meet.",
+      "hasAccount": "Has an account",
+      "pending": "Invitation pending",
+      "noAccount": "No account",
+      "dependentNote": "Depends on the household's income. If they handle no money, they need no way in.",
+      "twoFactorOn": "Two-step on",
+      "twoFactorOff": "No two-step",
+      "twoFactorUnknown": "Two-step: could not be read",
+      "invite": "Invite them to open an account",
+      "inviteAgain": "Invite again",
+      "email": "To which address?",
+      "emailHint": "It has to be the address they will sign in with. The invitation only works for that one.",
+      "role": "What will they be able to do?",
+      "linkTitle": "Or attach an account that already signs in",
+      "linkHint": "Household accounts nobody has claimed yet.",
+      "linkAction": "Attach this account",
+      "unlink": "Detach the account",
+      "reset": "Send them the password-change mail",
+      "resetSent": "The mail is on its way. Only they can finish it, from their own inbox.",
+      "revoke": "Take their access away",
+      "revokeConfirm": "They stop signing in. They stay on the household's list.",
+      "revokeYes": "Yes, take it away",
+      "copyLink": "Copy the link",
+      "linkOnce": "This is the invitation link. It is shown once: copy it and send it to them.",
+      "limits": "What cannot be done from here, and why: nobody can set another person's password — the change mail goes to their own inbox and only they can finish it; nobody can switch two-step on or off for somebody else, because whoever can switch it on can switch it off; and there are no backup codes to reissue, because the identity system this runs on does not issue them. Somebody who loses their authenticator has to write to us.",
+      "emptyTitle": "Nobody is on the list yet.",
+      "emptyBody": "Add the people who live here above. Then, from this section, open accounts for the ones who handle money.",
+      "roles": {
+        "owner": "Everything, including inviting",
+        "partner": "Everything but deleting the household",
+        "member": "Record and edit",
+        "viewer": "Look only"
+      },
+      "errors": {
+        "notAllowed": "Only whoever administers the household can change access.",
+        "emailInvalid": "Enter a valid address.",
+        "alreadyMember": "That person already has an account in this household.",
+        "noAccount": "That person has no account yet.",
+        "mailFailed": "The mail could not be sent. Check the address and try again.",
+        "cannotRevokeSelf": "You cannot take your own access away."
+      }
+    }
   },
   "settings": {
     "title": "Household settings",

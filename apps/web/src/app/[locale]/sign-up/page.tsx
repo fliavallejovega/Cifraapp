@@ -29,6 +29,7 @@ export default async function SignUpPage({ params }: { params: Promise<{ locale:
         action={signUp}
         locale={locale}
         withDisplayName
+        withTerms
         labels={{
           email: t('fields.email'),
           password: t('fields.password'),
@@ -37,11 +38,15 @@ export default async function SignUpPage({ params }: { params: Promise<{ locale:
           hidePassword: t('fields.hidePassword'),
           displayName: t('fields.displayName'),
           submit: t('signUp.submit'),
+          acceptTerms: t('signUp.acceptTerms'),
+          acceptTermsLink: t('signUp.acceptTermsLink'),
+          acceptTermsSummary: t('signUp.acceptTermsSummary'),
           errorTitle: t('errors.title'),
           errors: {
             signUpFailed: t('errors.signUpFailed'),
             passwordTooShort: t('errors.passwordTooShort'),
             invalidEmail: t('errors.invalidEmail'),
+            termsRequired: t('errors.termsRequired'),
             generic: t('errors.generic'),
           },
           notices: { checkYourEmail: t('signUp.checkYourEmail') },

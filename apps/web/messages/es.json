@@ -320,7 +320,10 @@
       "submit": "Crear cuenta",
       "haveAccount": "¿Ya tienes cuenta?",
       "signInInstead": "Entrar",
-      "checkYourEmail": "Te enviamos un correo para confirmar tu dirección. Ábrelo para terminar de crear tu cuenta."
+      "checkYourEmail": "Te enviamos un correo para confirmar tu dirección. Ábrelo para terminar de crear tu cuenta.",
+      "acceptTerms": "He leído y acepto los",
+      "acceptTermsLink": "Términos de servicio",
+      "acceptTermsSummary": "Entiendo que Cifraapp no es una entidad financiera, ni un contador, ni un asesor con licencia; que es un sistema de referencia y nunca sustituye a un contador público autorizado; y que toda cifra debe ser revisada por un profesional con licencia antes de usarla para declarar impuestos, invertir o cumplir cualquier obligación legal."
     },
     "forgot": {
       "title": "Recuperar tu contraseña",
@@ -347,7 +350,8 @@
       "passwordTooShort": "La contraseña necesita al menos 8 caracteres.",
       "invalidEmail": "Ese correo no parece válido.",
       "linkExpired": "Ese enlace ya venció. Pide uno nuevo.",
-      "generic": "Algo no salió bien. Intenta de nuevo."
+      "generic": "Algo no salió bien. Intenta de nuevo.",
+      "termsRequired": "Tienes que aceptar los Términos de servicio para abrir una cuenta."
     },
     "mfa": {
       "title": "Segundo paso",
@@ -781,6 +785,25 @@
         "signInRequired": "Tu sesión venció. Vuelve a entrar.",
         "generic": "Algo no salió bien. Intenta de nuevo."
       }
+    },
+    "accountGroups": {
+      "cards": "Tarjetas",
+      "bank": "Cuentas de banco",
+      "other": "Otras cuentas"
+    },
+    "accountTypes": {
+      "credit_card": "Tarjeta de crédito",
+      "checking": "Cuenta corriente",
+      "savings": "Cuenta de ahorros",
+      "cash": "Efectivo",
+      "digital_wallet": "Billetera digital",
+      "loan": "Préstamo",
+      "mortgage": "Hipoteca",
+      "investment": "Inversión",
+      "business": "Negocio",
+      "tax_reserve": "Reserva fiscal",
+      "other_asset": "Otro activo",
+      "other_liability": "Otro pasivo"
     }
   },
   "nav": {
@@ -1632,13 +1655,32 @@
       "dueDayHint": "El día del mes en que vence.",
       "statementDay": "Día de corte",
       "limit": "Límite de la tarjeta",
-      "limitHint": "Opcional. Sirve para saber cuánto del cupo llevas usado."
+      "limitHint": "Opcional. Sirve para saber cuánto del cupo llevas usado.",
+      "kind": "¿Qué clase de deuda es?",
+      "kindHint": "Decide qué tipo de cuenta se abre si decides llevarla con sus movimientos.",
+      "person": "¿De quién es?",
+      "personHint": "Sirve para separar «Visa Davo» de «Visa Blei» al importar un estado de cuenta.",
+      "personHousehold": "Del hogar"
     },
     "row": {
       "apr": "{apr}% anual",
       "minimum": "mínimo {amount}",
       "dueDay": "vence el {day}",
       "used": "{percent}% del cupo"
+    },
+    "carry": "Llevarla como cuenta",
+    "badges": {
+      "carried": "Se lleva como cuenta",
+      "notCarried": "Sin cuenta que la lleve"
+    },
+    "kinds": {
+      "credit_card": "Tarjeta de crédito",
+      "auto_loan": "Préstamo de auto",
+      "mortgage": "Hipoteca",
+      "personal_loan": "Préstamo personal",
+      "student_loan": "Préstamo estudiantil",
+      "other": "Otra",
+      "informal": "Informal (a una persona)"
     }
   },
   "debt": {
@@ -1899,7 +1941,51 @@
       "dependent": "Depende",
       "signsIn": "Entra al sistema"
     },
-    "syncNote": "Esta lista es la que manda. El conteo que usa el plan se actualiza solo cuando la cambias."
+    "syncNote": "Esta lista es la que manda. El conteo que usa el plan se actualiza solo cuando la cambias.",
+    "access": {
+      "title": "Quién puede entrar",
+      "detail": "Una persona de la casa y una cuenta que entra al sistema no son lo mismo. Aquí se unen.",
+      "hasAccount": "Tiene cuenta",
+      "pending": "Invitación pendiente",
+      "noAccount": "Sin cuenta",
+      "dependentNote": "Depende del ingreso del hogar. Si no maneja dinero, no necesita entrar.",
+      "twoFactorOn": "Dos pasos activo",
+      "twoFactorOff": "Sin dos pasos",
+      "twoFactorUnknown": "Dos pasos: no pudimos consultarlo",
+      "invite": "Invitar a abrir cuenta",
+      "inviteAgain": "Volver a invitar",
+      "email": "¿A qué correo?",
+      "emailHint": "Tiene que ser el correo con el que va a entrar. La invitación sólo sirve para esa dirección.",
+      "role": "¿Qué va a poder hacer?",
+      "linkTitle": "O unirla a una cuenta que ya entra",
+      "linkHint": "Cuentas del hogar que todavía nadie reclamó como suyas.",
+      "linkAction": "Unir esta cuenta",
+      "unlink": "Desvincular la cuenta",
+      "reset": "Mandarle el correo para cambiar su contraseña",
+      "resetSent": "Le mandamos el correo. Sólo esa persona puede completarlo desde su bandeja.",
+      "revoke": "Quitarle el acceso",
+      "revokeConfirm": "Deja de entrar. Sigue en la lista del hogar.",
+      "revokeYes": "Sí, quitarle el acceso",
+      "copyLink": "Copiar el enlace",
+      "linkOnce": "Este es el enlace de invitación. Se muestra una sola vez: cópialo y mándaselo.",
+      "limits": "Lo que no se puede hacer desde aquí, y por qué: nadie puede ponerle una contraseña a otro —el correo de cambio va a su bandeja y sólo ella lo completa—; nadie puede activar ni desactivar los dos pasos por otra persona, porque quien puede encenderlo puede apagarlo; y no hay códigos de respaldo que regenerar, porque el sistema de identidad que usamos no los emite. Si alguien pierde su autenticador, tiene que escribirnos.",
+      "emptyTitle": "Todavía no hay nadie en la lista.",
+      "emptyBody": "Agrega arriba a quienes viven aquí. Después, desde esta sección, les abres cuenta a los que manejan dinero.",
+      "roles": {
+        "owner": "Todo, incluido invitar",
+        "partner": "Todo menos borrar el hogar",
+        "member": "Registrar y editar",
+        "viewer": "Sólo mirar"
+      },
+      "errors": {
+        "notAllowed": "Sólo quien administra el hogar puede cambiar los accesos.",
+        "emailInvalid": "Escribe un correo válido.",
+        "alreadyMember": "Esa persona ya tiene cuenta en este hogar.",
+        "noAccount": "Esa persona todavía no tiene cuenta.",
+        "mailFailed": "No se pudo enviar el correo. Revisa la dirección y vuelve a intentarlo.",
+        "cannotRevokeSelf": "No puedes quitarte el acceso a ti mismo."
+      }
+    }
   },
   "settings": {
     "title": "Ajustes del hogar",

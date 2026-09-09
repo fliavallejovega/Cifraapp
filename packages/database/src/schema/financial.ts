@@ -573,7 +573,26 @@ export const debts = appSchema.table(
     householdId: uuid('household_id')
       .notNull()
       .references(() => households.id, { onDelete: 'cascade' }),
+    /**
+     * The account that carries this debt's movements.
+     *
+     * A credit card is an account like any other — a balance, a limit, and a
+     * statement full of movements — and until something filled this in, a card
+     * statement had nothing in the system to be imported against.
+     *
+     * The two balances are deliberately not kept in step. The account holds
+     * what the bank says today; the debt holds what the household is managing.
+     * They are usually the same figure, and the day they differ that gap is
+     * the finding rather than an error to paper over.
+     */
     accountId: uuid('account_id').references(() => accounts.id, { onDelete: 'set null' }),
+    /**
+     * Whose debt this is, within the household. Null means the household's,
+     * not unknown. Declared without a reference for the same reason
+     * `accounts.person_id` is: the people table imports from this file, and
+     * the database holds the foreign key either way.
+     */
+    personId: uuid('person_id'),
     name: text('name').notNull(),
     principal: money('principal').notNull(),
     currentBalance: money('current_balance').notNull(),

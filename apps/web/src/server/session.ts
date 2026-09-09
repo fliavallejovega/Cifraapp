@@ -1,7 +1,13 @@
 import 'server-only';
 
 import { getDb, withUserContext, type Database } from '@app/database';
-import { households, householdMembers, householdSettings, profiles } from '@app/database/schema';
+import {
+  households,
+  householdMembers,
+  householdSettings,
+  legalAcceptances,
+  profiles,
+} from '@app/database/schema';
 import { getServerEnv } from '@app/validation/env';
 import { and, eq, isNull } from 'drizzle-orm';
 import { sql } from 'drizzle-orm';
@@ -92,6 +98,15 @@ export const loadSession = cache(async (): Promise<Session | null> => {
       .insert(profiles)
       .values({ id: user.id, email: user.email ?? '', displayName: displayNameOf(user) })
       .onConflictDoNothing({ target: profiles.id });
+
+    // The terms this account agreed to when it was created.
+    //
+    // Recorded here rather than at sign-up because there was no profile row to
+    // reference then — the acceptance rode along on the auth user until the
+    // row it points at existed, which is now. Idempotent: the unique index on
+    // (profile, kind, version) means every later sign-in is a no-op, and it
+    // never overwrites the original timestamp.
+    await recordTermsAcceptance(tx, user);
 
     const [profile] = await tx
       .select({
@@ -253,4 +268,44 @@ export async function createHousehold(
     if (!created) throw new Error('The household could not be created.');
     return created;
   });
+}
+
+/**
+ * Turns the acceptance carried on the auth user into a row that can be audited.
+ *
+ * Consent to a text on a date is the only kind worth keeping, so all three
+ * travel: which document, which version, and when the person actually ticked
+ * the box — not when the row happened to be written. An account created before
+ * the terms were required has no metadata and gets no row, which is the honest
+ * answer rather than a backdated one.
+ */
+async function recordTermsAcceptance(
+  tx: Parameters<Parameters<Database['transaction']>[0]>[0],
+  user: User,
+): Promise<void> {
+  const metadata = user.user_metadata as {
+    terms_version?: unknown;
+    terms_locale?: unknown;
+    terms_accepted_at?: unknown;
+  };
+
+  const version = typeof metadata.terms_version === 'string' ? metadata.terms_version : null;
+  if (!version) return;
+
+  const locale = typeof metadata.terms_locale === 'string' ? metadata.terms_locale : 'es';
+  const acceptedAt =
+    typeof metadata.terms_accepted_at === 'string' ? new Date(metadata.terms_accepted_at) : null;
+
+  await tx
+    .insert(legalAcceptances)
+    .values({
+      profileId: user.id,
+      kind: 'terms',
+      version,
+      locale,
+      ...(acceptedAt && !Number.isNaN(acceptedAt.getTime()) ? { acceptedAt } : {}),
+    })
+    .onConflictDoNothing({
+      target: [legalAcceptances.profileId, legalAcceptances.kind, legalAcceptances.version],
+    });
 }

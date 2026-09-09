@@ -28,8 +28,34 @@ const credentials = z.object({
   password: z.string().min(8),
 });
 
+/**
+ * The version of the terms a new account is agreeing to.
+ *
+ * Hard-coded rather than read from the database, and that is the point:
+ * consent is to a specific text, and an account created today must record
+ * agreement to the text that was on the page today. Reading «whatever the
+ * latest version is» at insert time would silently re-point old consents at
+ * new wording.
+ *
+ * Raising it here without seeding that version is a bug the acceptance record
+ * will make obvious, which is the right direction for this to fail in.
+ *
+ * Not exported: a `'use server'` module may only export async functions, and a
+ * constant leaving through that door fails the build rather than the type
+ * check — which is a long way from where the mistake was made.
+ */
+const CURRENT_TERMS_VERSION = '1.0';
+
 const signUpInput = credentials.extend({
   displayName: z.string().trim().min(1).max(80).optional(),
+  /**
+   * Ticked, or there is no account.
+   *
+   * A checkbox that defaults to off and blocks the button is the only form of
+   * this that means anything. Pre-ticking it, or treating silence as assent,
+   * would make the record worthless precisely when it is needed.
+   */
+  acceptTerms: z.literal('on', { message: 'termsRequired' }),
 });
 
 export async function signIn(_previous: ActionResult, formData: FormData): Promise<ActionResult> {
@@ -71,11 +97,14 @@ export async function signUp(_previous: ActionResult, formData: FormData): Promi
     email: formData.get('email'),
     password: formData.get('password'),
     displayName: formData.get('displayName') ?? undefined,
+    acceptTerms: formData.get('acceptTerms'),
   });
 
   if (!parsed.success) {
     const issue = parsed.error.issues[0];
-    return { error: issue?.path[0] === 'password' ? 'passwordTooShort' : 'invalidEmail' };
+    const field = issue?.path[0];
+    if (field === 'acceptTerms') return { error: 'termsRequired' };
+    return { error: field === 'password' ? 'passwordTooShort' : 'invalidEmail' };
   }
 
   const locale = formData.get('locale');
@@ -86,7 +115,16 @@ export async function signUp(_previous: ActionResult, formData: FormData): Promi
     email: parsed.data.email,
     password: parsed.data.password,
     options: {
-      data: parsed.data.displayName ? { display_name: parsed.data.displayName } : {},
+      // The acceptance travels on the auth user because there is no profile row
+      // to hang it off yet — the profile is created on first sign-in, and a
+      // foreign key to a row that does not exist cannot be written. It is
+      // turned into a `legal_acceptances` row the moment the profile appears.
+      data: {
+        ...(parsed.data.displayName ? { display_name: parsed.data.displayName } : {}),
+        terms_version: CURRENT_TERMS_VERSION,
+        terms_locale: signUpLocale,
+        terms_accepted_at: new Date().toISOString(),
+      },
       emailRedirectTo: await requestAuthCallbackUrl(`/${signUpLocale}/overview`),
     },
   });

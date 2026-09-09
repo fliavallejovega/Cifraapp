@@ -99,6 +99,11 @@ export interface DebtView {
   readonly statementDay: number | null;
   readonly creditLimit: Money | null;
   readonly accountId: string | null;
+  /** Which class of debt, which is what decides the account type it converts to. */
+  readonly kind: string;
+  /** Whose it is, within the household. Null means the household's. */
+  readonly personId: string | null;
+  readonly personName: string | null;
 }
 
 export async function loadDebts(
@@ -119,8 +124,12 @@ export async function loadDebts(
         statementDay: debts.statementDay,
         creditLimit: debts.creditLimit,
         accountId: debts.accountId,
+        kind: debts.kind,
+        personId: debts.personId,
+        personName: householdPeople.displayName,
       })
       .from(debts)
+      .leftJoin(householdPeople, eq(householdPeople.id, debts.personId))
       .where(and(eq(debts.householdId, householdId), isNull(debts.deletedAt)))
       // The most expensive debt first: the ordering the product argues for on
       // every other screen, so the list does not contradict the plan.
@@ -138,6 +147,9 @@ export async function loadDebts(
     statementDay: row.statementDay,
     creditLimit: row.creditLimit ? Money.fromDecimalString(row.creditLimit, currency) : null,
     accountId: row.accountId,
+    kind: row.kind,
+    personId: row.personId,
+    personName: row.personName,
   }));
 }
 
@@ -515,14 +527,32 @@ export async function loadSettings(
 }
 
 /** Accounts an expense or a commitment can be filed against. */
+/**
+ * The accounts a statement can be filed against — with whose they are.
+ *
+ * The name alone was not enough the moment a household held more than one
+ * card. «Visa» and «Visa» are two rows in a select and one wrong import, and
+ * filing a statement against the wrong account is worse than not filing it: it
+ * puts somebody else's spending into your ledger and both accounts are then
+ * wrong. The type and the person's name travel so the choice can be made
+ * without guessing.
+ */
 export async function loadAccountOptions(
   session: Session,
   householdId: string,
-): Promise<readonly { id: string; name: string; type: string }[]> {
+): Promise<
+  readonly { id: string; name: string; type: string; personName: string | null }[]
+> {
   return queryAsUser(session, (tx) =>
     tx
-      .select({ id: accounts.id, name: accounts.name, type: accounts.accountType })
+      .select({
+        id: accounts.id,
+        name: accounts.name,
+        type: accounts.accountType,
+        personName: householdPeople.displayName,
+      })
       .from(accounts)
+      .leftJoin(householdPeople, eq(householdPeople.id, accounts.personId))
       .where(
         and(
           eq(accounts.householdId, householdId),

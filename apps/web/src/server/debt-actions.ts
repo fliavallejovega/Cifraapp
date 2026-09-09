@@ -1,6 +1,6 @@
 'use server';
 
-import { debts } from '@app/database/schema';
+import { accounts, debts } from '@app/database/schema';
 import { and, eq, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 
@@ -12,6 +12,7 @@ import {
   positiveAmount,
   recordName,
 } from './record-input';
+import { optionalUuid } from './record-input';
 import { revalidateFinancials, revalidateScreen } from './revalidate';
 import { loadSession, queryAsUser } from './session';
 import type { RecordActionResult } from '@/components/records/spec';
@@ -35,6 +36,19 @@ const optionalDay = z.preprocess(
   z.coerce.number().int().min(1).max(31).optional(),
 );
 
+/** The classes of debt the product knows, as the database enumerates them. */
+const DEBT_KINDS = [
+  'credit_card',
+  'auto_loan',
+  'mortgage',
+  'personal_loan',
+  'student_loan',
+  'other',
+  'informal',
+] as const;
+
+export type DebtKind = (typeof DEBT_KINDS)[number];
+
 const debtInput = z.object({
   name: recordName,
   currentBalance: positiveAmount,
@@ -43,6 +57,8 @@ const debtInput = z.object({
   dueDay: optionalDay,
   statementDay: optionalDay,
   creditLimit: optionalAmount,
+  kind: z.enum(DEBT_KINDS).default('other'),
+  personId: optionalUuid,
 });
 
 const FIELD_ERRORS = {
@@ -64,6 +80,8 @@ function parse(formData: FormData) {
     dueDay: formData.get('dueDay'),
     statementDay: formData.get('statementDay'),
     creditLimit: formData.get('creditLimit'),
+    kind: formData.get('kind') ?? 'other',
+    personId: formData.get('personId'),
   });
 }
 
@@ -97,6 +115,8 @@ export async function createDebt(
           ? {}
           : { statementDay: parsed.data.statementDay }),
         ...(parsed.data.creditLimit ? { creditLimit: parsed.data.creditLimit } : {}),
+        kind: parsed.data.kind,
+        personId: parsed.data.personId ?? null,
       })
       .returning({ id: debts.id }),
   );
@@ -133,6 +153,8 @@ export async function updateDebt(
         dueDay: parsed.data.dueDay ?? null,
         statementDay: parsed.data.statementDay ?? null,
         creditLimit: parsed.data.creditLimit ?? null,
+        kind: parsed.data.kind,
+        personId: parsed.data.personId ?? null,
         updatedAt: new Date(),
       })
       .where(
@@ -180,5 +202,108 @@ export async function removeDebt(
   if (!removed) return { error: 'notFound' };
 
   revalidateFinancials(formData);
+  return { ok: true };
+}
+
+/**
+ * Carrying a debt as an account, so its statement can be imported.
+ *
+ * A credit card is an account: it has a balance, a limit, and a statement full
+ * of movements. The product modelled it only as a debt, and the consequence
+ * was quiet but total — a household could hold three cards and have nowhere to
+ * file a card statement, because the import screen could only offer accounts
+ * and none of the cards were one.
+ *
+ * What this does *not* do is decide which debts are cards. A household whose
+ * cards are called «Visa Davo» and «Master Card Blei» has that fact in the
+ * name, and reading it out of the name is the kind of guess this system does
+ * not make about money. The household asks for the conversion, one debt at a
+ * time, and the class it already stated is what picks the account's type.
+ *
+ * The account opens at the debt's balance and then goes its own way. That is
+ * deliberate and it is the whole point of doing this: from here the account
+ * holds what the bank says, the debt holds what the household is managing, and
+ * the gap between them is the reconciliation this was built for.
+ */
+const ACCOUNT_TYPE_FOR_DEBT = {
+  credit_card: 'credit_card',
+  auto_loan: 'loan',
+  personal_loan: 'loan',
+  student_loan: 'loan',
+  mortgage: 'mortgage',
+  other: 'other_liability',
+  informal: 'other_liability',
+} as const satisfies Record<DebtKind, string>;
+
+export async function backDebtWithAccount(
+  _previous: RecordActionResult,
+  formData: FormData,
+): Promise<RecordActionResult> {
+  const session = await loadSession();
+  if (!session?.activeHouseholdId) return { error: 'signInRequired' };
+
+  const id = z.uuid().safeParse(formData.get('id'));
+  if (!id.success) return { error: 'notFound' };
+
+  const householdId = session.activeHouseholdId;
+
+  const outcome = await queryAsUser(session, async (tx) => {
+    const [debt] = await tx
+      .select({
+        id: debts.id,
+        name: debts.name,
+        kind: debts.kind,
+        currency: debts.currency,
+        currentBalance: debts.currentBalance,
+        creditLimit: debts.creditLimit,
+        apr: debts.apr,
+        personId: debts.personId,
+        accountId: debts.accountId,
+      })
+      .from(debts)
+      .where(
+        and(eq(debts.id, id.data), eq(debts.householdId, householdId), isNull(debts.deletedAt)),
+      )
+      .limit(1);
+
+    if (!debt) return 'notFound' as const;
+    // Already carried. Pressing twice must not open a second card holding the
+    // same money, which would double the household's movements.
+    if (debt.accountId) return 'ok' as const;
+
+    const [account] = await tx
+      .insert(accounts)
+      .values({
+        householdId,
+        name: debt.name,
+        // A liability's balance is what is owed, and this codebase stores an
+        // amount owed as a negative balance so that summing every account
+        // gives net worth rather than a figure that needs a footnote.
+        currentBalance: `-${debt.currentBalance}`,
+        currency: debt.currency,
+        accountType: ACCOUNT_TYPE_FOR_DEBT[debt.kind],
+        scope: debt.personId ? 'personal' : 'household',
+        createdBy: session.user.id,
+        ownerId: session.user.id,
+        personId: debt.personId,
+        ...(debt.creditLimit ? { creditLimit: debt.creditLimit } : {}),
+        ...(debt.apr ? { interestRate: debt.apr } : {}),
+      })
+      .returning({ id: accounts.id });
+
+    if (!account) return 'createFailed' as const;
+
+    await tx
+      .update(debts)
+      .set({ accountId: account.id, updatedAt: new Date() })
+      .where(and(eq(debts.id, debt.id), eq(debts.householdId, householdId)));
+
+    return 'ok' as const;
+  });
+
+  if (outcome !== 'ok') return { error: outcome };
+
+  revalidateFinancials(formData);
+  revalidateScreen(formData, 'accounts', 'documents');
   return { ok: true };
 }

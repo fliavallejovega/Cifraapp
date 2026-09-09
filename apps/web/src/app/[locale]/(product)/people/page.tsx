@@ -1,12 +1,20 @@
 import { Card, Page, PageHeader, Section, Stat } from '@app/ui';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
+import { PeopleAccess } from '@/components/people-access';
 import { RecordsManager } from '@/components/records';
 import type { FieldSpec, RecordRow } from '@/components/records/spec';
 import { loadHouseholdContext } from '@/server/household-context';
 import { createPerson, removePerson, updatePerson } from '@/server/people-actions';
 import { recordLabels } from '@/server/record-labels';
+import {
+  invitePersonToAccount,
+  linkPersonToMember,
+  revokePersonAccess,
+  sendPasswordReset,
+} from '@/server/people-access-actions';
 import { loadPeople } from '@/server/repositories/administration';
+import { loadPeopleAccess } from '@/server/repositories/people-access';
 import { requireHousehold } from '@/server/session';
 
 /**
@@ -28,7 +36,10 @@ export default async function PeoplePage({ params }: { params: Promise<{ locale:
 
   const session = await requireHousehold(locale);
   const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
-  const people = await loadPeople(session, session.activeHouseholdId);
+  const [people, access] = await Promise.all([
+    loadPeople(session, session.activeHouseholdId),
+    loadPeopleAccess(session, session.activeHouseholdId),
+  ]);
 
   const t = await getTranslations('people');
   const shared = await getTranslations('records');
@@ -131,6 +142,66 @@ export default async function PeoplePage({ params }: { params: Promise<{ locale:
             })}
           />
         </Card>
+      </Section>
+
+      <Section title={t('access.title')} detail={t('access.detail')} className="mt-14">
+        <PeopleAccess
+          locale={locale}
+          people={access.people}
+          unlinkedMembers={access.unlinkedMembers}
+          twoFactorReadable={access.twoFactorReadable}
+          actions={{
+            invite: invitePersonToAccount,
+            reset: sendPasswordReset,
+            link: linkPersonToMember,
+            revoke: revokePersonAccess,
+          }}
+          roles={(['owner', 'partner', 'member', 'viewer'] as const).map((value) => ({
+            value,
+            label: t(`access.roles.${value}`),
+          }))}
+          labels={{
+            hasAccount: t('access.hasAccount'),
+            pending: t('access.pending'),
+            noAccount: t('access.noAccount'),
+            dependentNote: t('access.dependentNote'),
+            twoFactorOn: t('access.twoFactorOn'),
+            twoFactorOff: t('access.twoFactorOff'),
+            twoFactorUnknown: t('access.twoFactorUnknown'),
+            invite: t('access.invite'),
+            inviteAgain: t('access.inviteAgain'),
+            email: t('access.email'),
+            emailHint: t('access.emailHint'),
+            role: t('access.role'),
+            linkTitle: t('access.linkTitle'),
+            linkHint: t('access.linkHint'),
+            linkAction: t('access.linkAction'),
+            unlink: t('access.unlink'),
+            reset: t('access.reset'),
+            resetSent: t('access.resetSent'),
+            revoke: t('access.revoke'),
+            revokeConfirm: t('access.revokeConfirm'),
+            revokeYes: t('access.revokeYes'),
+            cancel: shared('cancel'),
+            copyLink: t('access.copyLink'),
+            linkOnce: t('access.linkOnce'),
+            limits: t('access.limits'),
+            emptyTitle: t('access.emptyTitle'),
+            emptyBody: t('access.emptyBody'),
+            errorTitle: shared('errorTitle'),
+            errors: {
+              generic: shared('errors.generic'),
+              notAllowed: t('access.errors.notAllowed'),
+              emailInvalid: t('access.errors.emailInvalid'),
+              alreadyMember: t('access.errors.alreadyMember'),
+              noAccount: t('access.errors.noAccount'),
+              mailFailed: t('access.errors.mailFailed'),
+              cannotRevokeSelf: t('access.errors.cannotRevokeSelf'),
+              notFound: shared('errors.notFound'),
+              signInRequired: shared('errors.signInRequired'),
+            },
+          }}
+        />
       </Section>
 
       <p className="mt-12 max-w-[62ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]">
