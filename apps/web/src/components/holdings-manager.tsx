@@ -79,8 +79,19 @@ export interface HoldingsLabels {
   readonly kinds: Readonly<Record<string, string>>;
   readonly errorTitle: string;
   readonly errors: Readonly<Record<string, string>>;
-  /** Las cadenas del buscador de símbolos, que trae su propio catálogo. */
-  readonly search: (key: string) => string;
+  /**
+   * Las cadenas del buscador de símbolos, ya resueltas.
+   *
+   * Un **objeto**, no la función `t` del servidor. Pasar una función de un
+   * componente de servidor a uno de cliente es un error de ejecución que ni el
+   * compilador ni el build detectan: React no puede serializarla, la página
+   * revienta en producción y el gate entero pasa en verde. Tipar esta prop como
+   * datos es lo que devuelve esa comprobación al compilador.
+   *
+   * Las claves llegan tal cual las pide `SymbolSearch` —`holdings.…`— porque el
+   * catálogo sigue siendo uno solo, el del cuestionario, aplanado al cruzar.
+   */
+  readonly search: Readonly<Record<string, string>>;
 }
 
 export interface HoldingsManagerProps {
@@ -304,6 +315,16 @@ function HoldingForm({
     if (state.ok || state.created) onDone();
   }, [state.ok, state.created, onDone]);
 
+  /**
+   * El diccionario, como la función que el buscador espera.
+   *
+   * Se arma aquí, en el cliente, sobre un objeto que sí cruzó la frontera. Una
+   * clave que faltara se devuelve tal cual en vez de reventar: un buscador con
+   * una etiqueta cruda es un defecto visible y arreglable, y uno que lanza se
+   * lleva la pantalla entera por delante.
+   */
+  const searchCopy = (key: string): string => labels.search[key] ?? key;
+
   const [symbol, setSymbol] = useState(row?.symbol ?? '');
   const [label, setLabel] = useState(row?.label ?? '');
   const [kind, setKind] = useState(row?.kind ?? 'other');
@@ -343,7 +364,7 @@ function HoldingForm({
                   id={id}
                   describedBy={describedBy}
                   value={symbol}
-                  copy={labels.search}
+                  copy={searchCopy}
                   onType={setSymbol}
                   onChoose={choose}
                   onCommit={() => {

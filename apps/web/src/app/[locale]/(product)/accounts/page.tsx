@@ -296,10 +296,10 @@ export default async function AccountsPage({ params }: { params: Promise<{ local
               amountInvalid: t('errors.balanceInvalid'),
             },
             // El buscador de símbolos trae su propio catálogo, que vive con el
-            // cuestionario porque nació ahí. Se pasa tal cual en vez de copiarse:
+            // cuestionario porque nació ahí. Se pasa aplanado en vez de copiarse:
             // dos copias de quince cadenas se separan, y el día que se separen la
             // pantalla nueva es la que enseña la versión vieja.
-            search: (key: string) => setup(key),
+            search: flattenMessages(setup.raw('holdings'), 'holdings'),
           }}
         />
       </Section>
@@ -335,4 +335,27 @@ function rawOf(t: { raw: (key: string) => unknown }): (key: string) => string {
     const value = t.raw(key);
     return typeof value === 'string' ? value : '';
   };
+}
+
+/**
+ * Un subárbol del catálogo, aplanado a claves con punto.
+ *
+ * `{ kind: { equity: 'Acción' } }` sale como `{ 'holdings.kind.equity': 'Acción' }`,
+ * que es exactamente como lo pide el buscador de símbolos.
+ *
+ * Existe porque lo que cruza hacia un componente de cliente tiene que ser
+ * **datos**. La versión anterior de esta pantalla le pasaba la función `t`
+ * directamente: compilaba, construía y pasaba el gate entero, y luego reventaba
+ * en producción con «Functions cannot be passed directly to Client Components».
+ * Aplanar el catálogo cuesta doce líneas y devuelve esa comprobación al
+ * compilador, porque la prop del otro lado ya está tipada como un registro.
+ */
+function flattenMessages(value: unknown, prefix: string): Record<string, string> {
+  if (typeof value === 'string') return { [prefix]: value };
+  if (typeof value !== 'object' || value === null) return {};
+
+  return Object.entries(value).reduce<Record<string, string>>(
+    (flat, [key, nested]) => Object.assign(flat, flattenMessages(nested, `${prefix}.${key}`)),
+    {},
+  );
 }
