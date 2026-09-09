@@ -200,6 +200,47 @@ export default async function PlanPage({ params }: { params: Promise<{ locale: s
             )}
           </Section>
 
+          {/*
+            Lo que viene, al lado y nunca dentro.
+
+            Va después del plan a propósito: primero lo que hay para repartir,
+            después lo que todavía no llegó. Enseñarlo antes invitaría a leer las
+            dos cifras como una sola, que es exactamente el error que esta
+            sección existe para no cometer.
+          */}
+          {view.expected.length > 0 && (
+            <Section title={t('expected.title')} detail={t('expected.detail')} className="mt-16">
+              <Card padding="none" className="overflow-hidden">
+                <div className="px-5 sm:px-6">
+                  <Ledger caption={t('expected.title')}>
+                    <LedgerHead>
+                      <LedgerColumn>{t('expected.columns.what')}</LedgerColumn>
+                      <LedgerColumn>{t('expected.columns.from')}</LedgerColumn>
+                      <LedgerColumn>{t('expected.columns.when')}</LedgerColumn>
+                      <LedgerColumn align="end">{t('expected.columns.amount')}</LedgerColumn>
+                    </LedgerHead>
+                    <LedgerBody>
+                      {view.expected.map((entry) => (
+                        <LedgerRow key={entry.id}>
+                          <LedgerCell>{entry.name}</LedgerCell>
+                          <LedgerCell>{entry.source ?? '—'}</LedgerCell>
+                          <LedgerCell>
+                            {entry.expectedOn ?? t('expected.unknownDate')}
+                            {!entry.isConfirmed && ` · ${t('expected.estimated')}`}
+                          </LedgerCell>
+                          <LedgerCell align="end">{money(entry.amount)}</LedgerCell>
+                        </LedgerRow>
+                      ))}
+                    </LedgerBody>
+                  </Ledger>
+                </div>
+              </Card>
+              <p className="mt-3 max-w-[68ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]">
+                {t('expected.note')}
+              </p>
+            </Section>
+          )}
+
           <Section title={t('lines.title')} detail={t('lines.detail')} className="mt-16">
             {view.plan.lines.length === 0 ? (
               <EmptyState title={t('lines.emptyTitle')} body={t('lines.emptyBody')} />

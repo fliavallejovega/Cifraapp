@@ -24,6 +24,7 @@ import {
   householdSettings,
   households,
   obligations,
+  receivables,
   recurringSeries,
   rules as ruleRows,
 } from '@app/database/schema';
@@ -84,6 +85,23 @@ export interface PlanView {
    * second one is answering a slightly different question.
    */
   readonly periods: readonly PayPeriod[];
+  /**
+   * Lo que el hogar espera cobrar, al lado del plan y nunca dentro de él.
+   *
+   * El plan reparte dinero que entró. Un cobro tratado como cierto es la cifra
+   * optimista que arruina un presupuesto —el cliente paga tarde, el hermano no
+   * paga, y la casa ya gastó contra eso—, así que no suma a `safeToSpend` ni a
+   * ningún período. Viaja aquí para que la pantalla pueda enseñarlo aparte y el
+   * hogar pueda perseguirlo, que es la única gestión que un cobro admite.
+   */
+  readonly expected: readonly {
+    readonly id: string;
+    readonly name: string;
+    readonly source: string | null;
+    readonly amount: Money;
+    readonly expectedOn: PlainDate | null;
+    readonly isConfirmed: boolean;
+  }[];
   readonly isEmpty: boolean;
 }
 
@@ -430,11 +448,42 @@ export async function loadPlan(session: Session, householdId: string): Promise<P
       appliedRuleIds: evaluation.matched.map((entry) => entry.ruleId),
     });
 
+    // Lo que está por cobrar, leído aparte y sumado a nada. Ordenado por fecha,
+    // con lo que no tiene fecha al final: «no sé cuándo» es lo último que se
+    // persigue, no lo primero.
+    const expectedRows = await tx
+      .select({
+        id: receivables.id,
+        name: receivables.name,
+        source: receivables.source,
+        amount: receivables.amount,
+        expectedOn: receivables.expectedOn,
+        confidence: receivables.confidence,
+      })
+      .from(receivables)
+      .where(
+        and(
+          eq(receivables.householdId, householdId),
+          isNull(receivables.deletedAt),
+          isNull(receivables.receivedOn),
+        ),
+      );
+
     return {
       currency,
       today,
       safeToSpend,
       plan,
+      expected: expectedRows
+        .map((row) => ({
+          id: row.id,
+          name: row.name,
+          source: row.source,
+          amount: Money.fromDecimalString(row.amount, currency),
+          expectedOn: (row.expectedOn as PlainDate | null) ?? null,
+          isConfirmed: row.confidence === 'confirmed',
+        }))
+        .sort((a, b) => (a.expectedOn ?? '9999-12-31').localeCompare(b.expectedOn ?? '9999-12-31')),
       ruleNotes: applied.notes,
       skippedRules: evaluation.skipped.map((entry) => ({
         name: entry.name,

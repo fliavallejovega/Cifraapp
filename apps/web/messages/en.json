@@ -528,6 +528,19 @@
       "committed": "Already committed ({count})",
       "reserved": "Held back for the next period",
       "shortfall": "{amount} short of covering this period."
+    },
+    "expected": {
+      "title": "Money owed to you",
+      "detail": "Money you are owed that has not arrived. It is here so you can chase it, not so it can be divided.",
+      "note": "The plan above does not count on this. It is built on money that arrived — money owed treated as certain is the figure that ruins a budget when the payment is late.",
+      "unknownDate": "No date",
+      "estimated": "estimated",
+      "columns": {
+        "what": "What",
+        "from": "From",
+        "when": "When",
+        "amount": "Amount"
+      }
     }
   },
   "reports": {
@@ -990,7 +1003,29 @@
       "isrBaseNet": "It is computed on what is left after social security and education tax.",
       "isrEffective": "The percentage next to the income tax line is the effective one: what it came to over your gross. It is not a rate from the law, it is yours.",
       "legendSource": "Method and rates transcribed from: {source}. It is a draft nobody qualified has reviewed. Check it against your payslip — what we store is what you confirm.",
-      "frequencyHint": "Twice a month and every 14 days are not the same: the first is 24 payments a year on fixed days, the second is 26 and they drift. Two payments a year changes what is withheld."
+      "frequencyHint": "Twice a month and every 14 days are not the same: the first is 24 payments a year on fixed days, the second is 26 and they drift. Two payments a year changes what is withheld.",
+      "totalLabel": "Comes in per month",
+      "totalNote": "What actually arrives, deductions already taken off, brought to a month. It is the figure everything else is measured against."
+    },
+    "receivables": {
+      "title": "Money owed to you",
+      "detail": "An invoice due next month, a loan being paid back, the thirteenth month. We note it so you know what is coming and from whom — but the plan is built on money that already arrived.",
+      "empty": "This is for money you are owed and have not collected. If nothing is pending, carry on.",
+      "add": "Add another",
+      "addFirst": "Add something owed to you",
+      "name": "What you are owed",
+      "namePlaceholder": "March invoice, thirteenth month…",
+      "source": "Who owes it",
+      "sourceHint": "Money owed by nobody in particular cannot be chased.",
+      "sourcePlaceholder": "Client, company, person…",
+      "expectedOn": "When?",
+      "expectedOnHint": "Leave it empty if you do not know. We do not invent a date.",
+      "confidence": "How certain is it?",
+      "confidenceHint": "You say. We do not put a probability on anybody’s word.",
+      "confirmed": "Confirmed",
+      "estimated": "It is an estimate",
+      "totalLabel": "Owed to you",
+      "totalNote": "Not part of what the plan divides. Money owed treated as certain is the figure that ruins a budget: the client pays late and the household already spent against it."
     },
     "savings": {
       "title": "What do you have today?",
@@ -1063,7 +1098,10 @@
       "secondAmount": "Amount of the second",
       "unevenHint": "Only if the two fortnights do not pay the same. Leave them empty if they are equal.",
       "totalOptional": "Of that, not indispensable ({count})",
-      "totalAllEssential": "You marked everything as indispensable. If something is not, untick it: that is the only thing that lets us tell you what could be cut without deciding it for you."
+      "totalAllEssential": "You marked everything as indispensable. If something is not, untick it: that is the only thing that lets us tell you what could be cut without deciding it for you.",
+      "totalIncome": "Comes in per month",
+      "totalLeft": "Left over",
+      "totalLeftNote": "With what you have answered so far. Debts and goals are still to come, and they will move this figure."
     },
     "debts": {
       "title": "Do you owe anything?",

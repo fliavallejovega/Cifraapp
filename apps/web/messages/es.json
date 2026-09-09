@@ -528,6 +528,19 @@
       "committed": "Ya comprometido ({count})",
       "reserved": "Guardado para el período siguiente",
       "shortfall": "Faltan {amount} para cubrir este período."
+    },
+    "expected": {
+      "title": "Lo que está por cobrar",
+      "detail": "Dinero que te deben y todavía no entró. Está aquí para que puedas perseguirlo, no para repartirlo.",
+      "note": "El plan de arriba no cuenta con esta plata. Se hace con lo que ya entró — un cobro tratado como cierto es la cifra que arruina un presupuesto cuando el pago llega tarde.",
+      "unknownDate": "Sin fecha",
+      "estimated": "estimado",
+      "columns": {
+        "what": "Qué",
+        "from": "De quién",
+        "when": "Cuándo",
+        "amount": "Monto"
+      }
     }
   },
   "reports": {
@@ -990,7 +1003,29 @@
       "isrBaseNet": "Se calcula sobre lo que queda después del seguro social y el educativo.",
       "isrEffective": "El porcentaje que ves junto a la línea de renta es el efectivo: cuánto acabó siendo sobre tu bruto. No es una tasa de la ley, es la tuya.",
       "legendSource": "Método y tasas transcritos de: {source}. Es un borrador que nadie calificado revisó. Compáralo con tu recibo — lo que guardamos es lo que tú confirmes.",
-      "frequencyHint": "Quincenal y «cada 14 días» no son lo mismo: la primera son 24 pagos al año en días fijos del mes, la segunda son 26 y se corren. Dos pagos de diferencia al año cambian lo que se retiene de renta."
+      "frequencyHint": "Quincenal y «cada 14 días» no son lo mismo: la primera son 24 pagos al año en días fijos del mes, la segunda son 26 y se corren. Dos pagos de diferencia al año cambian lo que se retiene de renta.",
+      "totalLabel": "Entra al mes",
+      "totalNote": "Lo que llega de verdad, ya con los descuentos, llevado a un mes. Es la cifra contra la que se mide todo lo demás."
+    },
+    "receivables": {
+      "title": "Pagos por cobrar",
+      "detail": "Una factura del mes que viene, un préstamo que te devuelven, el décimo tercer mes. Lo anotamos para que sepas cuánto viene y de quién — pero el plan se hace con el dinero que ya entró.",
+      "empty": "Aquí va lo que te van a pagar y todavía no cobras. Si no hay nada pendiente, sigue.",
+      "add": "Agregar otro cobro",
+      "addFirst": "Agregar un cobro",
+      "name": "Qué te deben",
+      "namePlaceholder": "Factura de marzo, décimo tercer mes…",
+      "source": "De quién viene",
+      "sourceHint": "Un cobro sin origen no se puede reclamar.",
+      "sourcePlaceholder": "Cliente, empresa, persona…",
+      "expectedOn": "¿Para cuándo?",
+      "expectedOnHint": "Déjalo vacío si no lo sabes. No inventamos una fecha.",
+      "confidence": "¿Qué tan seguro es?",
+      "confidenceHint": "Lo dices tú. No le ponemos una probabilidad a la palabra de nadie.",
+      "confirmed": "Confirmado",
+      "estimated": "Es un estimado",
+      "totalLabel": "Por cobrar",
+      "totalNote": "No entra en lo que el plan reparte. Un cobro tratado como cierto es la cifra que arruina un presupuesto: el cliente paga tarde y la casa ya gastó contra eso."
     },
     "savings": {
       "title": "¿Qué tienes hoy?",
@@ -1063,7 +1098,10 @@
       "secondAmount": "Monto de la segunda",
       "unevenHint": "Solo si las dos quincenas no pagan lo mismo. Déjalos vacíos si son iguales.",
       "totalOptional": "De eso, prescindible ({count})",
-      "totalAllEssential": "Marcaste todo como indispensable. Si algo no lo es, desmárcalo: es lo único que nos deja decirte qué se podría recortar sin decidirlo por ti."
+      "totalAllEssential": "Marcaste todo como indispensable. Si algo no lo es, desmárcalo: es lo único que nos deja decirte qué se podría recortar sin decidirlo por ti.",
+      "totalIncome": "Entra al mes",
+      "totalLeft": "Te queda",
+      "totalLeftNote": "Con lo que llevas contestado. Faltan las deudas y las metas, que van a mover esta cifra."
     },
     "debts": {
       "title": "¿Debes algo?",

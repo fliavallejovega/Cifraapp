@@ -216,3 +216,45 @@ export const setupDrafts = appSchema.table('setup_drafts', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
+
+/** Cobrado o por cobrar, según lo diga el hogar. No lo calcula el producto. */
+export const receivableConfidence = pgEnum('receivable_confidence', ['confirmed', 'estimated']);
+
+/**
+ * Lo que la familia va a cobrar, y cuándo.
+ *
+ * Una factura del mes que viene, un préstamo que devuelven, el décimo tercer
+ * mes. Nada de eso es una cadencia —no se repite, tiene fecha propia— y por eso
+ * no cabe en `recurringSeries`, que existe para lo que vuelve a pasar.
+ *
+ * **No es dinero disponible y el plan no lo reparte.** Un cobro tratado como
+ * cierto es la cifra optimista que arruina un presupuesto: el cliente paga
+ * tarde, el hermano no paga, y la casa ya gastó contra eso. El plan se hace con
+ * lo que entró; esto se enseña al lado, para poder perseguirlo.
+ */
+export const receivables = appSchema.table(
+  'receivables',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .default(sql`public.uuid_generate_v7()`),
+    householdId: uuid('household_id')
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    /** De quién viene. Un cobro sin origen no se puede reclamar. */
+    source: text('source'),
+    amount: numeric('amount', { precision: 19, scale: 4, mode: 'string' }).notNull(),
+    currency: char('currency', { length: 3 }).notNull().default('USD'),
+    /** Nula cuando no se sabe: «me deben 500 y no sé cuándo» es una respuesta. */
+    expectedOn: date('expected_on'),
+    confidence: receivableConfidence('confidence').notNull().default('estimated'),
+    /** Cobrado. No se borra: un cobro que entró es historia del hogar. */
+    receivedOn: date('received_on'),
+    notes: text('notes'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+    deletedAt: timestamp('deleted_at', { withTimezone: true }),
+  },
+  (table) => [index('receivables_household_idx').on(table.householdId, table.expectedOn)],
+);

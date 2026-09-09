@@ -40,6 +40,7 @@ interface SetupDraft {
   people: PersonRow[];
   bufferMinimum: string;
   incomes: IncomeRow[];
+  receivables: ReceivableRow[];
   accounts: AccountRow[];
   commitments: CommitmentRow[];
   debts: DebtRow[];
@@ -130,6 +131,23 @@ interface Deduction {
    * pago, y poner el selector ahí sería ofrecer una decisión que no existe.
    */
   ruleKey?: string | undefined;
+}
+
+/**
+ * Un cobro que la familia espera, con su fecha y su origen.
+ *
+ * No es un ingreso recurrente: no se repite, tiene fecha propia, y el plan no
+ * lo reparte como dinero disponible. Está para poder perseguirlo — saber cuánto
+ * viene, de quién y para cuándo.
+ */
+interface ReceivableRow {
+  id?: string;
+  name: string;
+  source: string;
+  amount: string;
+  /** `YYYY-MM-DD`, o vacío cuando no se sabe. No se inventa una fecha. */
+  expectedOn: string;
+  confidence: 'confirmed' | 'estimated';
 }
 
 interface AccountRow {
@@ -257,6 +275,7 @@ export interface SetupInitial {
   readonly people: readonly PersonRow[];
   readonly accounts: readonly AccountRow[];
   readonly incomes: readonly IncomeRow[];
+  readonly receivables?: readonly ReceivableRow[] | undefined;
   readonly commitments: readonly CommitmentRow[];
   readonly debts: readonly DebtRow[];
   readonly goals: readonly GoalRow[];
@@ -376,6 +395,11 @@ export function SetupQuestionnaire({
         ? { ...row, amountIsGross: false }
         : { ...row, amountIsGross: true, amount: declaredGross };
     }),
+  );
+  const [receivableRows, setReceivableRows] = useState<ReceivableRow[]>(
+    initial?.receivables && initial.receivables.length > 0
+      ? initial.receivables.map((row) => ({ ...row }))
+      : [],
   );
   const [accountRows, setAccountRows] = useState<AccountRow[]>(
     start(initial?.accounts, {
@@ -535,6 +559,7 @@ export function SetupQuestionnaire({
     if (saved.people) setPeople(saved.people);
     if (saved.bufferMinimum !== undefined) setBufferMinimum(saved.bufferMinimum);
     if (saved.incomes) setIncomes(saved.incomes);
+    if (saved.receivables) setReceivableRows(saved.receivables);
     if (saved.accounts) setAccountRows(saved.accounts);
     if (saved.commitments) setCommitments(saved.commitments);
     if (saved.debts) setDebtRows(saved.debts);
@@ -564,6 +589,7 @@ export function SetupQuestionnaire({
         people,
         bufferMinimum,
         incomes,
+        receivables: receivableRows,
         accounts: accountRows,
         commitments,
         debts: debtRows,
@@ -584,6 +610,7 @@ export function SetupQuestionnaire({
     people,
     bufferMinimum,
     incomes,
+    receivableRows,
     accountRows,
     commitments,
     debtRows,
@@ -603,6 +630,26 @@ export function SetupQuestionnaire({
     if (!state.ok) return;
     void discardSetupDraft().catch(() => undefined);
   }, [state.ok]);
+
+  /** Como se escribe una cifra en esta pantalla: símbolo, miles y dos decimales. */
+  const money = (value: number) =>
+    `${currencySymbol}${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const amountOf = (value: string) => Number((value ?? '').replace(/[^\d.]/g, '')) || 0;
+
+  /**
+   * Todo llevado al mes, que es la unidad en la que una casa se piensa.
+   *
+   * Una quincena de 800 y un pago anual de 1.200 no se pueden sumar como
+   * están. Al mes son 1.600 y 100, y esa es la única suma que responde «¿me
+   * alcanza?». Los tramos anuales del impuesto son otra cosa y se calculan
+   * aparte: aquí solo se compara dinero que entra con dinero que sale.
+   */
+  const perMonth = (amount: string, frequency: Frequency) =>
+    (amountOf(amount) * PAYMENTS_PER_YEAR[frequency]) / 12;
+
+  const incomePerMonth = incomes
+    .filter((row) => row.name.trim() !== '')
+    .reduce((total, row) => total + perMonth(arrivingAmount(row), row.frequency), 0);
 
   const step: Step = STEPS[index] ?? 'household';
   const isLast = index === STEPS.length - 1;
@@ -637,6 +684,15 @@ export function SetupQuestionnaire({
                 (line) => line.label.trim() !== '' && line.amount.trim() !== '',
               )
             : [],
+      })),
+    // Lo que se espera cobrar. Sin nombre o sin monto no es un cobro: es una
+    // fila a medio llenar, y guardarla sería guardar una promesa vacía.
+    receivables: receivableRows
+      .filter((row) => row.name.trim() !== '' && row.amount.trim() !== '')
+      .map((row) => ({
+        ...row,
+        source: row.source.trim(),
+        ...(row.expectedOn.trim() === '' ? { expectedOn: undefined } : {}),
       })),
     accounts: accountRows.filter((row) => row.name.trim() !== '' && row.balance.trim() !== ''),
     // A deduction points at an income by position, and the income step is
@@ -759,6 +815,11 @@ export function SetupQuestionnaire({
         <RowEditor
           rows={people}
           addLabel={copy('household.add')}
+          itemLabel={copy('household.name')}
+          summarize={(row: PersonRow) => ({
+            title: row.name,
+            detail: copy(`household.relationships.${row.relationship}`),
+          })}
           removeLabel={copy('remove')}
           addFirstLabel={copy('household.addFirst')}
           emptyHint={copy('household.empty')}
@@ -834,6 +895,11 @@ export function SetupQuestionnaire({
         <RowEditor
           rows={incomes}
           addLabel={copy('income.add')}
+          itemLabel={copy('income.name')}
+          summarize={(row: IncomeRow) => ({
+            title: row.name,
+            detail: `${money(amountOf(arrivingAmount(row)))} ${copy(`income.per.${row.frequency}`)}`,
+          })}
           removeLabel={copy('remove')}
           addFirstLabel={copy('income.addFirst')}
           emptyHint={copy('income.empty')}
@@ -989,11 +1055,186 @@ export function SetupQuestionnaire({
         />
       )}
 
+      {/*
+        Lo que entra al mes, sumado delante de quien lo escribe.
+
+        Dos sueldos con cadencias distintas no se suman en la cabeza: una
+        quincena de 800 y un mensual de 1.000 son 2.600 al mes, y nadie hace esa
+        cuenta mientras teclea. Es también lo que delata el error de tipeo — un
+        sueldo con un cero de más no se ve raro en su casilla y sí en el total.
+      */}
+      {step === 'income' && incomePerMonth > 0 && (
+        <StepTotals
+          lines={[
+            ...incomes
+              .filter((row) => row.name.trim() !== '' && row.amount.trim() !== '')
+              .map((row) => ({
+                label: row.name,
+                value: money(perMonth(arrivingAmount(row), row.frequency)),
+                indent: true,
+              })),
+            {
+              label: copy('income.totalLabel'),
+              value: money(incomePerMonth),
+              tone: 'strong' as const,
+            },
+          ]}
+          note={copy('income.totalNote')}
+        />
+      )}
+
+      {/*
+        Y lo que está por cobrar, que no es un sueldo.
+
+        Una factura del mes que viene, un préstamo que devuelven, el décimo
+        tercer mes. Va en este paso porque es dinero que entra, y va aparte
+        porque **el plan no lo reparte**: un cobro tratado como cierto es la
+        cifra optimista que arruina un presupuesto —el cliente paga tarde, el
+        hermano no paga, y la casa ya gastó contra eso—. Se guarda para poder
+        perseguirlo, y la nota del pie lo dice sin rodeos.
+      */}
+      {step === 'income' && (
+        <section className="border-t border-[color:var(--color-rule)] pt-8">
+          <h3 className="text-base font-medium">{copy('receivables.title')}</h3>
+          <p className="mt-1 mb-4 max-w-[68ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]">
+            {copy('receivables.detail')}
+          </p>
+
+          <RowEditor
+            rows={receivableRows}
+            addLabel={copy('receivables.add')}
+            addFirstLabel={copy('receivables.addFirst')}
+            removeLabel={copy('remove')}
+            emptyHint={copy('receivables.empty')}
+            itemLabel={copy('receivables.name')}
+            summarize={(row: ReceivableRow) => ({
+              title: row.name,
+              detail: money(amountOf(row.amount)),
+            })}
+            onAdd={() => {
+              setReceivableRows([
+                ...receivableRows,
+                { name: '', source: '', amount: '', expectedOn: '', confidence: 'estimated' },
+              ]);
+            }}
+            onRemove={(at) => {
+              setReceivableRows(receivableRows.filter((_, position) => position !== at));
+            }}
+            render={(row, at) => (
+              <>
+                <Field label={copy('receivables.name')} className="sm:col-span-2">
+                  {({ id }) => (
+                    <Input
+                      id={id}
+                      value={row.name}
+                      placeholder={copy('receivables.namePlaceholder')}
+                      onChange={(event) => {
+                        setReceivableRows(patch(receivableRows, at, { name: event.target.value }));
+                      }}
+                    />
+                  )}
+                </Field>
+                <MoneyField
+                  label={copy('amount')}
+                  symbol={currencySymbol}
+                  value={row.amount}
+                  onChange={(value) => {
+                    setReceivableRows(patch(receivableRows, at, { amount: value }));
+                  }}
+                />
+                <Field label={copy('receivables.source')} hint={copy('receivables.sourceHint')}>
+                  {({ id, describedBy }) => (
+                    <Input
+                      id={id}
+                      value={row.source}
+                      aria-describedby={describedBy}
+                      placeholder={copy('receivables.sourcePlaceholder')}
+                      onChange={(event) => {
+                        setReceivableRows(
+                          patch(receivableRows, at, { source: event.target.value }),
+                        );
+                      }}
+                    />
+                  )}
+                </Field>
+                <Field
+                  label={copy('receivables.expectedOn')}
+                  hint={copy('receivables.expectedOnHint')}
+                >
+                  {({ id, describedBy }) => (
+                    <Input
+                      id={id}
+                      type="date"
+                      value={row.expectedOn}
+                      aria-describedby={describedBy}
+                      onChange={(event) => {
+                        setReceivableRows(
+                          patch(receivableRows, at, { expectedOn: event.target.value }),
+                        );
+                      }}
+                    />
+                  )}
+                </Field>
+                <Field
+                  label={copy('receivables.confidence')}
+                  hint={copy('receivables.confidenceHint')}
+                >
+                  {({ id, describedBy }) => (
+                    <Select
+                      id={id}
+                      aria-describedby={describedBy}
+                      value={row.confidence}
+                      onChange={(event) => {
+                        setReceivableRows(
+                          patch(receivableRows, at, {
+                            confidence: event.target.value as ReceivableRow['confidence'],
+                          }),
+                        );
+                      }}
+                    >
+                      <option value="confirmed">{copy('receivables.confirmed')}</option>
+                      <option value="estimated">{copy('receivables.estimated')}</option>
+                    </Select>
+                  )}
+                </Field>
+              </>
+            )}
+          />
+
+          {receivableRows.some((row) => row.name.trim() !== '' && row.amount.trim() !== '') && (
+            <StepTotals
+              lines={[
+                ...receivableRows
+                  .filter((row) => row.name.trim() !== '' && row.amount.trim() !== '')
+                  .map((row) => ({
+                    label: `${row.name}${row.expectedOn ? ` · ${row.expectedOn}` : ''}`,
+                    value: money(amountOf(row.amount)),
+                    indent: true,
+                  })),
+                {
+                  label: copy('receivables.totalLabel'),
+                  value: money(
+                    receivableRows.reduce((total, row) => total + amountOf(row.amount), 0),
+                  ),
+                  tone: 'strong' as const,
+                },
+              ]}
+              note={copy('receivables.totalNote')}
+            />
+          )}
+        </section>
+      )}
+
       {step === 'savings' && (
         <div className="flex flex-col gap-10">
           <RowEditor
             rows={accountRows}
             addLabel={copy('savings.add')}
+            itemLabel={copy('savings.name')}
+            summarize={(row: AccountRow) => ({
+              title: row.name,
+              detail: money(amountOf(row.balance)),
+            })}
             removeLabel={copy('remove')}
             addFirstLabel={copy('savings.addFirst')}
             emptyHint={copy('savings.empty')}
@@ -1134,6 +1375,16 @@ export function SetupQuestionnaire({
         <RowEditor
           rows={commitments}
           addLabel={copy('commitments.add')}
+          itemLabel={copy('commitments.name')}
+          summarize={(row: CommitmentRow) => ({
+            title: row.name,
+            detail: money(amountOf(row.amount)),
+            icon: (
+              <CategoryIcon
+                name={categories.find((one) => one.slug === row.categorySlug)?.icon ?? null}
+              />
+            ),
+          })}
           removeLabel={copy('remove')}
           addFirstLabel={copy('commitments.addFirst')}
           emptyHint={copy('commitments.empty')}
@@ -1494,6 +1745,7 @@ export function SetupQuestionnaire({
         <CommitmentsTotal
           rows={commitments}
           incomes={namedIncomes}
+          incomePerMonth={incomePerMonth}
           categories={categories}
           currencySymbol={currencySymbol}
           copy={copy}
@@ -1504,6 +1756,11 @@ export function SetupQuestionnaire({
         <RowEditor
           rows={debtRows}
           addLabel={copy('debts.add')}
+          itemLabel={copy('debts.name')}
+          summarize={(row: DebtRow) => ({
+            title: row.name,
+            detail: money(amountOf(row.balance)),
+          })}
           removeLabel={copy('remove')}
           addFirstLabel={copy('debts.addFirst')}
           emptyHint={copy('debts.empty')}
@@ -1624,6 +1881,11 @@ export function SetupQuestionnaire({
           <RowEditor
             rows={goalRows}
             addLabel={copy('goals.add')}
+            itemLabel={copy('goals.name')}
+            summarize={(row: GoalRow) => ({
+              title: row.name,
+              detail: money(amountOf(row.targetAmount)),
+            })}
             removeLabel={copy('remove')}
             addFirstLabel={copy('goals.addFirst')}
             emptyHint={copy('goals.empty')}
@@ -1861,6 +2123,8 @@ function RowEditor<T>({
   onAdd,
   onRemove,
   render,
+  summarize,
+  itemLabel,
 }: {
   readonly rows: readonly T[];
   readonly addLabel: string;
@@ -1872,6 +2136,20 @@ function RowEditor<T>({
   readonly onAdd: () => void;
   readonly onRemove: (index: number) => void;
   readonly render: (row: T, index: number) => ReactNode;
+  /**
+   * Cómo se llama y cuánto vale esta fila, para su encabezado.
+   *
+   * Sin esto, dos ítems seguidos son dos tiras de campos idénticas separadas
+   * por un filete de un píxel, y a partir del segundo nadie sabe dónde termina
+   * uno. El nombre que la persona escribió es el único título honesto que hay:
+   * mientras no escriba ninguno, la tarjeta se numera.
+   */
+  readonly summarize?: (
+    row: T,
+    index: number,
+  ) => { title: string; detail?: string; icon?: ReactNode };
+  /** «Cuenta», «Pago», «Deuda» — para numerar una tarjeta que todavía no tiene nombre. */
+  readonly itemLabel?: string;
 }) {
   return (
     <div className="flex flex-col gap-6">
@@ -1881,37 +2159,68 @@ function RowEditor<T>({
         </p>
       )}
 
-      {rows.map((row, index) => (
-        <div
-          // Rows are positional and have no identity of their own until they
-          // are saved; the index is the only stable handle there is.
-          key={index}
-          className="grid gap-4 border-t border-[color:var(--color-rule)] pt-6 first:border-t-0 first:pt-0 sm:grid-cols-2"
-        >
-          {render(row, index)}
-          {/*
-            Always offered, including on the last row.
-            It used to appear only from the second row on, which meant an
-            account added by mistake could not be taken back out: the way to
-            reach one row is to remove the other, and then the wrong one is the
-            only one left and it is stuck. Removing everything leaves the step
-            empty, which is a real answer — the same one «no tengo de esto»
-            gives — and the line above says what goes there.
-          */}
-          <div className="sm:col-span-2">
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                onRemove(index);
-              }}
-            >
-              {removeLabel}
-            </Button>
-          </div>
-        </div>
-      ))}
+      {rows.map((row, index) => {
+        const summary = summarize?.(row, index);
+        const title = summary?.title.trim()
+          ? summary.title
+          : `${itemLabel ?? ''} ${String(index + 1)}`.trim();
+
+        return (
+          <section
+            // Rows are positional and have no identity of their own until they
+            // are saved; the index is the only stable handle there is.
+            key={index}
+            /*
+              Una tarjeta y no un renglón.
+
+              El contorno, el fondo hundido del encabezado y el nombre del ítem
+              hacen el trabajo que un filete no puede hacer: decir dónde empieza
+              y dónde termina cada cosa. Con dos pagos seguidos de campos
+              idénticos, el filete se pierde y la pantalla se vuelve una sola
+              columna de formularios que cansa antes de la mitad.
+            */
+            className="overflow-hidden rounded-(--radius-md) border border-[color:var(--color-surface-border)] bg-[color:var(--color-surface)] shadow-(--shadow-card)"
+          >
+            <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-[color:var(--color-rule)] bg-[color:var(--color-ground-sunk)] px-4 py-3">
+              <h3 className="flex min-w-0 items-center gap-2 text-sm font-medium text-[color:var(--color-ink)]">
+                {summary?.icon}
+                <span className="truncate">{title}</span>
+              </h3>
+              {summary?.detail && (
+                <span className="tabular text-sm text-[color:var(--color-ink-secondary)]">
+                  {summary.detail}
+                </span>
+              )}
+            </header>
+
+            <div className="grid gap-4 p-4 sm:grid-cols-2">
+              {render(row, index)}
+              {/*
+                Always offered, including on the last row.
+                It used to appear only from the second row on, which meant an
+                account added by mistake could not be taken back out: the way to
+                reach one row is to remove the other, and then the wrong one is
+                the only one left and it is stuck. Removing everything leaves the
+                step empty, which is a real answer — the same one «no tengo de
+                esto» gives — and the line above says what goes there.
+              */}
+              <div className="sm:col-span-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  aria-label={`${removeLabel} — ${title}`}
+                  onClick={() => {
+                    onRemove(index);
+                  }}
+                >
+                  {removeLabel}
+                </Button>
+              </div>
+            </div>
+          </section>
+        );
+      })}
 
       <Button type="button" variant="secondary" size="sm" className="self-start" onClick={onAdd}>
         {rows.length === 0 ? addFirstLabel : addLabel}
@@ -2609,6 +2918,62 @@ function FortnightPicker({
 }
 
 /**
+ * Lo que se lleva sumado, al pie del paso.
+ *
+ * Un cuestionario que pide diez cifras y no enseña ninguna suma obliga a
+ * llevar la cuenta de cabeza, que es justo lo que la persona vino a dejar de
+ * hacer. Y la suma es la que delata el error de tipeo: un alquiler de $7.000
+ * no se ve raro en su casilla y sí se ve raro cuando el total del mes lo dice.
+ *
+ * Es un avance, no una promesa, y el texto lo dice: los pasos que faltan van a
+ * mover la cifra.
+ */
+function StepTotals({
+  lines,
+  note,
+}: {
+  readonly lines: readonly {
+    readonly label: string;
+    readonly value: string;
+    readonly tone?: 'muted' | 'strong' | 'negative';
+    readonly indent?: boolean;
+  }[];
+  readonly note?: string;
+}) {
+  if (lines.length === 0) return null;
+
+  return (
+    <aside className="mt-2 max-w-[46ch] rounded-(--radius-md) border border-[color:var(--color-surface-border)] bg-[color:var(--color-ground-sunk)] px-4 py-3 text-sm">
+      {lines.map((line) => (
+        <div
+          key={line.label}
+          className={[
+            'flex items-baseline justify-between gap-4 py-1',
+            line.tone === 'strong'
+              ? 'mt-1 border-t border-[color:var(--color-rule)] pt-2 text-base font-medium text-[color:var(--color-ink)]'
+              : 'text-[color:var(--color-ink-secondary)]',
+            line.indent === true ? 'pl-4' : '',
+          ].join(' ')}
+        >
+          <span className="min-w-0 truncate">{line.label}</span>
+          <span
+            className={[
+              'tabular shrink-0',
+              line.tone === 'negative' ? 'text-[color:var(--color-ink-secondary)]' : '',
+            ].join(' ')}
+          >
+            {line.value}
+          </span>
+        </div>
+      ))}
+      {note && (
+        <p className="mt-2 text-xs text-pretty text-[color:var(--color-ink-tertiary)]">{note}</p>
+      )}
+    </aside>
+  );
+}
+
+/**
  * Los rubros que casi todo el mundo usa, a un toque.
  *
  * Ocho de veintiocho cubren la mayoría de los pagos de una casa: el techo, la
@@ -2923,12 +3288,22 @@ const PAYMENTS_PER_YEAR: Record<Frequency, number> = {
 function CommitmentsTotal({
   rows,
   incomes,
+  incomePerMonth,
   categories,
   currencySymbol,
   copy,
 }: {
   readonly rows: readonly CommitmentRow[];
   readonly incomes: readonly { at: number; name: string }[];
+  /**
+   * Lo que entra al mes según lo contestado hasta aquí.
+   *
+   * Un total de compromisos sin nada contra qué compararlo no responde la
+   * única pregunta que la persona tiene en la cabeza mientras lo escribe. Cero
+   * cuando todavía no hay ingresos: entonces no se enseña la resta, porque
+   * «te queda −$950» no es una cifra, es una pantalla a medio contestar.
+   */
+  readonly incomePerMonth: number;
   readonly categories: readonly {
     readonly slug: string;
     readonly name: string;
@@ -3000,7 +3375,17 @@ function CommitmentsTotal({
       </p>
 
       <div className="mt-4 max-w-[46ch] text-sm text-[color:var(--color-ink-secondary)]">
-        {byCategory.map(([slug, value]) => line(nameOf(slug), money(value)))}
+        {byCategory.map(([slug, value]) => (
+          <div key={slug} className="flex items-baseline justify-between gap-4 py-1.5">
+            <span className="flex min-w-0 items-center gap-2">
+              <CategoryIcon
+                name={categories.find((category) => category.slug === slug)?.icon ?? null}
+              />
+              <span className="truncate">{nameOf(slug)}</span>
+            </span>
+            <span className="tabular shrink-0">{money(value)}</span>
+          </div>
+        ))}
 
         <div className="mt-2 flex items-baseline justify-between gap-4 border-t border-[color:var(--color-rule)] pt-3 text-base text-[color:var(--color-ink)]">
           <span className="font-medium">{copy('commitments.totalLabel')}</span>
@@ -3040,6 +3425,28 @@ function CommitmentsTotal({
           <p className="mt-3 text-xs text-[color:var(--color-ink-tertiary)]">
             {copy('commitments.totalFromSalaryNote')}
           </p>
+        )}
+
+        {/*
+          Y contra lo que entra, que es la pregunta de fondo.
+
+          Sumar los pagos responde «¿cuánto me reclaman?». Restarlos del sueldo
+          responde «¿me alcanza?», que es la que la persona tiene en la cabeza
+          mientras escribe el octavo. Solo cuando hay ingresos contestados: sin
+          ellos la resta daría un negativo que no describe a nadie.
+        */}
+        {incomePerMonth > 0 && (
+          <div className="mt-4 border-t border-[color:var(--color-rule)] pt-3">
+            {line(copy('commitments.totalIncome'), money(incomePerMonth))}
+            {line(copy('commitments.totalLabel'), `−${money(sum(counted))}`)}
+            <div className="mt-1 flex items-baseline justify-between gap-4 border-t border-[color:var(--color-rule)] pt-2 text-base text-[color:var(--color-ink)]">
+              <span className="font-medium">{copy('commitments.totalLeft')}</span>
+              <span className="tabular font-medium">{money(incomePerMonth - sum(counted))}</span>
+            </div>
+            <p className="mt-2 text-xs text-pretty text-[color:var(--color-ink-tertiary)]">
+              {copy('commitments.totalLeftNote')}
+            </p>
+          </div>
         )}
       </div>
     </section>

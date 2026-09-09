@@ -11,6 +11,7 @@ import {
   incomeDeductions,
   institutions,
   obligations,
+  receivables,
   recurringSeries,
 } from '@app/database/schema';
 import {
@@ -177,6 +178,31 @@ const setupInput = z.object({
       }),
     )
     .max(20),
+  /**
+   * Lo que la familia va a cobrar, y cuándo.
+   *
+   * No es un ingreso recurrente y no entra al plan como dinero disponible: se
+   * guarda para poder perseguirlo. La fecha puede faltar —«me deben 500 y no sé
+   * cuándo» es una respuesta verdadera— y obligar a inventar una la convertiría
+   * en un dato falso con aspecto de dato.
+   */
+  receivables: z
+    .array(
+      z.object({
+        id: z.uuid().optional(),
+        name: z.string().trim().min(1).max(120),
+        source: z.string().trim().max(120).optional(),
+        amount,
+        expectedOn: z
+          .string()
+          .trim()
+          .regex(/^\d{4}-\d{2}-\d{2}$/)
+          .optional(),
+        confidence: z.enum(['confirmed', 'estimated']).default('estimated'),
+      }),
+    )
+    .max(20)
+    .default([]),
   accounts: z
     .array(
       z.object({
@@ -690,6 +716,51 @@ export async function completeSetup(
             eq(recurringSeries.direction, 'inflow'),
             isNull(recurringSeries.deletedAt),
             notInArray(recurringSeries.id, survivors(keptIncomes)),
+          ),
+        );
+
+      /**
+       * Lo que está por cobrar.
+       *
+       * Se reescribe entero en cada envío, igual que el resto del cuestionario:
+       * el formulario es la declaración completa de lo que el hogar espera
+       * cobrar, y una lista que solo crece dejaría vivo lo que alguien acaba de
+       * borrar. Lo ya cobrado queda fuera de esta poda —tiene `received_on` y no
+       * es una promesa sino historia— pero el cuestionario tampoco lo muestra.
+       */
+      const keptReceivables: string[] = [];
+      for (const entry of answers.receivables) {
+        const values = {
+          name: entry.name,
+          source: entry.source ?? null,
+          amount: entry.amount,
+          currency,
+          expectedOn: entry.expectedOn ?? null,
+          confidence: entry.confidence,
+        };
+        if (entry.id) {
+          await tx
+            .update(receivables)
+            .set({ ...values, updatedAt: new Date() })
+            .where(and(eq(receivables.id, entry.id), eq(receivables.householdId, householdId)));
+          keptReceivables.push(entry.id);
+        } else {
+          const [created] = await tx
+            .insert(receivables)
+            .values({ householdId, ...values })
+            .returning({ id: receivables.id });
+          if (created) keptReceivables.push(created.id);
+        }
+      }
+      await tx
+        .update(receivables)
+        .set({ deletedAt: new Date() })
+        .where(
+          and(
+            eq(receivables.householdId, householdId),
+            isNull(receivables.deletedAt),
+            isNull(receivables.receivedOn),
+            notInArray(receivables.id, survivors(keptReceivables)),
           ),
         );
 

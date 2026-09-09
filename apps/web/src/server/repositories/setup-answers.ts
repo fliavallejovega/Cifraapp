@@ -13,6 +13,7 @@ import {
   marketPrices,
   obligations,
   profiles,
+  receivables,
   recurringSeries,
   setupDrafts,
 } from '@app/database/schema';
@@ -89,6 +90,7 @@ export async function loadSetupAnswers(
       bankRows,
       categoryRows,
       deductionRows,
+      receivableRows,
       draftRows,
     ] = await Promise.all([
       tx
@@ -255,6 +257,27 @@ export async function loadSetupAnswers(
         .from(incomeDeductions)
         .where(eq(incomeDeductions.householdId, householdId))
         .orderBy(asc(incomeDeductions.sortOrder)),
+      // Lo que está por cobrar, para que una segunda visita muestre la misma
+      // lista. Lo ya cobrado queda fuera: el cuestionario pregunta por lo que
+      // viene, no por lo que llegó.
+      tx
+        .select({
+          id: receivables.id,
+          name: receivables.name,
+          source: receivables.source,
+          amount: receivables.amount,
+          expectedOn: receivables.expectedOn,
+          confidence: receivables.confidence,
+        })
+        .from(receivables)
+        .where(
+          and(
+            eq(receivables.householdId, householdId),
+            isNull(receivables.deletedAt),
+            isNull(receivables.receivedOn),
+          ),
+        )
+        .orderBy(asc(receivables.expectedOn)),
       // Y lo que alguien dejó a medias, con su nombre: retomar el trabajo de
       // otra persona sin saber de quién es se parece demasiado a encontrarse
       // cifras que uno no escribió.
@@ -263,6 +286,7 @@ export async function loadSetupAnswers(
           answers: setupDrafts.answers,
           step: setupDrafts.step,
           by: profiles.displayName,
+          byId: setupDrafts.updatedBy,
         })
         .from(setupDrafts)
         .leftJoin(profiles, eq(profiles.id, setupDrafts.updatedBy))
@@ -395,8 +419,23 @@ export async function loadSetupAnswers(
         name: row.name,
         icon: row.icon,
       })),
+      receivables: receivableRows.map((row) => ({
+        id: row.id,
+        name: row.name,
+        source: row.source ?? '',
+        amount: trimAmount(row.amount),
+        expectedOn: row.expectedOn ?? '',
+        confidence: row.confidence,
+      })),
       draft: draftRows[0]
-        ? { answers: draftRows[0].answers, step: draftRows[0].step, by: draftRows[0].by }
+        ? {
+            answers: draftRows[0].answers,
+            step: draftRows[0].step,
+            // Nombrar a quien lo dejó solo cuando no es quien está mirando.
+            // «Seguimos donde lo dejó Javier Vallejo», dicho a Javier Vallejo,
+            // suena a que hubo alguien más metido en sus finanzas.
+            by: draftRows[0].byId === session.profile.id ? null : draftRows[0].by,
+          }
         : undefined,
     };
   });
