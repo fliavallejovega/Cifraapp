@@ -67,6 +67,19 @@ interface IncomeRow {
    */
   anchorFirst?: string | undefined;
   anchorSecond?: string | undefined;
+  /**
+   * Lo que dice la ficha antes de los descuentos, y las líneas copiadas de ella.
+   *
+   * `amount` sigue siendo lo que llega, siempre. Cuando alguien declara el
+   * bruto y las líneas, lo que llega es la resta: guardar las dos cifras a mano
+   * sería guardar una contradicción esperando a que alguien edite una sola.
+   *
+   * Ninguna tasa oficial se aplica aquí. Son cifras que alguien leyó de su
+   * propio recibo — el producto hace la resta y no afirma nada sobre lo que la
+   * ley dice que deberían ser.
+   */
+  grossAmount?: string | undefined;
+  deductions?: readonly { label: string; amount: string }[] | undefined;
 }
 interface AccountRow {
   id?: string;
@@ -259,7 +272,16 @@ export function SetupQuestionnaire({
   const [bufferMinimum, setBufferMinimum] = useState(initial?.bufferMinimum ?? '');
 
   const [incomes, setIncomes] = useState<IncomeRow[]>(
-    start(initial?.incomes, { name: '', amount: '', frequency: 'monthly', isApproximate: false }),
+    // El monto se deriva del bruto menos los descuentos en cuanto los dos
+    // existen, también al cargar. Sin esto, una fila guardada mostraba «Monto
+    // $1.400» arriba y «Te llega $1.200» abajo: dos cifras en la misma pantalla
+    // contradiciéndose, que es peor que cualquiera de las dos sola.
+    start(initial?.incomes, {
+      name: '',
+      amount: '',
+      frequency: 'monthly',
+      isApproximate: false,
+    }).map((row) => ({ ...row, amount: arrivingAmount(row) })),
   );
   const [accountRows, setAccountRows] = useState<AccountRow[]>(
     start(initial?.accounts, {
@@ -399,7 +421,17 @@ export function SetupQuestionnaire({
     bufferMinimum: bufferMinimum.trim(),
     incomes: incomes
       .filter((row) => row.name.trim() !== '' && row.amount.trim() !== '')
-      .map((row) => ({ ...row, anchorDays: anchorDaysOf(row) })),
+      .map((row) => ({
+        ...row,
+        amount: arrivingAmount(row),
+        anchorDays: anchorDaysOf(row),
+        // Solo las líneas escritas enteras. Una etiqueta sin monto o un monto
+        // sin etiqueta no es una deducción, es una fila a medio llenar, y
+        // restarla del bruto sería restar una suposición.
+        deductions: (row.deductions ?? []).filter(
+          (line) => line.label.trim() !== '' && line.amount.trim() !== '',
+        ),
+      })),
     accounts: accountRows.filter((row) => row.name.trim() !== '' && row.balance.trim() !== ''),
     // A deduction points at an income by position, and the income step is
     // still editable — somebody can go back and blank the salary a commitment
@@ -650,6 +682,15 @@ export function SetupQuestionnaire({
                   </Field>
                 </>
               )}
+
+              <IncomeDeductions
+                row={row}
+                currencySymbol={currencySymbol}
+                copy={copy}
+                onChange={(change) => {
+                  setIncomes(patch(incomes, at, change));
+                }}
+              />
 
               <Check
                 label={copy('income.approximate')}
@@ -1670,6 +1711,176 @@ function Check({
         <span className="mt-0.5 block text-xs text-[color:var(--color-ink-secondary)]">{hint}</span>
       </span>
     </label>
+  );
+}
+
+/**
+ * Lo que de verdad llega de un ingreso.
+ *
+ * El bruto menos lo que la persona copió de su ficha, cuando declaró las dos
+ * cosas; el monto tal cual cuando no. Nunca negativo: unos descuentos mayores
+ * que el bruto son un error de tipeo, y «te llega −$200» no es una cifra que
+ * nadie pueda usar.
+ */
+function arrivingAmount(row: {
+  amount: string;
+  grossAmount?: string | undefined;
+  deductions?: readonly { label: string; amount: string }[] | undefined;
+}): string {
+  const asNumber = (value: string) => Number((value ?? '').replace(/[^\d.]/g, '')) || 0;
+  const lines = row.deductions ?? [];
+  if (!row.grossAmount || lines.length === 0) return row.amount;
+  const taken = lines.reduce((total, line) => total + asNumber(line.amount), 0);
+  return Math.max(asNumber(row.grossAmount) - taken, 0).toFixed(2);
+}
+
+/**
+ * Lo que te descuentan antes de que el sueldo llegue, copiado de tu ficha.
+ *
+ * Un asalariado en Panamá no cobra lo que dice su contrato: entre el bruto y lo
+ * que entra a la cuenta hay seguro social, seguro educativo y retención de
+ * renta. Preguntar solo «cuánto entra» es correcto para planear e inútil para
+ * entender — un hogar que ve $1.000 no puede cuadrarlo con un contrato de
+ * $1.400 ni saber a dónde se fueron los $400.
+ *
+ * **Los montos los pone la persona, leídos de su propio recibo.** No hay tasas
+ * oficiales aquí, y su ausencia es deliberada: este repositorio ya tiene dónde
+ * viven —con vigencia, fuente y revisor— y ya tiene la puerta que impide
+ * mostrar una cifra fiscal que nadie calificado revisó. Calcular un 9,75% aquí
+ * porque suena correcto sería saltarse esa puerta por detrás.
+ *
+ * Las etiquetas son texto libre a propósito. Una ficha dice «S.S.», otra «Caja
+ * de Seguro Social», y una tercera trae una línea que ninguna lista nuestra
+ * habría previsto; obligar a elegir de un menú es obligar a traducir, y la
+ * traducción es donde se pierde el dato.
+ */
+function IncomeDeductions({
+  row,
+  onChange,
+  currencySymbol,
+  copy,
+}: {
+  readonly row: IncomeRow;
+  readonly onChange: (change: Partial<IncomeRow>) => void;
+  readonly currencySymbol: string;
+  readonly copy: (key: string) => string;
+}) {
+  const lines = row.deductions ?? [];
+  const asNumber = (value: string) => Number((value ?? '').replace(/[^\d.]/g, '')) || 0;
+
+  const gross = asNumber(row.grossAmount ?? '');
+  const taken = lines.reduce((total, line) => total + asNumber(line.amount), 0);
+  const arrives = Math.max(gross - taken, 0);
+
+  const money = (value: number) =>
+    `${currencySymbol}${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  const setLines = (next: readonly { label: string; amount: string }[]) => {
+    // El monto que el resto del sistema lee se recalcula aquí y no se escribe a
+    // mano: dos cifras editables que deben coincidir divergen el día que
+    // alguien corrige una sola.
+    const total = next.reduce((sum, line) => sum + asNumber(line.amount), 0);
+    const net = Math.max(asNumber(row.grossAmount ?? '') - total, 0);
+    onChange({ deductions: next, ...(next.length > 0 ? { amount: net.toFixed(2) } : {}) });
+  };
+
+  return (
+    <div className="sm:col-span-2">
+      <div className="flex flex-col gap-4 border-l border-[color:var(--color-rule)] pl-4">
+        <p className="text-sm text-pretty text-[color:var(--color-ink-secondary)]">
+          {copy('income.deductionsDetail')}
+        </p>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <MoneyField
+            label={copy('income.gross')}
+            hint={copy('income.grossHint')}
+            symbol={currencySymbol}
+            value={row.grossAmount ?? ''}
+            onChange={(value) => {
+              const total = lines.reduce((sum, line) => sum + asNumber(line.amount), 0);
+              const net = Math.max(asNumber(value) - total, 0);
+              onChange({
+                grossAmount: value,
+                ...(lines.length > 0 ? { amount: net.toFixed(2) } : {}),
+              });
+            }}
+          />
+        </div>
+
+        {lines.map((line, at) => (
+          <div key={at} className="grid gap-4 sm:grid-cols-2">
+            <Field label={copy('income.deductionLabel')}>
+              {({ id }) => (
+                <Input
+                  id={id}
+                  value={line.label}
+                  placeholder={copy('income.deductionPlaceholder')}
+                  onChange={(event) => {
+                    setLines(
+                      lines.map((one, position) =>
+                        position === at ? { ...one, label: event.target.value } : one,
+                      ),
+                    );
+                  }}
+                />
+              )}
+            </Field>
+            <MoneyField
+              label={copy('income.deductionAmount')}
+              symbol={currencySymbol}
+              value={line.amount}
+              onChange={(value) => {
+                setLines(
+                  lines.map((one, position) => (position === at ? { ...one, amount: value } : one)),
+                );
+              }}
+            />
+            <div className="sm:col-span-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setLines(lines.filter((_, position) => position !== at));
+                }}
+              >
+                {copy('remove')}
+              </Button>
+            </div>
+          </div>
+        ))}
+
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          className="self-start"
+          onClick={() => {
+            setLines([...lines, { label: '', amount: '' }]);
+          }}
+        >
+          {lines.length === 0 ? copy('income.addFirstDeduction') : copy('income.addDeduction')}
+        </Button>
+
+        {lines.length > 0 && gross > 0 && (
+          <div className="max-w-[46ch] border-t border-[color:var(--color-rule)] pt-3 text-sm text-[color:var(--color-ink-secondary)]">
+            <div className="flex items-baseline justify-between gap-4 py-1">
+              <span>{copy('income.grossLine')}</span>
+              <span className="tabular">{money(gross)}</span>
+            </div>
+            <div className="flex items-baseline justify-between gap-4 py-1">
+              <span>{copy('income.deductedLine').replace('{count}', String(lines.length))}</span>
+              <span className="tabular">−{money(taken)}</span>
+            </div>
+            <div className="mt-1 flex items-baseline justify-between gap-4 border-t border-[color:var(--color-rule)] pt-2 text-base text-[color:var(--color-ink)]">
+              <span className="font-medium">{copy('income.netLine')}</span>
+              <span className="tabular font-medium">{money(arrives)}</span>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 

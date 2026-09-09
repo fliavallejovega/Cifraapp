@@ -8,11 +8,19 @@ import {
   householdPeople,
   householdSettings,
   households,
+  incomeDeductions,
   institutions,
   obligations,
   recurringSeries,
 } from '@app/database/schema';
-import { addMonths, plainDateFromParts, todayIn, type PlainDate } from '@app/domain';
+import {
+  addMonths,
+  Money,
+  plainDateFromParts,
+  todayIn,
+  type CurrencyCode,
+  type PlainDate,
+} from '@app/domain';
 import { HOLDING_KINDS } from '@app/market-data';
 import { and, eq, isNull, ne, notInArray, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
@@ -127,6 +135,23 @@ const setupInput = z.object({
         // "About 2,400 in a good month" and "2,400 on the 15th" are different
         // claims, and a plan built on the first should not pretend otherwise.
         isApproximate: z.boolean(),
+        /**
+         * Lo que dice la ficha antes de los descuentos, y las líneas que el
+         * hogar copió de ella.
+         *
+         * `amount` sigue siendo lo que llega, siempre: todo el sistema lo lee
+         * como efectivo. El bruto y las líneas están para poder reconciliar —
+         * un hogar que ve «$1.000» no puede cuadrarlo con un contrato que dice
+         * $1.400 si no tiene los dos números y lo del medio delante.
+         *
+         * Ninguna tasa oficial entra por aquí. Son cifras que alguien leyó de
+         * su propio recibo.
+         */
+        grossAmount: optionalAmount,
+        deductions: z
+          .array(z.object({ label: z.string().trim().min(1).max(80), amount }))
+          .max(8)
+          .default([]),
       }),
     )
     .max(20),
@@ -337,7 +362,7 @@ export async function completeSetup(
         .where(eq(households.id, householdId))
         .limit(1);
 
-      const currency = household?.currency.trim() ?? 'USD';
+      const currency = (household?.currency.trim() ?? 'USD') as CurrencyCode;
       const today = todayIn(household?.timeZone ?? 'America/Panama');
 
       // One transaction for all of it. A setup that created the accounts and
@@ -487,9 +512,22 @@ export async function completeSetup(
             ? [...new Set(entry.anchorDays)].sort((a, b) => a - b)
             : null;
 
+        // Lo que llega es lo que el plan usa, siempre. Cuando el hogar declaró
+        // el bruto y las líneas, lo que llega es la resta — guardar el bruto en
+        // su lugar haría que cada quincena prometiera dinero que nunca entró.
+        const deducted = entry.deductions.reduce(
+          (total, line) => total.subtract(Money.fromDecimalString(line.amount, currency)),
+          Money.fromDecimalString(entry.grossAmount ?? entry.amount, currency),
+        );
+        const arrives =
+          entry.grossAmount !== undefined && entry.deductions.length > 0
+            ? (deducted.isNegative() ? Money.zero(currency) : deducted).toDecimalString()
+            : entry.amount;
+
         const values = {
           name: entry.name,
-          expectedAmount: entry.amount,
+          expectedAmount: arrives,
+          grossAmount: entry.grossAmount ?? null,
           frequency: entry.frequency,
           // Explicitly null outside `semimonthly`, so switching a salary from
           // «quincenal» to «mensual» on a second pass does not leave two
@@ -528,6 +566,32 @@ export async function completeSetup(
             })
             .returning({ id: recurringSeries.id });
           if (created) keptIncomes.push(created.id);
+        }
+
+        /**
+         * Las líneas del recibo, reemplazadas enteras.
+         *
+         * Borrar y reinsertar en vez de conciliar fila por fila, porque una
+         * ficha de pago se lee como un bloque: quien vuelve a este paso está
+         * copiando su recibo otra vez, no editando la tercera línea. Conciliar
+         * dejaría atrás una línea que la empresa quitó, y una deducción
+         * fantasma resta de un neto que nadie puede cuadrar.
+         */
+        const seriesId = keptIncomes[keptIncomes.length - 1];
+        if (seriesId) {
+          await tx.delete(incomeDeductions).where(eq(incomeDeductions.seriesId, seriesId));
+          if (entry.deductions.length > 0) {
+            await tx.insert(incomeDeductions).values(
+              entry.deductions.map((line, order) => ({
+                householdId,
+                seriesId,
+                label: line.label,
+                amount: line.amount,
+                currency,
+                sortOrder: order,
+              })),
+            );
+          }
         }
       }
       // Only the household's stated income is in scope here. An outflow series

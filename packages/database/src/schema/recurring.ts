@@ -75,6 +75,16 @@ export const recurringSeries = appSchema.table(
       .default('USD')
       .references(() => currencies.code),
 
+    /**
+     * What the payslip says before deductions, when the household stated it.
+     *
+     * `expectedAmount` above always stays what actually arrives, because every
+     * plan, period and projection reads it as cash. This one is for
+     * reconciling: a household that sees «$1,000» cannot square it with a
+     * contract that says $1,400 unless both figures are on the screen.
+     */
+    grossAmount: numeric('gross_amount', { precision: 19, scale: 4, mode: 'string' }),
+
     frequency: recurrenceFrequency('frequency').notNull(),
     /** Calendar days a semimonthly series lands on; 31 means month end. */
     anchorDays: smallint('anchor_days').array(),
@@ -110,3 +120,36 @@ export const recurringSeriesRelations = relations(recurringSeries, ({ one }) => 
   category: one(categories, { fields: [recurringSeries.categoryId], references: [categories.id] }),
   account: one(accounts, { fields: [recurringSeries.accountId], references: [accounts.id] }),
 }));
+
+/**
+ * What is taken out of an income before it arrives, as the household reads it
+ * off their own payslip.
+ *
+ * Deliberately not a rate table. Panama's contribution and withholding rates
+ * live —or will live— in `platform.tax_rules`, versioned, sourced, and behind a
+ * gate that refuses to show a household any figure nobody qualified has
+ * reviewed. These rows are the other thing entirely: amounts a person copied
+ * from a piece of paper. The product does arithmetic on them and asserts
+ * nothing about what the law says they should be.
+ */
+export const incomeDeductions = appSchema.table(
+  'income_deductions',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .default(sql`public.uuid_generate_v7()`),
+    householdId: uuid('household_id').notNull(),
+    seriesId: uuid('series_id')
+      .notNull()
+      .references(() => recurringSeries.id, { onDelete: 'cascade' }),
+    /** As the payslip words it — «S.S.», «Caja de Seguro Social», «ISR». */
+    label: text('label').notNull(),
+    amount: numeric('amount', { precision: 19, scale: 4, mode: 'string' }).notNull(),
+    currency: char('currency', { length: 3 }).notNull().default('USD'),
+    /** The order they appear on the payslip, so the screen reads like the paper. */
+    sortOrder: smallint('sort_order').notNull().default(0),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index('income_deductions_series_idx').on(table.seriesId, table.sortOrder)],
+);

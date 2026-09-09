@@ -8,6 +8,7 @@ import {
   holdings,
   householdPeople,
   householdSettings,
+  incomeDeductions,
   institutions,
   marketPrices,
   obligations,
@@ -73,6 +74,7 @@ export async function loadSetupAnswers(
       goalRows,
       bankRows,
       categoryRows,
+      deductionRows,
     ] = await Promise.all([
       tx
         .select({
@@ -125,6 +127,7 @@ export async function loadSetupAnswers(
           amount: recurringSeries.expectedAmount,
           frequency: recurringSeries.frequency,
           anchorDays: recurringSeries.anchorDays,
+          grossAmount: recurringSeries.grossAmount,
           variation: recurringSeries.amountVariation,
         })
         .from(recurringSeries)
@@ -224,6 +227,17 @@ export async function loadSetupAnswers(
           ),
         )
         .orderBy(asc(categories.sortOrder)),
+      // Las líneas del recibo, para que una segunda visita muestre el mismo
+      // desglose que se copió la primera vez en vez de un bruto sin explicar.
+      tx
+        .select({
+          seriesId: incomeDeductions.seriesId,
+          label: incomeDeductions.label,
+          amount: incomeDeductions.amount,
+        })
+        .from(incomeDeductions)
+        .where(eq(incomeDeductions.householdId, householdId))
+        .orderBy(asc(incomeDeductions.sortOrder)),
     ]);
 
     return {
@@ -254,6 +268,10 @@ export async function loadSetupAnswers(
         // pair of boxes that would silently become an approximation on save.
         anchorFirst: row.anchorDays?.[0] === undefined ? '' : String(row.anchorDays[0]),
         anchorSecond: row.anchorDays?.[1] === undefined ? '' : String(row.anchorDays[1]),
+        grossAmount: row.grossAmount ? trimAmount(row.grossAmount) : '',
+        deductions: deductionRows
+          .filter((line) => line.seriesId === row.id)
+          .map((line) => ({ label: line.label, amount: trimAmount(line.amount) })),
       })),
       commitments: commitmentRows.map((row) => ({
         id: row.id,
