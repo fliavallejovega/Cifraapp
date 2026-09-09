@@ -30,7 +30,19 @@ import { completeSetup, type SetupResult } from '@/server/onboarding-actions';
  * counts down, expires, or claims anybody else is watching.
  */
 
-type Frequency = 'weekly' | 'biweekly' | 'semimonthly' | 'monthly' | 'quarterly' | 'annual';
+type Frequency =
+  'daily' | 'weekly' | 'biweekly' | 'semimonthly' | 'monthly' | 'quarterly' | 'annual';
+
+/** Offered in this order, commonest first. */
+const FREQUENCIES: readonly Frequency[] = [
+  'monthly',
+  'semimonthly',
+  'biweekly',
+  'weekly',
+  'daily',
+  'quarterly',
+  'annual',
+];
 
 interface PersonRow {
   id?: string;
@@ -45,6 +57,16 @@ interface IncomeRow {
   amount: string;
   frequency: Frequency;
   isApproximate: boolean;
+  /**
+   * The two days of the month a twice-monthly income lands on.
+   *
+   * «Quincenal» is not one cadence: the 15th and the 30th, the 5th and the
+   * 20th, and the 1st and the 16th are three different calendars, and which one
+   * a household is on decides which fortnight carries the rent. Asking is the
+   * only way to know, and it is two number fields.
+   */
+  anchorFirst?: string | undefined;
+  anchorSecond?: string | undefined;
 }
 interface AccountRow {
   id?: string;
@@ -100,6 +122,17 @@ interface CommitmentRow {
   lateFeeKind?: 'none' | 'amount' | 'rate';
   lateFee?: string;
   lateFeeAfterDays?: string;
+  /**
+   * How often it is paid, and on which days when it is twice a month.
+   *
+   * A monthly payment on the 5th already exists in one fortnight and not the
+   * other — that falls out of the date alone. What could not be said before is
+   * everything else: a fee charged weekly, a loan taken twice a month, a quota
+   * that lands on the 15th *and* the 30th.
+   */
+  frequency?: Frequency | undefined;
+  anchorFirst?: string | undefined;
+  anchorSecond?: string | undefined;
 }
 interface DebtRow {
   id?: string;
@@ -243,6 +276,7 @@ export function SetupQuestionnaire({
       amount: '',
       dueDay: '1',
       isEssential: true,
+      frequency: 'monthly',
       lateFeeKind: 'none',
       lateFee: '',
       lateFeeAfterDays: '',
@@ -250,6 +284,7 @@ export function SetupQuestionnaire({
       lateFeeKind: 'none' as const,
       lateFee: '',
       lateFeeAfterDays: '',
+      frequency: 'monthly' as const,
       ...row,
     })),
   );
@@ -345,7 +380,9 @@ export function SetupQuestionnaire({
     memberCount: String(Math.max(1, namedPeople.length)),
     dependentCount: String(namedPeople.filter((row) => row.isDependent).length),
     bufferMinimum: bufferMinimum.trim(),
-    incomes: incomes.filter((row) => row.name.trim() !== '' && row.amount.trim() !== ''),
+    incomes: incomes
+      .filter((row) => row.name.trim() !== '' && row.amount.trim() !== '')
+      .map((row) => ({ ...row, anchorDays: anchorDaysOf(row) })),
     accounts: accountRows.filter((row) => row.name.trim() !== '' && row.balance.trim() !== ''),
     // A deduction points at an income by position, and the income step is
     // still editable — somebody can go back and blank the salary a commitment
@@ -354,12 +391,13 @@ export function SetupQuestionnaire({
     // deduction from whoever now sits in that slot.
     commitments: commitments
       .filter((row) => row.name.trim() !== '' && row.amount.trim() !== '')
-      .map((row) =>
-        row.deductedFromIncome !== undefined &&
+      .map((row) => ({
+        ...(row.deductedFromIncome !== undefined &&
         namedIncomes.some((income) => income.at === row.deductedFromIncome)
           ? row
-          : { ...row, deductedFromIncome: undefined },
-      ),
+          : { ...row, deductedFromIncome: undefined }),
+        anchorDays: anchorDaysOf(row),
+      })),
     debts: debtRows.filter(
       (row) =>
         row.name.trim() !== '' &&
@@ -552,16 +590,7 @@ export function SetupQuestionnaire({
                       );
                     }}
                   >
-                    {(
-                      [
-                        'weekly',
-                        'biweekly',
-                        'semimonthly',
-                        'monthly',
-                        'quarterly',
-                        'annual',
-                      ] as const
-                    ).map((value) => (
+                    {FREQUENCIES.map((value) => (
                       <option key={value} value={value}>
                         {copy(`frequency.${value}`)}
                       </option>
@@ -569,6 +598,41 @@ export function SetupQuestionnaire({
                   </Select>
                 )}
               </Field>
+              {row.frequency === 'semimonthly' && (
+                <>
+                  <Field label={copy('income.firstDay')} hint={copy('income.daysHint')}>
+                    {({ id, describedBy }) => (
+                      <Input
+                        id={id}
+                        numeric
+                        inputMode="numeric"
+                        placeholder="15"
+                        value={row.anchorFirst ?? ''}
+                        aria-describedby={describedBy}
+                        onChange={(event) => {
+                          setIncomes(patch(incomes, at, { anchorFirst: event.target.value }));
+                        }}
+                      />
+                    )}
+                  </Field>
+                  <Field label={copy('income.secondDay')} hint={copy('income.lastDayHint')}>
+                    {({ id, describedBy }) => (
+                      <Input
+                        id={id}
+                        numeric
+                        inputMode="numeric"
+                        placeholder="30"
+                        value={row.anchorSecond ?? ''}
+                        aria-describedby={describedBy}
+                        onChange={(event) => {
+                          setIncomes(patch(incomes, at, { anchorSecond: event.target.value }));
+                        }}
+                      />
+                    )}
+                  </Field>
+                </>
+              )}
+
               <Check
                 label={copy('income.approximate')}
                 hint={copy('income.approximateHint')}
@@ -738,6 +802,7 @@ export function SetupQuestionnaire({
                 amount: '',
                 dueDay: '1',
                 isEssential: true,
+                frequency: 'monthly',
                 lateFeeKind: 'none',
                 lateFee: '',
                 lateFeeAfterDays: '',
@@ -818,6 +883,69 @@ export function SetupQuestionnaire({
                     </Select>
                   )}
                 </Field>
+              )}
+
+              <Field label={copy('commitments.frequency')} hint={copy('commitments.frequencyHint')}>
+                {({ id, describedBy }) => (
+                  <Select
+                    id={id}
+                    aria-describedby={describedBy}
+                    value={row.frequency ?? 'monthly'}
+                    onChange={(event) => {
+                      setCommitments(
+                        patch(commitments, at, { frequency: event.target.value as Frequency }),
+                      );
+                    }}
+                  >
+                    {FREQUENCIES.map((value) => (
+                      <option key={value} value={value}>
+                        {copy(`frequency.${value}`)}
+                      </option>
+                    ))}
+                  </Select>
+                )}
+              </Field>
+
+              {row.frequency === 'semimonthly' && (
+                <>
+                  <Field label={copy('commitments.firstDay')} hint={copy('commitments.daysHint')}>
+                    {({ id, describedBy }) => (
+                      <Input
+                        id={id}
+                        numeric
+                        inputMode="numeric"
+                        placeholder="15"
+                        value={row.anchorFirst ?? ''}
+                        aria-describedby={describedBy}
+                        onChange={(event) => {
+                          setCommitments(
+                            patch(commitments, at, { anchorFirst: event.target.value }),
+                          );
+                        }}
+                      />
+                    )}
+                  </Field>
+                  <Field
+                    label={copy('commitments.secondDay')}
+                    hint={copy('commitments.lastDayHint')}
+                  >
+                    {({ id, describedBy }) => (
+                      <Input
+                        id={id}
+                        numeric
+                        inputMode="numeric"
+                        placeholder="30"
+                        value={row.anchorSecond ?? ''}
+                        aria-describedby={describedBy}
+                        onChange={(event) => {
+                          setCommitments(
+                            patch(commitments, at, { anchorSecond: event.target.value }),
+                          );
+                        }}
+                      />
+                    )}
+                  </Field>
+                </>
               )}
 
               <Field
@@ -1389,6 +1517,27 @@ function MoneyField({
       )}
     </Field>
   );
+}
+
+/**
+ * The two typed day fields, as the list of anchor days the server stores.
+ *
+ * Only for `semimonthly`, and only the days that were actually filled in: a
+ * salary marked twice-monthly with one day answered is still better described
+ * by that one day than by an invented second one. Everything else sends
+ * nothing, and nothing means «step the generic cadence», which is honest about
+ * being an approximation.
+ */
+function anchorDaysOf(row: {
+  frequency?: Frequency | undefined;
+  anchorFirst?: string | undefined;
+  anchorSecond?: string | undefined;
+}): number[] | undefined {
+  if (row.frequency !== 'semimonthly') return undefined;
+  const days = [row.anchorFirst, row.anchorSecond]
+    .map((value) => Number((value ?? '').trim()))
+    .filter((day) => Number.isInteger(day) && day >= 1 && day <= 31);
+  return days.length > 0 ? [...new Set(days)].sort((a, b) => a - b) : undefined;
 }
 
 function patch<T>(rows: readonly T[], index: number, change: Partial<T>): T[] {

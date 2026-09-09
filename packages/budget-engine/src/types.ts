@@ -9,7 +9,15 @@ import type { Money, PlainDate } from '@app/domain';
  * the engine predict a 27th paycheck that never arrives, and a cash-flow
  * forecast built on a phantom paycheck is worse than no forecast.
  */
-export type Frequency = 'weekly' | 'biweekly' | 'semimonthly' | 'monthly' | 'quarterly' | 'annual';
+/**
+ * How often something repeats.
+ *
+ * `daily` is here because plenty of work is paid that way — a market stall, a
+ * driver, piecework — and a product that only understands salaries paid monthly
+ * tells those households nothing about the week they are actually living in.
+ */
+export type Frequency =
+  'daily' | 'weekly' | 'biweekly' | 'semimonthly' | 'monthly' | 'quarterly' | 'annual';
 
 /** One dated movement, as the recurrence and forecast passes need to see it. */
 export interface Occurrence {

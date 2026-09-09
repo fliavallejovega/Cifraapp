@@ -20,6 +20,7 @@ import {
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { Link } from '@/i18n/navigation';
+import { PeriodStrip } from '@/components/period-strip';
 import { explainPlan } from '@/server/repositories/copilot';
 import { loadPlan } from '@/server/repositories/plan';
 import { requireHousehold } from '@/server/session';
@@ -119,6 +120,10 @@ export default async function PlanPage({ params }: { params: Promise<{ locale: s
         />
       ) : (
         <>
+          {view.periods.length > 0 && (
+            <PeriodStrip periods={view.periods} locale={locale} moneyLocale={moneyLocale} t={t} />
+          )}
+
           <section aria-labelledby="safe-heading">
             <h2 id="safe-heading" className="sr-only">
               {t('safeToSpend.title')}

@@ -517,7 +517,18 @@
       }
     },
     "scopeNote": "El plan se calcula con las cuentas, obligaciones, deudas y metas que tienes registradas hoy. La reserva fiscal es una estimación a partir de la tasa que configuraste, no un cálculo del impuesto que debes.",
-    "historyLink": "Aceptar y seguir este plan"
+    "historyLink": "Aceptar y seguir este plan",
+    "periods": {
+      "title": "Tus quincenas",
+      "detail": "El plan ya no reparte por mes: reparte por el período en que de verdad cobras. Por eso la del 15 y la del 30 no dan lo mismo.",
+      "now": "Ahora mismo",
+      "range": "Del {from} al {to}",
+      "available": "Puedes sacar en este período",
+      "income": "Entra",
+      "committed": "Ya comprometido ({count})",
+      "reserved": "Guardado para el período siguiente",
+      "shortfall": "Faltan {amount} para cubrir este período."
+    }
   },
   "reports": {
     "title": "Estados",
@@ -921,7 +932,11 @@
       "add": "Agregar otro ingreso",
       "next": "Continuar a lo que ya tienes",
       "empty": "Ningún ingreso cargado. Agrega el primero —un sueldo, honorarios, un alquiler que cobras— o sáltate el paso si ahora mismo no entra nada.",
-      "addFirst": "Agregar el primer ingreso"
+      "addFirst": "Agregar el primer ingreso",
+      "firstDay": "Primer día de cobro",
+      "secondDay": "Segundo día de cobro",
+      "daysHint": "El día del mes. Quincenal no es una sola cosa: el 15 y el 30 no es lo mismo que el 5 y el 20, y de eso depende cuál quincena te queda apretada.",
+      "lastDayHint": "Si cobras el último día del mes, pon 31: lo ajustamos a los meses de 30 y a febrero."
     },
     "savings": {
       "title": "¿Qué tienes hoy?",
@@ -972,7 +987,13 @@
       "lateFeeHowMuchRate": "Qué porcentaje",
       "lateFeeAfter": "¿A los cuántos días?",
       "lateFeeAfterHint": "Días después del vencimiento antes de que apliquen el recargo. Si cobran desde el primer día, pon 0.",
-      "addFirst": "Agregar el primer pago"
+      "addFirst": "Agregar el primer pago",
+      "frequency": "¿Cada cuánto se paga?",
+      "frequencyHint": "Si es mensual, con el día del mes basta. Ponlo quincenal solo si de verdad se paga dos veces al mes.",
+      "firstDay": "Primer día",
+      "secondDay": "Segundo día",
+      "daysHint": "El día del mes en que cae la primera.",
+      "lastDayHint": "Si cae el último día del mes, pon 31."
     },
     "debts": {
       "title": "¿Debes algo?",
@@ -1010,6 +1031,7 @@
       "addFirst": "Agregar la primera meta"
     },
     "frequency": {
+      "daily": "Todos los días",
       "weekly": "Cada semana",
       "biweekly": "Cada dos semanas",
       "semimonthly": "Quincenal",

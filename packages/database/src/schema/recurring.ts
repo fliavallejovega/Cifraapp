@@ -34,6 +34,10 @@ import { currencies } from './platform.js';
  */
 
 export const recurrenceFrequency = pgEnum('recurrence_frequency', [
+  // Plenty of work is paid by the day — a stall, a driver, piecework — and a
+  // product that only understands monthly salaries has nothing to say to those
+  // households about the week they are actually living through.
+  'daily',
   'weekly',
   'biweekly',
   'semimonthly',

@@ -20,7 +20,18 @@ export {
 } from './forecast.js';
 
 export {
+  buildPayPeriods,
+  PAY_PERIOD_HORIZON_DAYS,
+  periodContaining,
+  type IncomeStream,
+  type PayPeriod,
+  type PayPeriodInput,
+  type PeriodClaim,
+} from './pay-period.js';
+
+export {
   advanceToOrAfter,
+  nextOccurrence,
   detectRecurrence,
   MIN_OCCURRENCES,
   RECURRING_CONFIDENCE_FLOOR,

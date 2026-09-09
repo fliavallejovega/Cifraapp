@@ -517,7 +517,18 @@
       }
     },
     "scopeNote": "The plan is computed from the accounts, obligations, debts and goals you have recorded today. The tax reserve is an estimate from the rate you configured, not a calculation of tax owed.",
-    "historyLink": "Accept and track this plan"
+    "historyLink": "Accept and track this plan",
+    "periods": {
+      "title": "Your pay periods",
+      "detail": "The plan no longer divides by month: it divides by the period you are actually paid in. That is why the 15th and the 30th are not the same.",
+      "now": "Right now",
+      "range": "{from} to {to}",
+      "available": "You can spend this period",
+      "income": "Coming in",
+      "committed": "Already committed ({count})",
+      "reserved": "Held back for the next period",
+      "shortfall": "{amount} short of covering this period."
+    }
   },
   "reports": {
     "title": "Statements",
@@ -921,7 +932,11 @@
       "add": "Add another income",
       "next": "Continue to what you hold",
       "empty": "No income yet. Add the first one — a salary, fees, rent you collect — or skip this step if nothing is coming in right now.",
-      "addFirst": "Add the first income"
+      "addFirst": "Add the first income",
+      "firstDay": "First payday",
+      "secondDay": "Second payday",
+      "daysHint": "The day of the month. Twice-monthly is not one thing: the 15th and the 30th is not the 5th and the 20th, and which one you are on decides which fortnight is tight.",
+      "lastDayHint": "If you are paid on the last day of the month, put 31: we clamp it for 30-day months and February."
     },
     "savings": {
       "title": "What do you have today?",
@@ -972,7 +987,13 @@
       "lateFeeHowMuchRate": "What percentage",
       "lateFeeAfter": "After how many days?",
       "lateFeeAfterHint": "Days after the due date before the charge applies. If they charge from day one, put 0.",
-      "addFirst": "Add the first payment"
+      "addFirst": "Add the first payment",
+      "frequency": "How often is it paid?",
+      "frequencyHint": "If it is monthly, the day of the month is enough. Set it to twice-monthly only if it really is paid twice.",
+      "firstDay": "First day",
+      "secondDay": "Second day",
+      "daysHint": "The day of the month the first one falls on.",
+      "lastDayHint": "If it falls on the last day of the month, put 31."
     },
     "debts": {
       "title": "Do you owe anything?",
@@ -1010,6 +1031,7 @@
       "addFirst": "Add the first goal"
     },
     "frequency": {
+      "daily": "Every day",
       "weekly": "Every week",
       "biweekly": "Every two weeks",
       "semimonthly": "Twice a month",

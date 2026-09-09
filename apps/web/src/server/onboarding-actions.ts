@@ -103,7 +103,27 @@ const setupInput = z.object({
         id: rowId,
         name,
         amount,
-        frequency: z.enum(['weekly', 'biweekly', 'semimonthly', 'monthly', 'quarterly', 'annual']),
+        frequency: z.enum([
+          'daily',
+          'weekly',
+          'biweekly',
+          'semimonthly',
+          'monthly',
+          'quarterly',
+          'annual',
+        ]),
+        /**
+         * The two days of the month a twice-monthly income lands on.
+         *
+         * Asked rather than assumed, because «quincenal» is not one cadence:
+         * the 15th and the 30th, the 5th and the 20th, and the 1st and the 16th
+         * are three different calendars, and which one a household is on
+         * decides which fortnight carries the rent. Empty for every other
+         * cadence, and empty is a real answer — it means we fall back to
+         * stepping fifteen days, which is an approximation and is treated as
+         * one.
+         */
+        anchorDays: z.array(z.coerce.number().int().min(1).max(31)).max(2).optional(),
         // "About 2,400 in a good month" and "2,400 on the 15th" are different
         // claims, and a plan built on the first should not pretend otherwise.
         isApproximate: z.boolean(),
@@ -195,6 +215,20 @@ const setupInput = z.object({
          */
         lateFeeKind: z.enum(['none', 'amount', 'rate']).default('none'),
         lateFee: optionalAmount,
+        /**
+         * How often this is paid, and on which days when it is twice a month.
+         *
+         * A monthly payment on the 5th already exists in one fortnight and not
+         * the other — that falls out of the date. What could not be said before
+         * is the rest: a fee charged every week, a loan taken twice a month, a
+         * quota that lands on the 15th *and* the 30th. Monthly is the default
+         * because it is what the previous version of this form silently
+         * assumed, so nothing changes for anybody who does not touch it.
+         */
+        frequency: z
+          .enum(['daily', 'weekly', 'biweekly', 'semimonthly', 'monthly', 'quarterly', 'annual'])
+          .default('monthly'),
+        anchorDays: z.array(z.coerce.number().int().min(1).max(31)).max(2).optional(),
         lateFeeAfterDays: z.preprocess(
           (value) => (value === '' || value === undefined || value === null ? undefined : value),
           z.coerce.number().int().min(0).max(365).optional(),
@@ -437,10 +471,19 @@ export async function completeSetup(
       // Income
       const keptIncomes: string[] = [];
       for (const entry of answers.incomes) {
+        const anchors =
+          entry.frequency === 'semimonthly' && entry.anchorDays && entry.anchorDays.length > 0
+            ? [...new Set(entry.anchorDays)].sort((a, b) => a - b)
+            : null;
+
         const values = {
           name: entry.name,
           expectedAmount: entry.amount,
           frequency: entry.frequency,
+          // Explicitly null outside `semimonthly`, so switching a salary from
+          // «quincenal» to «mensual» on a second pass does not leave two
+          // anchor days behind to be projected onto a cadence that has none.
+          anchorDays: anchors,
           amountVariation: entry.isApproximate ? '0.1500' : '0',
         };
         if (entry.id) {
@@ -460,7 +503,7 @@ export async function completeSetup(
               direction: 'inflow' as const,
               currency,
               lastSeenOn: today,
-              nextExpectedDate: nextFor(today, entry.frequency),
+              nextExpectedDate: nextFor(today, entry.frequency, anchors ?? undefined),
               // Stated by a person, so confidence in the statement is total; what
               // is uncertain is the amount, and that is what the variation says.
               confidence: '1.000',
@@ -506,11 +549,18 @@ export async function completeSetup(
           entry.deductedFromIncome === undefined
             ? null
             : (keptIncomes[entry.deductedFromIncome] ?? null);
+        const commitmentAnchors =
+          entry.frequency === 'semimonthly' && entry.anchorDays && entry.anchorDays.length > 0
+            ? [...new Set(entry.anchorDays)].sort((a, b) => a - b)
+            : null;
+
         const values = {
           name: entry.name,
           expectedAmount: entry.amount,
           dueDate: due,
           nextExpectedDate: addMonths(due, 1),
+          frequency: entry.frequency,
+          anchorDays: commitmentAnchors,
           isEssential: entry.isEssential,
           // Explicitly null rather than omitted, so unticking «se descuenta
           // del sueldo» on a second pass clears it instead of leaving the old
@@ -539,7 +589,6 @@ export async function completeSetup(
             .values({
               householdId,
               currency,
-              frequency: 'monthly',
               detectedBy: 'user' as const,
               ...values,
             })
@@ -798,6 +847,7 @@ function nextDueOn(today: PlainDate, day: number): PlainDate {
 }
 
 const FREQUENCY_MONTHS = {
+  daily: 0,
   weekly: 0,
   biweekly: 0,
   semimonthly: 0,
@@ -806,9 +856,46 @@ const FREQUENCY_MONTHS = {
   annual: 12,
 } as const;
 
-const FREQUENCY_DAYS = { weekly: 7, biweekly: 14, semimonthly: 15 } as const;
+const FREQUENCY_DAYS = { daily: 1, weekly: 7, biweekly: 14, semimonthly: 15 } as const;
 
-function nextFor(today: PlainDate, frequency: keyof typeof FREQUENCY_MONTHS): PlainDate {
+/**
+ * The next day a twice-monthly income actually lands on.
+ *
+ * Not «fifteen days from today», which is what the generic step does and which
+ * is wrong for exactly the households this matters most to: a salary paid on
+ * the 5th and the 20th, first seen on the 12th, would be projected onto the
+ * 27th and every fortnight after it would be off by a week. The whole point of
+ * asking for the two days is to stop approximating them.
+ */
+function nextAnchorDay(today: PlainDate, anchors: readonly number[]): PlainDate {
+  const year = Number(today.slice(0, 4));
+  const month = Number(today.slice(5, 7));
+  const day = Number(today.slice(8, 10));
+  const sorted = [...anchors].sort((a, b) => a - b);
+
+  const lastOf = (y: number, m: number) => new Date(Date.UTC(y, m, 0)).getUTCDate();
+
+  for (const anchor of sorted) {
+    const clamped = Math.min(anchor, lastOf(year, month));
+    if (clamped > day) return plainDateFromParts(year, month, clamped);
+  }
+
+  // Every anchor is behind us: the first one of next month.
+  const nextMonth = month === 12 ? 1 : month + 1;
+  const nextYear = month === 12 ? year + 1 : year;
+  const first = sorted[0] ?? 15;
+  return plainDateFromParts(nextYear, nextMonth, Math.min(first, lastOf(nextYear, nextMonth)));
+}
+
+function nextFor(
+  today: PlainDate,
+  frequency: keyof typeof FREQUENCY_MONTHS,
+  anchors?: readonly number[],
+): PlainDate {
+  if (frequency === 'semimonthly' && anchors && anchors.length > 0) {
+    return nextAnchorDay(today, anchors);
+  }
+
   const months = FREQUENCY_MONTHS[frequency];
   if (months > 0) return addMonths(today, months);
 

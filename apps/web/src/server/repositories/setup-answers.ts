@@ -120,6 +120,7 @@ export async function loadSetupAnswers(
           name: recurringSeries.name,
           amount: recurringSeries.expectedAmount,
           frequency: recurringSeries.frequency,
+          anchorDays: recurringSeries.anchorDays,
           variation: recurringSeries.amountVariation,
         })
         .from(recurringSeries)
@@ -142,6 +143,8 @@ export async function loadSetupAnswers(
           lateFeeAmount: obligations.lateFeeAmount,
           lateFeeRate: obligations.lateFeeRate,
           lateFeeAfterDays: obligations.lateFeeAfterDays,
+          frequency: obligations.frequency,
+          anchorDays: obligations.anchorDays,
         })
         .from(obligations)
         .where(and(eq(obligations.householdId, householdId), isNull(obligations.deletedAt)))
@@ -224,6 +227,11 @@ export async function loadSetupAnswers(
         // The variation is how "about 2,400" was recorded. Reading it back as
         // the checkbox keeps the two descriptions of one claim in step.
         isApproximate: Number(row.variation) > 0,
+        // Back into the two fields they were typed in, so a household that
+        // said «el 5 y el 20» sees that on a second visit rather than a blank
+        // pair of boxes that would silently become an approximation on save.
+        anchorFirst: row.anchorDays?.[0] === undefined ? '' : String(row.anchorDays[0]),
+        anchorSecond: row.anchorDays?.[1] === undefined ? '' : String(row.anchorDays[1]),
       })),
       commitments: commitmentRows.map((row) => ({
         id: row.id,
@@ -250,6 +258,9 @@ export async function loadSetupAnswers(
             : ('none' as const),
         lateFee: trimAmount(row.lateFeeAmount ?? row.lateFeeRate ?? ''),
         lateFeeAfterDays: row.lateFeeAfterDays === null ? '' : String(row.lateFeeAfterDays),
+        frequency: (row.frequency ?? 'monthly') as SetupInitial['commitments'][number]['frequency'],
+        anchorFirst: row.anchorDays?.[0] === undefined ? '' : String(row.anchorDays[0]),
+        anchorSecond: row.anchorDays?.[1] === undefined ? '' : String(row.anchorDays[1]),
       })),
       debts: debtRows.map((row) => ({
         id: row.id,

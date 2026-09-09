@@ -7,7 +7,16 @@ import {
   type Claim,
   type RuleNote,
 } from '@app/allocation-engine';
-import { computeSafeToSpend, type SafeToSpendResult } from '@app/budget-engine';
+import {
+  buildPayPeriods,
+  computeSafeToSpend,
+  nextOccurrence,
+  PAY_PERIOD_HORIZON_DAYS,
+  type Frequency,
+  type PayPeriod,
+  type PeriodClaim,
+  type SafeToSpendResult,
+} from '@app/budget-engine';
 import {
   accounts,
   debts,
@@ -15,6 +24,7 @@ import {
   householdSettings,
   households,
   obligations,
+  recurringSeries,
   rules as ruleRows,
 } from '@app/database/schema';
 import { orderDebts, totalMinimums, type Debt } from '@app/debt-engine';
@@ -65,6 +75,15 @@ export interface PlanView {
   readonly ruleNotes: readonly RuleNote[];
   readonly skippedRules: readonly { name: string; reason: string }[];
   readonly debtOrder: readonly { id: string; name: string; reason: string }[];
+  /**
+   * The household's own pay periods, and the one they are living in now.
+   *
+   * Empty when no income is on record: without a payday there is no period, and
+   * the plan falls back to dividing what is held over the next thirty days. The
+   * screen has to be able to tell those two situations apart, because the
+   * second one is answering a slightly different question.
+   */
+  readonly periods: readonly PayPeriod[];
   readonly isEmpty: boolean;
 }
 
@@ -81,7 +100,7 @@ export async function loadPlan(session: Session, householdId: string): Promise<P
     const horizon = addDays(today, OBLIGATION_HORIZON_DAYS);
     const zero = Money.zero(currency);
 
-    const [accountRows, obligationRows, debtRows, goalRows, settingsRows, storedRules] =
+    const [accountRows, obligationRows, debtRows, goalRows, settingsRows, storedRules, incomeRows] =
       await Promise.all([
         tx
           .select({ balance: accounts.currentBalance, type: accounts.accountType })
@@ -103,6 +122,8 @@ export async function loadPlan(session: Session, householdId: string): Promise<P
             lateFeeAmount: obligations.lateFeeAmount,
             lateFeeRate: obligations.lateFeeRate,
             lateFeeAfterDays: obligations.lateFeeAfterDays,
+            frequency: obligations.frequency,
+            anchorDays: obligations.anchorDays,
           })
           .from(obligations)
           .where(
@@ -166,10 +187,33 @@ export async function loadPlan(session: Session, householdId: string): Promise<P
           .from(ruleRows)
           .where(and(eq(ruleRows.householdId, householdId), isNull(ruleRows.deletedAt)))
           .orderBy(ruleRows.priority),
+        // What comes in, and when. The days matter more than the amounts here:
+        // they are what divides the horizon into the periods the household
+        // actually lives in.
+        tx
+          .select({
+            id: recurringSeries.id,
+            name: recurringSeries.name,
+            amount: recurringSeries.expectedAmount,
+            frequency: recurringSeries.frequency,
+            anchorDays: recurringSeries.anchorDays,
+            nextExpectedDate: recurringSeries.nextExpectedDate,
+          })
+          .from(recurringSeries)
+          .where(
+            and(
+              eq(recurringSeries.householdId, householdId),
+              eq(recurringSeries.direction, 'inflow'),
+              eq(recurringSeries.isActive, true),
+              isNull(recurringSeries.deletedAt),
+            ),
+          ),
       ]);
 
     const settings = settingsRows[0];
     const bufferMinimum = Money.fromDecimalString(settings?.bufferMinimum ?? '0', currency);
+
+    const periodHorizon = addDays(today, PAY_PERIOD_HORIZON_DAYS);
 
     const liquid = Money.sum(
       accountRows
@@ -178,19 +222,104 @@ export async function loadPlan(session: Session, householdId: string): Promise<P
       currency,
     );
 
-    const upcoming = obligationRows
-      .filter((row) => row.due <= horizon)
-      .map((row) => {
-        const amount = Money.fromDecimalString(row.amount, currency);
-        return {
-          id: row.id,
-          name: row.name,
-          due: row.due as PlainDate,
-          amount,
-          isEssential: row.isEssential,
-          missPenalty: penaltyStillAtStake(row, amount, row.due as PlainDate, today),
-        };
-      });
+    /**
+     * Every date each commitment falls on between now and the horizon.
+     *
+     * A monthly obligation is one row with one due date, and the plan used to
+     * read it as one payment. Over a horizon long enough to hold two paydays
+     * that is wrong in the way that matters: the rent due on the 1st exists in
+     * *every* fortnight of the 1st, and a household deciding what to spend on
+     * the 16th needs to see the one that is coming, not the one that has
+     * already gone.
+     *
+     * The same stepper the recurrence pass uses, so a commitment projected here
+     * and the same commitment on the forecast screen land on the same days.
+     */
+    const occurrencesOf = (row: (typeof obligationRows)[number]): readonly PlainDate[] => {
+      const first = row.due as PlainDate;
+      const cadence = row.frequency as Frequency | null;
+      if (!cadence) return first <= periodHorizon ? [first] : [];
+
+      const dates: PlainDate[] = [];
+      let date = first;
+      // Bounded for the same reason the engine's own walk is: a cadence that
+      // fails to advance must not spin. A daily commitment over the horizon is
+      // sixty-two dates; this is far past it.
+      for (let step = 0; step < 400 && date <= periodHorizon; step += 1) {
+        // Anything already overdue is carried in as it stands: it is owed now,
+        // not on the day it was originally due.
+        if (date >= today || dates.length === 0) dates.push(date);
+        const next = nextOccurrence(cadence, date, row.anchorDays ?? undefined);
+        if (next <= date) break;
+        date = next;
+      }
+      return dates;
+    };
+
+    const periodClaims: PeriodClaim[] = obligationRows.flatMap((row) => {
+      const amount = Money.fromDecimalString(row.amount, currency);
+      return occurrencesOf(row).map((due, at) => ({
+        // The row's own id for the first occurrence, so anything keyed on it
+        // still matches; later ones are distinct claims on distinct days.
+        id: at === 0 ? row.id : `${row.id}@${due}`,
+        label: row.name,
+        amount,
+        due,
+        isEssential: row.isEssential,
+      }));
+    });
+
+    const periods = buildPayPeriods({
+      currency,
+      today,
+      opening: liquid,
+      incomes: incomeRows.map((row) => ({
+        id: row.id,
+        label: row.name,
+        amount: Money.fromDecimalString(row.amount, currency),
+        frequency: row.frequency,
+        anchorDays: row.anchorDays ?? undefined,
+        nextPayday: row.nextExpectedDate as PlainDate,
+      })),
+      claims: periodClaims,
+      keepAtLeast: bufferMinimum,
+    });
+
+    /**
+     * What the plan divides, and over which claims.
+     *
+     * With a payday on record it is the period the household is living in: what
+     * this fortnight can spare, against what this fortnight owes. Without one
+     * there are no periods, and it falls back to what the plan always did —
+     * everything held, over the next thirty days. The fallback is not a worse
+     * answer to the same question, it is the answer to a different one, and
+     * `periods` being empty is how the screen can say which it is looking at.
+     */
+    const current = periods[0];
+
+    const upcoming = (
+      current
+        ? current.claims
+        : obligationRows
+            .filter((row) => row.due <= horizon)
+            .map((row) => ({
+              id: row.id,
+              label: row.name,
+              amount: Money.fromDecimalString(row.amount, currency),
+              due: row.due as PlainDate,
+              isEssential: row.isEssential,
+            }))
+    ).map((claim) => {
+      const source = obligationRows.find((row) => claim.id.startsWith(row.id));
+      return {
+        id: claim.id,
+        name: claim.label,
+        due: claim.due,
+        amount: claim.amount,
+        isEssential: claim.isEssential,
+        missPenalty: source ? penaltyStillAtStake(source, claim.amount, claim.due, today) : null,
+      };
+    });
 
     const modelDebts: Debt[] = debtRows.map((row) => ({
       id: row.id,
@@ -263,7 +392,10 @@ export async function loadPlan(session: Session, householdId: string): Promise<P
     const applied = applyRuleActions(baseClaims, evaluation.actions, liquid);
 
     const plan = buildAllocationPlan({
-      incoming: liquid,
+      // What this period can spare, not everything the household holds. The
+      // difference is the point: a plan that hands out the whole balance on the
+      // 15th is the reason the 30th arrives short.
+      incoming: current ? current.available : liquid,
       claims: applied.claims,
       order: applied.order,
       today,
@@ -280,6 +412,7 @@ export async function loadPlan(session: Session, householdId: string): Promise<P
         name: entry.name,
         reason: entry.missingFact ?? entry.reason,
       })),
+      periods,
       debtOrder: ordered.map((entry) => ({
         id: entry.debt.id,
         name: entry.debt.name,

@@ -175,12 +175,22 @@ function scoreTiming(intervals: readonly number[], cadence: Cadence): number {
   return clamp(1 - drift / cadence.tolerance, 0, 1);
 }
 
-function nextOccurrence(
+/**
+ * The next date a cadence lands on after `from`.
+ *
+ * Exported because the pay-period calculation walks the same cadences forward
+ * and must land on exactly the same dates the recurrence pass does. Two
+ * implementations of «when is the next payday» would eventually disagree, and
+ * the household would be told two different things about the same salary.
+ */
+export function nextOccurrence(
   frequency: Frequency,
   from: PlainDate,
   anchors?: readonly number[],
 ): PlainDate {
   switch (frequency) {
+    case 'daily':
+      return addDays(from, 1);
     case 'weekly':
       return addDays(from, 7);
     case 'biweekly':
@@ -236,6 +246,7 @@ function dayOfMonth(date: PlainDate): number {
 
 function describe(frequency: Frequency, count: number, variation: number): string {
   const cadence: Record<Frequency, string> = {
+    daily: 'every day',
     weekly: 'every week',
     biweekly: 'every two weeks',
     semimonthly: 'twice a month',

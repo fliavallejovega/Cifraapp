@@ -329,6 +329,16 @@ export const obligations = appSchema.table(
       .references(() => currencies.code),
     dueDate: date('due_date').notNull(),
     frequency: text('frequency'),
+    /**
+     * The calendar days a semimonthly obligation lands on, `31` meaning month
+     * end. Null for every other cadence.
+     *
+     * The same meaning the column carries on `recurring_series`, and the field
+     * that lets a payment exist in the fortnight of the 15th and not in the one
+     * of the 30th — which is the whole reason those two fortnights feel
+     * different to the household living in them.
+     */
+    anchorDays: smallint('anchor_days').array(),
     nextExpectedDate: date('next_expected_date'),
     isEssential: boolean('is_essential').notNull().default(true),
     /**
