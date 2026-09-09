@@ -328,6 +328,33 @@ export async function loadPlan(session: Session, householdId: string): Promise<P
       }));
     });
 
+    const expectedRowsEarly = await tx
+      .select({
+        id: receivables.id,
+        name: receivables.name,
+        source: receivables.source,
+        amount: receivables.amount,
+        expectedOn: receivables.expectedOn,
+        confidence: receivables.confidence,
+      })
+      .from(receivables)
+      .where(
+        and(
+          eq(receivables.householdId, householdId),
+          isNull(receivables.deletedAt),
+          isNull(receivables.receivedOn),
+        ),
+      );
+
+    const expectedForPlan = expectedRowsEarly
+      .filter((row) => row.confidence === 'confirmed' && row.expectedOn !== null)
+      .map((row) => ({
+        id: row.id,
+        label: row.name,
+        amount: Money.fromDecimalString(row.amount, currency),
+        on: row.expectedOn as PlainDate,
+      }));
+
     const periods = buildPayPeriods({
       currency,
       today,
@@ -347,6 +374,16 @@ export async function loadPlan(session: Session, householdId: string): Promise<P
           : {}),
         nextPayday: row.nextExpectedDate as PlainDate,
       })),
+      /**
+       * Lo confirmado entra; lo estimado no.
+       *
+       * Un cobro que el hogar dio por seguro, con día, es dinero con el que se
+       * puede contar y el plan lo reparte cuando llega. Uno estimado se queda
+       * fuera: tratarlo como cierto es la cifra optimista que deja a una casa
+       * gastando contra un pago que llegó tarde —o no llegó—, y esa distinción
+       * la hace la persona, no el producto.
+       */
+      oneOffIncome: expectedForPlan,
       claims: periodClaims,
       keepAtLeast: bufferMinimum,
     });
@@ -479,23 +516,7 @@ export async function loadPlan(session: Session, householdId: string): Promise<P
     // Lo que está por cobrar, leído aparte y sumado a nada. Ordenado por fecha,
     // con lo que no tiene fecha al final: «no sé cuándo» es lo último que se
     // persigue, no lo primero.
-    const expectedRows = await tx
-      .select({
-        id: receivables.id,
-        name: receivables.name,
-        source: receivables.source,
-        amount: receivables.amount,
-        expectedOn: receivables.expectedOn,
-        confidence: receivables.confidence,
-      })
-      .from(receivables)
-      .where(
-        and(
-          eq(receivables.householdId, householdId),
-          isNull(receivables.deletedAt),
-          isNull(receivables.receivedOn),
-        ),
-      );
+    const expectedRows = expectedRowsEarly;
 
     return {
       currency,

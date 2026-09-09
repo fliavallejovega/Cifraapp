@@ -483,6 +483,9 @@ export const debtKind = pgEnum('debt_kind', [
   'mortgage',
   'personal_loan',
   'student_loan',
+  // Lo que se le debe a una persona o a un proveedor: sin cuota, sin mínimo y
+  // sin día. Se debe, y se paga cuando se pueda.
+  'informal',
   'other',
 ]);
 
@@ -501,6 +504,8 @@ export const debtRepayment = pgEnum('debt_repayment', [
   'single_payment',
   'no_interest_plan',
   'revolving',
+  // Sin fecha. No es «un solo pago al vencimiento»: eso supone un vencimiento.
+  'open',
 ]);
 
 export const debts = appSchema.table(

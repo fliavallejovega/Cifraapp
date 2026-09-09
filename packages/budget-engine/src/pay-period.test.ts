@@ -104,6 +104,59 @@ describe('deriving the periods a household is paid in', () => {
     }
   });
 
+  it('cuenta un cobro confirmado como una entrada de su día', () => {
+    // Una factura que el hogar dio por confirmada para el 20 abre período ese
+    // día, igual que un sueldo: el dinero que entra es lo que parte el horizonte
+    // en los tramos que la casa vive.
+    const periods = buildPayPeriods({
+      currency: 'USD',
+      today: on('2026-09-14'),
+      opening: usd('0'),
+      incomes: [salary({ anchorDays: [15, 30] })],
+      oneOffIncome: [
+        { id: 'invoice', label: 'Factura', amount: usd('900.00'), on: on('2026-09-20') },
+      ],
+      claims: [],
+      horizonDays: 30,
+    });
+
+    const landings = periods.map((period) => period.income.toDecimalString());
+    expect(landings).toContain('900.0000');
+    expect(periods.some((period) => period.start === '2026-09-20')).toBe(true);
+  });
+
+  it('ignora un cobro fuera del horizonte', () => {
+    // El control negativo: una factura de dentro de un año no abre un período
+    // hoy, y contarla haría que el plan repartiera plata que no va a llegar en
+    // los treinta días que está mirando.
+    const periods = buildPayPeriods({
+      currency: 'USD',
+      today: on('2026-09-14'),
+      opening: usd('0'),
+      incomes: [salary({ anchorDays: [15, 30] })],
+      oneOffIncome: [
+        { id: 'later', label: 'Factura', amount: usd('900.00'), on: on('2027-09-20') },
+      ],
+      claims: [],
+      horizonDays: 30,
+    });
+    expect(periods.some((period) => period.income.toDecimalString() === '900.0000')).toBe(false);
+  });
+
+  it('suma un cobro que cae el mismo día que un sueldo', () => {
+    const periods = buildPayPeriods({
+      currency: 'USD',
+      today: on('2026-09-14'),
+      opening: usd('0'),
+      incomes: [salary({ amount: usd('1000.00'), anchorDays: [15, 30] })],
+      oneOffIncome: [{ id: 'same', label: 'Décimo', amount: usd('500.00'), on: on('2026-09-15') }],
+      claims: [],
+      horizonDays: 30,
+    });
+    const fifteenth = periods.find((period) => period.start === '2026-09-15');
+    expect(fifteenth?.income.toDecimalString()).toBe('1500.0000');
+  });
+
   it('uses the days the household stated, not the days we would have guessed', () => {
     // Paid on the 5th and the 20th. A product that assumes «twice a month means
     // the 15th and the 30th» puts the rent in the wrong fortnight, which is the

@@ -24,6 +24,7 @@ export {
   PAY_PERIOD_HORIZON_DAYS,
   periodContaining,
   type IncomeStream,
+  type OneOffReceipt,
   type PayPeriod,
   type PayPeriodInput,
   type PeriodClaim,

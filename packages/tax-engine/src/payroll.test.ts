@@ -2,7 +2,7 @@ import { Money } from '@app/domain';
 import { describe, expect, it } from 'vitest';
 
 import { PANAMA_2026_DRAFT } from './jurisdictions/pa-2026.js';
-import { estimatePayroll } from './payroll.js';
+import { estimatePayroll, thirteenthMonth } from './payroll.js';
 
 /**
  * Lo que se le descuenta a un salario panameño, contra una calculadora publicada.
@@ -230,6 +230,41 @@ describe('los descuentos de una planilla panameña', () => {
     });
     const tax = result?.lines.find((line) => line.key === 'incomeTax');
     expect(tax?.amount.toDecimalString()).toBe('263.0000');
+  });
+
+  /**
+   * El decimotercer mes, en las tres fechas en que se paga.
+   *
+   * Tres partidas iguales de un tercio de un sueldo mensual, en abril, agosto y
+   * diciembre. Las fechas salen del conjunto de reglas: son ley de la
+   * jurisdicción y cambian por ley, no por despliegue.
+   */
+  it('reparte el decimotercer mes en tres partidas con sus fechas', () => {
+    const parts = thirteenthMonth({
+      monthlySalary: pab('3000.00'),
+      year: 2026,
+      rules: PANAMA_2026_DRAFT,
+    });
+
+    expect(parts?.map((one) => one.on)).toEqual(['2026-04-15', '2026-08-15', '2026-12-15']);
+    expect(parts?.map((one) => one.amount.toDecimalString())).toEqual([
+      '999.9900',
+      '999.9900',
+      '999.9900',
+    ]);
+  });
+
+  it('no inventa fechas de pago cuando el conjunto no las lleva', () => {
+    // El control negativo que importa: sin la regla no hay tres fechas por
+    // defecto. Un producto que se inventa cuándo le pagan a alguien es peor que
+    // uno que no lo sabe.
+    const withoutSchedule = {
+      ...PANAMA_2026_DRAFT,
+      rules: PANAMA_2026_DRAFT.rules.filter((rule) => rule.key !== 'thirteenth_month'),
+    };
+    expect(
+      thirteenthMonth({ monthlySalary: pab('3000.00'), year: 2026, rules: withoutSchedule }),
+    ).toBeNull();
   });
 
   it('devuelve nada antes que una cuenta a medias', () => {

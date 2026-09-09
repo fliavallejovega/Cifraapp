@@ -341,7 +341,15 @@ const setupInput = z.object({
          * una tarjeta no termina y una hipoteca no tiene límite.
          */
         kind: z
-          .enum(['credit_card', 'auto_loan', 'mortgage', 'personal_loan', 'student_loan', 'other'])
+          .enum([
+            'credit_card',
+            'auto_loan',
+            'mortgage',
+            'personal_loan',
+            'student_loan',
+            'informal',
+            'other',
+          ])
           .default('other'),
         /** Cuántas cuotas tiene y cuántas van pagadas. Vacías en una tarjeta. */
         termMonths: z.coerce.number().int().min(1).max(600).optional(),
@@ -359,6 +367,7 @@ const setupInput = z.object({
             'single_payment',
             'no_interest_plan',
             'revolving',
+            'open',
           ])
           .default('fixed_instalment'),
         /** La cuota sale de la planilla antes de que el sueldo llegue. */
@@ -372,14 +381,33 @@ const setupInput = z.object({
         personName: z.string().trim().max(120).optional(),
         // A percentage: "24.5" means 24.5%. Bounded because a rate past 200%
         // is a figure entered in the wrong field, not a loan.
-        apr: z.preprocess(
-          normalizeTypedAmount,
-          z
-            .string()
-            .regex(/^\d+(\.\d{1,3})?$/)
-            .refine((value) => Number(value) <= 200),
-        ),
-        minimumPayment: amount,
+        /**
+         * La tasa, cuando se sabe.
+         *
+         * Opcional a propósito: el hint de la pantalla dice desde siempre «si
+         * no la sabes, déjala en blanco», y hasta ahora eso descartaba la fila
+         * entera al guardar. Una deuda sin tasa conocida sigue siendo una
+         * deuda; lo que no se puede hacer con ella es ordenarla por costo, y
+         * eso es una consecuencia que se explica, no una fila que se tira.
+         */
+        apr: z
+          .preprocess(
+            normalizeTypedAmount,
+            z
+              .string()
+              .regex(/^\d+(\.\d{1,3})?$/)
+              .refine((value) => Number(value) <= 200),
+          )
+          .optional(),
+        /**
+         * El mínimo, cuando lo hay.
+         *
+         * Lo que se le debe a un hermano o a un proveedor no tiene mínimo ni
+         * fecha: se debe, y se paga cuando se pueda. Exigirlo obligaba a
+         * inventar un cero que después el plan trata como una obligación de
+         * cero, que es distinto de no tener obligación.
+         */
+        minimumPayment: optionalAmount,
       }),
     )
     .max(20),
@@ -933,16 +961,23 @@ export async function completeSetup(
         const values = {
           name: entry.name,
           currentBalance: entry.balance,
-          apr: entry.apr,
-          minimumPayment: entry.minimumPayment,
+          // Sin tasa declarada, cero: es lo que la columna admite y lo que el
+          // orden de ataque lee como «no se puede ordenar por costo». No es
+          // una tasa de cero por ciento afirmada sobre nada.
+          apr: entry.apr ?? '0',
+          minimumPayment: entry.minimumPayment ?? '0',
           kind: entry.kind,
           repayment: entry.repayment,
           isPayrollDeducted: entry.isPayrollDeducted,
           paymentFrequency: entry.paymentFrequency,
-          // Lo revolvente no tiene cuota que fechar, y la base lo rechaza: una
-          // tarjeta tiene corte y pago, que viven en sus propias columnas.
+          // Lo revolvente y lo abierto no tienen cuota que fechar: una tarjeta
+          // tiene corte y pago en sus propias columnas, y lo que se le debe a
+          // un hermano no tiene día.
           anchorDays:
-            entry.repayment === 'revolving' || !entry.anchorDays || entry.anchorDays.length === 0
+            entry.repayment === 'revolving' ||
+            entry.repayment === 'open' ||
+            !entry.anchorDays ||
+            entry.anchorDays.length === 0
               ? null
               : [...new Set(entry.anchorDays)].sort((a, b) => a - b),
           // El cupo solo en una tarjeta y las cuotas solo fuera de ella: la
@@ -951,8 +986,14 @@ export async function completeSetup(
           creditLimit: isCard ? (entry.creditLimit ?? null) : null,
           // Lo revolvente no tiene cuotas, y la base lo rechaza. Se normaliza
           // aquí para que cambiar de forma no reviente el guardado al final.
-          termMonths: entry.repayment === 'revolving' ? null : (entry.termMonths ?? null),
-          paidMonths: entry.repayment === 'revolving' ? null : (entry.paidMonths ?? null),
+          termMonths:
+            entry.repayment === 'revolving' || entry.repayment === 'open'
+              ? null
+              : (entry.termMonths ?? null),
+          paidMonths:
+            entry.repayment === 'revolving' || entry.repayment === 'open'
+              ? null
+              : (entry.paidMonths ?? null),
         };
 
         let debtId = entry.id;

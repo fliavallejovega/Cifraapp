@@ -1,7 +1,7 @@
 'use server';
 
 import { Money } from '@app/domain';
-import { estimatePayroll, PANAMA_2026_DRAFT } from '@app/tax-engine';
+import { estimatePayroll, thirteenthMonth, PANAMA_2026_DRAFT } from '@app/tax-engine';
 
 /**
  * Los descuentos de planilla, calculados para rellenar un formulario.
@@ -92,5 +92,51 @@ export async function estimatePanamaPayroll(
     // alguien lo publique esto lo dirá solo.
     isEstimate: !result.mayPresentAsOwed,
     source: 'CSS · Seguro Educativo · Código Fiscal',
+  };
+}
+
+/** Una partida del decimotercer mes, lista para rellenar un cobro. */
+export interface ThirteenthOut {
+  readonly on: string;
+  readonly amount: string;
+}
+
+/**
+ * El decimotercer mes de un sueldo, en las tres fechas en que se paga.
+ *
+ * Se ofrece para rellenar tres cobros esperados —abril, agosto y diciembre— que
+ * la persona confirma o corrige. No se anota solo: el hogar decide si su sueldo
+ * lo tiene, porque no todo ingreso en este paso es una planilla y ninguna ley
+ * cubre un alquiler ni una factura de un cliente.
+ *
+ * Igual que el resto de este archivo, sale de un conjunto de reglas en borrador
+ * que nadie calificado revisó. Y para salario variable la ley manda sobre lo
+ * devengado en el cuatrimestre, que este conjunto no modela: por eso lo que
+ * queda guardado es lo que la persona confirmó.
+ */
+export async function estimateThirteenthMonth(
+  amount: string,
+  frequency: string,
+  year: number,
+): Promise<{ ok: boolean; instalments?: readonly ThirteenthOut[] }> {
+  await Promise.resolve();
+
+  const paymentsPerYear = PAYMENTS_PER_YEAR[frequency];
+  if (paymentsPerYear === undefined) return { ok: false };
+  if (!Number.isInteger(year) || year < 2000 || year > 2100) return { ok: false };
+
+  const clean = amount.replace(/[^\d.]/g, '');
+  if (clean === '' || Number(clean) <= 0) return { ok: false };
+
+  // Un sueldo mensual, sea cual sea la cadencia con que se cobre: la ley habla
+  // de un mes de salario, no de un pago.
+  const monthly = Money.fromDecimalString(clean, 'PAB').multiply(paymentsPerYear).divide(12);
+
+  const parts = thirteenthMonth({ monthlySalary: monthly, year, rules: PANAMA_2026_DRAFT });
+  if (!parts) return { ok: false };
+
+  return {
+    ok: true,
+    instalments: parts.map((one) => ({ on: one.on, amount: asShown(one.amount) })),
   };
 }

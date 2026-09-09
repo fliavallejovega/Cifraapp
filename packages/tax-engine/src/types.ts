@@ -161,6 +161,26 @@ export type TaxRule =
       readonly provenance: RuleProvenance;
     }
   | {
+      /**
+       * Un pago que la ley reparte en fechas fijas del año.
+       *
+       * El decimotercer mes panameño es el caso: no es un impuesto ni una
+       * cadencia del hogar, es una obligación del empleador con días propios y
+       * una fracción por partida. Vive aquí porque interactúa con la retención
+       * —la base anual lo incluye— y porque necesita exactamente las mismas
+       * garantías: vigencia, fuente, y una puerta que impida presentarlo como
+       * un hecho mientras nadie calificado lo haya revisado.
+       */
+      readonly kind: 'payment_schedule';
+      readonly key: string;
+      readonly taxType: TaxType;
+      /** `MM-DD` por partida, en el orden en que caen. */
+      readonly monthDays: readonly string[];
+      /** Qué fracción de un sueldo mensual es cada partida, en porcentaje. */
+      readonly sharePerInstalment: string;
+      readonly provenance: RuleProvenance;
+    }
+  | {
       readonly kind: 'deadline';
       readonly key: string;
       readonly taxType: TaxType;

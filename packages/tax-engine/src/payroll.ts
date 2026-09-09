@@ -298,3 +298,41 @@ export function payrollReference(rules: TaxRuleSet): PayrollReference | null {
     source: (policy ?? bracketRule).provenance.sourceReference,
   };
 }
+
+/** Una partida del decimotercer mes: cuándo cae y cuánto es. */
+export interface ThirteenthInstalment {
+  /** `YYYY-MM-DD`, ya resuelta al año que se pregunta. */
+  readonly on: string;
+  readonly amount: Money;
+}
+
+/**
+ * El decimotercer mes, repartido en las fechas en que la ley lo paga.
+ *
+ * Tres partidas iguales —abril, agosto y diciembre— de un tercio de un sueldo
+ * mensual cada una. Las fechas y la fracción salen del conjunto de reglas y no
+ * de aquí: son política de la jurisdicción, cambian por ley y no por
+ * despliegue.
+ *
+ * **Es una sugerencia editable, no lo que se debe.** Para quien gana fijo el
+ * tercio es exacto; para quien gana variable la ley manda sobre lo devengado en
+ * el cuatrimestre, y eso este conjunto no lo modela. Devolver un número
+ * parecido y llamarlo definitivo sería peor que no devolver ninguno.
+ *
+ * Null cuando el conjunto no lleva la regla: no se inventan fechas de pago.
+ */
+export function thirteenthMonth(input: {
+  readonly monthlySalary: Money;
+  readonly year: number;
+  readonly rules: TaxRuleSet;
+}): readonly ThirteenthInstalment[] | null {
+  const rule = findRule(input.rules, 'thirteenth_month');
+  if (rule?.kind !== 'payment_schedule') return null;
+  if (input.monthlySalary.isNegative()) return null;
+
+  const share = input.monthlySalary.percentage(rule.sharePerInstalment);
+  return rule.monthDays.map((monthDay) => ({
+    on: `${String(input.year)}-${monthDay}`,
+    amount: share,
+  }));
+}

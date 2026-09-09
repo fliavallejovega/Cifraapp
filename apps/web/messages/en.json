@@ -531,8 +531,8 @@
     },
     "expected": {
       "title": "Money owed to you",
-      "detail": "Money you are owed that has not arrived. It is here so you can chase it, not so it can be divided.",
-      "note": "The plan above does not count on this. It is built on money that arrived — money owed treated as certain is the figure that ruins a budget when the payment is late.",
+      "detail": "Money you are owed that has not arrived. What you marked as confirmed is counted by the plan on the day it lands; estimates are not.",
+      "note": "Only confirmed money enters the split, and on its date. An estimate treated as certain is the figure that ruins a budget when the payment is late.",
       "unknownDate": "No date",
       "estimated": "estimated",
       "columns": {
@@ -1036,11 +1036,15 @@
       "expectedOn": "When?",
       "expectedOnHint": "Leave it empty if you do not know. We do not invent a date.",
       "confidence": "How certain is it?",
-      "confidenceHint": "You say. We do not put a probability on anybody’s word.",
+      "confidenceHint": "You say, and it decides whether the plan counts on that money. Confirmed enters on its date; an estimate is shown and not divided.",
       "confirmed": "Confirmed",
       "estimated": "It is an estimate",
       "totalLabel": "Owed to you",
-      "totalNote": "Not part of what the plan divides. Money owed treated as certain is the figure that ruins a budget: the client pays late and the household already spent against it."
+      "totalNote": "Whatever you mark as confirmed enters the plan on the day it lands. Estimates do not: money owed treated as certain is the figure that ruins a budget when the client pays late.",
+      "thirteenthAction": "Add the thirteenth month",
+      "thirteenthAdding": "Working it out…",
+      "thirteenthName": "Thirteenth month",
+      "thirteenthNote": "Three instalments a year: 15 April, 15 August and 15 December. We note them with an estimate from your salary; correct it against your payslip."
     },
     "savings": {
       "title": "What do you have today?",
@@ -1151,7 +1155,8 @@
         "mortgage": "Mortgage",
         "personal_loan": "Personal loan",
         "student_loan": "Student loan",
-        "other": "Other"
+        "other": "Other",
+        "informal": "To a person or supplier"
       },
       "totalTitle": "What you owe",
       "totalBalance": "Debts ({count})",
@@ -1169,7 +1174,8 @@
         "interest_only": "Interest only, principal at the end",
         "single_payment": "One payment at maturity",
         "no_interest_plan": "Interest-free instalments",
-        "revolving": "Revolving (card or line)"
+        "revolving": "Revolving (card or line)",
+        "open": "No fixed date, when you can"
       },
       "frequency": "How often is it charged?",
       "frequencyHint": "Monthly is the common case. With payroll deduction, many mortgages are charged twice a month.",
@@ -2670,7 +2676,9 @@
       "reviewBacklog": "There are decisions waiting for you",
       "reviewBacklogDetail": "Repeats, transfers or categories to confirm.",
       "weeklySummary": "The week's summary",
-      "weeklySummaryDetail": "What came in, what went out and what is coming."
+      "weeklySummaryDetail": "What came in, what went out and what is coming.",
+      "thirteenthMonth": "The thirteenth month is due",
+      "thirteenthMonthDetail": "One of the three instalments lands today. It is one of the few large payments you can plan months ahead."
     },
     "default": "Default",
     "log": {

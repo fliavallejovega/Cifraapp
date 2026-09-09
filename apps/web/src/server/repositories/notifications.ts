@@ -25,6 +25,7 @@ export const NOTIFICATION_KINDS = [
   'importFinished',
   'reviewBacklog',
   'weeklySummary',
+  'thirteenthMonth',
 ] as const;
 
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
@@ -43,6 +44,14 @@ const DEFAULTS: Readonly<Record<NotificationKind, KindDefault>> = {
   importFinished: { channel: 'email', throttleHours: 0, isEnabled: true },
   reviewBacklog: { channel: 'email', throttleHours: 168, isEnabled: true },
   weeklySummary: { channel: 'email', throttleHours: 168, isEnabled: true },
+  /**
+   * Las tres partidas del decimotercer mes.
+   *
+   * Son de las pocas entradas grandes cuya fecha se sabe con meses de
+   * anticipación, y la que más fácil se gasta antes de decidir para qué era.
+   * Inmediata: avisar tarde de un dinero que ya entró no sirve de nada.
+   */
+  thirteenthMonth: { channel: 'email', throttleHours: 0, isEnabled: true },
 };
 
 export interface PreferenceView {

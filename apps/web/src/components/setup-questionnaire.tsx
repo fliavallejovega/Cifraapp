@@ -16,7 +16,7 @@ import { LANDING_DRAFT_KEY, type LandingDraft } from '@/components/marketing/try
 import { CategoryIcon } from '@/components/category-icon';
 import { KindIcon, SymbolSearch } from '@/components/symbol-search';
 import { lookupSymbol, type SymbolCandidate } from '@/server/holdings-actions';
-import { estimatePanamaPayroll } from '@/server/payroll-actions';
+import { estimatePanamaPayroll, estimateThirteenthMonth } from '@/server/payroll-actions';
 import { discardSetupDraft, saveSetupDraft } from '@/server/setup-draft-actions';
 import { completeSetup, type SetupResult } from '@/server/onboarding-actions';
 
@@ -68,6 +68,7 @@ const DEBT_REPAYMENTS = [
   'single_payment',
   'no_interest_plan',
   'revolving',
+  'open',
 ] as const;
 
 const DEBT_KINDS = [
@@ -76,6 +77,7 @@ const DEBT_KINDS = [
   'mortgage',
   'personal_loan',
   'student_loan',
+  'informal',
   'other',
 ] as const;
 
@@ -286,7 +288,14 @@ interface DebtRow {
    * existe y no puede preguntarle por sus cuotas, que es lo que su dueño sabe
    * de memoria.
    */
-  kind?: 'credit_card' | 'auto_loan' | 'mortgage' | 'personal_loan' | 'student_loan' | 'other';
+  kind?:
+    | 'credit_card'
+    | 'auto_loan'
+    | 'mortgage'
+    | 'personal_loan'
+    | 'student_loan'
+    | 'informal'
+    | 'other';
   /** Cuántas cuotas tiene en total. Vacío en lo que no termina. */
   termMonths?: string | undefined;
   /** Cuántas van pagadas. */
@@ -305,7 +314,8 @@ interface DebtRow {
     | 'interest_only'
     | 'single_payment'
     | 'no_interest_plan'
-    | 'revolving';
+    | 'revolving'
+    | 'open';
   /** La cuota sale de la planilla antes de que el sueldo llegue. */
   isPayrollDeducted?: boolean | undefined;
   /**
@@ -589,6 +599,8 @@ export function SetupQuestionnaire({
    * que alguien acababa de corregir.
    */
   const [resumed, setResumed] = useState(false);
+  /** Mientras se piden las tres partidas al servidor. */
+  const [addingThirteenth, setAddingThirteenth] = useState(false);
 
   // The figures a person tried on the home page, if they came from there. Read
   // once, on the first render in the browser, and then removed: they have
@@ -856,15 +868,16 @@ export function SetupQuestionnaire({
     // que la base espera entero es un guardado que falla al final, cuando ya no
     // hay nada que la persona pueda hacer al respecto.
     debts: debtRows
-      .filter(
-        (row) =>
-          row.name.trim() !== '' &&
-          row.balance.trim() !== '' &&
-          row.apr.trim() !== '' &&
-          row.minimumPayment.trim() !== '',
-      )
+      // Nombre y saldo. La tasa y el mínimo dejaron de ser obligatorios porque
+      // el hint decía desde siempre «si no la sabes, déjala en blanco» y luego
+      // la fila entera se descartaba al guardar: una deuda sin tasa conocida
+      // sigue siendo una deuda, y lo que se le debe a una persona no tiene
+      // mínimo que declarar.
+      .filter((row) => row.name.trim() !== '' && row.balance.trim() !== '')
       .map((row) => ({
         ...row,
+        ...(row.apr.trim() === '' ? { apr: undefined } : {}),
+        ...(row.minimumPayment.trim() === '' ? { minimumPayment: undefined } : {}),
         ...((row.termMonths ?? '').trim() === '' ? { termMonths: undefined } : {}),
         ...((row.paidMonths ?? '').trim() === '' ? { paidMonths: undefined } : {}),
         // Los días de cobro, como lista de números. Solo los escritos: un día
@@ -1381,6 +1394,73 @@ export function SetupQuestionnaire({
                 </>
               )}
             />
+
+            {/*
+            Y el decimotercer mes, que se puede anotar en un toque.
+
+            Un asalariado panameño cobra tres partidas al año —abril, agosto y
+            diciembre— y son de las pocas entradas grandes cuya fecha se sabe
+            con meses de anticipación. Anotarlas las pone en «lo que viene» y,
+            si hay una meta para esas fechas, junto a ella.
+
+            No se anotan solas: no todo ingreso de este paso es una planilla, y
+            ninguna ley cubre un alquiler ni la factura de un cliente. Lo que
+            queda guardado es lo que la persona confirme — para salario variable
+            la ley manda sobre lo devengado en el cuatrimestre, y eso el
+            conjunto de reglas no lo modela.
+          */}
+            {incomes.some(
+              (row) =>
+                row.name.trim() !== '' && row.amount.trim() !== '' && row.frequency !== 'annual',
+            ) && (
+              <div className="mb-4 flex flex-wrap items-center gap-3">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={addingThirteenth}
+                  onClick={() => {
+                    const salary = incomes.find(
+                      (row) => row.name.trim() !== '' && row.amount.trim() !== '',
+                    );
+                    if (!salary) return;
+                    setAddingThirteenth(true);
+                    void estimateThirteenthMonth(
+                      arrivingAmount(salary),
+                      salary.frequency,
+                      new Date().getFullYear(),
+                    )
+                      .then((result) => {
+                        const parts = result.instalments;
+                        if (!result.ok || !parts) return;
+                        setReceivableRows((rows) => [
+                          ...rows,
+                          ...parts.map((part) => ({
+                            name: copy('receivables.thirteenthName'),
+                            source: salary.name,
+                            amount: part.amount,
+                            expectedOn: part.on,
+                            // Confirmado porque la fecha y el derecho los pone la
+                            // ley, no una promesa de nadie. El monto sigue siendo
+                            // editable, que es donde vive la incertidumbre.
+                            confidence: 'confirmed' as const,
+                          })),
+                        ]);
+                      })
+                      .finally(() => {
+                        setAddingThirteenth(false);
+                      });
+                  }}
+                >
+                  {addingThirteenth
+                    ? copy('receivables.thirteenthAdding')
+                    : copy('receivables.thirteenthAction')}
+                </Button>
+                <p className="max-w-[52ch] text-xs text-pretty text-[color:var(--color-ink-tertiary)]">
+                  {copy('receivables.thirteenthNote')}
+                </p>
+              </div>
+            )}
 
             {receivableRows.some((row) => row.name.trim() !== '' && row.amount.trim() !== '') && (
               <StepTotals
@@ -2105,7 +2185,9 @@ export function SetupQuestionnaire({
                         const repayment =
                           kind === 'credit_card'
                             ? ('revolving' as const)
-                            : ('fixed_instalment' as const);
+                            : kind === 'informal'
+                              ? ('open' as const)
+                              : ('fixed_instalment' as const);
                         setDebtRows(
                           patch(debtRows, at, {
                             kind,
@@ -2124,15 +2206,25 @@ export function SetupQuestionnaire({
                     </Select>
                   )}
                 </Field>
-                <MoneyField
-                  label={copy('debts.minimum')}
-                  hint={copy('debts.minimumHint')}
-                  symbol={currencySymbol}
-                  value={row.minimumPayment}
-                  onChange={(value) => {
-                    setDebtRows(patch(debtRows, at, { minimumPayment: value }));
-                  }}
-                />
+                {/*
+                  El mínimo solo donde existe.
+
+                  Lo que se le debe a un hermano no tiene mínimo: se debe, y se
+                  paga cuando se pueda. Pedirlo obligaba a inventar un cero, y
+                  un cero inventado el plan lo lee como «una obligación de
+                  cero», que no es lo mismo que no tener obligación.
+                */}
+                {(row.repayment ?? 'fixed_instalment') !== 'open' && (
+                  <MoneyField
+                    label={copy('debts.minimum')}
+                    hint={copy('debts.minimumHint')}
+                    symbol={currencySymbol}
+                    value={row.minimumPayment}
+                    onChange={(value) => {
+                      setDebtRows(patch(debtRows, at, { minimumPayment: value }));
+                    }}
+                  />
+                )}
                 {/*
                   El cupo solo existe en una tarjeta.
 
@@ -2176,8 +2268,13 @@ export function SetupQuestionnaire({
                         setDebtRows(
                           patch(debtRows, at, {
                             repayment,
-                            ...(repayment === 'revolving'
-                              ? { termMonths: '', paidMonths: '' }
+                            ...(['revolving', 'open'].includes(repayment)
+                              ? {
+                                  termMonths: '',
+                                  paidMonths: '',
+                                  anchorFirst: '',
+                                  anchorSecond: '',
+                                }
                               : {}),
                           }),
                         );
@@ -2192,7 +2289,7 @@ export function SetupQuestionnaire({
                   )}
                 </Field>
 
-                {(row.repayment ?? 'fixed_instalment') !== 'revolving' && (
+                {!['revolving', 'open'].includes(row.repayment ?? 'fixed_instalment') && (
                   <>
                     <Field label={copy('debts.term')} hint={copy('debts.termHint')}>
                       {({ id, describedBy }) => (
@@ -2237,7 +2334,7 @@ export function SetupQuestionnaire({
                   corta. Los días no se suponen: el 15 y el 30 son una cadencia
                   entre varias.
                 */}
-                {(row.repayment ?? 'fixed_instalment') !== 'revolving' && (
+                {!['revolving', 'open'].includes(row.repayment ?? 'fixed_instalment') && (
                   <>
                     <Field label={copy('debts.frequency')} hint={copy('debts.frequencyHint')}>
                       {({ id, describedBy }) => (

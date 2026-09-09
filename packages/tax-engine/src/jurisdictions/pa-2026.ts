@@ -154,6 +154,34 @@ export const PANAMA_2026_DRAFT: TaxRuleSet = {
           'Método transcrito de la calculadora de Grupo SIUMA, señalada por el propietario del producto como la que refleja la práctica panameña. No verificado contra una publicación de la DGI, y difiere de otras calculadoras públicas que sí restan las contribuciones de la base. Solo para rellenar campos editables que el hogar confirma contra su recibo.',
       },
     },
+    /**
+     * El decimotercer mes, en las tres fechas en que se paga.
+     *
+     * No es un impuesto: es una obligación del empleador que la ley reparte en
+     * tres partidas iguales, en abril, agosto y diciembre. Está aquí porque el
+     * cálculo de la retención ya lo cuenta —la base anual son trece sueldos— y
+     * porque necesita la misma puerta que todo lo demás de este archivo: nadie
+     * calificado lo revisó, así que se ofrece como cifra editable y no como un
+     * hecho que este producto afirme.
+     *
+     * Cada partida es un tercio de un sueldo mensual para quien gana fijo. Para
+     * quien gana variable la ley manda sobre lo devengado en el cuatrimestre, y
+     * eso este conjunto no lo modela: por eso lo que se rellena es una
+     * sugerencia que la persona corrige contra su recibo.
+     */
+    {
+      kind: 'payment_schedule',
+      key: 'thirteenth_month',
+      taxType: 'income',
+      monthDays: ['04-15', '08-15', '12-15'],
+      sharePerInstalment: '33.333',
+      provenance: {
+        ...UNREVIEWED,
+        sourceReference: 'Décimo tercer mes — tres partidas anuales',
+        notes:
+          'Fechas y fracción transcritas de la práctica corriente. No verificadas contra el Código de Trabajo ni contra una publicación del MITRADEL. Solo para rellenar campos editables que el hogar confirma; para salario variable la ley manda sobre lo devengado en el cuatrimestre, que este conjunto no modela.',
+      },
+    },
     {
       kind: 'flat_rate',
       key: 'itbms.general',

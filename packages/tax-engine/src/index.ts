@@ -41,8 +41,10 @@ export type {
 export {
   estimatePayroll,
   payrollReference,
+  thirteenthMonth,
   type PayrollEstimate,
   type PayrollInput,
   type PayrollLine,
   type PayrollReference,
+  type ThirteenthInstalment,
 } from './payroll.js';

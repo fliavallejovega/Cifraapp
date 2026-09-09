@@ -531,8 +531,8 @@
     },
     "expected": {
       "title": "Lo que está por cobrar",
-      "detail": "Dinero que te deben y todavía no entró. Está aquí para que puedas perseguirlo, no para repartirlo.",
-      "note": "El plan de arriba no cuenta con esta plata. Se hace con lo que ya entró — un cobro tratado como cierto es la cifra que arruina un presupuesto cuando el pago llega tarde.",
+      "detail": "Dinero que te deben y todavía no entró. Lo que marcaste como confirmado el plan lo cuenta el día que llega; lo estimado no.",
+      "note": "Solo lo confirmado entra al reparto, y en su fecha. Un cobro estimado tratado como cierto es la cifra que arruina un presupuesto cuando el pago llega tarde.",
       "unknownDate": "Sin fecha",
       "estimated": "estimado",
       "columns": {
@@ -1036,11 +1036,15 @@
       "expectedOn": "¿Para cuándo?",
       "expectedOnHint": "Déjalo vacío si no lo sabes. No inventamos una fecha.",
       "confidence": "¿Qué tan seguro es?",
-      "confidenceHint": "Lo dices tú. No le ponemos una probabilidad a la palabra de nadie.",
+      "confidenceHint": "Lo dices tú, y decide si el plan cuenta con ese dinero. Confirmado entra en su fecha; estimado se muestra y no se reparte.",
       "confirmed": "Confirmado",
       "estimated": "Es un estimado",
       "totalLabel": "Por cobrar",
-      "totalNote": "No entra en lo que el plan reparte. Un cobro tratado como cierto es la cifra que arruina un presupuesto: el cliente paga tarde y la casa ya gastó contra eso."
+      "totalNote": "Lo que marques como confirmado entra al plan el día que llega. Lo estimado no: un cobro tratado como cierto es la cifra que arruina un presupuesto cuando el cliente paga tarde.",
+      "thirteenthAction": "Anotar el décimo tercer mes",
+      "thirteenthAdding": "Calculando…",
+      "thirteenthName": "Décimo tercer mes",
+      "thirteenthNote": "Tres partidas al año: 15 de abril, 15 de agosto y 15 de diciembre. Las anotamos con el monto estimado de tu sueldo; corrígelo con lo que diga tu recibo."
     },
     "savings": {
       "title": "¿Qué tienes hoy?",
@@ -1151,7 +1155,8 @@
         "mortgage": "Hipoteca",
         "personal_loan": "Préstamo personal",
         "student_loan": "Préstamo estudiantil",
-        "other": "Otra"
+        "other": "Otra",
+        "informal": "A una persona o proveedor"
       },
       "totalTitle": "Lo que debes",
       "totalBalance": "Deudas ({count})",
@@ -1169,7 +1174,8 @@
         "interest_only": "Solo intereses, el capital al final",
         "single_payment": "Un solo pago al vencimiento",
         "no_interest_plan": "Cuotas sin interés",
-        "revolving": "Revolvente (tarjeta o línea)"
+        "revolving": "Revolvente (tarjeta o línea)",
+        "open": "Sin fecha fija, cuando se pueda"
       },
       "frequency": "¿Cada cuánto se cobra?",
       "frequencyHint": "Mensual es lo corriente. Con descuento directo, muchas hipotecas se cobran por quincena.",
@@ -2670,7 +2676,9 @@
       "reviewBacklog": "Hay decisiones esperándote",
       "reviewBacklogDetail": "Repetidos, transferencias o rubros por confirmar.",
       "weeklySummary": "Resumen de la semana",
-      "weeklySummaryDetail": "Qué entró, qué salió y qué viene."
+      "weeklySummaryDetail": "Qué entró, qué salió y qué viene.",
+      "thirteenthMonth": "Llega el décimo tercer mes",
+      "thirteenthMonthDetail": "Una de las tres partidas cae hoy. Es de las pocas entradas grandes que se pueden planear con meses de anticipación."
     },
     "default": "Por defecto",
     "log": {

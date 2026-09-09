@@ -66,6 +66,14 @@ export interface IncomeStream {
   readonly nextPayday: PlainDate;
 }
 
+/** Una entrada de una sola vez, el día que cae. */
+export interface OneOffReceipt {
+  readonly id: string;
+  readonly label: string;
+  readonly amount: Money;
+  readonly on: PlainDate;
+}
+
 /** Something owed, on the day it is owed. */
 export interface PeriodClaim {
   readonly id: string;
@@ -135,6 +143,18 @@ export interface PayPeriodInput {
   /** What the household holds right now. */
   readonly opening: Money;
   readonly incomes: readonly IncomeStream[];
+  /**
+   * Entradas de una sola vez, con día propio.
+   *
+   * Un cobro que el hogar dio por **confirmado** y las partidas del
+   * decimotercer mes: dinero que no se repite, que tiene fecha, y con el que se
+   * puede contar. Aterrizan como cualquier otro pago del día en que caen.
+   *
+   * Lo que el hogar marcó como estimado no llega hasta aquí, y esa es la línea
+   * entera: un cobro tratado como cierto sin serlo es la cifra optimista que
+   * deja a una casa gastando contra un pago que llegó tarde o no llegó.
+   */
+  readonly oneOffIncome?: readonly OneOffReceipt[] | undefined;
   readonly claims: readonly PeriodClaim[];
   /** Never spent down into. The household's own floor, not one we chose. */
   readonly keepAtLeast?: Money | undefined;
@@ -231,6 +251,26 @@ export function buildPayPeriods(input: PayPeriodInput): readonly PayPeriod[] {
       } else {
         landings.set(day, { amount: arriving, from: [income.label] });
       }
+    }
+  }
+
+  /**
+   * Y lo que llega una sola vez, en su día.
+   *
+   * Abre período igual que un sueldo: el dinero que entra es lo que divide el
+   * horizonte en los tramos que la casa vive, y una casa que cobra una factura
+   * el día 10 vive el 10 como un antes y un después.
+   */
+  for (const receipt of input.oneOffIncome ?? []) {
+    if (receipt.on < today || receipt.on > horizon) continue;
+    const existing = landings.get(receipt.on);
+    if (existing) {
+      landings.set(receipt.on, {
+        amount: existing.amount.add(receipt.amount),
+        from: [...existing.from, receipt.label],
+      });
+    } else {
+      landings.set(receipt.on, { amount: receipt.amount, from: [receipt.label] });
     }
   }
 
