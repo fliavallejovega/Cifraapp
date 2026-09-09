@@ -110,7 +110,21 @@ interface CommitmentRow {
    * no ids yet — they are created in the same save as the commitments that
    * point at them.
    */
-  deductedFromIncome?: number | undefined;
+  /**
+   * De qué sueldo sale este pago, por su posición en el paso de ingresos.
+   *
+   * Separado de si lo descuentan en planilla, porque no son la misma pregunta:
+   * se puede pagar el alquiler del sueldo de uno sin que nadie lo descuente.
+   * Solo la segunda cambia lo que reclama el saldo; la primera es para que el
+   * hogar pueda ordenarse.
+   */
+  paidFromIncome?: number | undefined;
+  isDeductedAtSource?: boolean | undefined;
+  /** El rubro, por su slug. Vacío es «sin rubro», que es una respuesta. */
+  categorySlug?: string | undefined;
+  /** Un monto por quincena, cuando no son parejas. Vacío es «lo mismo las dos». */
+  anchorFirstAmount?: string | undefined;
+  anchorSecondAmount?: string | undefined;
   /**
    * What paying late costs, and how late «late» is.
    *
@@ -201,6 +215,8 @@ export interface SetupQuestionnaireProps {
   readonly t: Record<string, string>;
   /** The banks of Panama, from `app.institutions`. Names only — a rate is not a fact this system has. */
   readonly institutions: readonly string[];
+  /** Los rubros del hogar, para preguntar en qué se va cada pago. */
+  readonly categories: readonly { readonly slug: string; readonly name: string }[];
   readonly initial?: SetupInitial;
   /**
    * Answered before. The questions do not change — the words around them do,
@@ -216,6 +232,7 @@ export function SetupQuestionnaire({
   currencyCode,
   t,
   institutions,
+  categories,
   initial,
   review = false,
 }: SetupQuestionnaireProps) {
@@ -392,11 +409,12 @@ export function SetupQuestionnaire({
     commitments: commitments
       .filter((row) => row.name.trim() !== '' && row.amount.trim() !== '')
       .map((row) => ({
-        ...(row.deductedFromIncome !== undefined &&
-        namedIncomes.some((income) => income.at === row.deductedFromIncome)
+        ...(row.paidFromIncome !== undefined &&
+        namedIncomes.some((income) => income.at === row.paidFromIncome)
           ? row
-          : { ...row, deductedFromIncome: undefined }),
+          : { ...row, paidFromIncome: undefined, isDeductedAtSource: false }),
         anchorDays: anchorDaysOf(row),
+        anchorAmounts: anchorAmountsOf(row),
       })),
     debts: debtRows.filter(
       (row) =>
@@ -848,33 +866,48 @@ export function SetupQuestionnaire({
                   />
                 )}
               </Field>
+              <Field label={copy('commitments.category')} hint={copy('commitments.categoryHint')}>
+                {({ id, describedBy }) => (
+                  <Select
+                    id={id}
+                    aria-describedby={describedBy}
+                    value={row.categorySlug ?? ''}
+                    onChange={(event) => {
+                      setCommitments(patch(commitments, at, { categorySlug: event.target.value }));
+                    }}
+                  >
+                    <option value="">{copy('commitments.categoryNone')}</option>
+                    {categories.map((category) => (
+                      <option key={category.slug} value={category.slug}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </Select>
+                )}
+              </Field>
+
               {namedIncomes.length > 0 && (
-                <Field
-                  label={copy('commitments.deductedFrom')}
-                  hint={
-                    row.deductedFromIncome === undefined
-                      ? copy('commitments.deductedFromHint')
-                      : copy('commitments.deductedFromChosenHint')
-                  }
-                  className="sm:col-span-2"
-                >
+                <Field label={copy('commitments.paidFrom')} hint={copy('commitments.paidFromHint')}>
                   {({ id, describedBy }) => (
                     <Select
                       id={id}
                       aria-describedby={describedBy}
-                      value={
-                        row.deductedFromIncome === undefined ? '' : String(row.deductedFromIncome)
-                      }
+                      value={row.paidFromIncome === undefined ? '' : String(row.paidFromIncome)}
                       onChange={(event) => {
+                        const chosen =
+                          event.target.value === '' ? undefined : Number(event.target.value);
                         setCommitments(
                           patch(commitments, at, {
-                            deductedFromIncome:
-                              event.target.value === '' ? undefined : Number(event.target.value),
+                            paidFromIncome: chosen,
+                            // «Se descuenta» solo significa algo contra un
+                            // sueldo. Sin sueldo elegido no hay de dónde
+                            // descontarlo, así que la marca se va con él.
+                            ...(chosen === undefined ? { isDeductedAtSource: false } : {}),
                           }),
                         );
                       }}
                     >
-                      <option value="">{copy('commitments.deductedFromNone')}</option>
+                      <option value="">{copy('commitments.paidFromNone')}</option>
                       {namedIncomes.map((income) => (
                         <option key={income.at} value={income.at}>
                           {income.name}
@@ -883,6 +916,19 @@ export function SetupQuestionnaire({
                     </Select>
                   )}
                 </Field>
+              )}
+
+              {row.paidFromIncome !== undefined && (
+                <div className="sm:col-span-2">
+                  <Check
+                    label={copy('commitments.atSource')}
+                    hint={copy('commitments.atSourceHint')}
+                    checked={row.isDeductedAtSource ?? false}
+                    onChange={(checked) => {
+                      setCommitments(patch(commitments, at, { isDeductedAtSource: checked }));
+                    }}
+                  />
+                </div>
               )}
 
               <Field label={copy('commitments.frequency')} hint={copy('commitments.frequencyHint')}>
@@ -945,6 +991,28 @@ export function SetupQuestionnaire({
                       />
                     )}
                   </Field>
+
+                  {/* Los montos por quincena, opcionales y en blanco por
+                      defecto: la mayoría paga lo mismo las dos veces, y pedir
+                      dos cifras a quien tiene una sola sería cobrarle a todos
+                      el caso de algunos. */}
+                  <MoneyField
+                    label={copy('commitments.firstAmount')}
+                    hint={copy('commitments.unevenHint')}
+                    symbol={currencySymbol}
+                    value={row.anchorFirstAmount ?? ''}
+                    onChange={(value) => {
+                      setCommitments(patch(commitments, at, { anchorFirstAmount: value }));
+                    }}
+                  />
+                  <MoneyField
+                    label={copy('commitments.secondAmount')}
+                    symbol={currencySymbol}
+                    value={row.anchorSecondAmount ?? ''}
+                    onChange={(value) => {
+                      setCommitments(patch(commitments, at, { anchorSecondAmount: value }));
+                    }}
+                  />
                 </>
               )}
 
@@ -1062,6 +1130,7 @@ export function SetupQuestionnaire({
         <CommitmentsTotal
           rows={commitments}
           incomes={namedIncomes}
+          categories={categories}
           currencySymbol={currencySymbol}
           copy={copy}
         />
@@ -1537,6 +1606,28 @@ function MoneyField({
  * nothing, and nothing means «step the generic cadence», which is honest about
  * being an approximation.
  */
+/**
+ * Los dos montos escritos, como la lista que el servidor guarda.
+ *
+ * Solo cuando hay dos y los dos son números: una quincena con monto y la otra
+ * en blanco no es un pago desigual, es un pago a medio escribir, y la base
+ * rechaza una lista más corta que la de días precisamente para que nadie
+ * decida en silencio cuál de las dos quincenas se queda sin monto.
+ */
+function anchorAmountsOf(row: {
+  frequency?: Frequency | undefined;
+  amount: string;
+  anchorFirstAmount?: string | undefined;
+  anchorSecondAmount?: string | undefined;
+}): string[] | undefined {
+  if (row.frequency !== 'semimonthly') return undefined;
+  const typed = [row.anchorFirstAmount, row.anchorSecondAmount].map((value) =>
+    (value ?? '').trim(),
+  );
+  if (typed.some((value) => value === '')) return undefined;
+  return typed;
+}
+
 function anchorDaysOf(row: {
   frequency?: Frequency | undefined;
   anchorFirst?: string | undefined;
@@ -1602,28 +1693,37 @@ const PAYMENTS_PER_YEAR: Record<Frequency, number> = {
 };
 
 /**
- * What the commitments add up to, in the one unit they can be compared in.
+ * What the commitments add up to, where they go, and how much of it is the
+ * household's own to reconsider.
  *
- * The step asks for each payment on its own and then moves on, so nobody ever
- * saw the figure they make — which is the figure the step is about. And the
- * total cannot be a plain sum any more: a rent of $630 charged twice a month
- * and an internet bill of $50 charged once are not $680 of anything. Adding the
- * amounts as typed would produce a number that looks careful and is wrong by
- * the size of a rent, in the direction that leaves a household short.
+ * Three questions, and the step could answer none of them. The total, because
+ * the step asks for each payment alone and moves on. Where it goes, because a
+ * household that can see «$1,260 en vivienda, $50 en suscripciones» can act on
+ * it and one looking at a single figure cannot. And how much is not
+ * indispensable — which is the only honest thing that can be said about what is
+ * feasible to cut, because the household already said it, one checkbox at a
+ * time. The product does not decide what anybody can live without.
  *
- * So every cadence is converted to a month before anything is added, and the
- * conversion is stated rather than hidden. Nothing is stored from this: the
- * position and the plan do their own arithmetic on the saved rows, and this is
- * the confirmation that what is being typed means what the person thinks.
+ * The total cannot be a plain sum. A rent of $630 charged twice a month and an
+ * internet bill of $50 charged once are not $680 of anything: adding the
+ * amounts as typed produces a number that looks careful and is wrong by the
+ * size of a rent, in the direction that leaves a household short. So every
+ * cadence is converted to a month first, and the conversion is stated.
+ *
+ * Nothing is stored from this. The position and the plan do their own
+ * arithmetic on the saved rows; this is the confirmation that what is being
+ * typed means what the person thinks it means.
  */
 function CommitmentsTotal({
   rows,
   incomes,
+  categories,
   currencySymbol,
   copy,
 }: {
   readonly rows: readonly CommitmentRow[];
   readonly incomes: readonly { at: number; name: string }[];
+  readonly categories: readonly { readonly slug: string; readonly name: string }[];
   readonly currencySymbol: string;
   readonly copy: (key: string) => string;
 }) {
@@ -1632,26 +1732,53 @@ function CommitmentsTotal({
   const counted = rows.filter((row) => row.name.trim() !== '' && row.amount.trim() !== '');
   if (counted.length === 0) return null;
 
-  const monthly = (row: CommitmentRow) =>
-    (asNumber(row.amount) * PAYMENTS_PER_YEAR[row.frequency ?? 'monthly']) / 12;
-
-  const fromSalary = counted.filter((row) => row.deductedFromIncome !== undefined);
-  const fromBalance = counted.filter((row) => row.deductedFromIncome === undefined);
+  /**
+   * A row's cost in a month, with the two fortnights added separately when
+   * they differ. A payment of $700 on the 15th and $560 on the 30th is $1,260 a
+   * month, and averaging it to «$630 twice» would be right about the month and
+   * wrong about both fortnights.
+   */
+  const monthly = (row: CommitmentRow) => {
+    const uneven = anchorAmountsOf(row);
+    if (uneven) return uneven.reduce((total, value) => total + asNumber(value), 0);
+    return (asNumber(row.amount) * PAYMENTS_PER_YEAR[row.frequency ?? 'monthly']) / 12;
+  };
 
   const sum = (list: readonly CommitmentRow[]) =>
     list.reduce((total, row) => total + monthly(row), 0);
 
+  const atSource = counted.filter((row) => row.isDeductedAtSource === true);
+  const fromBalance = counted.filter((row) => row.isDeductedAtSource !== true);
+  const optional = counted.filter((row) => !row.isEssential);
+
+  // By rubro, biggest first: the list is only useful if the thing worth looking
+  // at is at the top of it.
+  const nameOf = (slug: string) =>
+    categories.find((category) => category.slug === slug)?.name ?? copy('commitments.categoryNone');
+  const byCategory = [
+    ...counted
+      .reduce((totals, row) => {
+        const key = row.categorySlug ?? '';
+        return totals.set(key, (totals.get(key) ?? 0) + monthly(row));
+      }, new Map<string, number>())
+      .entries(),
+  ].sort((a, b) => b[1] - a[1]);
+
   // Only worth saying when a cadence was actually converted. On a list of
   // ordinary monthly bills the sentence would be noise.
-  const converted = counted.some((row) => (row.frequency ?? 'monthly') !== 'monthly');
+  const converted = counted.some(
+    (row) => (row.frequency ?? 'monthly') !== 'monthly' || anchorAmountsOf(row),
+  );
 
   const money = (value: number) =>
     `${currencySymbol}${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-  const line = (label: string, value: string) => (
+  const line = (label: string, value: string, muted = false) => (
     <div className="flex items-baseline justify-between gap-4 py-1.5">
-      <span>{label}</span>
-      <span className="tabular">{value}</span>
+      <span className={muted ? 'text-[color:var(--color-ink-tertiary)]' : ''}>{label}</span>
+      <span className={`tabular ${muted ? 'text-[color:var(--color-ink-tertiary)]' : ''}`}>
+        {value}
+      </span>
     </div>
   );
 
@@ -1663,24 +1790,43 @@ function CommitmentsTotal({
       </p>
 
       <div className="mt-4 max-w-[46ch] text-sm text-[color:var(--color-ink-secondary)]">
-        {fromBalance.length > 0 &&
-          line(
-            copy('commitments.totalYouPay').replace('{count}', String(fromBalance.length)),
-            money(sum(fromBalance)),
-          )}
-
-        {fromSalary.length > 0 &&
-          line(
-            copy('commitments.totalFromSalary').replace('{count}', String(fromSalary.length)),
-            money(sum(fromSalary)),
-          )}
+        {byCategory.map(([slug, value]) => line(nameOf(slug), money(value)))}
 
         <div className="mt-2 flex items-baseline justify-between gap-4 border-t border-[color:var(--color-rule)] pt-3 text-base text-[color:var(--color-ink)]">
           <span className="font-medium">{copy('commitments.totalLabel')}</span>
           <span className="tabular font-medium">{money(sum(counted))}</span>
         </div>
 
-        {fromSalary.length > 0 && incomes.length > 0 && (
+        <div className="mt-4 border-t border-[color:var(--color-rule)] pt-3">
+          {atSource.length > 0 &&
+            line(
+              copy('commitments.totalFromSalary').replace('{count}', String(atSource.length)),
+              money(sum(atSource)),
+              true,
+            )}
+          {atSource.length > 0 &&
+            line(
+              copy('commitments.totalYouPay').replace('{count}', String(fromBalance.length)),
+              money(sum(fromBalance)),
+              true,
+            )}
+          {/* Lo que el propio hogar marcó como prescindible. El producto no
+              decide qué se puede cortar: repite lo que dijeron, sumado. */}
+          {optional.length > 0 &&
+            line(
+              copy('commitments.totalOptional').replace('{count}', String(optional.length)),
+              money(sum(optional)),
+              true,
+            )}
+        </div>
+
+        {optional.length === 0 && counted.length > 0 && (
+          <p className="mt-3 text-xs text-[color:var(--color-ink-tertiary)]">
+            {copy('commitments.totalAllEssential')}
+          </p>
+        )}
+
+        {atSource.length > 0 && incomes.length > 0 && (
           <p className="mt-3 text-xs text-[color:var(--color-ink-tertiary)]">
             {copy('commitments.totalFromSalaryNote')}
           </p>

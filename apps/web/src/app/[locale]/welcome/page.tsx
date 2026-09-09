@@ -56,6 +56,7 @@ export default async function WelcomePage({ params }: { params: Promise<{ locale
         currencyCode={currency}
         t={labels(rawOf(t))}
         institutions={answers.institutions}
+        categories={answers.categories}
         initial={answers}
         review={review}
       />
@@ -201,10 +202,6 @@ function labels(read: (key: string) => string): Record<string, string> {
     'commitments.dueDayHint',
     'commitments.essential',
     'commitments.essentialHint',
-    'commitments.deductedFrom',
-    'commitments.deductedFromNone',
-    'commitments.deductedFromHint',
-    'commitments.deductedFromChosenHint',
     'household.empty',
     'frequency.daily',
     'income.firstDay',
@@ -213,6 +210,19 @@ function labels(read: (key: string) => string): Record<string, string> {
     'income.lastDayHint',
     'commitments.frequency',
     'commitments.frequencyHint',
+    'commitments.category',
+    'commitments.categoryHint',
+    'commitments.categoryNone',
+    'commitments.paidFrom',
+    'commitments.paidFromHint',
+    'commitments.paidFromNone',
+    'commitments.atSource',
+    'commitments.atSourceHint',
+    'commitments.firstAmount',
+    'commitments.secondAmount',
+    'commitments.unevenHint',
+    'commitments.totalOptional',
+    'commitments.totalAllEssential',
     'commitments.totalTitle',
     'commitments.totalDetail',
     'commitments.totalConverted',

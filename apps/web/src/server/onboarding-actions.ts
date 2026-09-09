@@ -204,7 +204,18 @@ const setupInput = z.object({
          * they are inserted in the same transaction as the commitments that
          * point at them. Resolved below, once the inserts have returned.
          */
-        deductedFromIncome: z.coerce.number().int().min(0).max(19).optional(),
+        /**
+         * De qué sueldo sale este pago, por su posición en las respuestas.
+         *
+         * Separado de si lo descuentan en planilla, porque no son la misma
+         * pregunta: se puede pagar el alquiler del sueldo de uno sin que nadie
+         * lo descuente. Solo la segunda cambia lo que reclama un saldo.
+         */
+        paidFromIncome: z.coerce.number().int().min(0).max(19).optional(),
+        isDeductedAtSource: z.coerce.boolean().default(false),
+        /** Un monto por cada día de anclaje, cuando la quincena no es pareja. */
+        anchorAmounts: z.array(amount).max(2).optional(),
+        categorySlug: z.string().trim().max(60).optional(),
         /**
          * What paying late costs, stated as one shape or the other.
          *
@@ -545,10 +556,8 @@ export async function completeSetup(
       const keptCommitments: string[] = [];
       for (const entry of answers.commitments) {
         const due = nextDueOn(today, entry.dueDay);
-        const deductedFrom =
-          entry.deductedFromIncome === undefined
-            ? null
-            : (keptIncomes[entry.deductedFromIncome] ?? null);
+        const paidFrom =
+          entry.paidFromIncome === undefined ? null : (keptIncomes[entry.paidFromIncome] ?? null);
         const commitmentAnchors =
           entry.frequency === 'semimonthly' && entry.anchorDays && entry.anchorDays.length > 0
             ? [...new Set(entry.anchorDays)].sort((a, b) => a - b)
@@ -562,10 +571,19 @@ export async function completeSetup(
           frequency: entry.frequency,
           anchorDays: commitmentAnchors,
           isEssential: entry.isEssential,
-          // Explicitly null rather than omitted, so unticking «se descuenta
-          // del sueldo» on a second pass clears it instead of leaving the old
-          // answer in place.
-          deductedFromSeriesId: deductedFrom,
+          // Explicitly null rather than omitted, so clearing the answer on a
+          // second pass clears the row instead of leaving the old one in place.
+          paidFromSeriesId: paidFrom,
+          // A deduction at source only means anything against an income: «se
+          // descuenta» with no salary named is not a fact anybody can use.
+          isDeductedAtSource: paidFrom !== null && entry.isDeductedAtSource,
+          // Un monto por cada día, o ninguno. Una lista más corta que la de
+          // días es un pago que nadie puede calcular, y la base lo rechaza.
+          anchorAmounts:
+            entry.frequency === 'semimonthly' &&
+            entry.anchorAmounts?.length === commitmentAnchors?.length
+              ? (entry.anchorAmounts ?? null)
+              : null,
           // A fee with no figure is not a fee, and a figure with no shape is
           // not a number anybody can use — so both have to be present, and the
           // shape decides which of the two columns receives it. The other is

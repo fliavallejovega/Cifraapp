@@ -2,6 +2,7 @@ import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 
 import { Monogram } from './shell-icons';
+import { ThemeSwitch } from './theme';
 
 /**
  * The door.
@@ -28,6 +29,7 @@ export async function AuthScreen({
   readonly children: ReactNode;
 }) {
   const common = await getTranslations('common');
+  const nav = await getTranslations('nav');
 
   return (
     <div className="flex min-h-dvh">
@@ -57,11 +59,29 @@ export async function AuthScreen({
 
       <main className="flex min-w-0 flex-1 items-center justify-center px-5 py-10 sm:px-8">
         <div className={wide ? 'w-full max-w-2xl' : 'w-full max-w-sm'}>
-          <div className="mb-8 flex items-center gap-3 lg:hidden">
-            <Monogram size={30} />
-            <span className="font-(family-name:--font-mono) text-sm font-semibold tracking-[0.18em] text-[color:var(--color-ink)] uppercase">
-              {common('appName')}
-            </span>
+          {/*
+            El selector de tema vive aquí y no solo dentro del producto.
+            El cuestionario es lo primero que ve una persona y es largo: seis
+            pasos con la pantalla en el color que el sistema haya decidido, sin
+            forma de cambiarlo hasta terminar. Quien prefiere claro no debería
+            tener que atravesar el onboarding entero a oscuras para poder
+            elegir.
+          */}
+          <div className="mb-8 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 lg:invisible">
+              <Monogram size={30} />
+              <span className="font-(family-name:--font-mono) text-sm font-semibold tracking-[0.18em] text-[color:var(--color-ink)] uppercase">
+                {common('appName')}
+              </span>
+            </div>
+            <ThemeSwitch
+              labels={{
+                legend: nav('theme.legend'),
+                system: nav('theme.system'),
+                light: nav('theme.light'),
+                dark: nav('theme.dark'),
+              }}
+            />
           </div>
 
           <div className="rounded-(--radius-xl) border border-[color:var(--color-surface-border)] bg-[color:var(--color-surface)] p-6 shadow-(--shadow-card) sm:p-8">

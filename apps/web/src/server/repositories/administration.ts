@@ -224,6 +224,14 @@ export interface CommitmentView {
    */
   readonly isDeductedAtSource: boolean;
   /**
+   * Which income this comes out of, whether or not it is taken at source.
+   *
+   * Separate from `isDeductedAtSource` on purpose: «sale del sueldo de Blei»
+   * and «se lo descuentan de la planilla» are different facts, and only the
+   * second one changes what claims a balance.
+   */
+  readonly paidFromSeriesId: string | null;
+  /**
    * What paying it late costs, in whichever shape the contract states it.
    *
    * Both shapes are carried rather than reduced to one figure here, because
@@ -252,7 +260,8 @@ export async function loadCommitments(
         isEssential: obligations.isEssential,
         settledTransactionId: obligations.settledTransactionId,
         categoryId: obligations.categoryId,
-        deductedFromSeriesId: obligations.deductedFromSeriesId,
+        isDeductedAtSource: obligations.isDeductedAtSource,
+        paidFromSeriesId: obligations.paidFromSeriesId,
         lateFeeAmount: obligations.lateFeeAmount,
         lateFeeRate: obligations.lateFeeRate,
         lateFeeAfterDays: obligations.lateFeeAfterDays,
@@ -271,7 +280,8 @@ export async function loadCommitments(
     isEssential: row.isEssential,
     isSettled: row.settledTransactionId !== null,
     categoryId: row.categoryId,
-    isDeductedAtSource: row.deductedFromSeriesId !== null,
+    isDeductedAtSource: row.isDeductedAtSource,
+    paidFromSeriesId: row.paidFromSeriesId,
     lateFee:
       row.lateFeeAmount === null ? null : Money.fromDecimalString(row.lateFeeAmount, currency),
     lateFeeRate: row.lateFeeRate,

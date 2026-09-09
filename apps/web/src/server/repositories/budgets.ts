@@ -127,7 +127,7 @@ async function spendingFor(
           isNull(obligations.settledTransactionId),
           // A deduction at source consumes no budget: nothing will leave the
           // account for it, so it must not eat a category's headroom.
-          isNull(obligations.deductedFromSeriesId),
+          eq(obligations.isDeductedAtSource, false),
           gte(obligations.dueDate, window.start),
           lte(obligations.dueDate, window.end),
         ),

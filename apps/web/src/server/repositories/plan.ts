@@ -124,6 +124,7 @@ export async function loadPlan(session: Session, householdId: string): Promise<P
             lateFeeAfterDays: obligations.lateFeeAfterDays,
             frequency: obligations.frequency,
             anchorDays: obligations.anchorDays,
+            anchorAmounts: obligations.anchorAmounts,
           })
           .from(obligations)
           .where(
@@ -133,7 +134,7 @@ export async function loadPlan(session: Session, householdId: string): Promise<P
               isNull(obligations.settledTransactionId),
               // Not a claim on money the household holds: it is taken out of a
               // salary before that salary arrives. See the column's own note.
-              isNull(obligations.deductedFromSeriesId),
+              eq(obligations.isDeductedAtSource, false),
             ),
           )
           .orderBy(obligations.dueDate),
@@ -257,13 +258,32 @@ export async function loadPlan(session: Session, householdId: string): Promise<P
     };
 
     const periodClaims: PeriodClaim[] = obligationRows.flatMap((row) => {
-      const amount = Money.fromDecimalString(row.amount, currency);
+      const flat = Money.fromDecimalString(row.amount, currency);
+
+      /**
+       * What this occurrence costs, which is not always the same figure.
+       *
+       * A payment of $700 on the 15th and $560 on the 30th is two different
+       * claims, and averaging them to $630 would be right about the month and
+       * wrong about both fortnights — which is the only thing the fortnight
+       * view exists to get right. The amount is matched to the anchor day it
+       * falls on, so the heavy one lands where it actually lands.
+       */
+      const amountOn = (due: PlainDate): Money => {
+        const perAnchor = row.anchorAmounts;
+        const days = row.anchorDays;
+        if (!perAnchor || !days) return flat;
+        const at = days.indexOf(Number(due.slice(8, 10)));
+        const stated = at >= 0 ? perAnchor[at] : undefined;
+        return stated === undefined ? flat : Money.fromDecimalString(stated, currency);
+      };
+
       return occurrencesOf(row).map((due, at) => ({
         // The row's own id for the first occurrence, so anything keyed on it
         // still matches; later ones are distinct claims on distinct days.
         id: at === 0 ? row.id : `${row.id}@${due}`,
         label: row.name,
-        amount,
+        amount: amountOn(due),
         due,
         isEssential: row.isEssential,
       }));

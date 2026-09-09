@@ -2,6 +2,7 @@ import 'server-only';
 
 import {
   accounts,
+  categories,
   debts,
   goals,
   holdings,
@@ -52,6 +53,8 @@ export interface SetupAnswers extends SetupInitial {
   readonly answered: boolean;
   /** The banks the accounts step offers, by name. Seeded reference data. */
   readonly institutions: readonly string[];
+  /** The household's expense categories, for the «¿en qué rubro?» question. */
+  readonly categories: readonly { readonly slug: string; readonly name: string }[];
 }
 
 export async function loadSetupAnswers(
@@ -69,6 +72,7 @@ export async function loadSetupAnswers(
       holdingRows,
       goalRows,
       bankRows,
+      categoryRows,
     ] = await Promise.all([
       tx
         .select({
@@ -139,7 +143,10 @@ export async function loadSetupAnswers(
           amount: obligations.expectedAmount,
           dueDate: obligations.dueDate,
           isEssential: obligations.isEssential,
-          deductedFromSeriesId: obligations.deductedFromSeriesId,
+          paidFromSeriesId: obligations.paidFromSeriesId,
+          isDeductedAtSource: obligations.isDeductedAtSource,
+          anchorAmounts: obligations.anchorAmounts,
+          categorySlug: categories.templateSlug,
           lateFeeAmount: obligations.lateFeeAmount,
           lateFeeRate: obligations.lateFeeRate,
           lateFeeAfterDays: obligations.lateFeeAfterDays,
@@ -147,6 +154,7 @@ export async function loadSetupAnswers(
           anchorDays: obligations.anchorDays,
         })
         .from(obligations)
+        .leftJoin(categories, eq(categories.id, obligations.categoryId))
         .where(and(eq(obligations.householdId, householdId), isNull(obligations.deletedAt)))
         .orderBy(asc(obligations.createdAt)),
       // The card behind a debt, when there is one, is where the limit and
@@ -202,6 +210,20 @@ export async function loadSetupAnswers(
         .from(institutions)
         .where(eq(institutions.country, 'PA'))
         .orderBy(asc(institutions.name)),
+      // The household's own expense categories, so the questionnaire can ask
+      // «¿en qué rubro va esto?» with the same list every other screen uses
+      // rather than a second, private one that would drift.
+      tx
+        .select({ slug: categories.templateSlug, name: categories.name })
+        .from(categories)
+        .where(
+          and(
+            eq(categories.householdId, householdId),
+            eq(categories.kind, 'expense'),
+            isNull(categories.archivedAt),
+          ),
+        )
+        .orderBy(asc(categories.sortOrder)),
     ]);
 
     return {
@@ -242,13 +264,21 @@ export async function loadSetupAnswers(
         dueDay: String(Number(row.dueDate.slice(8, 10))),
         isEssential: row.isEssential,
         // Stored as the income's id, answered as its position in the list. An
-        // income deleted since is `-1` here rather than a stale index, so a
-        // review shows «lo pago yo» instead of silently pointing the deduction
-        // at whichever salary now happens to sit in that slot.
+        // income deleted since drops the pointer rather than leaving a stale
+        // index, so a review shows «lo pago yo» instead of silently pointing
+        // the payment at whichever salary now happens to sit in that slot.
         ...(() => {
-          const at = incomeRows.findIndex((income) => income.id === row.deductedFromSeriesId);
-          return row.deductedFromSeriesId && at >= 0 ? { deductedFromIncome: at } : {};
+          const at = incomeRows.findIndex((income) => income.id === row.paidFromSeriesId);
+          return row.paidFromSeriesId && at >= 0 ? { paidFromIncome: at } : {};
         })(),
+        isDeductedAtSource: row.isDeductedAtSource,
+        categorySlug: row.categorySlug ?? '',
+        // Back into the two amount fields they were typed in. Blank when the
+        // fortnights are even, which is what an empty second field means.
+        anchorFirstAmount:
+          row.anchorAmounts?.[0] === undefined ? '' : trimAmount(row.anchorAmounts[0]),
+        anchorSecondAmount:
+          row.anchorAmounts?.[1] === undefined ? '' : trimAmount(row.anchorAmounts[1]),
         // Read back as the shape it was answered in. Which column holds a
         // figure is what says whether the contract charges a sum or a share.
         lateFeeKind: row.lateFeeAmount
@@ -300,6 +330,9 @@ export async function loadSetupAnswers(
       bufferMinimum: settings[0]?.buffer ? trimAmount(settings[0].buffer) : '',
       answered: Boolean(settings[0]?.completedAt),
       institutions: bankRows.map((row) => row.name),
+      // A category with no template slug is one the household invented; it is
+      // still theirs to pick, and its own name is the stable handle for it.
+      categories: categoryRows.map((row) => ({ slug: row.slug ?? row.name, name: row.name })),
     };
   });
 }

@@ -342,20 +342,36 @@ export const obligations = appSchema.table(
     nextExpectedDate: date('next_expected_date'),
     isEssential: boolean('is_essential').notNull().default(true),
     /**
-     * The income this is taken out of before it ever arrives.
+     * The income this payment comes out of.
      *
-     * Null is the ordinary case — the household pays it from money it holds.
-     * When it is set, the obligation is still owed and still shown, but it is
-     * not a claim on any balance: the money never landed. Counting it as one
-     * subtracted the same deduction twice from «lo que de verdad te queda».
+     * Says nothing about *when*. A household can pay the rent from one salary
+     * without anybody deducting it from a payslip, and until these were two
+     * columns saying so meant lying about the other half. This one exists so a
+     * household can order itself — «esto sale del sueldo de Blei» — and so
+     * advice can be about a person's own money rather than about an average.
      *
      * The foreign key onto `recurring_series` lives in the migration rather
      * than here, for the same reason `seriesId` above does: this module is
-     * imported *by* `recurring.ts`, and declaring the reference would make the
-     * two import each other. `on delete set null`, because losing the income
-     * must not delete the obligation — the debt survives the job.
+     * imported *by* `recurring.ts`.
      */
-    deductedFromSeriesId: uuid('deducted_from_series_id'),
+    paidFromSeriesId: uuid('paid_from_series_id'),
+    /**
+     * True when the money never reaches an account at all.
+     *
+     * Then it is owed and shown, but it is not a claim on any balance — the
+     * stated salary is already net of it, and counting it again subtracts the
+     * same deduction twice from «lo que de verdad te queda».
+     */
+    isDeductedAtSource: boolean('is_deducted_at_source').notNull().default(false),
+    /**
+     * One amount per anchor day, in the same order as `anchorDays`.
+     *
+     * Because a fortnight does not always pay what the other one pays. Null is
+     * the ordinary case and means the same amount every time; a list of a
+     * different length is refused by the schema rather than letting a screen
+     * silently pick which day goes unpriced.
+     */
+    anchorAmounts: numeric('anchor_amounts', { precision: 19, scale: 4, mode: 'string' }).array(),
     /**
      * What paying this late costs, in whichever shape the contract states it.
      *
