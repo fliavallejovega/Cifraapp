@@ -1218,7 +1218,10 @@
         "index": "Index",
         "other": "Other"
       }
-    }
+    },
+    "edit": "Edit",
+    "saveAndAdd": "Save and add another",
+    "done": "Done"
   },
   "records": {
     "cancel": "Cancel",

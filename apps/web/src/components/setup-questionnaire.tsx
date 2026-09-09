@@ -821,6 +821,7 @@ export function SetupQuestionnaire({
             detail: copy(`household.relationships.${row.relationship}`),
           })}
           removeLabel={copy('remove')}
+          copy={copy}
           addFirstLabel={copy('household.addFirst')}
           emptyHint={copy('household.empty')}
           onAdd={() => {
@@ -901,6 +902,7 @@ export function SetupQuestionnaire({
             detail: `${money(amountOf(arrivingAmount(row)))} ${copy(`income.per.${row.frequency}`)}`,
           })}
           removeLabel={copy('remove')}
+          copy={copy}
           addFirstLabel={copy('income.addFirst')}
           emptyHint={copy('income.empty')}
           onAdd={() => {
@@ -1105,6 +1107,7 @@ export function SetupQuestionnaire({
             addLabel={copy('receivables.add')}
             addFirstLabel={copy('receivables.addFirst')}
             removeLabel={copy('remove')}
+            copy={copy}
             emptyHint={copy('receivables.empty')}
             itemLabel={copy('receivables.name')}
             summarize={(row: ReceivableRow) => ({
@@ -1236,6 +1239,7 @@ export function SetupQuestionnaire({
               detail: money(amountOf(row.balance)),
             })}
             removeLabel={copy('remove')}
+            copy={copy}
             addFirstLabel={copy('savings.addFirst')}
             emptyHint={copy('savings.empty')}
             onAdd={() => {
@@ -1386,6 +1390,7 @@ export function SetupQuestionnaire({
             ),
           })}
           removeLabel={copy('remove')}
+          copy={copy}
           addFirstLabel={copy('commitments.addFirst')}
           emptyHint={copy('commitments.empty')}
           onAdd={() => {
@@ -1762,6 +1767,7 @@ export function SetupQuestionnaire({
             detail: money(amountOf(row.balance)),
           })}
           removeLabel={copy('remove')}
+          copy={copy}
           addFirstLabel={copy('debts.addFirst')}
           emptyHint={copy('debts.empty')}
           onAdd={() => {
@@ -1887,6 +1893,7 @@ export function SetupQuestionnaire({
               detail: money(amountOf(row.targetAmount)),
             })}
             removeLabel={copy('remove')}
+            copy={copy}
             addFirstLabel={copy('goals.addFirst')}
             emptyHint={copy('goals.empty')}
             onAdd={() => {
@@ -2114,6 +2121,24 @@ function Progress({
   );
 }
 
+/**
+ * Un ítem a la vez, y al terminar, «¿otro?».
+ *
+ * Con todos los formularios abiertos, cada ítem es una tira de campos idéntica
+ * a la anterior y la pantalla se vuelve una sola columna que cansa antes de la
+ * mitad: nadie sabe dónde termina uno y empieza el otro, ni cuántos lleva. La
+ * repetición no se arregla decorando la repetición.
+ *
+ * Así que solo está abierto el que se está llenando. Los ya contestados quedan
+ * como un renglón que dice lo que hay que saber de ellos —nombre, cifra,
+ * rubro— y se abren de nuevo con un clic si hay algo que corregir. Al terminar
+ * uno, la pregunta que sigue está en el botón: «guardar y agregar otro» o
+ * «listo».
+ *
+ * Nada se pliega ni se despliega por gusto: el renglón resumido no esconde
+ * información, la dice más corta. Abrirlo es para editarlo, que es la única
+ * razón por la que alguien querría volver a verlo entero.
+ */
 function RowEditor<T>({
   rows,
   addLabel,
@@ -2125,6 +2150,7 @@ function RowEditor<T>({
   render,
   summarize,
   itemLabel,
+  copy,
 }: {
   readonly rows: readonly T[];
   readonly addLabel: string;
@@ -2137,11 +2163,9 @@ function RowEditor<T>({
   readonly onRemove: (index: number) => void;
   readonly render: (row: T, index: number) => ReactNode;
   /**
-   * Cómo se llama y cuánto vale esta fila, para su encabezado.
+   * Cómo se llama y cuánto vale una fila, para su encabezado y su renglón.
    *
-   * Sin esto, dos ítems seguidos son dos tiras de campos idénticas separadas
-   * por un filete de un píxel, y a partir del segundo nadie sabe dónde termina
-   * uno. El nombre que la persona escribió es el único título honesto que hay:
+   * El nombre que la persona escribió es el único título honesto que hay:
    * mientras no escriba ninguno, la tarjeta se numera.
    */
   readonly summarize?: (
@@ -2150,9 +2174,23 @@ function RowEditor<T>({
   ) => { title: string; detail?: string; icon?: ReactNode };
   /** «Cuenta», «Pago», «Deuda» — para numerar una tarjeta que todavía no tiene nombre. */
   readonly itemLabel?: string;
+  readonly copy: (key: string) => string;
 }) {
+  /**
+   * Cuál está abierto. El último, al llegar: es el que se acaba de agregar.
+   *
+   * `null` significa que no hay ninguno en edición y la pantalla ofrece agregar
+   * el siguiente — el estado natural de quien ya terminó con esta lista.
+   */
+  const [open, setOpen] = useState<number | null>(rows.length > 0 ? rows.length - 1 : null);
+
+  const titleOf = (row: T, index: number) => {
+    const summary = summarize?.(row, index);
+    return summary?.title.trim() ? summary.title : `${itemLabel ?? ''} ${String(index + 1)}`.trim();
+  };
+
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       {rows.length === 0 && (
         <p className="max-w-[56ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]">
           {emptyHint}
@@ -2161,25 +2199,65 @@ function RowEditor<T>({
 
       {rows.map((row, index) => {
         const summary = summarize?.(row, index);
-        const title = summary?.title.trim()
-          ? summary.title
-          : `${itemLabel ?? ''} ${String(index + 1)}`.trim();
+        const title = titleOf(row, index);
+
+        // Terminado: un renglón que dice lo que hay que saber, no un formulario
+        // más. Es lo que convierte una lista de ocho pagos en una lista y no en
+        // ocho pantallas iguales.
+        if (open !== index) {
+          return (
+            <div
+              key={index}
+              className="flex flex-wrap items-baseline gap-x-4 gap-y-1 rounded-(--radius-md) border border-[color:var(--color-surface-border)] bg-[color:var(--color-surface)] px-4 py-3"
+            >
+              <span className="flex min-w-0 flex-1 items-center gap-2 text-sm text-[color:var(--color-ink)]">
+                {summary?.icon}
+                <span className="truncate font-medium">{title}</span>
+              </span>
+              {summary?.detail && (
+                <span className="tabular text-sm text-[color:var(--color-ink-secondary)]">
+                  {summary.detail}
+                </span>
+              )}
+              <span className="flex shrink-0 items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  aria-label={`${copy('edit')} — ${title}`}
+                  onClick={() => {
+                    setOpen(index);
+                  }}
+                >
+                  {copy('edit')}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  aria-label={`${removeLabel} — ${title}`}
+                  onClick={() => {
+                    onRemove(index);
+                    // El abierto se corre solo cuando lo que se quita está
+                    // antes que él; si no, la pantalla saltaría de ítem sola.
+                    setOpen((current) =>
+                      current === null || current <= index ? current : current - 1,
+                    );
+                  }}
+                >
+                  {removeLabel}
+                </Button>
+              </span>
+            </div>
+          );
+        }
 
         return (
           <section
             // Rows are positional and have no identity of their own until they
             // are saved; the index is the only stable handle there is.
             key={index}
-            /*
-              Una tarjeta y no un renglón.
-
-              El contorno, el fondo hundido del encabezado y el nombre del ítem
-              hacen el trabajo que un filete no puede hacer: decir dónde empieza
-              y dónde termina cada cosa. Con dos pagos seguidos de campos
-              idénticos, el filete se pierde y la pantalla se vuelve una sola
-              columna de formularios que cansa antes de la mitad.
-            */
-            className="overflow-hidden rounded-(--radius-md) border border-[color:var(--color-surface-border)] bg-[color:var(--color-surface)] shadow-(--shadow-card)"
+            className="overflow-hidden rounded-(--radius-md) border border-[color:var(--color-ink)] bg-[color:var(--color-surface)] shadow-(--shadow-card)"
           >
             <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-[color:var(--color-rule)] bg-[color:var(--color-ground-sunk)] px-4 py-3">
               <h3 className="flex min-w-0 items-center gap-2 text-sm font-medium text-[color:var(--color-ink)]">
@@ -2195,16 +2273,45 @@ function RowEditor<T>({
 
             <div className="grid gap-4 p-4 sm:grid-cols-2">
               {render(row, index)}
+
               {/*
-                Always offered, including on the last row.
-                It used to appear only from the second row on, which meant an
-                account added by mistake could not be taken back out: the way to
-                reach one row is to remove the other, and then the wrong one is
-                the only one left and it is stuck. Removing everything leaves the
-                step empty, which is a real answer — the same one «no tengo de
-                esto» gives — and the line above says what goes there.
+                Y la pregunta que sigue, en el botón.
+
+                «Guardar y agregar otro» es la acción de quien está haciendo una
+                lista, que es lo que casi siempre está pasando aquí; «listo»
+                cierra sin agregar nada. Ninguno de los dos guarda en la base:
+                lo escrito ya está en el formulario y se envía al final. Lo que
+                hacen es cerrar este ítem, que es lo que la persona quiere decir
+                cuando dice «ya».
               */}
-              <div className="sm:col-span-2">
+              <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => {
+                    onAdd();
+                    setOpen(rows.length);
+                  }}
+                >
+                  {copy('saveAndAdd')}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => {
+                    setOpen(null);
+                  }}
+                >
+                  {copy('done')}
+                </Button>
+                {/*
+                  Always offered, including on the last row. It used to appear
+                  only from the second row on, which meant an item added by
+                  mistake could not be taken back out: removing everything
+                  leaves the step empty, which is a real answer — the same one
+                  «no tengo de esto» gives.
+                */}
                 <Button
                   type="button"
                   size="sm"
@@ -2212,6 +2319,7 @@ function RowEditor<T>({
                   aria-label={`${removeLabel} — ${title}`}
                   onClick={() => {
                     onRemove(index);
+                    setOpen(null);
                   }}
                 >
                   {removeLabel}
@@ -2222,9 +2330,20 @@ function RowEditor<T>({
         );
       })}
 
-      <Button type="button" variant="secondary" size="sm" className="self-start" onClick={onAdd}>
-        {rows.length === 0 ? addFirstLabel : addLabel}
-      </Button>
+      {open === null && (
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          className="self-start"
+          onClick={() => {
+            onAdd();
+            setOpen(rows.length);
+          }}
+        >
+          {rows.length === 0 ? addFirstLabel : addLabel}
+        </Button>
+      )}
     </div>
   );
 }
