@@ -2245,63 +2245,62 @@ function FortnightPicker({
   readonly label: string;
   readonly onChange: (next: readonly number[]) => void;
 }) {
-  // Vacío significa «en todos», así que para pintar los botones es lo mismo que
-  // tenerlos todos encendidos. Una sola forma de leerlo evita que el botón diga
-  // una cosa y la cuenta haga otra.
+  // Vacío significa «en todos», así que para pintar las tarjetas es lo mismo
+  // que tenerlos todos encendidos. Una sola forma de leerlo evita que la
+  // tarjeta diga una cosa y la cuenta haga otra.
   const active = chosen.length === 0 ? anchors : chosen;
 
   return (
-    <div className="sm:col-span-3">
-      <p className="text-sm font-medium text-[color:var(--color-ink)]">
+    <fieldset className="sm:col-span-3">
+      <legend className="text-sm font-medium text-[color:var(--color-ink)]">
         {copy('income.deductionWhen')}
-      </p>
+      </legend>
       <div
-        role="group"
         aria-label={`${copy('income.deductionWhen')} — ${label.trim() || copy('income.deductionLabel')}`}
-        className="mt-2 flex flex-wrap gap-2"
+        className="mt-2 grid gap-3 sm:grid-cols-2"
       >
         {anchors.map((day) => {
           const on = active.includes(day);
-          const only = on && active.length === 1;
+          // El último encendido no se apaga: un descuento que no sale ningún
+          // día no es un descuento, es una fila que habría que borrar, y para
+          // eso está «Quitar» al lado.
+          const locked = on && active.length === 1;
           return (
-            <Button
+            <label
               key={day}
-              type="button"
-              size="sm"
-              variant={on ? 'primary' : 'secondary'}
-              aria-pressed={on}
-              // `aria-disabled` y no `disabled`: el último encendido no se puede
-              // apagar, pero sigue estando encendido, y atenuarlo al 45% lo
-              // haría parecer apagado y roto a la vez.
-              aria-disabled={only || undefined}
-              className="min-w-24"
-              onClick={() => {
-                if (only) return;
-                const next = on ? active.filter((one) => one !== day) : [...active, day].sort();
-                // Todos encendidos vuelve a ser «en todos los pagos», que es el
-                // mismo hecho escrito de la forma más corta.
-                onChange(next.length === anchors.length ? [] : next);
-              }}
+              className={[
+                'flex cursor-pointer gap-3 rounded-(--radius-md) border p-3 transition-colors duration-(--duration-quick) ease-(--ease-settle)',
+                on
+                  ? 'border-[color:var(--color-ink)] bg-[color:var(--color-ground-sunk)]'
+                  : 'border-[color:var(--color-surface-border)] hover:border-[color:var(--color-rule-strong)]',
+              ].join(' ')}
             >
-              {copy('income.deductionWhenDay').replace('{day}', String(day))}
-            </Button>
+              <input
+                type="checkbox"
+                checked={on}
+                aria-disabled={locked || undefined}
+                className="mt-0.5 h-4 w-4 shrink-0 accent-[color:var(--color-ink)]"
+                onChange={() => {
+                  if (locked) return;
+                  const next = on ? active.filter((one) => one !== day) : [...active, day].sort();
+                  // Todos encendidos vuelve a ser «en todos los pagos», que es
+                  // el mismo hecho escrito de la forma más corta.
+                  onChange(next.length === anchors.length ? [] : next);
+                }}
+              />
+              <span className="text-sm">
+                <span className="block text-[color:var(--color-ink)]">
+                  {copy('income.deductionWhenDay').replace('{day}', String(day))}
+                </span>
+                <span className="mt-0.5 block text-xs text-pretty text-[color:var(--color-ink-secondary)]">
+                  {on ? copy('income.deductionWhenOn') : copy('income.deductionWhenOff')}
+                </span>
+              </span>
+            </label>
           );
         })}
       </div>
-      {/*
-        La explicación solo donde hace falta.
-
-        Con los dos encendidos —el caso corriente y el de casi todas las líneas—
-        el estado ya lo dice todo, y repetir la misma frase debajo de cada
-        descuento es ruido que empuja el resumen fuera de la pantalla. Cuando
-        alguien apaga uno, la consecuencia sí merece una línea.
-      */}
-      {active.length < anchors.length && (
-        <p className="mt-1.5 text-xs text-pretty text-[color:var(--color-ink-secondary)]">
-          {copy('income.deductionWhenOneHint')}
-        </p>
-      )}
-    </div>
+    </fieldset>
   );
 }
 
