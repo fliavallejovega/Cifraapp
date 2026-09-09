@@ -1058,6 +1058,15 @@ export function SetupQuestionnaire({
         />
       )}
 
+      {step === 'commitments' && (
+        <CommitmentsTotal
+          rows={commitments}
+          incomes={namedIncomes}
+          currencySymbol={currencySymbol}
+          copy={copy}
+        />
+      )}
+
       {step === 'debts' && (
         <RowEditor
           rows={debtRows}
@@ -1570,6 +1579,114 @@ function Check({
         <span className="mt-0.5 block text-xs text-[color:var(--color-ink-secondary)]">{hint}</span>
       </span>
     </label>
+  );
+}
+
+/**
+ * How many times a year each cadence is paid.
+ *
+ * The exact ones are exact: twice a month is twenty-four, a quarter is four.
+ * Weekly, fortnightly and daily are counted per *year* rather than per month,
+ * because a month is not four weeks — treating it as four undercounts a weekly
+ * bill by a whole payment most months, and a household planning around that
+ * number is short every fourth week for a reason nobody can see.
+ */
+const PAYMENTS_PER_YEAR: Record<Frequency, number> = {
+  daily: 365,
+  weekly: 52,
+  biweekly: 26,
+  semimonthly: 24,
+  monthly: 12,
+  quarterly: 4,
+  annual: 1,
+};
+
+/**
+ * What the commitments add up to, in the one unit they can be compared in.
+ *
+ * The step asks for each payment on its own and then moves on, so nobody ever
+ * saw the figure they make — which is the figure the step is about. And the
+ * total cannot be a plain sum any more: a rent of $630 charged twice a month
+ * and an internet bill of $50 charged once are not $680 of anything. Adding the
+ * amounts as typed would produce a number that looks careful and is wrong by
+ * the size of a rent, in the direction that leaves a household short.
+ *
+ * So every cadence is converted to a month before anything is added, and the
+ * conversion is stated rather than hidden. Nothing is stored from this: the
+ * position and the plan do their own arithmetic on the saved rows, and this is
+ * the confirmation that what is being typed means what the person thinks.
+ */
+function CommitmentsTotal({
+  rows,
+  incomes,
+  currencySymbol,
+  copy,
+}: {
+  readonly rows: readonly CommitmentRow[];
+  readonly incomes: readonly { at: number; name: string }[];
+  readonly currencySymbol: string;
+  readonly copy: (key: string) => string;
+}) {
+  const asNumber = (value: string) => Number(value.replace(/[^\d.]/g, '')) || 0;
+
+  const counted = rows.filter((row) => row.name.trim() !== '' && row.amount.trim() !== '');
+  if (counted.length === 0) return null;
+
+  const monthly = (row: CommitmentRow) =>
+    (asNumber(row.amount) * PAYMENTS_PER_YEAR[row.frequency ?? 'monthly']) / 12;
+
+  const fromSalary = counted.filter((row) => row.deductedFromIncome !== undefined);
+  const fromBalance = counted.filter((row) => row.deductedFromIncome === undefined);
+
+  const sum = (list: readonly CommitmentRow[]) =>
+    list.reduce((total, row) => total + monthly(row), 0);
+
+  // Only worth saying when a cadence was actually converted. On a list of
+  // ordinary monthly bills the sentence would be noise.
+  const converted = counted.some((row) => (row.frequency ?? 'monthly') !== 'monthly');
+
+  const money = (value: number) =>
+    `${currencySymbol}${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  const line = (label: string, value: string) => (
+    <div className="flex items-baseline justify-between gap-4 py-1.5">
+      <span>{label}</span>
+      <span className="tabular">{value}</span>
+    </div>
+  );
+
+  return (
+    <section className="border-t border-[color:var(--color-rule)] pt-8">
+      <h3 className="text-base font-medium">{copy('commitments.totalTitle')}</h3>
+      <p className="mt-1 max-w-[68ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]">
+        {converted ? copy('commitments.totalConverted') : copy('commitments.totalDetail')}
+      </p>
+
+      <div className="mt-4 max-w-[46ch] text-sm text-[color:var(--color-ink-secondary)]">
+        {fromBalance.length > 0 &&
+          line(
+            copy('commitments.totalYouPay').replace('{count}', String(fromBalance.length)),
+            money(sum(fromBalance)),
+          )}
+
+        {fromSalary.length > 0 &&
+          line(
+            copy('commitments.totalFromSalary').replace('{count}', String(fromSalary.length)),
+            money(sum(fromSalary)),
+          )}
+
+        <div className="mt-2 flex items-baseline justify-between gap-4 border-t border-[color:var(--color-rule)] pt-3 text-base text-[color:var(--color-ink)]">
+          <span className="font-medium">{copy('commitments.totalLabel')}</span>
+          <span className="tabular font-medium">{money(sum(counted))}</span>
+        </div>
+
+        {fromSalary.length > 0 && incomes.length > 0 && (
+          <p className="mt-3 text-xs text-[color:var(--color-ink-tertiary)]">
+            {copy('commitments.totalFromSalaryNote')}
+          </p>
+        )}
+      </div>
+    </section>
   );
 }
 

@@ -993,7 +993,14 @@
       "firstDay": "Primer día",
       "secondDay": "Segundo día",
       "daysHint": "El día del mes en que cae la primera.",
-      "lastDayHint": "Si cae el último día del mes, pon 31."
+      "lastDayHint": "Si cae el último día del mes, pon 31.",
+      "totalTitle": "Lo que pagan al mes",
+      "totalDetail": "La suma de lo que acabas de escribir. No la guardamos: es para que veas el número que forman tus pagos antes de seguir.",
+      "totalConverted": "Llevado todo a un mes para poder sumarlo: lo quincenal cuenta dos veces, y lo semanal y lo diario se cuentan por año (52 y 365 pagos) repartidos entre 12 meses. Un mes no son cuatro semanas.",
+      "totalYouPay": "Pagas tú ({count})",
+      "totalFromSalary": "Se descuenta de un sueldo ({count})",
+      "totalLabel": "Total al mes",
+      "totalFromSalaryNote": "Lo descontado del sueldo no sale de tu saldo: ya viene restado de lo que cobras. Está aquí porque lo debes, no porque lo vayas a pagar aparte."
     },
     "debts": {
       "title": "¿Debes algo?",

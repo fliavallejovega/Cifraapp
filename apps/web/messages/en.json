@@ -993,7 +993,14 @@
       "firstDay": "First day",
       "secondDay": "Second day",
       "daysHint": "The day of the month the first one falls on.",
-      "lastDayHint": "If it falls on the last day of the month, put 31."
+      "lastDayHint": "If it falls on the last day of the month, put 31.",
+      "totalTitle": "What you pay each month",
+      "totalDetail": "The sum of what you just typed. We do not store it: it is here so you can see the figure your payments make before moving on.",
+      "totalConverted": "Everything brought to one month so it can be added: twice-monthly counts twice, and weekly and daily are counted per year (52 and 365 payments) spread over 12 months. A month is not four weeks.",
+      "totalYouPay": "You pay ({count})",
+      "totalFromSalary": "Taken from a salary ({count})",
+      "totalLabel": "Monthly total",
+      "totalFromSalaryNote": "What comes off a salary does not leave your balance: it is already deducted from what you are paid. It is here because you owe it, not because you will pay it separately."
     },
     "debts": {
       "title": "Do you owe anything?",
