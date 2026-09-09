@@ -1120,7 +1120,9 @@
       "account": "Cuenta principal",
       "rent": "Alquiler o hipoteca",
       "minimums": "Mínimos de tarjetas y préstamos",
-      "other": "Otros pagos del mes"
+      "other": "Otros pagos del mes",
+      "resumed": "Seguimos donde lo dejaste. Puedes cambiar cualquier respuesta antes de terminar.",
+      "discard": "Empezar de nuevo"
     },
     "review": {
       "title": "Revisa lo que nos contaste",

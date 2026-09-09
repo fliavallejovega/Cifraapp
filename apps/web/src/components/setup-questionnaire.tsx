@@ -33,6 +33,28 @@ import { completeSetup, type SetupResult } from '@/server/onboarding-actions';
  * counts down, expires, or claims anybody else is watching.
  */
 
+/** El cuestionario a medio contestar, tal como se guarda en el navegador. */
+interface SetupDraft {
+  people: PersonRow[];
+  bufferMinimum: string;
+  incomes: IncomeRow[];
+  accounts: AccountRow[];
+  commitments: CommitmentRow[];
+  debts: DebtRow[];
+  holdings: HoldingRow[];
+  goals: GoalRow[];
+  index: number;
+}
+
+/**
+ * Dónde vive el cuestionario a medio contestar, por hogar.
+ *
+ * Con prefijo y no con una llave fija porque dos hogares en el mismo navegador
+ * son un caso real —una contadora con el suyo y el de un cliente— y una única
+ * llave los haría escribirse encima.
+ */
+const SETUP_DRAFT_PREFIX = 'cifra.setup.';
+
 type Frequency =
   'daily' | 'weekly' | 'biweekly' | 'semimonthly' | 'monthly' | 'quarterly' | 'annual';
 
@@ -279,6 +301,14 @@ export interface SetupQuestionnaireProps {
    */
   readonly payroll?: PayrollLegendData | undefined;
   /**
+   * El hogar al que pertenece lo que se está contestando.
+   *
+   * Solo se usa para nombrar el borrador local: dos hogares en el mismo
+   * navegador —una contadora que administra el suyo y el de un cliente— no
+   * pueden compartir una única llave sin pisarse las respuestas.
+   */
+  readonly householdId?: string | undefined;
+  /**
    * Answered before. The questions do not change — the words around them do,
    * and so does what saving means: an update to what is on record rather than
    * a first description of it.
@@ -295,6 +325,7 @@ export function SetupQuestionnaire({
   categories,
   initial,
   payroll,
+  householdId,
   review = false,
 }: SetupQuestionnaireProps) {
   // `noUncheckedIndexedAccess` is on, and rightly: a missing key should not
@@ -402,6 +433,27 @@ export function SetupQuestionnaire({
     start(initial?.goals, { name: '', targetAmount: '', targetDate: '' }),
   );
 
+  /**
+   * Lo contestado hasta aquí, guardado en el navegador al avanzar de paso.
+   *
+   * Seis pasos son muchos para perderlos porque sonó el teléfono. Hasta ahora,
+   * salir de la página antes de la última pantalla borraba todo: quien volvía
+   * tenía que volver a escribir su casa, sus ingresos, sus cuentas y sus pagos
+   * desde cero, y la segunda vez casi nadie llega al final.
+   *
+   * En el navegador y no en el servidor porque son respuestas a medias: la mitad
+   * de un cuestionario no es un hogar descrito, y guardar en la base un ingreso
+   * sin nombre o un pago sin monto sería guardar algo que ninguna pantalla puede
+   * leer. Lo que llega a la base sigue siendo lo que se envía al final, entero y
+   * en una transacción.
+   *
+   * Se borra al terminar. Un borrador que sobrevive al envío reaparece encima de
+   * lo que ya está guardado, que es la forma más rápida de resucitar una cifra
+   * que alguien acababa de corregir.
+   */
+  const draftKey = `${SETUP_DRAFT_PREFIX}${householdId ?? 'anon'}`;
+  const [resumed, setResumed] = useState(false);
+
   // The figures a person tried on the home page, if they came from there. Read
   // once, on the first render in the browser, and then removed: they have
   // become this form's state, and a second visit should not resurrect them.
@@ -460,6 +512,103 @@ export function SetupQuestionnaire({
     }
     // Runs once; `copy` is stable for the life of the page.
   }, [review]);
+
+  /**
+   * Restaurar lo que quedó a medias, una vez, antes de tocar nada.
+   *
+   * Solo en la primera vuelta. En una revisión, lo que manda es lo que la base
+   * tiene guardado: un borrador viejo del navegador escrito encima de respuestas
+   * ya confirmadas sería deshacer en silencio la corrección que la persona vino
+   * a hacer.
+   */
+  useEffect(() => {
+    if (review) return;
+    try {
+      const raw = window.localStorage.getItem(draftKey);
+      if (!raw) return;
+      const draft = JSON.parse(raw) as Partial<SetupDraft>;
+      if (draft.people) setPeople(draft.people);
+      if (draft.bufferMinimum !== undefined) setBufferMinimum(draft.bufferMinimum);
+      if (draft.incomes) setIncomes(draft.incomes);
+      if (draft.accounts) setAccountRows(draft.accounts);
+      if (draft.commitments) setCommitments(draft.commitments);
+      if (draft.debts) setDebtRows(draft.debts);
+      if (draft.holdings) setHoldingRows(draft.holdings);
+      if (draft.goals) setGoalRows(draft.goals);
+      // Al paso donde se quedó, no al primero: volver y tener que pasar cinco
+      // pantallas ya contestadas es casi tan molesto como volver a escribirlas.
+      if (typeof draft.index === 'number' && draft.index >= 0 && draft.index < STEPS.length) {
+        setIndex(draft.index);
+      }
+      setResumed(true);
+    } catch {
+      // Almacenamiento no disponible o ilegible. El formulario abre en blanco,
+      // que es exactamente como abría antes de que esto existiera.
+    }
+    // Corre una vez, al montar. `draftKey` y `review` son fijos durante la vida
+    // de la pantalla, así que declararlos no la hace correr otra vez.
+  }, [review, draftKey]);
+
+  /**
+   * Y guardarlo, con retraso, cada vez que algo cambia.
+   *
+   * Al avanzar de paso sobre todo —que es lo que se pidió— pero también
+   * mientras se escribe: quien cierra la pestaña a mitad de la pantalla de
+   * ingresos no perdió menos que quien la cierra al terminarla.
+   */
+  useEffect(() => {
+    if (review) return;
+    const timer = setTimeout(() => {
+      try {
+        const draft: SetupDraft = {
+          people,
+          bufferMinimum,
+          incomes,
+          accounts: accountRows,
+          commitments,
+          debts: debtRows,
+          holdings: holdingRows,
+          goals: goalRows,
+          index,
+        };
+        window.localStorage.setItem(draftKey, JSON.stringify(draft));
+      } catch {
+        // Sin almacenamiento no hay borrador, y el formulario sigue funcionando
+        // exactamente como funcionaba. No es un error que reportarle a nadie.
+      }
+    }, 400);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [
+    review,
+    draftKey,
+    people,
+    bufferMinimum,
+    incomes,
+    accountRows,
+    commitments,
+    debtRows,
+    holdingRows,
+    goalRows,
+    index,
+  ]);
+
+  /**
+   * Y se borra en cuanto lo contestado deja de estar a medias.
+   *
+   * Un borrador que sobrevive al envío vuelve a aparecer encima de lo que ya
+   * está guardado la próxima vez que alguien abra esta pantalla, que es la
+   * forma más rápida de resucitar una cifra recién corregida.
+   */
+  useEffect(() => {
+    if (!state.ok) return;
+    try {
+      window.localStorage.removeItem(draftKey);
+    } catch {
+      // Nada que hacer: si no se puede escribir, tampoco se pudo guardar.
+    }
+  }, [state.ok, draftKey]);
 
   const step: Step = STEPS[index] ?? 'household';
   const isLast = index === STEPS.length - 1;
@@ -559,6 +708,36 @@ export function SetupQuestionnaire({
       )}
 
       {fromDraft && <Status tone="neutral">{copy('draft.notice')}</Status>}
+
+      {/*
+        Retomado, y con la puerta de salida al lado.
+
+        Decir «seguimos donde lo dejaste» sin ofrecer empezar de nuevo deja
+        encerrado a quien está probando, o a quien contestó por otra persona y
+        ahora quiere contestar por sí mismo.
+      */}
+      {resumed && (
+        <Status tone="neutral">
+          <span className="flex flex-wrap items-center gap-3">
+            <span>{copy('draft.resumed')}</span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                try {
+                  window.localStorage.removeItem(draftKey);
+                } catch {
+                  // Sin almacenamiento no había borrador que borrar.
+                }
+                window.location.reload();
+              }}
+            >
+              {copy('draft.discard')}
+            </Button>
+          </span>
+        </Status>
+      )}
 
       {state.error && (
         <Problem

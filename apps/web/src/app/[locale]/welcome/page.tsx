@@ -64,6 +64,7 @@ export default async function WelcomePage({ params }: { params: Promise<{ locale
         t={labels(rawOf(t))}
         institutions={answers.institutions}
         {...(payroll ? { payroll } : {})}
+        householdId={householdId}
         categories={answers.categories}
         initial={answers}
         review={review}
@@ -104,6 +105,8 @@ async function HouseholdStep({ locale }: { locale: string }) {
 function labels(read: (key: string) => string): Record<string, string> {
   const keys = [
     'draft.notice',
+    'draft.resumed',
+    'draft.discard',
     'draft.account',
     'draft.rent',
     'draft.minimums',

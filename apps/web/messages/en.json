@@ -1120,7 +1120,9 @@
       "account": "Main account",
       "rent": "Rent or mortgage",
       "minimums": "Card and loan minimums",
-      "other": "Other payments this month"
+      "other": "Other payments this month",
+      "resumed": "Picking up where you left off. You can change any answer before you finish.",
+      "discard": "Start over"
     },
     "review": {
       "title": "Review what you told us",
