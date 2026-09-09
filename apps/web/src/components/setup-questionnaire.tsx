@@ -684,7 +684,17 @@ export function SetupQuestionnaire({
                 )}
               </Field>
               <MoneyField
-                label={row.amountIsGross === true ? copy('income.grossLine') : copy('amount')}
+                /*
+                  El período, dicho en la etiqueta.
+
+                  «Monto: 3.000» junto a «Cada cuánto: Quincenal» pide que la
+                  persona una las dos cosas en su cabeza, y quien tiene un
+                  contrato mensual no las une: escribe el sueldo del mes en una
+                  casilla que significa el de la quincena. Decirlo dos veces es
+                  redundante y es exactamente la redundancia que evita duplicar
+                  un sueldo.
+                */
+                label={`${row.amountIsGross === true ? copy('income.grossLine') : copy('amount')} ${copy(`income.per.${row.frequency}`)}`}
                 symbol={currencySymbol}
                 value={row.amount}
                 onChange={(value) => {
@@ -1923,6 +1933,7 @@ function IncomeDeductions({
    * un calendario distinto del 15 y el 30, y quien lee su recibo reconoce el
    * número, no el ordinal.
    */
+  const per = copy(`income.per.${row.frequency}`);
   const anchors = anchorsOf(row);
   const byFortnight = anchors.length === 2;
   const perAnchor = arrivingPerAnchor(row);
@@ -1968,7 +1979,7 @@ function IncomeDeductions({
               )}
             </Field>
             <MoneyField
-              label={copy('income.deductionAmount')}
+              label={`${copy('income.deductionAmount')} ${per}`}
               symbol={currencySymbol}
               value={line.amount}
               onChange={(value) => {
@@ -2088,7 +2099,7 @@ function IncomeDeductions({
         {lines.length > 0 && gross > 0 && (
           <div className="max-w-[46ch] border-t border-[color:var(--color-rule)] pt-3 text-sm text-[color:var(--color-ink-secondary)]">
             <div className="flex items-baseline justify-between gap-4 py-1">
-              <span>{copy('income.grossLine')}</span>
+              <span>{`${copy('income.grossLine')} ${per}`}</span>
               <span className="tabular">{money(gross)}</span>
             </div>
             {/*
@@ -2101,10 +2112,12 @@ function IncomeDeductions({
               una retención que no es la de nadie. El número que delata el error
               es este.
             */}
-            <div className="flex items-baseline justify-between gap-4 py-1">
-              <span>{copy('income.annualLine').replace('{count}', String(paymentsPerYear))}</span>
-              <span className="tabular">{money(gross * paymentsPerYear)}</span>
-            </div>
+            {paymentsPerYear > 1 && (
+              <div className="flex items-baseline justify-between gap-4 py-1">
+                <span>{copy('income.annualLine').replace('{count}', String(paymentsPerYear))}</span>
+                <span className="tabular">{money(gross * paymentsPerYear)}</span>
+              </div>
+            )}
             <div className="flex items-baseline justify-between gap-4 py-1">
               <span>{copy('income.deductedLine').replace('{count}', String(lines.length))}</span>
               <span className="tabular">−{money(taken)}</span>
@@ -2128,12 +2141,14 @@ function IncomeDeductions({
                   </div>
                 ))}
                 <p className="mt-2 text-xs text-pretty text-[color:var(--color-ink-tertiary)]">
-                  {copy('income.netUnevenNote').replace('{amount}', money(average))}
+                  {copy('income.netUnevenNote')
+                    .replace('{amount}', money(average))
+                    .replace('{per}', per)}
                 </p>
               </div>
             ) : (
               <div className="mt-1 flex items-baseline justify-between gap-4 border-t border-[color:var(--color-rule)] pt-2 text-base text-[color:var(--color-ink)]">
-                <span className="font-medium">{copy('income.netLine')}</span>
+                <span className="font-medium">{`${copy('income.netLine')} ${per}`}</span>
                 <span className="tabular font-medium">{money(arrives)}</span>
               </div>
             )}
