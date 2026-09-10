@@ -85,7 +85,12 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
       view.cards.map(async (card) => [
         card.accountId,
         await loadCatalogueFor(
-          { issuerKey: card.issuerKey, network: card.network, tier: card.tier },
+          {
+            issuerKey: card.issuerKey,
+            network: card.network,
+            tier: card.tier,
+            program: card.programKey,
+          },
           context.today,
         ),
       ] as const),
@@ -209,9 +214,27 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
         reviewBy: rawOf(t)('manage.catalogue.reviewBy'),
         stale: t('manage.catalogue.stale'),
         adopt: t('manage.catalogue.adopt'),
+        forThisCard: rawOf(t)('manage.catalogue.forThisCard'),
+        needsProgram: t('manage.catalogue.needsProgram'),
+        market: t('manage.catalogue.market'),
+        marketDetail: t('manage.catalogue.marketDetail'),
         openSource: t('manage.catalogue.openSource'),
         warning: t('manage.catalogue.warning'),
       },
+    },
+    balance: {
+      title: t('manage.balance.title'),
+      ask: rawOf(t)('manage.balance.ask'),
+      amount: t('manage.balance.amount'),
+      asOf: t('manage.balance.asOf'),
+      asOfHint: t('manage.balance.asOfHint'),
+      save: t('manage.balance.save'),
+      saved: t('manage.balance.saved'),
+      current: rawOf(t)('manage.balance.current'),
+      since: rawOf(t)('manage.balance.since'),
+      stale: t('manage.balance.stale'),
+      never: rawOf(t)('manage.balance.never'),
+      why: t('manage.balance.why'),
     },
     movements: {
       detail: t('manage.movements.detail'),
@@ -323,7 +346,41 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
     tier: card.tier,
     programKey: card.programKey,
     institutionId: card.institutionId,
-    catalogue: (catalogues[card.accountId] ?? []).map((entry) => ({
+    /** Cómo se llama esta tarjeta en una frase: «Visa ConnectMiles de Banco General». */
+    identity: [
+      card.network ? t(`networks.${card.network}`) : null,
+      card.programName,
+      card.tier ? t(`tiers.${card.tier}`) : null,
+      card.issuerName ? t('manage.catalogue.byIssuer', { issuer: card.issuerName }) : null,
+    ]
+      .filter((part): part is string => part !== null && part !== '')
+      .join(' · '),
+    needsProgram: card.programKey === null,
+    /* Sólo millas y puntos. Un cashback se acredita en el estado de cuenta y ya
+       está contado; unas millas viven en otro lado y nadie las ve al mirar la
+       tarjeta, que es justamente por qué hay que preguntarlas. */
+    tracksBalance: card.programKind === 'miles' || card.programKind === 'points',
+    programName: card.programName,
+    programBalance:
+      card.programBalance === null ? null : card.programBalance.toLocaleString(moneyLocale),
+    programBalanceAsOf: card.programBalanceAsOf
+      ? formatPlainDate(card.programBalanceAsOf, locale)
+      : null,
+    programBalanceAgeDays:
+      card.programBalanceAsOf === null ? null : daysBetween(card.programBalanceAsOf, context.today),
+    spentSinceBalance:
+      card.spentSinceBalance?.isPositive()
+        ? money(card.spentSinceBalance)
+        : null,
+    marketReferences: (catalogues[card.accountId]?.marketReferences ?? []).map((entry) => ({
+      id: entry.id,
+      label: entry.label,
+      value: entry.value,
+      sourceName: entry.sourceName,
+      sourceUrl: entry.sourceUrl,
+      capturedOn: formatPlainDate(entry.capturedOn, locale),
+    })),
+    catalogue: (catalogues[card.accountId]?.benefits ?? []).map((entry) => ({
       id: entry.id,
       kind: entry.kind,
       label: entry.label,
@@ -658,4 +715,10 @@ function rawOf(catalogue: { raw: (key: string) => unknown }): (key: string) => s
     const value = catalogue.raw(key);
     return typeof value === 'string' ? value : '';
   };
+}
+
+/** Cuántos días pasaron entre dos fechas, sin pasar por la zona del servidor. */
+function daysBetween(from: string, to: string): number {
+  const gap = Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`);
+  return Math.round(gap / (24 * 60 * 60 * 1000));
 }

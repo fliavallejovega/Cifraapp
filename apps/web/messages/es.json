@@ -3702,7 +3702,12 @@
         "stale": "Conviene reconfirmarlo",
         "adopt": "Tengo este",
         "openSource": "Ver la fuente",
-        "warning": "Esta información puede variar sin aviso: los bancos cambian condiciones, topes y comercios cuando quieren. Cada línea dice de cuándo es y hasta cuándo se leyó vigente. Antes de decidir algo con plata, confirmalo con tu banco."
+        "warning": "Esta información puede variar sin aviso: los bancos cambian condiciones, topes y comercios cuando quieren. Cada línea dice de cuándo es y hasta cuándo se leyó vigente. Antes de decidir algo con plata, confirmalo con tu banco.",
+        "byIssuer": "de {issuer}",
+        "forThisCard": "Lo que tu banco publica para una {identity}. No sale de tu contrato: es la referencia con la que sabés qué preguntar.",
+        "needsProgram": "Falta declarar el programa de esta tarjeta, así que los beneficios que dependen de él no aparecen. Ponelo en Datos y se completan.",
+        "market": "Cómo se compara con el mercado",
+        "marketDetail": "Lo que cobran otros bancos por una tarjeta del mismo nivel, según el estudio de ACODECO. Es una referencia para negociar, no algo que tengas."
       },
       "movements": {
         "detail": "Anotá acá lo que esta tarjeta no trae todavía en su estado de cuenta.",
@@ -3721,6 +3726,20 @@
         "chargeEffect": "Sube lo que debés, que hoy es {balance}.",
         "paymentEffect": "Baja lo que debés, que hoy es {balance}.",
         "noDebt": "Esta tarjeta todavía no lleva una deuda, así que un pago no tendría qué bajar. Marcala como tarjeta en Deudas y aparece."
+      },
+      "balance": {
+        "title": "Tus {program}",
+        "ask": "Anotar cuántas {program} llevo",
+        "amount": "¿Cuántas llevás?",
+        "asOf": "¿De qué fecha es ese número?",
+        "asOfHint": "La fecha en que lo miraste, no la de hoy.",
+        "save": "Anotarlo",
+        "saved": "Anotado.",
+        "current": "{balance} al {date}",
+        "since": "Desde entonces llevás {spent} de consumo con ella. No decimos cuántas subió: la tasa está escrita en prosa y calcularla daría un número que el programa no reconoce.",
+        "stale": "Ya pasó un ciclo entero",
+        "never": "Todavía no anotaste cuántas {program} llevás. Es la mitad que explica por qué esta tarjeta vale su anualidad.",
+        "why": "No lo calculamos solos a propósito. La tasa de acumulación vive en una frase del banco, y acumular sobre un factor sacado de ahí daría un saldo que el programa no reconoce — con tu familia decidiendo un viaje contra una cifra inventada."
       }
     },
     "compare": {

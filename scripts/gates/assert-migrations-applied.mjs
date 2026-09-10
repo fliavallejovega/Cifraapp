@@ -23,6 +23,10 @@ const EXPECTED = [
   ['platform', 'card_programs', 'program_key'],
   ['platform', 'card_promotions', 'programs'],
   ['app', 'accounts', 'card_program'],
+  ['app', 'program_balances', 'balance'],
+  ['app', 'program_balances', 'as_of'],
+  ['platform', 'card_benefit_catalogue', 'program_key'],
+  ['platform', 'card_benefit_catalogue', 'is_market_reference'],
 ];
 
 const sql = connect();

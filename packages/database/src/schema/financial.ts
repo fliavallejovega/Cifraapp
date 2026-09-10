@@ -1,5 +1,6 @@
 import { relations, sql } from 'drizzle-orm';
 import {
+  bigint,
   boolean,
   char,
   date,
@@ -779,6 +780,42 @@ export const debtPayments = appSchema.table(
     reversalReason: text('reversal_reason'),
   },
   (table) => [index('debt_payments_debt_idx').on(table.debtId)],
+);
+
+/**
+ * El saldo de millas o puntos que la casa declaró, con su fecha.
+ *
+ * No se calcula. La tasa de acumulación vive en prosa —«una milla por cada
+ * US$3.00 de compra»— y acumular sobre una tasa inferida de una frase produce
+ * un saldo que el programa no reconoce, con una familia decidiendo un viaje
+ * contra una cifra que este sistema se inventó.
+ *
+ * Una tabla y no una columna porque un saldo con fecha es un hecho fechado. Si
+ * el programa devalúa, si vencen millas o si alguien canjea, el histórico es lo
+ * único que explica por qué el número dejó de cuadrar.
+ */
+export const programBalances = appSchema.table(
+  'program_balances',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .default(sql`public.uuid_generate_v7()`),
+    householdId: uuid('household_id')
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    accountId: uuid('account_id')
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    /** Un plástico puede cambiar de programa; el saldo viejo sigue siendo del viejo. */
+    programKey: text('program_key'),
+    /** Entero: no hay medias millas, y un numeric invitaría a promediarlas. */
+    balance: bigint('balance', { mode: 'number' }).notNull(),
+    asOf: date('as_of').notNull(),
+    note: text('note'),
+    recordedBy: uuid('recorded_by').references(() => profiles.id, { onDelete: 'set null' }),
+    recordedAt: timestamp('recorded_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index('program_balances_account_idx').on(table.accountId)],
 );
 
 export const householdSettings = appSchema.table('household_settings', {

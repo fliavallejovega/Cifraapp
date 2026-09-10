@@ -73,6 +73,11 @@ entienda entra a un asistente donde se clasifica o se crea el rubro.
       EXPECT: NO DAY CLAIMS OK
       EVIDENCE: automatic-evidence=v1; definition-sha256=af8ab4ed8e6c28e1b1b293461165fc7f62aec73fb2a7b2d99049c31128d70681; exit=0; EXPECT=matched; output-sha256=1d4ba86631979560caffef11d0fee0e2934047f28fb53b21a4a8e8b8b10fa762; output-bytes=17; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar; path=6dc919bb4189/22 entries
 
+- [x] G15: A una tarjeta sólo se le ofrece lo que puede ser suyo: su programa, no los otros del banco, y nunca una referencia de mercado como algo que se tiene
+      CHECK: node scripts/gates/assert-catalogue-fits-the-card.mjs
+      EXPECT: CATALOGUE FITS THE CARD OK
+      EVIDENCE: automatic-evidence=v1; definition-sha256=163cafc58470959f0da20ddd9cd0d97228e4719a6d4846c325431ff7ef933804; exit=0; EXPECT=matched; output-sha256=2606c8a7dc96f8ad88589356472e59fd26e66d6f941f97bf99358723281dda7c; output-bytes=27; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar; path=6dc919bb4189/22 entries
+
 - [x] G10: Cada clave de copy que una pantalla pide existe en español y en inglés
       CHECK: node scripts/gates/assert-copy-complete.mjs
       EXPECT: COPY COMPLETE OK

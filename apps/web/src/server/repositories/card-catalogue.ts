@@ -23,6 +23,20 @@ import type { PlainDate } from '@app/domain';
  * es la forma más rápida de que alguien crea que tiene una cobertura que no
  * tiene, y este catálogo existe justamente para no hacer eso.
  *
+ * ## El programa cuenta, y por meses no contó
+ *
+ * Una Visa ConnectMiles y una Visa Estrellas del mismo banco, la misma red y el
+ * mismo nivel acumulan cosas distintas. La columna `program` estaba cargada y
+ * este filtro la ignoraba, así que a una ConnectMiles se le ofrecían Estrellas
+ * y CashBack — tres programas incompatibles presentados como si los tuviera los
+ * tres. Un sistema que sabe qué tarjeta es y aun así pregunta cuál de seis
+ * programas ajenos es el suyo no está usando lo que sabe.
+ *
+ * ## Y lo que describe el mercado no se ofrece como propio
+ *
+ * «La anualidad más baja es US$84 en Davivienda» es un dato sobre otro banco.
+ * Sale aparte, sin botón para adoptarlo, porque no es de nadie.
+ *
  * ## Se lee con la conexión de plataforma
  *
  * No pertenece a ningún hogar: dice lo que un banco publicó. Leerlo con la
@@ -49,13 +63,26 @@ export interface CatalogueEntry {
   readonly isStale: boolean;
 }
 
+export interface CatalogueForCard {
+  /** Lo que este banco y esta red publican para una tarjeta como la tuya. */
+  readonly benefits: readonly CatalogueEntry[];
+  /** Cómo se compara con el resto del mercado. No se adopta: se lee. */
+  readonly marketReferences: readonly CatalogueEntry[];
+}
+
 export async function loadCatalogueFor(
-  card: { issuerKey: string | null; network: string | null; tier: string | null },
+  card: {
+    issuerKey: string | null;
+    network: string | null;
+    tier: string | null;
+    /** La llave del programa declarado, o nulo cuando la casa no lo dijo. */
+    program: string | null;
+  },
   today: PlainDate,
-): Promise<readonly CatalogueEntry[]> {
+): Promise<CatalogueForCard> {
   // Sin red ni emisor no hay nada que filtrar, y devolver el catálogo entero
   // sería enseñarle a una tarjeta los beneficios de otras seis.
-  if (!card.issuerKey && !card.network) return [];
+  if (!card.issuerKey && !card.network) return { benefits: [], marketReferences: [] };
 
   const db = getPlatformDb(getServerEnv().DATABASE_URL);
 
@@ -77,11 +104,22 @@ export async function loadCatalogueFor(
         matches(cardBenefitCatalogue.issuerKey, card.issuerKey),
         matches(cardBenefitCatalogue.network, card.network),
         matches(cardBenefitCatalogue.tier, card.tier),
+        /*
+          El programa. Una fila que nombra uno sólo aplica a una tarjeta que
+          declaró ese mismo; una que no lo nombra aplica igual.
+
+          Y si la tarjeta todavía no declaró el suyo, las filas con programa
+          quedan fuera: enseñarlas todas afirmaría que tiene los tres, que es
+          justo lo que este filtro existe para no hacer. La pantalla lo dice y
+          ofrece declararlo.
+        */
+        matches(cardBenefitCatalogue.programKey, card.program),
       ),
     )
     .orderBy(asc(cardBenefitCatalogue.kind), asc(cardBenefitCatalogue.label));
 
-  return rows.map((row) => ({
+  const entries = rows.map((row) => ({
+    isMarketReference: row.isMarketReference,
     id: row.id,
     kind: row.kind,
     label: row.label,
@@ -99,4 +137,9 @@ export async function loadCatalogueFor(
       (row.validUntil !== null && (row.validUntil as PlainDate) < today) ||
       (row.reviewBy !== null && (row.reviewBy as PlainDate) < today),
   }));
+
+  return {
+    benefits: entries.filter((entry) => !entry.isMarketReference),
+    marketReferences: entries.filter((entry) => entry.isMarketReference),
+  };
 }

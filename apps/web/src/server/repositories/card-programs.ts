@@ -75,3 +75,16 @@ export async function loadProgramNames(): Promise<ReadonlyMap<string, string>> {
   const programs = await loadCardPrograms();
   return new Map(programs.map((program) => [program.programKey, program.name]));
 }
+
+/**
+ * De qué tipo es cada programa: `miles`, `points`, `cashback`.
+ *
+ * Decide si tiene sentido pedirle a la casa el saldo. Un cashback se acredita
+ * en el estado de cuenta y ya está contado; unas millas viven en otro lado y
+ * nadie las ve al mirar la tarjeta — que es justamente por qué hay que
+ * preguntarlas.
+ */
+export async function loadProgramKinds(): Promise<ReadonlyMap<string, string>> {
+  const programs = await loadCardPrograms();
+  return new Map(programs.map((program) => [program.programKey, program.kind]));
+}

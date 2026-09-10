@@ -13,7 +13,7 @@ import { unitRatio } from '@app/budget-engine';
 import { Money, todayIn, type CurrencyCode, type PlainDate } from '@app/domain';
 import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 
-import { loadProgramNames } from './card-programs';
+import { loadProgramKinds, loadProgramNames } from './card-programs';
 
 import { queryAsUser, type Session } from '../session';
 
@@ -80,6 +80,24 @@ export interface CardView {
   readonly programKey: string | null;
   /** Su nombre comercial, cuando el catálogo lo conoce: «Estrellas». */
   readonly programName: string | null;
+  /** `miles`, `points`, `cashback`… Decide si tiene sentido pedir un saldo. */
+  readonly programKind: string | null;
+  /**
+   * El último saldo de millas o puntos que la casa declaró, con su fecha.
+   *
+   * Nulo cuando nadie lo anotó todavía. No se calcula: la tasa vive en prosa y
+   * acumular sobre una tasa inferida produce un saldo que el programa no
+   * reconoce.
+   */
+  readonly programBalance: number | null;
+  readonly programBalanceAsOf: PlainDate | null;
+  /**
+   * Lo consumido con esta tarjeta desde la fecha de ese saldo.
+   *
+   * Es lo único que se puede decir sin inventar una tasa: movimientos reales
+   * sumados. Deja juzgar si el número está viejo sin afirmar cuánto subió.
+   */
+  readonly spentSinceBalance: Money | null;
   /** El banco que la emite, y su llave estable para casar con el catálogo. */
   readonly institutionId: string | null;
   readonly issuerName: string | null;
@@ -131,7 +149,10 @@ export async function loadCards(
 ): Promise<CardsView> {
   // El catálogo de programas vive en `platform`, fuera del alcance de RLS, así
   // que se lee antes de entrar en la consulta del hogar.
-  const programNames = await loadProgramNames();
+  const [programNames, programKinds] = await Promise.all([
+    loadProgramNames(),
+    loadProgramKinds(),
+  ]);
 
   return queryAsUser(session, async (tx) => {
     const [household] = await tx
@@ -152,6 +173,30 @@ export async function loadCards(
         network: accounts.cardNetwork,
         tier: accounts.cardTier,
         programKey: accounts.cardProgram,
+        // El último saldo declarado y lo consumido desde entonces, resueltos por
+        // Postgres: traer el histórico entero para quedarse con la última fila
+        // movería años de lecturas para producir un número.
+        programBalance: sql<number | null>`(
+          select pb.balance from app.program_balances pb
+          where pb.account_id = ${accounts.id}
+          order by pb.as_of desc, pb.recorded_at desc limit 1
+        )`,
+        programBalanceAsOf: sql<string | null>`(
+          select pb.as_of from app.program_balances pb
+          where pb.account_id = ${accounts.id}
+          order by pb.as_of desc, pb.recorded_at desc limit 1
+        )`,
+        spentSinceBalance: sql<string | null>`(
+          select coalesce(sum(abs(t.amount)), 0)::text from app.transactions t
+          where t.account_id = ${accounts.id}
+            and t.deleted_at is null
+            and t.direction = 'outflow'
+            and t.transaction_date >= (
+              select pb.as_of from app.program_balances pb
+              where pb.account_id = ${accounts.id}
+              order by pb.as_of desc, pb.recorded_at desc limit 1
+            )
+        )`,
         institutionId: accounts.institutionId,
         issuerName: institutions.name,
         issuerKey: institutions.parserKey,
@@ -309,6 +354,13 @@ export async function loadCards(
         tier: row.tier,
         programKey: row.programKey,
         programName: row.programKey ? (programNames.get(row.programKey) ?? null) : null,
+        programKind: row.programKey ? (programKinds.get(row.programKey) ?? null) : null,
+        programBalance: row.programBalance,
+        programBalanceAsOf: (row.programBalanceAsOf as PlainDate | null) ?? null,
+        spentSinceBalance:
+          row.spentSinceBalance === null
+            ? null
+            : Money.fromDecimalString(row.spentSinceBalance, currency),
         institutionId: row.institutionId,
         issuerName: row.issuerName,
         issuerKey: row.issuerKey,

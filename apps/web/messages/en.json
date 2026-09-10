@@ -3702,7 +3702,12 @@
         "stale": "Worth reconfirming",
         "adopt": "I have this one",
         "openSource": "See the source",
-        "warning": "This information can change without notice: banks change terms, caps and merchants whenever they like. Every line says when it was read and how long it was read as valid. Before deciding anything with money on it, confirm with your bank."
+        "warning": "This information can change without notice: banks change terms, caps and merchants whenever they like. Every line says when it was read and how long it was read as valid. Before deciding anything with money on it, confirm with your bank.",
+        "byIssuer": "from {issuer}",
+        "forThisCard": "What your bank publishes for a {identity}. It does not come from your contract: it is the reference that tells you what to ask about.",
+        "needsProgram": "This card’s program is not declared yet, so the benefits that depend on it are not shown. Set it under Details and they fill in.",
+        "market": "How it compares to the market",
+        "marketDetail": "What other banks charge for a card of the same tier, per the ACODECO study. A reference for negotiating, not something you have."
       },
       "movements": {
         "detail": "Record here what this card’s statement has not brought in yet.",
@@ -3721,6 +3726,20 @@
         "chargeEffect": "Raises what you owe, which today is {balance}.",
         "paymentEffect": "Lowers what you owe, which today is {balance}.",
         "noDebt": "This card does not carry a debt yet, so a payment would have nothing to pay down. Mark it as a card under Debts and it appears."
+      },
+      "balance": {
+        "title": "Your {program}",
+        "ask": "Record how many {program} I have",
+        "amount": "How many do you have?",
+        "asOf": "What date is that number from?",
+        "asOfHint": "The date you looked, not today.",
+        "save": "Record it",
+        "saved": "Recorded.",
+        "current": "{balance} as of {date}",
+        "since": "Since then you have spent {spent} on it. We do not say how many that added: the rate is written in prose, and computing it would give a number the program does not recognise.",
+        "stale": "A whole cycle has passed",
+        "never": "You have not recorded how many {program} you have. It is the half that explains why this card is worth its annual fee.",
+        "why": "We do not compute it, on purpose. The earning rate lives in a sentence from the bank, and accumulating on a factor pulled from there would give a balance the program does not recognise — with your family deciding a trip against a made-up figure."
       }
     },
     "compare": {

@@ -5,6 +5,7 @@ import { useActionState, useEffect, useState, type ReactNode } from 'react';
 
 import type { RecordActionResult } from '@/components/records/spec';
 import { createManualMovement } from '@/server/movement-actions';
+import { recordProgramBalance } from '@/server/program-balance-actions';
 import {
   addCardBenefit,
   adoptCatalogueBenefit,
@@ -134,6 +135,16 @@ export interface ProgramOption {
   readonly capturedOn: string;
 }
 
+/** Una comparación con el mercado. No se adopta: se lee. */
+export interface MarketReferenceRow {
+  readonly id: string;
+  readonly label: string;
+  readonly value: string | null;
+  readonly sourceName: string;
+  readonly sourceUrl: string;
+  readonly capturedOn: string;
+}
+
 export interface CardRow {
   readonly accountId: string;
   readonly name: string;
@@ -154,6 +165,21 @@ export interface CardRow {
   readonly benefits: readonly CardBenefitRow[];
   /** Las ofertas del mes que esta tarjeta puede pagar, ya cruzadas. */
   readonly offers: readonly CardOfferRow[];
+  /** Qué tarjeta es, en una frase: «Visa · ConnectMiles · Banco General». */
+  readonly identity: string;
+  /** El programa acumula algo que vive fuera del estado de cuenta. */
+  readonly tracksBalance: boolean;
+  readonly programName: string | null;
+  /** El último saldo declarado, ya formateado: «42,350». */
+  readonly programBalance: string | null;
+  readonly programBalanceAsOf: string | null;
+  /** Hace cuántos días se anotó. Decide si el número está viejo. */
+  readonly programBalanceAgeDays: number | null;
+  /** Lo consumido desde esa fecha, ya formateado. */
+  readonly spentSinceBalance: string | null;
+  /** Verdadero cuando el programa no se declaró y por eso falta la mitad. */
+  readonly needsProgram: boolean;
+  readonly marketReferences: readonly MarketReferenceRow[];
   /** La deuda que esta tarjeta lleva. Sin ella un pago no baja nada. */
   readonly debtId: string | null;
   /** Lo que se debe hoy, ya formateado. Es la mitad de la frase de un pago. */
@@ -246,6 +272,12 @@ export interface CardsManagerLabels {
       readonly reviewBy: string;
       readonly stale: string;
       readonly adopt: string;
+      /** «Esto es lo que Banco General publica para tu {identity}.» */
+      readonly forThisCard: string;
+      /** Cuando el programa no se declaró, falta la mitad del catálogo. */
+      readonly needsProgram: string;
+      readonly market: string;
+      readonly marketDetail: string;
       readonly openSource: string;
       readonly warning: string;
     };
@@ -276,6 +308,24 @@ export interface CardsManagerLabels {
     readonly maybeTitle: string;
     readonly maybeBody: string;
     readonly maybeTag: string;
+  };
+  readonly balance: {
+    readonly title: string;
+    /** «Cuántas millas ConnectMiles llevás» */
+    readonly ask: string;
+    readonly amount: string;
+    readonly asOf: string;
+    readonly asOfHint: string;
+    readonly save: string;
+    readonly saved: string;
+    /** «42,350 al 10 de septiembre» */
+    readonly current: string;
+    /** «Desde entonces llevás $840 de consumo con ella.» */
+    readonly since: string;
+    /** Cuando el número tiene más de mes y medio. */
+    readonly stale: string;
+    readonly never: string;
+    readonly why: string;
   };
   readonly movements: {
     readonly detail: string;
@@ -979,6 +1029,12 @@ function Benefits({
 
   return (
     <div className="flex flex-col gap-5">
+      {/* El saldo del programa, antes que nada.
+          Una tarjeta de millas tiene dos saldos y el producto sólo conocía uno:
+          sabía que se deben $4,050 y no sabía que hay 42,000 millas esperando,
+          que es la mitad que explica por qué alguien paga $150 de anualidad. */}
+      {card.tracksBalance && <ProgramBalance locale={locale} card={card} labels={labels} />}
+
       <p className="max-w-[68ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]">
         {labels.benefits.detail}
       </p>
@@ -1086,9 +1142,28 @@ function Benefits({
       */}
       <section className="border-t border-[color:var(--color-rule)] pt-5">
         <h4 className="text-sm font-medium">{labels.benefits.catalogue.title}</h4>
+        {/*
+          Qué tarjeta es, dicho antes de la lista.
+
+          El sistema sabe el banco, la red, el nivel y el programa. Enseñar una
+          lista sin nombrar de qué tarjeta es la lista invita a la pregunta que
+          esta pantalla hacía sin querer: «¿y esto es mío?». Nombrarla contesta
+          eso y además deja ver de un vistazo si el filtro se equivocó.
+        */}
         <p className="mt-1 max-w-[68ch] text-xs text-pretty text-[color:var(--color-ink-secondary)]">
-          {labels.benefits.catalogue.detail}
+          {card.identity === ''
+            ? labels.benefits.catalogue.detail
+            : labels.benefits.catalogue.forThisCard.replace('{identity}', card.identity)}
         </p>
+
+        {/* Sin programa declarado falta la mitad: los beneficios que dependen
+            de él quedan fuera, porque enseñarlos todos afirmaría que tiene los
+            tres programas del banco a la vez. */}
+        {card.needsProgram && (
+          <p className="mt-3 max-w-[68ch] text-xs text-pretty text-[color:var(--color-caution)]">
+            {labels.benefits.catalogue.needsProgram}
+          </p>
+        )}
 
         {card.catalogue.length === 0 ? (
           <p className="mt-4 max-w-[68ch] text-xs text-pretty text-[color:var(--color-ink-tertiary)]">
@@ -1158,6 +1233,53 @@ function Benefits({
               </li>
             ))}
           </ul>
+        )}
+
+        {/*
+          El mercado, aparte y sin botón para adoptarlo.
+
+          «La anualidad más baja es US$84 en Davivienda» es un dato sobre otro
+          banco. La pantalla lo ofrecía con un «Tengo este» al lado, que es
+          pedirle a alguien declarar como propio algo que no es de nadie. Sirve
+          —saber que tu platino cobra $150 cuando el más barato cobra $84 es
+          exactamente lo que este producto debería decir— pero se lee, no se
+          tiene.
+        */}
+        {card.marketReferences.length > 0 && (
+          <div className="mt-6 border-t border-[color:var(--color-rule)] pt-5">
+            <h4 className="text-sm font-medium">{labels.benefits.catalogue.market}</h4>
+            <p className="mt-1 max-w-[68ch] text-xs text-pretty text-[color:var(--color-ink-secondary)]">
+              {labels.benefits.catalogue.marketDetail}
+            </p>
+            <ul className="mt-3 flex list-none flex-col p-0">
+              {card.marketReferences.map((entry) => (
+                <li
+                  key={entry.id}
+                  className="border-b border-[color:var(--color-rule)] py-2 last:border-b-0"
+                >
+                  <span className="text-sm">{entry.label}</span>
+                  {entry.value && (
+                    <span className="ml-2 text-sm text-[color:var(--color-ink-secondary)]">
+                      {entry.value}
+                    </span>
+                  )}
+                  <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[color:var(--color-ink-tertiary)]">
+                    <a
+                      href={entry.sourceUrl}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
+                    >
+                      {entry.sourceName}
+                    </a>
+                    <span>
+                      {labels.benefits.catalogue.capturedOn.replace('{date}', entry.capturedOn)}
+                    </span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
 
         {/* Lo que el catálogo no es. Debajo de la lista y no encima: quien ya
@@ -1546,6 +1668,159 @@ function CardMovements({
         </div>
       </form>
     </div>
+  );
+}
+
+/**
+ * Cuántas millas o puntos lleva esta tarjeta.
+ *
+ * ## Por qué se pregunta
+ *
+ * Porque la tasa vive en prosa: «una milla por cada US$3.00 de compra, y por
+ * cada US$3.00 en impuestos y multas». Sacar un factor de esa frase e ir
+ * acumulando produciría un saldo que el programa no reconoce, con una familia
+ * decidiendo un viaje contra una cifra que este sistema se inventó.
+ *
+ * ## Y qué se dice sin inventar nada
+ *
+ * De cuándo es el número, y cuánto se consumió con esa tarjeta desde entonces.
+ * Lo segundo son movimientos reales sumados: no dice cuántas millas subió —eso
+ * exigiría la tasa— pero deja juzgar si el saldo está viejo, que es la pregunta
+ * de verdad.
+ */
+function ProgramBalance({
+  locale,
+  card,
+  labels,
+}: {
+  readonly locale: string;
+  readonly card: CardRow;
+  readonly labels: CardsManagerLabels;
+}) {
+  const [state, formAction, pending] = useActionState<RecordActionResult, FormData>(
+    recordProgramBalance,
+    {},
+  );
+  const [editing, setEditing] = useState(card.programBalance === null);
+
+  const programName = card.programName ?? '';
+  // Mes y medio. Un estado de cuenta llega cada treinta días, así que un saldo
+  // de más de cuarenta y cinco ya pasó un ciclo entero sin mirarse.
+  const isStale = (card.programBalanceAgeDays ?? 0) > 45;
+
+  return (
+    <section className="rounded-(--radius-md) border border-[color:var(--color-rule)] bg-[color:var(--color-surface)] p-5">
+      <h4 className="text-sm font-medium">
+        {labels.balance.title.replace('{program}', programName)}
+      </h4>
+
+      {card.programBalance === null ? (
+        <p className="mt-1 max-w-[68ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]">
+          {labels.balance.never.replace('{program}', programName)}
+        </p>
+      ) : (
+        <>
+          <p className="readout mt-2 text-2xl tabular-nums">{card.programBalance}</p>
+          <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[color:var(--color-ink-secondary)]">
+            <span>
+              {labels.balance.current
+                .replace('{balance}', card.programBalance)
+                .replace('{date}', card.programBalanceAsOf ?? '')}
+            </span>
+            {isStale && <Status tone="caution">{labels.balance.stale}</Status>}
+          </p>
+          {/* Lo consumido desde entonces, sin convertirlo a millas. Convertirlo
+              exigiría una tasa que sólo existe en una frase. */}
+          {card.spentSinceBalance && (
+            <p className="mt-2 max-w-[68ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]">
+              {labels.balance.since.replace('{spent}', card.spentSinceBalance)}
+            </p>
+          )}
+        </>
+      )}
+
+      {state.error && (
+        <div className="mt-4">
+          <Problem
+            title={labels.errorTitle}
+            body={labels.errors[state.error] ?? labels.errors['generic'] ?? ''}
+          />
+        </div>
+      )}
+      {state.ok && (
+        <p className="mt-3">
+          <Status tone="positive">{labels.balance.saved}</Status>
+        </p>
+      )}
+
+      {editing ? (
+        <form action={formAction} className="mt-4 flex flex-wrap items-end gap-3">
+          <input type="hidden" name="locale" value={locale} />
+          <input type="hidden" name="accountId" value={card.accountId} />
+          {card.programKey && <input type="hidden" name="programKey" value={card.programKey} />}
+
+          <span className="flex min-w-36 flex-col gap-1.5">
+            <label
+              htmlFor={`balance-${card.accountId}`}
+              className="text-sm font-medium text-[color:var(--color-ink)]"
+            >
+              {labels.balance.amount}
+            </label>
+            <Input
+              id={`balance-${card.accountId}`}
+              name="balance"
+              numeric
+              inputMode="numeric"
+              required
+              placeholder="0"
+            />
+          </span>
+
+          <span className="flex min-w-40 flex-col gap-1.5">
+            <label
+              htmlFor={`asof-${card.accountId}`}
+              className="text-sm font-medium text-[color:var(--color-ink)]"
+            >
+              {labels.balance.asOf}
+            </label>
+            <Input id={`asof-${card.accountId}`} name="asOf" type="date" required />
+          </span>
+
+          <Button type="submit" size="sm" disabled={pending}>
+            {labels.balance.save}
+          </Button>
+          {card.programBalance !== null && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setEditing(false);
+              }}
+            >
+              {labels.form.cancel}
+            </Button>
+          )}
+        </form>
+      ) : (
+        <div className="mt-4">
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              setEditing(true);
+            }}
+          >
+            {labels.balance.ask.replace('{program}', programName)}
+          </Button>
+        </div>
+      )}
+
+      <p className="mt-4 max-w-[68ch] text-xs text-pretty text-[color:var(--color-ink-tertiary)]">
+        {labels.balance.why}
+      </p>
+    </section>
   );
 }
 

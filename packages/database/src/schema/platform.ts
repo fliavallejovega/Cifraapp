@@ -87,8 +87,25 @@ export const cardBenefitCatalogue = platformSchema.table(
     /** El nombre comercial, cuando la fuente lo da. Es lo que permite comparar. */
     cardProduct: text('card_product'),
     sourceId: uuid('source_id'),
-    /** El programa con nombre propio: Estrellas, ConnectMiles, Regálate. */
+    /** El nombre para leer: «ConnectMiles». */
     program: text('program'),
+    /**
+     * La llave para cruzar: `connectmiles`.
+     *
+     * La misma que guarda `accounts.card_program`. Mientras nadie cruzaba las
+     * dos columnas, tener sólo el nombre no molestaba; al filtrar por programa
+     * el cruce no encontraba nada, y la pantalla pasaba de ofrecer los tres
+     * programas del banco a no ofrecer ninguno.
+     */
+    programKey: text('program_key'),
+    /**
+     * Verdadero cuando la fila describe el mercado y no una tarjeta.
+     *
+     * «La anualidad más baja es US$84 en Davivienda» es un dato sobre otros
+     * bancos. Ofrecerlo con un botón que dice «Tengo este» le pide a alguien
+     * declarar como propio algo que no es de nadie.
+     */
+    isMarketReference: boolean('is_market_reference').notNull().default(false),
     kind: text('kind').notNull(),
     label: text('label').notNull(),
     value: text('value'),
