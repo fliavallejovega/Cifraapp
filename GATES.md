@@ -78,6 +78,11 @@ entienda entra a un asistente donde se clasifica o se crea el rubro.
       EXPECT: CATALOGUE FITS THE CARD OK
       EVIDENCE: automatic-evidence=v1; definition-sha256=163cafc58470959f0da20ddd9cd0d97228e4719a6d4846c325431ff7ef933804; exit=0; EXPECT=matched; output-sha256=2606c8a7dc96f8ad88589356472e59fd26e66d6f941f97bf99358723281dda7c; output-bytes=27; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar; path=6dc919bb4189/22 entries
 
+- [x] G16: Ninguna tabla del hogar existe sin que el rol de la aplicación la pueda leer, ni legible sin RLS
+      CHECK: node scripts/gates/assert-tables-are-reachable.mjs
+      EXPECT: TABLES ARE REACHABLE OK
+      EVIDENCE: automatic-evidence=v1; definition-sha256=896eed2f0d0f1b5447d6ae99b2f29f65f4cf8687bee782fcf509b5f23a77ae27; exit=0; EXPECT=matched; output-sha256=25f6805432956a4aee537dd1804cfd31e2d8afec926d23e0468d0cb3c5c0791b; output-bytes=36; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar; path=6dc919bb4189/22 entries
+
 - [x] G10: Cada clave de copy que una pantalla pide existe en español y en inglés
       CHECK: node scripts/gates/assert-copy-complete.mjs
       EXPECT: COPY COMPLETE OK
