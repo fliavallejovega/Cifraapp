@@ -379,6 +379,10 @@
       "nameRequired": "Give the household a name.",
       "createFailed": "We couldn't create the household. Please try again in a moment.",
       "signInRequired": "Your session expired. Please sign in again."
+    },
+    "review": {
+      "title": "Review your answers",
+      "detail": "Before finishing, check that everything is how you want it. You can change any answer."
     }
   },
   "overview": {
@@ -3247,10 +3251,10 @@
     "title": "Projection",
     "detail": "How the months ahead look if nothing changes. Arithmetic you could check on paper, not a forecast.",
     "horizon": {
-      "label": "Show",
       "12": "12 months",
       "24": "24 months",
       "60": "5 years",
+      "label": "Show",
       "apply": "Show"
     },
     "stats": {
@@ -3549,7 +3553,8 @@
       "tabs": {
         "data": "Details",
         "benefits": "Benefits",
-        "statement": "Statement"
+        "statement": "Statement",
+        "offers": "Offers"
       },
       "form": {
         "name": "How you recognise it",
@@ -3576,7 +3581,15 @@
         "create": "Add this card",
         "archive": "Archive this card",
         "archiveConfirm": "Archive it? Its movements are kept.",
-        "archiveConfirmYes": "Yes, archive it"
+        "archiveConfirmYes": "Yes, archive it",
+        "identityNote": "These three fields decide which benefits and which of this month's offers we can show you. Without them there is no way to tell which of your bank's promotions applies to this card, and guessing from the name would be making it up.",
+        "networkHint": "Visa, Mastercard, Amex. Promotions are almost always for one network, not all of them.",
+        "tier": "Tier",
+        "tierNone": "Not specified",
+        "tierHint": "Classic, Gold, Platinum, Signature, Infinite. Travel insurance and lounge access depend on the tier.",
+        "issuer": "Which bank issues it?",
+        "issuerNone": "Not specified",
+        "issuerHint": "It is the first thing matched: without the bank there is no way to know whether a promotion is yours."
       },
       "benefits": {
         "title": "Benefits",
@@ -3596,13 +3609,33 @@
         "remove": "Remove",
         "expired": "Expired",
         "noCatalogue": "Cifraapp does not ship the benefits of Panamanian cards. They change by card tier, by promotion and by month, and they are terms of your contract: a stale table would tell you that you have insurance you do not have. What you record here comes from your contract, and that is why it can be trusted."
+      },
+      "offers": {
+        "detail": "This month's promotions you can pay with this card. What the bank published is shown as published, with its source and the date it was read. Which one suits you depends on where and how much you will spend, so none is crowned.",
+        "emptyTitle": "No promotions for this card this month",
+        "emptyBody": "The bank may not have published any, or the monthly sweep may not have read it yet. The board with every bank's offers is linked below.",
+        "needsTypeTitle": "We still do not know what card this is",
+        "needsTypeBody": "Matching promotions needs the issuing bank and the network. Without those two, there is no way to say which one applies, and an empty list would read as «there are none».",
+        "goToData": "Fill it in under Details",
+        "seeAll": "See every offer this month, from every bank"
+      },
+      "catalogue": {
+        "title": "What the market publishes",
+        "detail": "Benefits this bank published for cards like yours. They do not come from your contract: they are a reference for what to ask about.",
+        "empty": "Nothing has been read yet for this combination of bank, network and tier.",
+        "capturedOn": "Read on {date}",
+        "validUntil": "Valid until {date}",
+        "reviewBy": "Worth reconfirming before {date}",
+        "stale": "Worth reconfirming",
+        "adopt": "I have this one",
+        "openSource": "See the source",
+        "warning": "This information can change without notice: banks change terms, caps and merchants whenever they like. Every line says when it was read and how long it was read as valid. Before deciding anything with money on it, confirm with your bank."
       }
     },
     "compare": {
       "title": "Which one should you pay with?",
       "detail": "Pick what you are about to spend on and it sorts what you have recorded, alongside what the market offers this month.",
       "category": "I am spending on",
-      "best": "Best of what is loaded",
       "unquantified": "They give something, without a comparable figure",
       "unquantifiedHint": "Miles, points, lounges. What they are worth depends on how you use them, and the product will not guess that for you.",
       "expired": "Expired",
@@ -3610,6 +3643,15 @@
       "notMine": "Market",
       "emptyTitle": "Nothing to compare in this category",
       "emptyBody": "Record your cards’ benefits under «Manage → Benefits», or wait for the monthly sweep that brings the banks’ promotions."
+    },
+    "tiers": {
+      "classic": "Classic",
+      "gold": "Gold",
+      "platinum": "Platinum",
+      "signature": "Signature",
+      "infinite": "Infinite",
+      "black": "Black",
+      "other": "Other"
     }
   },
   "offers": {

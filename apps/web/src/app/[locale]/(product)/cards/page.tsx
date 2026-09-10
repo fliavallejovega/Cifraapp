@@ -12,15 +12,14 @@ import {
 } from '@app/ui';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
-import { CardCompare } from '@/components/card-compare';
-import { CardsManager } from '@/components/cards-manager';
+import { AddCard, CardManage } from '@/components/cards-manager';
 import { ImportForm } from '@/components/import-form';
 import { formatPlainDate, trimRate } from '@/lib/format';
 import { loadHouseholdContext } from '@/server/household-context';
 import { loadInstitutions, loadPeople } from '@/server/repositories/administration';
 import { loadCatalogueFor } from '@/server/repositories/card-catalogue';
-import { COMPARE_CATEGORIES, compareByCategory } from '@/server/repositories/card-comparison';
 import { loadCards } from '@/server/repositories/cards';
+import { loadOffers } from '@/server/repositories/offers';
 import { requireHousehold } from '@/server/session';
 
 /**
@@ -50,10 +49,13 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
   const currency = (household?.baseCurrency.trim() ?? 'USD') as CurrencyCode;
   const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
 
-  const [view, people, issuers] = await Promise.all([
+  const [view, people, issuers, offersView] = await Promise.all([
     loadCards(session, session.activeHouseholdId, currency),
     loadPeople(session, session.activeHouseholdId),
     loadInstitutions(),
+    // Las mismas ofertas del mes que alimentan su propia pantalla. Aquí sólo se
+    // usan las que cada tarjeta puede pagar; el tablero completo vive allá.
+    loadOffers(session, session.activeHouseholdId, currency, context.today),
   ]);
 
   /**
@@ -80,29 +82,6 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
   const offersCopy = await getTranslations('offers');
   const shared = await getTranslations('records');
 
-  /**
-   * El comparativo, sobre lo propio y lo del mercado a la vez.
-   *
-   * Lo que la casa anotó de su contrato entra como confirmado; lo del mercado,
-   * con la marca que traiga. Van a la misma comparación porque contestan la
-   * misma pregunta — cuál conviene aquí — y lo que las distingue es de dónde
-   * salieron, no en qué lista aparecen.
-   */
-  const comparison = await compareByCategory(
-    view.cards.flatMap((card) =>
-      card.benefits.map((benefit) => ({
-        cardId: card.accountId,
-        cardName: card.name,
-        issuerName: card.issuerName,
-        kind: benefit.kind,
-        label: benefit.label,
-        value: benefit.value,
-        capturedOn: context.today,
-        expiresOn: benefit.expiresOn,
-      })),
-    ),
-    context.today,
-  );
   const moneyLocale = locale === 'en' ? 'en-US' : 'es-PA';
   const money = (value: Parameters<typeof formatMoney>[0]) =>
     formatMoney(value, { locale: moneyLocale });
@@ -116,6 +95,7 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
     tabs: {
       data: t('manage.tabs.data'),
       benefits: t('manage.tabs.benefits'),
+      offers: t('manage.tabs.offers'),
       statement: t('manage.tabs.statement'),
     },
     form: {
@@ -123,6 +103,8 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
       nameHint: t('manage.form.nameHint'),
       network: t('manage.form.network'),
       networkNone: t('manage.form.networkNone'),
+      networkHint: t('manage.form.networkHint'),
+      identityNote: t('manage.form.identityNote'),
       networks: {
         visa: t('networks.visa'),
         mastercard: t('networks.mastercard'),
@@ -132,6 +114,7 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
       },
       tier: t('manage.form.tier'),
       tierNone: t('manage.form.tierNone'),
+      tierHint: t('manage.form.tierHint'),
       tiers: {
         classic: t('tiers.classic'),
         gold: t('tiers.gold'),
@@ -208,11 +191,124 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
         warning: t('manage.catalogue.warning'),
       },
     },
+    offers: {
+      detail: t('manage.offers.detail'),
+      emptyTitle: t('manage.offers.emptyTitle'),
+      emptyBody: t('manage.offers.emptyBody'),
+      needsTypeTitle: t('manage.offers.needsTypeTitle'),
+      needsTypeBody: t('manage.offers.needsTypeBody'),
+      goToData: t('manage.offers.goToData'),
+      today: offersCopy('today'),
+      everyDay: offersCopy('everyDay'),
+      until: rawOf(offersCopy)('until'),
+      unverified: offersCopy('unverified'),
+      capturedOn: rawOf(offersCopy)('capturedOn'),
+      seeAll: t('manage.offers.seeAll'),
+    },
     addCard: t('manage.addCard'),
     addCardTitle: t('manage.addCardTitle'),
     errorTitle: shared('errorTitle'),
     errors: errorsOf(shared),
   };
+
+  /** El tope de una oferta, en una frase: «hasta $125 sobre un consumo de $250». */
+  const capOf = (offer: (typeof offersView.offers)[number]): string | null => {
+    const discount = offer.maxDiscount ? money(offer.maxDiscount) : null;
+    const spend = offer.maxSpend ? money(offer.maxSpend) : null;
+
+    if (discount && spend) return offersCopy('capBoth', { discount, spend });
+    if (discount) return offersCopy('capDiscount', { discount });
+    if (spend) return offersCopy('capSpend', { spend });
+    return null;
+  };
+
+  const dayNames = [
+    offersCopy('days.1'),
+    offersCopy('days.2'),
+    offersCopy('days.3'),
+    offersCopy('days.4'),
+    offersCopy('days.5'),
+    offersCopy('days.6'),
+    offersCopy('days.7'),
+  ];
+
+  /**
+   * Las ofertas de cada tarjeta, agrupadas por la cuenta que las puede pagar.
+   *
+   * El cruce —emisor, red, crédito o débito— lo hizo la consulta; aquí sólo se
+   * reparten. Lo de hoy primero, y dentro de eso por comercio: es el orden de
+   * las preguntas y no un juicio sobre cuál conviene, que esta pantalla no
+   * tiene con qué emitir.
+   */
+  const offersFor = (accountId: string) =>
+    offersView.offers
+      .filter((offer) => offer.usableWithIds.includes(accountId))
+      .sort((a, b) => {
+        if (a.isToday !== b.isToday) return a.isToday ? -1 : 1;
+        return a.merchantName.localeCompare(b.merchantName);
+      })
+      .map((offer) => ({
+        id: offer.id,
+        merchantName: offer.merchantName,
+        merchantNote: offer.merchantNote,
+        categoryName: offer.category ? offersCopy(`categories.${offer.category}`) : null,
+        headline: offer.headline,
+        detail: offer.detail,
+        cap: capOf(offer),
+        weekdayNames: offer.weekdays.map((day) => dayNames[day - 1] ?? ''),
+        validUntil: offer.validUntil ? formatPlainDate(offer.validUntil, locale) : null,
+        channel: offer.channel,
+        sourceName: offer.sourceName,
+        sourceUrl: offer.sourceUrl,
+        capturedOn: formatPlainDate(offer.capturedOn, locale),
+        isVerified: offer.status === 'verified',
+        isToday: offer.isToday,
+      }));
+
+  /** Lo que el panel de una tarjeta necesita saber de ella, como datos. */
+  const rowFor = (card: (typeof view.cards)[number]) => ({
+    accountId: card.accountId,
+    name: card.name,
+    maskedNumber: card.maskedNumber,
+    network: card.network,
+    tier: card.tier,
+    institutionId: card.institutionId,
+    catalogue: (catalogues[card.accountId] ?? []).map((entry) => ({
+      id: entry.id,
+      kind: entry.kind,
+      label: entry.label,
+      value: entry.value,
+      program: entry.program,
+      sourceName: entry.sourceName,
+      sourceUrl: entry.sourceUrl,
+      capturedOn: formatPlainDate(entry.capturedOn, locale),
+      validUntil: entry.validUntil ? formatPlainDate(entry.validUntil, locale) : null,
+      reviewBy: entry.reviewBy ? formatPlainDate(entry.reviewBy, locale) : null,
+      notes: entry.notes,
+      isStale: entry.isStale,
+    })),
+    holderId: card.holderId,
+    // La deuda es la que el formulario edita: la cuenta guarda lo que dice el
+    // banco y no se pisa desde aquí.
+    balance: (card.managed ?? card.owed).toDecimalString(),
+    apr: card.apr ? trimRate(card.apr) : '',
+    minimumPayment: card.minimumPayment?.toDecimalString() ?? '',
+    creditLimit: card.creditLimit?.toDecimalString() ?? '',
+    annualFee: card.annualFee?.toDecimalString() ?? '',
+    statementDay: card.statementDay === null ? '' : String(card.statementDay),
+    dueDay: card.dueDay === null ? '' : String(card.dueDay),
+    benefits: card.benefits.map((benefit) => ({
+      id: benefit.id,
+      kind: benefit.kind,
+      label: benefit.label,
+      value: benefit.value,
+      source: benefit.source,
+      expiresOn: benefit.expiresOn,
+      isExpired: benefit.isExpired,
+    })),
+    offers: offersFor(card.accountId),
+    isArchived: card.isArchived,
+  });
 
   /**
    * El formulario de importación de cada tarjeta, armado en el servidor.
@@ -236,11 +332,11 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
           account: documents('form.account'),
           accountHint: documents('form.accountHint'),
           submit: documents('form.submit'),
-          errorTitle: documents('errors.title'),
-          queuedHeading: documents('queued.heading'),
-          queuedDetail: documents('queued.detail'),
-          watchLink: documents('queued.watch'),
-          errors: errorsOf(documents, 'errors'),
+          errorTitle: documents('form.errorTitle'),
+          queuedHeading: documents('form.queuedHeading'),
+          queuedDetail: documents('form.queuedDetail'),
+          watchLink: documents('form.watchLink'),
+          errors: errorsOf(documents, 'form.errors'),
         }}
       />,
     ]),
@@ -257,13 +353,11 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
             esta pantalla administra es la razón por la que había que registrar
             una tarjeta en dos sitios. */}
         <div className="mt-6">
-          <CardsManager
+          <AddCard
             locale={locale}
             currencySymbol={getCurrency(currency).symbol}
             people={people.map((person) => ({ id: person.id, name: person.displayName }))}
             issuers={issuers}
-            cards={[]}
-            statementFor={{}}
             labels={managerLabels}
           />
         </div>
@@ -296,51 +390,6 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
           </Card>
         )}
       </div>
-
-      {/* El comparativo antes del listado: quien abre esta pantalla suele venir
-          con una compra en la mano, y «cuál uso» se contesta antes que «qué
-          tengo». */}
-      <Section title={t('compare.title')} detail={t('compare.detail')} className="mt-12">
-        <CardCompare
-          categories={[...COMPARE_CATEGORIES]}
-          byCategory={Object.fromEntries(
-            Object.entries(comparison).map(([category, result]) => [
-              category,
-              {
-                ranked: result.ranked.map(toCompareOffer(locale)),
-                unquantified: result.unquantified.map(toCompareOffer(locale)),
-                expired: result.expired.map(toCompareOffer(locale)),
-              },
-            ]),
-          )}
-          labels={{
-            title: t('compare.title'),
-            detail: t('compare.detail'),
-            category: t('compare.category'),
-            categories: {
-              restaurantes: offersCopy('categories.restaurantes'),
-              supermercados: offersCopy('categories.supermercados'),
-              combustible: offersCopy('categories.combustible'),
-              farmacias: offersCopy('categories.farmacias'),
-              viajes: offersCopy('categories.viajes'),
-              entretenimiento: offersCopy('categories.entretenimiento'),
-              tecnologia: offersCopy('categories.tecnologia'),
-              salud: offersCopy('categories.salud'),
-              otros: offersCopy('categories.otros'),
-            },
-            best: t('compare.best'),
-            unquantified: t('compare.unquantified'),
-            unquantifiedHint: t('compare.unquantifiedHint'),
-            expired: t('compare.expired'),
-            mine: t('compare.mine'),
-            notMine: t('compare.notMine'),
-            unverified: offersCopy('unverified'),
-            capturedOn: rawOf(offersCopy)('capturedOn'),
-            emptyTitle: t('compare.emptyTitle'),
-            emptyBody: t('compare.emptyBody'),
-          }}
-        />
-      </Section>
 
       <Section title={t('list.title')} detail={t('list.detail')} className="mt-12">
         <div className="flex flex-col gap-4">
@@ -490,59 +539,31 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
                   )}
                 </p>
               )}
+
+              {/* La gestión, dentro de la tarjeta que gestiona.
+                  Antes eran tres botones «Gestionar» apilados al pie de la
+                  lista, sin nada que dijera cuál era de cuál: un control que no
+                  toca lo que modifica obliga a contar posiciones. */}
+              <CardManage
+                locale={locale}
+                currencySymbol={getCurrency(currency).symbol}
+                people={people.map((person) => ({ id: person.id, name: person.displayName }))}
+                issuers={issuers}
+                card={rowFor(card)}
+                statement={statementFor[card.accountId]}
+                offersHref={`/${locale}/offers`}
+                labels={managerLabels}
+              />
             </Card>
           ))}
         </div>
 
         <div className="mt-6">
-          <CardsManager
+          <AddCard
             locale={locale}
             currencySymbol={getCurrency(currency).symbol}
             people={people.map((person) => ({ id: person.id, name: person.displayName }))}
             issuers={issuers}
-            cards={view.cards.map((card) => ({
-              accountId: card.accountId,
-              name: card.name,
-              maskedNumber: card.maskedNumber,
-              network: card.network,
-              tier: card.tier,
-              institutionId: card.institutionId,
-              catalogue: (catalogues[card.accountId] ?? []).map((entry) => ({
-                id: entry.id,
-                kind: entry.kind,
-                label: entry.label,
-                value: entry.value,
-                program: entry.program,
-                sourceName: entry.sourceName,
-                sourceUrl: entry.sourceUrl,
-                capturedOn: formatPlainDate(entry.capturedOn, locale),
-                validUntil: entry.validUntil ? formatPlainDate(entry.validUntil, locale) : null,
-                reviewBy: entry.reviewBy ? formatPlainDate(entry.reviewBy, locale) : null,
-                notes: entry.notes,
-                isStale: entry.isStale,
-              })),
-              holderId: card.holderId,
-              // La deuda es la que el formulario edita: la cuenta guarda lo que
-              // dice el banco y no se pisa desde aquí.
-              balance: (card.managed ?? card.owed).toDecimalString(),
-              apr: card.apr ? trimRate(card.apr) : '',
-              minimumPayment: card.minimumPayment?.toDecimalString() ?? '',
-              creditLimit: card.creditLimit?.toDecimalString() ?? '',
-              annualFee: card.annualFee?.toDecimalString() ?? '',
-              statementDay: card.statementDay === null ? '' : String(card.statementDay),
-              dueDay: card.dueDay === null ? '' : String(card.dueDay),
-              benefits: card.benefits.map((benefit) => ({
-                id: benefit.id,
-                kind: benefit.kind,
-                label: benefit.label,
-                value: benefit.value,
-                source: benefit.source,
-                expiresOn: benefit.expiresOn,
-                isExpired: benefit.isExpired,
-              })),
-              isArchived: card.isArchived,
-            }))}
-            statementFor={statementFor}
             labels={managerLabels}
           />
         </div>
@@ -592,31 +613,4 @@ function rawOf(catalogue: { raw: (key: string) => unknown }): (key: string) => s
     const value = catalogue.raw(key);
     return typeof value === 'string' ? value : '';
   };
-}
-
-/** Una oferta comparada, lista para cruzar al cliente como datos. */
-function toCompareOffer(locale: string) {
-  return (offer: {
-    cardId: string;
-    cardName: string;
-    issuerName: string | null;
-    headline: string;
-    detail: string | null;
-    isVerified: boolean;
-    isOwned: boolean;
-    capturedOn: string;
-    rate: number | null;
-    position: number;
-  }) => ({
-    cardId: offer.cardId,
-    cardName: offer.cardName,
-    issuerName: offer.issuerName,
-    headline: offer.headline,
-    detail: offer.detail,
-    isVerified: offer.isVerified,
-    isOwned: offer.isOwned,
-    capturedOn: formatPlainDate(offer.capturedOn, locale),
-    rate: offer.rate,
-    position: offer.position,
-  });
 }

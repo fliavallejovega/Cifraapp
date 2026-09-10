@@ -20,12 +20,23 @@ import {
  * el estado de cuenta se subía en Importar eligiendo de una lista de todas las
  * cuentas del hogar. Nadie piensa en su tarjeta como tres sitios.
  *
- * ## Un panel por tarjeta, tres pestañas
+ * ## El panel vive dentro de la tarjeta que administra
  *
- * **Datos** —nombre, red, cupo, anualidad, últimos cuatro, saldo, tasa, mínimo,
- * fechas—, **beneficios**, y **estado de cuenta**. Sólo una tarjeta abierta a la
- * vez: tres formularios abiertos sobre tres tarjetas parecidas es cómo se edita
- * la equivocada.
+ * `CardManage` se monta **dentro** del bloque de cada tarjeta y la expande al
+ * abrirse. Antes era un botón por tarjeta apilado debajo de la lista entera:
+ * tres «Gestionar» sueltos al pie, sin nada que dijera cuál era de cuál. Un
+ * control que no toca lo que modifica obliga a contar posiciones.
+ *
+ * ## Cuatro pestañas
+ *
+ * **Datos** —nombre, red, nivel, emisor, cupo, anualidad, últimos cuatro, saldo,
+ * tasa, mínimo, fechas—, **beneficios**, **ofertas** y **estado de cuenta**.
+ *
+ * Las ofertas van dentro y no arriba de la pantalla: el tablero de todas las
+ * ofertas del mes es su propia sección del producto. Aquí sólo se contesta qué
+ * ofertas sirven **con esta tarjeta**, y por eso la pestaña depende de que la
+ * red y el emisor estén declarados — sin esos dos datos no hay forma de saber
+ * cuál promoción aplica, y la pestaña lo dice en vez de enseñar una lista vacía.
  *
  * ## Archivar, no borrar
  *
@@ -71,6 +82,34 @@ export interface CatalogueRow {
   readonly isStale: boolean;
 }
 
+/**
+ * Una oferta del mes que esta tarjeta puede pagar.
+ *
+ * Llega ya resuelta desde el servidor —el cruce de emisor, red y tipo lo hace
+ * la consulta— y ya formateada, porque lo que cruza a un componente de cliente
+ * tiene que poder serializarse. Sin veredicto de «la mejor»: se enseña lo que
+ * la fuente escribió y quien decide es quien va a pagar.
+ */
+export interface CardOfferRow {
+  readonly id: string;
+  readonly merchantName: string;
+  readonly merchantNote: string | null;
+  readonly categoryName: string | null;
+  readonly headline: string;
+  readonly detail: string | null;
+  /** El tope, en una frase ya armada: «hasta $125 sobre un consumo de $250». */
+  readonly cap: string | null;
+  /** Los días con nombre. Vacío es todos los días. */
+  readonly weekdayNames: readonly string[];
+  readonly validUntil: string | null;
+  readonly channel: string | null;
+  readonly sourceName: string;
+  readonly sourceUrl: string;
+  readonly capturedOn: string;
+  readonly isVerified: boolean;
+  readonly isToday: boolean;
+}
+
 export interface CardRow {
   readonly accountId: string;
   readonly name: string;
@@ -88,13 +127,20 @@ export interface CardRow {
   readonly statementDay: string;
   readonly dueDay: string;
   readonly benefits: readonly CardBenefitRow[];
+  /** Las ofertas del mes que esta tarjeta puede pagar, ya cruzadas. */
+  readonly offers: readonly CardOfferRow[];
   readonly isArchived: boolean;
 }
 
 export interface CardsManagerLabels {
   readonly manage: string;
   readonly close: string;
-  readonly tabs: { readonly data: string; readonly benefits: string; readonly statement: string };
+  readonly tabs: {
+    readonly data: string;
+    readonly benefits: string;
+    readonly offers: string;
+    readonly statement: string;
+  };
   readonly form: {
     readonly name: string;
     readonly nameHint: string;
@@ -103,10 +149,14 @@ export interface CardsManagerLabels {
     readonly networks: Readonly<Record<string, string>>;
     readonly tier: string;
     readonly tierNone: string;
+    readonly tierHint: string;
     readonly tiers: Readonly<Record<string, string>>;
     readonly issuer: string;
     readonly issuerNone: string;
     readonly issuerHint: string;
+    /** Por qué la red, el nivel y el emisor deciden qué ofertas se enseñan. */
+    readonly identityNote: string;
+    readonly networkHint: string;
     readonly mask: string;
     readonly maskHint: string;
     readonly balance: string;
@@ -162,6 +212,21 @@ export interface CardsManagerLabels {
       readonly warning: string;
     };
   };
+  readonly offers: {
+    readonly detail: string;
+    readonly emptyTitle: string;
+    readonly emptyBody: string;
+    /** Cuando falta la red o el emisor no se puede cruzar nada. Se dice. */
+    readonly needsTypeTitle: string;
+    readonly needsTypeBody: string;
+    readonly goToData: string;
+    readonly today: string;
+    readonly everyDay: string;
+    readonly until: string;
+    readonly unverified: string;
+    readonly capturedOn: string;
+    readonly seeAll: string;
+  };
   readonly addCard: string;
   readonly addCardTitle: string;
   readonly errorTitle: string;
@@ -181,93 +246,125 @@ const BENEFIT_KINDS: readonly BenefitKind[] = [
   'other',
 ];
 
-export function CardsManager({
+/**
+ * El control de una tarjeta, dentro de la tarjeta.
+ *
+ * Se monta al pie del bloque que describe esa tarjeta y la expande hacia abajo.
+ * El estado es suyo y no de la lista: el motivo de abrir una sola a la vez era
+ * no editar la equivocada, y eso ya lo resuelve tener el formulario debajo del
+ * nombre al que pertenece.
+ */
+export function CardManage({
   locale,
   currencySymbol,
   people,
   issuers,
-  cards,
+  card,
   labels,
-  statementFor,
+  statement,
+  offersHref,
 }: {
   readonly locale: string;
   readonly currencySymbol: string;
   readonly people: readonly { readonly id: string; readonly name: string }[];
   /** Los bancos de la lista, para poder decir cuál emite esta tarjeta. */
   readonly issuers: readonly { readonly id: string; readonly name: string }[];
-  readonly cards: readonly CardRow[];
+  readonly card: CardRow;
   readonly labels: CardsManagerLabels;
-  /** El formulario de importación de cada tarjeta, armado en el servidor. */
-  readonly statementFor: Readonly<Record<string, ReactNode>>;
+  /** El formulario de importación de esta tarjeta, armado en el servidor. */
+  readonly statement: ReactNode;
+  /** El tablero con todas las ofertas del mes, incluidas las de otros bancos. */
+  readonly offersHref: string;
 }) {
-  const [open, setOpen] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
+  const [open, setOpen] = useState(false);
+  const panelId = `card-panel-${card.accountId}`;
 
   return (
-    <div className="flex flex-col gap-4">
-      {cards.map((card) => (
-        <div key={card.accountId}>
-          <div className="flex flex-wrap items-center gap-3">
-            <Button
-              type="button"
-              variant={open === card.accountId ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => {
-                setCreating(false);
-                setOpen(open === card.accountId ? null : card.accountId);
-              }}
-            >
-              {open === card.accountId ? labels.close : labels.manage}
-            </Button>
-          </div>
+    <div className="mt-5 border-t border-[color:var(--color-rule)] pt-4">
+      <Button
+        type="button"
+        variant={open ? 'secondary' : 'ghost'}
+        size="sm"
+        aria-expanded={open}
+        aria-controls={panelId}
+        onClick={() => {
+          setOpen(!open);
+        }}
+      >
+        {open ? labels.close : labels.manage}
+      </Button>
 
-          {open === card.accountId && (
-            <CardPanel
-              locale={locale}
-              currencySymbol={currencySymbol}
-              people={people}
-              issuers={issuers}
-              card={card}
-              labels={labels}
-              statement={statementFor[card.accountId]}
-              onDone={() => {
-                setOpen(null);
-              }}
-            />
-          )}
-        </div>
-      ))}
-
-      {creating ? (
-        <Card>
-          <p className="mb-4 text-sm font-medium">{labels.addCardTitle}</p>
-          <CardForm
+      {open && (
+        <div id={panelId}>
+          <CardPanel
             locale={locale}
             currencySymbol={currencySymbol}
             people={people}
             issuers={issuers}
-            card={null}
+            card={card}
             labels={labels}
+            statement={statement}
+            offersHref={offersHref}
             onDone={() => {
-              setCreating(false);
+              setOpen(false);
             }}
           />
-        </Card>
-      ) : (
-        <div>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => {
-              setOpen(null);
-              setCreating(true);
-            }}
-          >
-            {labels.addCard}
-          </Button>
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * Agregar una tarjeta.
+ *
+ * Aparte del panel de cada tarjeta y al final de la lista, que es donde se
+ * busca lo que todavía no existe.
+ */
+export function AddCard({
+  locale,
+  currencySymbol,
+  people,
+  issuers,
+  labels,
+}: {
+  readonly locale: string;
+  readonly currencySymbol: string;
+  readonly people: readonly { readonly id: string; readonly name: string }[];
+  readonly issuers: readonly { readonly id: string; readonly name: string }[];
+  readonly labels: CardsManagerLabels;
+}) {
+  const [creating, setCreating] = useState(false);
+
+  if (!creating) {
+    return (
+      <Button
+        type="button"
+        variant="secondary"
+        onClick={() => {
+          setCreating(true);
+        }}
+      >
+        {labels.addCard}
+      </Button>
+    );
+  }
+
+  return (
+    <Card>
+      <p className="mb-4 text-sm font-medium">{labels.addCardTitle}</p>
+      <CardForm
+        locale={locale}
+        currencySymbol={currencySymbol}
+        people={people}
+        issuers={issuers}
+        card={null}
+        labels={labels}
+        onDone={() => {
+          setCreating(false);
+        }}
+      />
+    </Card>
   );
 }
 
@@ -279,6 +376,7 @@ function CardPanel({
   card,
   labels,
   statement,
+  offersHref,
   onDone,
 }: {
   readonly locale: string;
@@ -288,13 +386,15 @@ function CardPanel({
   readonly card: CardRow;
   readonly labels: CardsManagerLabels;
   readonly statement: ReactNode;
+  readonly offersHref: string;
   readonly onDone: () => void;
 }) {
-  const [tab, setTab] = useState<'data' | 'benefits' | 'statement'>('data');
+  const [tab, setTab] = useState<'data' | 'benefits' | 'offers' | 'statement'>('data');
 
   const tabs = [
     ['data', labels.tabs.data],
     ['benefits', labels.tabs.benefits],
+    ['offers', labels.tabs.offers],
     ['statement', labels.tabs.statement],
   ] as const;
 
@@ -336,6 +436,16 @@ function CardPanel({
           />
         )}
         {tab === 'benefits' && <Benefits locale={locale} card={card} labels={labels} />}
+        {tab === 'offers' && (
+          <Offers
+            card={card}
+            labels={labels}
+            offersHref={offersHref}
+            onFixType={() => {
+              setTab('data');
+            }}
+          />
+        )}
         {tab === 'statement' && <div className="max-w-lg">{statement}</div>}
       </div>
     </Card>
@@ -421,9 +531,29 @@ function CardForm({
             )}
           </Field>
 
-          <Field label={labels.form.network}>
-            {({ id }) => (
-              <Select id={id} name="network" defaultValue={card?.network ?? ''}>
+          {/*
+            Qué tarjeta es: red, nivel y emisor.
+
+            No son adorno ni clasificación: son los tres datos con los que se
+            cruzan las promociones del mes y el catálogo de beneficios. Una
+            promoción de Banco General para Visa no se le puede enseñar a quien
+            no dijo de qué banco ni de qué red es su tarjeta, y adivinarlo por
+            el nombre —«Visa Blei BG»— sería inventar la respuesta. Por eso la
+            nota está aquí arriba, donde se contestan, y no escondida en la
+            pestaña que las usa.
+          */}
+          <p className="max-w-[68ch] text-xs text-pretty text-[color:var(--color-ink-secondary)] sm:col-span-2">
+            {labels.form.identityNote}
+          </p>
+
+          <Field label={labels.form.network} hint={labels.form.networkHint}>
+            {({ id, describedBy }) => (
+              <Select
+                id={id}
+                name="network"
+                defaultValue={card?.network ?? ''}
+                aria-describedby={describedBy}
+              >
                 <option value="">{labels.form.networkNone}</option>
                 {NETWORKS.map((network) => (
                   <option key={network} value={network}>
@@ -434,9 +564,14 @@ function CardForm({
             )}
           </Field>
 
-          <Field label={labels.form.tier}>
-            {({ id }) => (
-              <Select id={id} name="tier" defaultValue={card?.tier ?? ''}>
+          <Field label={labels.form.tier} hint={labels.form.tierHint}>
+            {({ id, describedBy }) => (
+              <Select
+                id={id}
+                name="tier"
+                defaultValue={card?.tier ?? ''}
+                aria-describedby={describedBy}
+              >
                 <option value="">{labels.form.tierNone}</option>
                 {TIERS.map((tier) => (
                   <option key={tier} value={tier}>
@@ -449,7 +584,11 @@ function CardForm({
 
           {/* El emisor: es lo que permite enseñar los beneficios que ese banco
               publicó y no los de otro. */}
-          <Field label={labels.form.issuer} hint={labels.form.issuerHint}>
+          <Field
+            label={labels.form.issuer}
+            hint={labels.form.issuerHint}
+            className="sm:col-span-2"
+          >
             {({ id, describedBy }) => (
               <Select
                 id={id}
@@ -831,6 +970,134 @@ function Benefits({
           {labels.benefits.noCatalogue}
         </p>
       </section>
+    </div>
+  );
+}
+
+/**
+ * Las ofertas del mes que se pagan con esta tarjeta.
+ *
+ * ## Sin veredicto
+ *
+ * No hay «la mejor». Se enseña la frase que el banco publicó, el comercio, los
+ * días, el tope y de dónde salió; cuál conviene depende de dónde se va a comer
+ * y de cuánto se va a gastar, y eso no está en esta pantalla. Poner una corona
+ * sobre una de ellas sería afirmar algo que nadie midió.
+ *
+ * ## Sin la red y el emisor no hay nada que cruzar
+ *
+ * Y una lista vacía por falta de datos se lee igual que «no hay ofertas», que
+ * es falso. Se distingue el caso y se ofrece el camino: la pestaña de datos,
+ * que es donde se contesta.
+ *
+ * ## El resto del mercado no se esconde
+ *
+ * Al pie, el camino al tablero completo. Saber que el banco de al lado da 50%
+ * donde el tuyo no da nada es información, y esta pestaña —que por definición
+ * sólo mira una tarjeta— no la puede dar.
+ */
+function Offers({
+  card,
+  labels,
+  offersHref,
+  onFixType,
+}: {
+  readonly card: CardRow;
+  readonly labels: CardsManagerLabels;
+  readonly offersHref: string;
+  readonly onFixType: () => void;
+}) {
+  const knowsWhatItIs = card.institutionId !== null && card.network !== null;
+
+  if (!knowsWhatItIs) {
+    return (
+      <div className="flex flex-col gap-4">
+        <EmptyState title={labels.offers.needsTypeTitle} body={labels.offers.needsTypeBody} />
+        <div>
+          <Button type="button" size="sm" onClick={onFixType}>
+            {labels.offers.goToData}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-5">
+      <p className="max-w-[68ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]">
+        {labels.offers.detail}
+      </p>
+
+      {card.offers.length === 0 ? (
+        <EmptyState title={labels.offers.emptyTitle} body={labels.offers.emptyBody} />
+      ) : (
+        <ul className="flex list-none flex-col gap-3 p-0">
+          {card.offers.map((offer) => (
+            <li key={offer.id}>
+              <Card tone="sunk">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <span className="font-medium break-words">{offer.merchantName}</span>
+                  {offer.isToday && <Status tone="positive">{labels.offers.today}</Status>}
+                </div>
+
+                <p className="mt-1 text-sm text-pretty">{offer.headline}</p>
+
+                {offer.merchantNote && (
+                  <p className="mt-1 text-xs text-pretty text-[color:var(--color-ink-secondary)]">
+                    {offer.merchantNote}
+                  </p>
+                )}
+                {offer.detail && (
+                  <p className="mt-1 text-xs text-pretty text-[color:var(--color-ink-secondary)]">
+                    {offer.detail}
+                  </p>
+                )}
+                {/* El tope es la parte que decide si conviene, y la que los
+                    bancos ponen en letra chica. Va al mismo tamaño que todo. */}
+                {offer.cap && (
+                  <p className="mt-1 text-xs text-pretty text-[color:var(--color-ink-secondary)]">
+                    {offer.cap}
+                  </p>
+                )}
+
+                <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[color:var(--color-ink-tertiary)]">
+                  <span>
+                    {offer.weekdayNames.length === 0
+                      ? labels.offers.everyDay
+                      : offer.weekdayNames.join(' · ')}
+                  </span>
+                  {offer.categoryName && <span>{offer.categoryName}</span>}
+                  {offer.channel && <span>{offer.channel}</span>}
+                  {offer.validUntil && (
+                    <span>{labels.offers.until.replace('{date}', offer.validUntil)}</span>
+                  )}
+                  <a
+                    href={offer.sourceUrl}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
+                  >
+                    {offer.sourceName}
+                  </a>
+                  <span>{labels.offers.capturedOn.replace('{date}', offer.capturedOn)}</span>
+                  {!offer.isVerified && (
+                    <Status tone="caution">{labels.offers.unverified}</Status>
+                  )}
+                </p>
+              </Card>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <p className="text-sm">
+        <a
+          href={offersHref}
+          className="underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
+        >
+          {labels.offers.seeAll}
+        </a>
+      </p>
     </div>
   );
 }

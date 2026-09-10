@@ -2,9 +2,12 @@ import { formatMoney } from '@app/domain';
 import { Card, Page, PageHeader, Section, Stat } from '@app/ui';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
+import { CardCompare } from '@/components/card-compare';
 import { OffersBoard } from '@/components/offers-board';
 import { formatMoment, formatPlainDate } from '@/lib/format';
 import { loadHouseholdContext } from '@/server/household-context';
+import { COMPARE_CATEGORIES, compareByCategory } from '@/server/repositories/card-comparison';
+import { loadCards } from '@/server/repositories/cards';
 import { loadOffers } from '@/server/repositories/offers';
 import { requireHousehold } from '@/server/session';
 
@@ -34,9 +37,38 @@ export default async function OffersPage({ params }: { params: Promise<{ locale:
   const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
   const currency = context.currency;
 
-  const view = await loadOffers(session, session.activeHouseholdId, currency, context.today);
+  const [view, cards] = await Promise.all([
+    loadOffers(session, session.activeHouseholdId, currency, context.today),
+    loadCards(session, session.activeHouseholdId, currency),
+  ]);
+
+  /**
+   * El comparativo por categoría, sobre lo propio y lo del mercado a la vez.
+   *
+   * Vive aquí y no en la pantalla de tarjetas: allá se administra una tarjeta
+   * concreta, y «cuál de todas conviene en el supermercado» es una pregunta
+   * sobre el conjunto. Lo que la casa anotó de su contrato y lo que el mercado
+   * publica van a la misma comparación porque contestan lo mismo; lo que las
+   * distingue es de dónde salieron, no en qué lista aparecen.
+   */
+  const comparison = await compareByCategory(
+    cards.cards.flatMap((card) =>
+      card.benefits.map((benefit) => ({
+        cardId: card.accountId,
+        cardName: card.name,
+        issuerName: card.issuerName,
+        kind: benefit.kind,
+        label: benefit.label,
+        value: benefit.value,
+        capturedOn: context.today,
+        expiresOn: benefit.expiresOn,
+      })),
+    ),
+    context.today,
+  );
 
   const t = await getTranslations('offers');
+  const cardsCopy = await getTranslations('cards');
   const moneyLocale = locale === 'en' ? 'en-US' : 'es-PA';
 
   const dayNames = [
@@ -142,6 +174,53 @@ export default async function OffersPage({ params }: { params: Promise<{ locale:
         />
       </Section>
 
+      {/* El comparativo, después del tablero. Quien abre esta pantalla suele
+          venir con una compra en la mano: primero qué hay, después con cuál. */}
+      <Section
+        title={cardsCopy('compare.title')}
+        detail={cardsCopy('compare.detail')}
+        className="mt-12"
+      >
+        <CardCompare
+          categories={[...COMPARE_CATEGORIES]}
+          byCategory={Object.fromEntries(
+            Object.entries(comparison).map(([category, result]) => [
+              category,
+              {
+                ranked: result.ranked.map(toCompareOffer(locale)),
+                unquantified: result.unquantified.map(toCompareOffer(locale)),
+                expired: result.expired.map(toCompareOffer(locale)),
+              },
+            ]),
+          )}
+          labels={{
+            title: cardsCopy('compare.title'),
+            detail: cardsCopy('compare.detail'),
+            category: cardsCopy('compare.category'),
+            categories: {
+              restaurantes: t('categories.restaurantes'),
+              supermercados: t('categories.supermercados'),
+              combustible: t('categories.combustible'),
+              farmacias: t('categories.farmacias'),
+              viajes: t('categories.viajes'),
+              entretenimiento: t('categories.entretenimiento'),
+              tecnologia: t('categories.tecnologia'),
+              salud: t('categories.salud'),
+              otros: t('categories.otros'),
+            },
+            unquantified: cardsCopy('compare.unquantified'),
+            unquantifiedHint: cardsCopy('compare.unquantifiedHint'),
+            expired: cardsCopy('compare.expired'),
+            mine: cardsCopy('compare.mine'),
+            notMine: cardsCopy('compare.notMine'),
+            unverified: t('unverified'),
+            capturedOn: rawOf(t)('capturedOn'),
+            emptyTitle: cardsCopy('compare.emptyTitle'),
+            emptyBody: cardsCopy('compare.emptyBody'),
+          }}
+        />
+      </Section>
+
       {/* Cuándo se miró por última vez. Sin esta línea, «las ofertas del mes» es
           una afirmación que nadie puede fechar. */}
       <p className="mt-12 max-w-[68ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]">
@@ -164,4 +243,31 @@ function rawOf(catalogue: { raw: (key: string) => unknown }): (key: string) => s
     const value = catalogue.raw(key);
     return typeof value === 'string' ? value : '';
   };
+}
+
+/** Una oferta comparada, lista para cruzar al cliente como datos. */
+function toCompareOffer(locale: string) {
+  return (offer: {
+    cardId: string;
+    cardName: string;
+    issuerName: string | null;
+    headline: string;
+    detail: string | null;
+    isVerified: boolean;
+    isOwned: boolean;
+    capturedOn: string;
+    rate: number | null;
+    position: number;
+  }) => ({
+    cardId: offer.cardId,
+    cardName: offer.cardName,
+    issuerName: offer.issuerName,
+    headline: offer.headline,
+    detail: offer.detail,
+    isVerified: offer.isVerified,
+    isOwned: offer.isOwned,
+    capturedOn: formatPlainDate(offer.capturedOn, locale),
+    rate: offer.rate,
+    position: offer.position,
+  });
 }

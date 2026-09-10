@@ -17,6 +17,14 @@ import { useState } from 'react';
  * —millas, salas VIP— aparte. Y las vencidas, aparte también. Poner una tarjeta
  * cuyo beneficio nadie cargó debajo de la que da 1% afirmaría que da menos, y
  * eso nadie lo sabe.
+ *
+ * ## Ninguna se corona
+ *
+ * El orden dice qué cifra declaró cada una; no dice cuál conviene. Eso depende
+ * de dónde se va a gastar, de cuánto, y de topes que casi nadie carga. Llamar
+ * «la mejor» a la primera convierte un ordenamiento por un número en un
+ * consejo, y el número no alcanza para darlo. Se enseñan las tres y decide
+ * quien va a pagar.
  */
 
 export interface CompareOffer {
@@ -37,7 +45,6 @@ export interface CardCompareLabels {
   readonly detail: string;
   readonly category: string;
   readonly categories: Readonly<Record<string, string>>;
-  readonly best: string;
   readonly unquantified: string;
   readonly unquantifiedHint: string;
   readonly expired: string;
@@ -101,10 +108,11 @@ export function CardCompare({
             <ol className="flex list-none flex-col gap-3 p-0">
               {result.ranked.map((offer) => (
                 <li key={`${offer.cardId}-${offer.headline}`}>
-                  <Card {...(offer.position === 1 ? {} : { tone: 'sunk' as const })}>
+                  {/* Todas con el mismo peso visual: destacar la primera es
+                      decir «esta» sin haberlo medido. */}
+                  <Card tone="sunk">
                     <div className="flex flex-wrap items-baseline justify-between gap-2">
-                      <span className="font-medium">{offer.cardName}</span>
-                      {offer.position === 1 && <Status tone="positive">{labels.best}</Status>}
+                      <span className="font-medium break-words">{offer.cardName}</span>
                     </div>
                     <p className="mt-1 text-sm">{offer.headline}</p>
                     {offer.detail && (

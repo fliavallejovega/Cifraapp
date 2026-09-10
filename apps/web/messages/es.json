@@ -379,6 +379,10 @@
       "nameRequired": "Escribe un nombre para el hogar.",
       "createFailed": "No pudimos crear el hogar. Intenta de nuevo en un momento.",
       "signInRequired": "Tu sesión venció. Vuelve a entrar."
+    },
+    "review": {
+      "title": "Revisá lo que respondiste",
+      "detail": "Antes de cerrar, mirá que todo esté como lo querés. Podés cambiar cualquier respuesta."
     }
   },
   "overview": {
@@ -3247,10 +3251,10 @@
     "title": "Proyección",
     "detail": "Cómo se ven los meses que vienen si no cambia nada. Es aritmética que puedes comprobar en papel, no un pronóstico.",
     "horizon": {
-      "label": "Ver",
       "12": "12 meses",
       "24": "24 meses",
       "60": "5 años",
+      "label": "Ver",
       "apply": "Ver"
     },
     "stats": {
@@ -3549,7 +3553,8 @@
       "tabs": {
         "data": "Datos",
         "benefits": "Beneficios",
-        "statement": "Estado de cuenta"
+        "statement": "Estado de cuenta",
+        "offers": "Ofertas"
       },
       "form": {
         "name": "Cómo la reconocés",
@@ -3576,7 +3581,15 @@
         "create": "Agregar esta tarjeta",
         "archive": "Archivar esta tarjeta",
         "archiveConfirm": "¿Archivarla? Sus movimientos se conservan.",
-        "archiveConfirmYes": "Sí, archivarla"
+        "archiveConfirmYes": "Sí, archivarla",
+        "identityNote": "Estos tres datos son los que deciden qué beneficios y qué promociones del mes te podemos enseñar. Sin ellos no hay forma de saber cuál de las ofertas de tu banco aplica a esta tarjeta, y adivinarlo por el nombre sería inventarlo.",
+        "networkHint": "Visa, Mastercard, Amex. Las promociones casi siempre son de una red y no de todas.",
+        "tier": "Nivel",
+        "tierNone": "Sin especificar",
+        "tierHint": "Clásica, Oro, Platinum, Signature, Infinite. Los seguros de viaje y las salas VIP dependen del nivel.",
+        "issuer": "¿Qué banco la emite?",
+        "issuerNone": "Sin especificar",
+        "issuerHint": "Es lo primero que se cruza: sin banco no se puede saber si una promoción es tuya."
       },
       "benefits": {
         "title": "Beneficios",
@@ -3596,13 +3609,33 @@
         "remove": "Quitar",
         "expired": "Vencido",
         "noCatalogue": "Cifraapp no trae cargados los beneficios de las tarjetas de Panamá. Cambian por nivel de tarjeta, por promoción y por mes, y son términos de tu contrato: una tabla desactualizada te diría que tenés un seguro que no tenés. Lo que anotes acá sale de tu contrato, y por eso se puede confiar."
+      },
+      "offers": {
+        "detail": "Las promociones de este mes que se pagan con esta tarjeta. Se enseña lo que el banco publicó, con su fuente y la fecha en que se leyó. Cuál conviene depende de dónde vas a gastar y de cuánto, así que no se corona ninguna.",
+        "emptyTitle": "Sin promociones para esta tarjeta este mes",
+        "emptyBody": "Puede que el banco no haya publicado ninguna, o que el barrido del mes todavía no la haya leído. Abajo está el tablero con las de todos los bancos.",
+        "needsTypeTitle": "Falta saber qué tarjeta es",
+        "needsTypeBody": "Para cruzar las promociones hace falta el banco que la emite y la red. Sin esos dos datos no se puede decir cuál aplica, y una lista vacía se leería como «no hay ninguna».",
+        "goToData": "Completar en Datos",
+        "seeAll": "Ver todas las ofertas del mes, de todos los bancos"
+      },
+      "catalogue": {
+        "title": "Lo que publica el mercado",
+        "detail": "Beneficios que este banco publicó para tarjetas como la tuya. No salen de tu contrato: son una referencia para que sepas qué preguntar.",
+        "empty": "Todavía no hay nada leído para esta combinación de banco, red y nivel.",
+        "capturedOn": "Leído el {date}",
+        "validUntil": "Vigente hasta el {date}",
+        "reviewBy": "Conviene reconfirmarlo antes del {date}",
+        "stale": "Conviene reconfirmarlo",
+        "adopt": "Tengo este",
+        "openSource": "Ver la fuente",
+        "warning": "Esta información puede variar sin aviso: los bancos cambian condiciones, topes y comercios cuando quieren. Cada línea dice de cuándo es y hasta cuándo se leyó vigente. Antes de decidir algo con plata, confirmalo con tu banco."
       }
     },
     "compare": {
       "title": "¿Con cuál conviene pagar?",
       "detail": "Elegí en qué vas a gastar y ordena lo que tenés anotado, junto con lo que ofrece el mercado este mes.",
       "category": "Voy a gastar en",
-      "best": "La mejor según lo cargado",
       "unquantified": "Dan algo, pero sin cifra que comparar",
       "unquantifiedHint": "Millas, puntos, salas VIP. Cuánto valen depende de cómo los uses, y el producto no lo va a adivinar por vos.",
       "expired": "Vencidas",
@@ -3610,6 +3643,15 @@
       "notMine": "Del mercado",
       "emptyTitle": "Nada que comparar en esta categoría",
       "emptyBody": "Anotá los beneficios de tus tarjetas en «Gestionar → Beneficios», o esperá al barrido del mes que trae las promociones de los bancos."
+    },
+    "tiers": {
+      "classic": "Clásica",
+      "gold": "Oro",
+      "platinum": "Platinum",
+      "signature": "Signature",
+      "infinite": "Infinite",
+      "black": "Black",
+      "other": "Otro"
     }
   },
   "offers": {

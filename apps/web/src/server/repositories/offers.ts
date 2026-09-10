@@ -61,6 +61,14 @@ export interface OfferView {
   readonly isMine: boolean;
   /** Cuáles, por nombre. Es la respuesta a «¿con cuál pago?». */
   readonly usableWith: readonly string[];
+  /**
+   * Las mismas, por identificador de cuenta.
+   *
+   * El nombre sirve para leerlo; el identificador para que la pantalla de una
+   * tarjeta sepa cuáles de estas ofertas son suyas sin comparar cadenas — dos
+   * tarjetas de la misma casa se pueden llamar igual.
+   */
+  readonly usableWithIds: readonly string[];
   /** Verdadero si hoy es uno de sus días. Contesta «¿me sirve ahora?». */
   readonly isToday: boolean;
 }
@@ -95,6 +103,7 @@ export async function loadOffers(
   const mine = await queryAsUser(session, (tx) =>
     tx
       .select({
+        id: accounts.id,
         name: accounts.name,
         type: accounts.accountType,
         network: accounts.cardNetwork,
@@ -135,7 +144,7 @@ export async function loadOffers(
      * la red, y sólo si la promoción la nombra — una que no la nombra aplica a
      * todas las de ese banco.
      */
-    const usableWith = mine
+    const usable = mine
       .filter((card) => {
         if (!card.issuerKey || card.issuerKey !== row.issuerKey) return false;
 
@@ -154,8 +163,9 @@ export async function loadOffers(
         }
 
         return true;
-      })
-      .map((card) => card.name);
+      });
+
+    const usableWith = usable.map((card) => card.name);
 
     return {
       id: row.id,
@@ -180,6 +190,7 @@ export async function loadOffers(
       status: row.status,
       isMine: usableWith.length > 0,
       usableWith,
+      usableWithIds: usable.map((card) => card.id),
       // Vacío es todos los días, que es lo que dice una promoción sin restricción.
       isToday: row.weekdays.length === 0 || row.weekdays.includes(weekdayToday),
     };
