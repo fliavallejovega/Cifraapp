@@ -1488,7 +1488,9 @@
       "bandIncomplete": "Si cambias los supuestos, pon los tres: malo, esperado y bueno.",
       "bandOutOfOrder": "El supuesto malo no puede ser mayor que el esperado, ni el esperado mayor que el bueno.",
       "symbolInvalid": "Escribe el símbolo como lo usa TradingView. Por ejemplo, NASDAQ:AAPL o TVC:GOLD.",
-      "alreadyWatching": "Ya tienes ese símbolo en tu lista."
+      "alreadyWatching": "Ya tienes ese símbolo en tu lista.",
+      "maskInvalid": "Tienen que ser exactamente 4 dígitos.",
+      "termInvalid": "Las cuotas van de 1 a 600."
     }
   },
   "movements": {
@@ -1865,10 +1867,19 @@
       "limit": "Límite de la tarjeta",
       "limitHint": "Opcional. Sirve para saber cuánto del cupo llevas usado.",
       "kind": "¿Qué clase de deuda es?",
-      "kindHint": "Decide qué tipo de cuenta se abre si decides llevarla con sus movimientos.",
+      "kindHint": "Decide qué se te pregunta abajo. Si es tarjeta, además aparece sola en Tarjetas con su cupo y sus movimientos.",
       "person": "¿De quién es?",
       "personHint": "Sirve para separar «Visa Davo» de «Visa Blei» al importar un estado de cuenta.",
-      "personHousehold": "Del hogar"
+      "personHousehold": "Del hogar",
+      "mask": "Últimos 4 dígitos",
+      "maskHint": "Opcional. Es lo que distingue una Visa de otra cuando llega el estado de cuenta. Nunca guardamos el número completo.",
+      "statementDayHint": "El día en que el banco cierra el mes y arma tu estado de cuenta.",
+      "instalmentDay": "Día de la cuota",
+      "instalmentDayHint": "El día del mes en que te cobran la cuota.",
+      "termMonths": "Cuántas cuotas en total",
+      "termMonthsHint": "Opcional. Si son 60, poné 60.",
+      "paidMonths": "Cuántas van pagadas",
+      "paidMonthsHint": "Opcional. «Voy 18 de 60» es lo que casi todo el mundo sabe de memoria."
     },
     "row": {
       "apr": "{apr}% anual",

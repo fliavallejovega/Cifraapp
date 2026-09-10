@@ -57,6 +57,24 @@ const debtInput = z.object({
   dueDay: optionalDay,
   statementDay: optionalDay,
   creditLimit: optionalAmount,
+  /** Los últimos cuatro de la tarjeta. Nunca el número completo. */
+  maskedNumber: z.preprocess(
+    (value) => (value === '' || value === undefined || value === null ? undefined : value),
+    z
+      .string()
+      .trim()
+      .regex(/^\d{4}$/)
+      .optional(),
+  ),
+  instalmentDay: optionalDay,
+  termMonths: z.preprocess(
+    (value) => (value === '' || value === undefined || value === null ? undefined : value),
+    z.coerce.number().int().min(1).max(600).optional(),
+  ),
+  paidMonths: z.preprocess(
+    (value) => (value === '' || value === undefined || value === null ? undefined : value),
+    z.coerce.number().int().min(0).max(600).optional(),
+  ),
   kind: z.enum(DEBT_KINDS).default('other'),
   personId: optionalUuid,
 });
@@ -68,7 +86,11 @@ const FIELD_ERRORS = {
   minimumPayment: 'minimumInvalid',
   dueDay: 'dayInvalid',
   statementDay: 'dayInvalid',
+  instalmentDay: 'dayInvalid',
   creditLimit: 'limitInvalid',
+  maskedNumber: 'maskInvalid',
+  termMonths: 'termInvalid',
+  paidMonths: 'termInvalid',
 } as const;
 
 function parse(formData: FormData) {
@@ -80,9 +102,107 @@ function parse(formData: FormData) {
     dueDay: formData.get('dueDay'),
     statementDay: formData.get('statementDay'),
     creditLimit: formData.get('creditLimit'),
+    maskedNumber: formData.get('maskedNumber'),
+    instalmentDay: formData.get('instalmentDay'),
+    termMonths: formData.get('termMonths'),
+    paidMonths: formData.get('paidMonths'),
     kind: formData.get('kind') ?? 'other',
     personId: formData.get('personId'),
   });
+}
+
+type Tx = Parameters<Parameters<typeof queryAsUser<unknown>>[1]>[0];
+
+/**
+ * La cuenta que lleva una tarjeta, creada o puesta al día.
+ *
+ * ## Por qué una tarjeta se vuelve cuenta sola
+ *
+ * Cuando esta conversión se escribió, ninguna deuda del hogar decía ser una
+ * tarjeta: las tres se llamaban «Visa» y «Master Card» y estaban registradas
+ * como `other`. Adivinarlo por el nombre es la clase de inferencia que este
+ * sistema no hace sobre datos financieros, así que la conversión se pedía a
+ * mano, deuda por deuda.
+ *
+ * Eso dejó de aplicar en cuanto el formulario pregunta la clase. Marcar
+ * «tarjeta de crédito» **es** la declaración; pedir después un segundo botón
+ * que diga «llevarla como cuenta» es cobrar dos veces por la misma respuesta —
+ * y quien marcó la clase y no vio nada aparecer en Tarjetas concluye,
+ * razonablemente, que el producto no lo entendió.
+ *
+ * El botón manual sigue existiendo para lo que no es tarjeta: un préstamo puede
+ * tener cuenta y esa sí es una decisión aparte.
+ *
+ * ## Qué se mantiene en step y qué no
+ *
+ * El nombre, el cupo, el dueño y los últimos cuatro: son la misma cosa dicha
+ * una vez. **El saldo no.** La cuenta guarda lo que dice el banco y la deuda lo
+ * que la casa gestiona; pisar uno con el otro destruiría la discrepancia que la
+ * pantalla de Tarjetas existe para enseñar. Sólo se escribe al crearla, cuando
+ * no hay nada que destruir.
+ */
+async function syncCardAccount(
+  tx: Tx,
+  session: NonNullable<Awaited<ReturnType<typeof loadSession>>>,
+  householdId: string,
+  debtId: string,
+  data: {
+    name: string;
+    currentBalance: string;
+    creditLimit?: string | undefined;
+    maskedNumber?: string | undefined;
+    apr: string;
+    personId: string | null;
+  },
+): Promise<void> {
+  const [debt] = await tx
+    .select({ accountId: debts.accountId })
+    .from(debts)
+    .where(and(eq(debts.id, debtId), eq(debts.householdId, householdId)))
+    .limit(1);
+
+  if (!debt) return;
+
+  const shared = {
+    name: data.name,
+    creditLimit: data.creditLimit ?? null,
+    maskedNumber: data.maskedNumber ?? null,
+    interestRate: data.apr,
+    personId: data.personId,
+    scope: data.personId ? ('personal' as const) : ('household' as const),
+  };
+
+  if (debt.accountId) {
+    await tx
+      .update(accounts)
+      .set({ ...shared, updatedAt: new Date() })
+      .where(and(eq(accounts.id, debt.accountId), eq(accounts.householdId, householdId)));
+    return;
+  }
+
+  const [account] = await tx
+    .insert(accounts)
+    .values({
+      householdId,
+      accountType: 'credit_card',
+      // Lo que se debe, en negativo: sumar todas las cuentas tiene que dar
+      // patrimonio neto y no una cifra que necesite una nota al pie.
+      currentBalance: `-${data.currentBalance}`,
+      currency: currencyOf(session, householdId),
+      status: 'active',
+      source: 'user',
+      createdBy: session.user.id,
+      ownerId: session.user.id,
+      ...shared,
+    })
+    .returning({ id: accounts.id });
+
+  if (!account) return;
+
+  await tx
+    .update(debts)
+    .set({ accountId: account.id, updatedAt: new Date() })
+    .where(and(eq(debts.id, debtId), eq(debts.householdId, householdId)));
 }
 
 export async function createDebt(
@@ -97,8 +217,8 @@ export async function createDebt(
 
   const householdId = session.activeHouseholdId;
 
-  const [created] = await queryAsUser(session, (tx) =>
-    tx
+  const created = await queryAsUser(session, async (tx) => {
+    const [row] = await tx
       .insert(debts)
       .values({
         householdId,
@@ -115,15 +235,38 @@ export async function createDebt(
           ? {}
           : { statementDay: parsed.data.statementDay }),
         ...(parsed.data.creditLimit ? { creditLimit: parsed.data.creditLimit } : {}),
+        ...(parsed.data.instalmentDay === undefined
+          ? {}
+          : { instalmentDay: parsed.data.instalmentDay }),
+        ...(parsed.data.termMonths === undefined ? {} : { termMonths: parsed.data.termMonths }),
+        ...(parsed.data.paidMonths === undefined ? {} : { paidMonths: parsed.data.paidMonths }),
         kind: parsed.data.kind,
         personId: parsed.data.personId ?? null,
       })
-      .returning({ id: debts.id }),
-  );
+      .returning({ id: debts.id });
+
+    if (!row) return null;
+
+    // Marcar «tarjeta de crédito» ya es la declaración. No hace falta un
+    // segundo botón que pregunte lo mismo con otras palabras.
+    if (parsed.data.kind === 'credit_card') {
+      await syncCardAccount(tx, session, householdId, row.id, {
+        name: parsed.data.name,
+        currentBalance: parsed.data.currentBalance,
+        creditLimit: parsed.data.creditLimit,
+        maskedNumber: parsed.data.maskedNumber,
+        apr: parsed.data.apr,
+        personId: parsed.data.personId ?? null,
+      });
+    }
+
+    return row;
+  });
 
   if (!created) return { error: 'createFailed' };
 
   revalidateFinancials(formData);
+  revalidateScreen(formData, 'cards', 'accounts');
   return { created: created.id };
 }
 
@@ -142,17 +285,23 @@ export async function updateDebt(
 
   const householdId = session.activeHouseholdId;
 
-  const [updated] = await queryAsUser(session, (tx) =>
-    tx
+  const updated = await queryAsUser(session, async (tx) => {
+    const [row] = await tx
       .update(debts)
       .set({
         name: parsed.data.name,
         currentBalance: parsed.data.currentBalance,
         apr: parsed.data.apr,
         minimumPayment: parsed.data.minimumPayment,
+        // Lo que el formulario no enseña tampoco lo envía, y aquí se limpia:
+        // pasar una tarjeta a hipoteca tiene que borrar su cupo, no dejarlo
+        // guardado donde nadie lo vuelve a ver ni a corregir.
         dueDay: parsed.data.dueDay ?? null,
         statementDay: parsed.data.statementDay ?? null,
         creditLimit: parsed.data.creditLimit ?? null,
+        instalmentDay: parsed.data.instalmentDay ?? null,
+        termMonths: parsed.data.termMonths ?? null,
+        paidMonths: parsed.data.paidMonths ?? null,
         kind: parsed.data.kind,
         personId: parsed.data.personId ?? null,
         updatedAt: new Date(),
@@ -160,13 +309,28 @@ export async function updateDebt(
       .where(
         and(eq(debts.id, id.data), eq(debts.householdId, householdId), isNull(debts.deletedAt)),
       )
-      .returning({ id: debts.id }),
-  );
+      .returning({ id: debts.id });
+
+    if (!row) return null;
+
+    if (parsed.data.kind === 'credit_card') {
+      await syncCardAccount(tx, session, householdId, row.id, {
+        name: parsed.data.name,
+        currentBalance: parsed.data.currentBalance,
+        creditLimit: parsed.data.creditLimit,
+        maskedNumber: parsed.data.maskedNumber,
+        apr: parsed.data.apr,
+        personId: parsed.data.personId ?? null,
+      });
+    }
+
+    return row;
+  });
 
   if (!updated) return { error: 'notFound' };
 
   revalidateFinancials(formData);
-  revalidateScreen(formData, `debts/${id.data}`);
+  revalidateScreen(formData, `debts/${id.data}`, 'cards', 'accounts');
   return { ok: true };
 }
 

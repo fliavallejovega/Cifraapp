@@ -31,6 +31,19 @@ interface FieldBase {
   readonly required?: boolean;
   /** Half-width on a wide screen. Two short fields read as one line. */
   readonly half?: boolean;
+  /**
+   * Sólo se muestra cuando otro campo vale una de estas cosas.
+   *
+   * Un formulario que enseña todos los campos de todas las formas posibles le
+   * pide a una hipoteca un límite de tarjeta y a una tarjeta un día de corte
+   * que no usa. Peor que feo: cada campo que no aplica es una decisión que se
+   * le traslada a alguien para nada, y un campo vacío junto a otro lleno se lee
+   * como un dato que falta.
+   *
+   * Lo que no se muestra tampoco se envía, así que cambiar de tipo limpia lo
+   * que dejó de tener sentido en vez de guardarlo escondido.
+   */
+  readonly showWhen?: { readonly field: string; readonly is: readonly string[] };
 }
 
 export type FieldSpec =

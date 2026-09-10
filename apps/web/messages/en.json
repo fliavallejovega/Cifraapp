@@ -1488,7 +1488,9 @@
       "bandIncomplete": "If you change the assumptions, give all three: poor, expected and good.",
       "bandOutOfOrder": "The poor assumption cannot exceed the expected one, nor the expected the good one.",
       "symbolInvalid": "Write the symbol the way TradingView does. For example, NASDAQ:AAPL or TVC:GOLD.",
-      "alreadyWatching": "That symbol is already on your list."
+      "alreadyWatching": "That symbol is already on your list.",
+      "maskInvalid": "It has to be exactly 4 digits.",
+      "termInvalid": "Instalments run from 1 to 600."
     }
   },
   "movements": {
@@ -1865,10 +1867,19 @@
       "limit": "Card limit",
       "limitHint": "Optional. It tells you how much of the limit you are using.",
       "kind": "What kind of debt is it?",
-      "kindHint": "Decides the type of account opened if you carry it with its movements.",
+      "kindHint": "It decides what you are asked below. If it is a card, it also shows up on its own in Cards with its limit and its movements.",
       "person": "Whose is it?",
       "personHint": "This is what tells «Visa Davo» from «Visa Blei» when a statement is imported.",
-      "personHousehold": "The household's"
+      "personHousehold": "The household's",
+      "mask": "Last 4 digits",
+      "maskHint": "Optional. It is what tells one Visa from another when the statement arrives. We never store the full number.",
+      "statementDayHint": "The day the bank closes the month and puts your statement together.",
+      "instalmentDay": "Instalment day",
+      "instalmentDayHint": "The day of the month you are charged.",
+      "termMonths": "How many instalments in total",
+      "termMonthsHint": "Optional. If it is 60, put 60.",
+      "paidMonths": "How many are paid",
+      "paidMonthsHint": "Optional. «I am 18 of 60» is what almost everybody knows by heart."
     },
     "row": {
       "apr": "{apr}% a year",

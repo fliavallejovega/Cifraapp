@@ -1,7 +1,7 @@
 'use client';
 
 import { Button, Problem } from '@app/ui';
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 
 import { RecordFieldset } from './record-fieldset';
 import type {
@@ -57,6 +57,41 @@ export function RecordForm({
     {},
   );
 
+  /**
+   * Lo que vale cada campo que controla a otros.
+   *
+   * Sólo los campos nombrados en algún `showWhen` entran aquí: seguir el resto
+   * volvería a renderizar el formulario en cada tecla de un monto, para nada.
+   * Se siembra con lo que trae la fila al editar y con la primera opción al
+   * crear, que es lo que el navegador va a tener seleccionado.
+   */
+  const controllers = new Set(
+    fields.map((field) => field.showWhen?.field).filter((name): name is string => name !== undefined),
+  );
+
+  const [values, setValues] = useState<RecordValues>(() =>
+    Object.fromEntries(
+      fields
+        .filter((field) => controllers.has(field.name))
+        .map((field) => [
+          field.name,
+          record?.values[field.name] ??
+            (field.kind === 'select' ? (field.options[0]?.value ?? '') : ''),
+        ]),
+    ),
+  );
+
+  /**
+   * Un campo se enseña si nadie lo condiciona, o si su condición se cumple.
+   *
+   * Y lo que no se enseña no se envía: el navegador no incluye en el formulario
+   * lo que no está en el DOM. Cambiar una tarjeta a hipoteca borra su límite en
+   * vez de dejarlo guardado donde nadie lo vuelve a ver.
+   */
+  const visible = fields.filter(
+    (field) => !field.showWhen || field.showWhen.is.includes(values[field.showWhen.field] ?? ''),
+  );
+
   return (
     <form action={formAction} className="flex flex-col gap-5">
       <input type="hidden" name="locale" value={locale} />
@@ -73,12 +108,19 @@ export function RecordForm({
       )}
 
       <div className="grid gap-5 sm:grid-cols-2">
-        {fields.map((field) => (
+        {visible.map((field) => (
           <div key={field.name} className={field.half ? '' : 'sm:col-span-2'}>
             <RecordFieldset
               field={field}
               currencySymbol={currencySymbol}
               value={record?.values[field.name] ?? ''}
+              {...(controllers.has(field.name)
+                ? {
+                    onChange: (name: string, next: string) => {
+                      setValues((current) => ({ ...current, [name]: next }));
+                    },
+                  }
+                : {})}
             />
           </div>
         ))}

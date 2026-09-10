@@ -103,6 +103,11 @@ export interface DebtView {
   readonly statementDay: number | null;
   readonly creditLimit: Money | null;
   readonly accountId: string | null;
+  /** Los últimos cuatro de la tarjeta, en la cuenta que la lleva. */
+  readonly maskedNumber: string | null;
+  readonly instalmentDay: number | null;
+  readonly termMonths: number | null;
+  readonly paidMonths: number | null;
   /** Which class of debt, which is what decides the account type it converts to. */
   readonly kind: string;
   /** Whose it is, within the household. Null means the household's. */
@@ -128,12 +133,19 @@ export async function loadDebts(
         statementDay: debts.statementDay,
         creditLimit: debts.creditLimit,
         accountId: debts.accountId,
+        instalmentDay: debts.instalmentDay,
+        termMonths: debts.termMonths,
+        paidMonths: debts.paidMonths,
         kind: debts.kind,
         personId: debts.personId,
         personName: householdPeople.displayName,
+        // Los últimos cuatro viven en la cuenta que lleva la tarjeta, que es
+        // donde se concilia. Nulo en lo que no es tarjeta.
+        maskedNumber: accounts.maskedNumber,
       })
       .from(debts)
       .leftJoin(householdPeople, eq(householdPeople.id, debts.personId))
+      .leftJoin(accounts, eq(accounts.id, debts.accountId))
       .where(and(eq(debts.householdId, householdId), isNull(debts.deletedAt)))
       // The most expensive debt first: the ordering the product argues for on
       // every other screen, so the list does not contradict the plan.
@@ -151,6 +163,10 @@ export async function loadDebts(
     statementDay: row.statementDay,
     creditLimit: row.creditLimit ? Money.fromDecimalString(row.creditLimit, currency) : null,
     accountId: row.accountId,
+    maskedNumber: row.maskedNumber,
+    instalmentDay: row.instalmentDay,
+    termMonths: row.termMonths,
+    paidMonths: row.paidMonths,
     kind: row.kind,
     personId: row.personId,
     personName: row.personName,

@@ -44,52 +44,27 @@ export default async function DebtsPage({ params }: { params: Promise<{ locale: 
     context.currency,
   );
 
+  /**
+   * Los tipos que se pagan en cuotas, y el que da vueltas.
+   *
+   * La forma decide qué preguntar. Una tarjeta tiene cupo y no termina; una
+   * hipoteca no tiene cupo y sí tiene final. Enseñar los dos juegos de campos a
+   * la vez le pide a cada una algo que por diseño no puede contestar, y un campo
+   * vacío al lado de uno lleno se lee como un dato que falta.
+   */
+  const INSTALMENT_KINDS = [
+    'auto_loan',
+    'mortgage',
+    'personal_loan',
+    'student_loan',
+    'informal',
+    'other',
+  ] as const;
+
   const fields: readonly FieldSpec[] = [
     { kind: 'text', name: 'name', label: t('form.name'), hint: t('form.nameHint'), required: true },
-    {
-      kind: 'money',
-      name: 'currentBalance',
-      label: t('form.balance'),
-      hint: t('form.balanceHint'),
-      required: true,
-      half: true,
-    },
-    {
-      kind: 'rate',
-      name: 'apr',
-      label: t('form.apr'),
-      hint: t('form.aprHint'),
-      suffix: '%',
-      required: true,
-      half: true,
-    },
-    { kind: 'money', name: 'minimumPayment', label: t('form.minimum'), required: true, half: true },
-    {
-      kind: 'money',
-      name: 'creditLimit',
-      label: t('form.limit'),
-      hint: t('form.limitHint'),
-      half: true,
-    },
-    {
-      kind: 'integer',
-      name: 'dueDay',
-      label: t('form.dueDay'),
-      hint: t('form.dueDayHint'),
-      min: 1,
-      max: 31,
-      half: true,
-    },
-    {
-      kind: 'integer',
-      name: 'statementDay',
-      label: t('form.statementDay'),
-      min: 1,
-      max: 31,
-      half: true,
-    },
-    // The class is what decides the kind of account this becomes when it is
-    // carried as one, so it is asked rather than guessed from the name.
+    // La clase va arriba porque decide el resto del formulario. Preguntarla al
+    // final obligaría a volver a mirar campos que ya se contestaron.
     {
       kind: 'select',
       name: 'kind',
@@ -118,6 +93,96 @@ export default async function DebtsPage({ params }: { params: Promise<{ locale: 
         { value: '', label: t('form.personHousehold') },
         ...people.map((person) => ({ value: person.id, label: person.displayName })),
       ],
+    },
+    {
+      kind: 'money',
+      name: 'currentBalance',
+      label: t('form.balance'),
+      hint: t('form.balanceHint'),
+      required: true,
+      half: true,
+    },
+    {
+      kind: 'rate',
+      name: 'apr',
+      label: t('form.apr'),
+      hint: t('form.aprHint'),
+      suffix: '%',
+      required: true,
+      half: true,
+    },
+    { kind: 'money', name: 'minimumPayment', label: t('form.minimum'), required: true, half: true },
+
+    // ── Sólo tarjeta ──────────────────────────────────────────────────────────
+    {
+      kind: 'money',
+      name: 'creditLimit',
+      label: t('form.limit'),
+      hint: t('form.limitHint'),
+      half: true,
+      showWhen: { field: 'kind', is: ['credit_card'] },
+    },
+    {
+      kind: 'text',
+      name: 'maskedNumber',
+      label: t('form.mask'),
+      hint: t('form.maskHint'),
+      maxLength: 4,
+      placeholder: '0000',
+      half: true,
+      showWhen: { field: 'kind', is: ['credit_card'] },
+    },
+    {
+      kind: 'integer',
+      name: 'statementDay',
+      label: t('form.statementDay'),
+      hint: t('form.statementDayHint'),
+      min: 1,
+      max: 31,
+      half: true,
+      showWhen: { field: 'kind', is: ['credit_card'] },
+    },
+    {
+      kind: 'integer',
+      name: 'dueDay',
+      label: t('form.dueDay'),
+      hint: t('form.dueDayHint'),
+      min: 1,
+      max: 31,
+      half: true,
+      showWhen: { field: 'kind', is: ['credit_card'] },
+    },
+
+    // ── Sólo lo que se paga en cuotas ─────────────────────────────────────────
+    {
+      kind: 'integer',
+      name: 'instalmentDay',
+      label: t('form.instalmentDay'),
+      hint: t('form.instalmentDayHint'),
+      min: 1,
+      max: 31,
+      half: true,
+      showWhen: { field: 'kind', is: INSTALMENT_KINDS },
+    },
+    {
+      kind: 'integer',
+      name: 'termMonths',
+      label: t('form.termMonths'),
+      hint: t('form.termMonthsHint'),
+      min: 1,
+      max: 600,
+      half: true,
+      showWhen: { field: 'kind', is: INSTALMENT_KINDS },
+    },
+    {
+      kind: 'integer',
+      name: 'paidMonths',
+      label: t('form.paidMonths'),
+      hint: t('form.paidMonthsHint'),
+      min: 0,
+      max: 600,
+      half: true,
+      showWhen: { field: 'kind', is: INSTALMENT_KINDS },
     },
   ];
 
@@ -154,8 +219,12 @@ export default async function DebtsPage({ params }: { params: Promise<{ locale: 
       apr: trimRate(debt.apr),
       minimumPayment: debt.minimumPayment.toDecimalString(),
       creditLimit: debt.creditLimit?.toDecimalString() ?? '',
+      maskedNumber: debt.maskedNumber ?? '',
       dueDay: debt.dueDay === null ? '' : String(debt.dueDay),
       statementDay: debt.statementDay === null ? '' : String(debt.statementDay),
+      instalmentDay: debt.instalmentDay === null ? '' : String(debt.instalmentDay),
+      termMonths: debt.termMonths === null ? '' : String(debt.termMonths),
+      paidMonths: debt.paidMonths === null ? '' : String(debt.paidMonths),
       kind: debt.kind,
       personId: debt.personId ?? '',
     },

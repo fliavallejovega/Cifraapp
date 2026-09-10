@@ -21,10 +21,18 @@ export function RecordFieldset({
   field,
   currencySymbol,
   value,
+  onChange,
 }: {
   readonly field: FieldSpec;
   readonly currencySymbol: string;
   readonly value: string;
+  /**
+   * Lo que el formulario necesita saber para decidir qué otros campos enseñar.
+   *
+   * Sólo lo llaman los campos que pueden controlar a otros; el resto siguen sin
+   * estado, que es lo que mantiene el formulario rápido al teclear un monto.
+   */
+  readonly onChange?: (name: string, next: string) => void;
 }) {
   if (field.kind === 'toggle') {
     // A checkbox carries its own label, so `Field`'s label would say the same
@@ -65,6 +73,13 @@ export function RecordFieldset({
           defaultValue: value,
           'aria-describedby': describedBy,
           ...(field.required ? { required: true } : {}),
+          ...(onChange
+            ? {
+                onChange: (event: { target: { value: string } }) => {
+                  onChange(field.name, event.target.value);
+                },
+              }
+            : {}),
         } as const;
 
         switch (field.kind) {
