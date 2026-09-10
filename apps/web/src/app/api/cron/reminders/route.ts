@@ -1,6 +1,7 @@
 import { getServerEnv } from '@app/validation/env';
 import { NextResponse } from 'next/server';
 
+import { refreshCatalogue } from '@/server/catalogue/refresh';
 import { publishCalendars } from '@/server/google/publish';
 import { sweepMailboxes } from '@/server/google/sweep';
 import { runDailyReminders } from '@/server/reminders';
@@ -32,6 +33,17 @@ import { runDailyReminders } from '@/server/reminders';
  * Los tres corren en secuencia y ninguno puede tumbar a los otros: cada uno
  * atrapa lo suyo y devuelve nulo, porque una cuenta a la que le retiraron el
  * permiso no puede dejar sin recordatorios a todos los demás hogares.
+ *
+ * ## Y el catálogo de tarjetas, una vez al mes
+ *
+ * El día 1. No cada día: las condiciones de una tarjeta cambian por trimestre y
+ * las promociones por mes, así que releer trece páginas de bancos a diario es
+ * gastar cuota de un tercero para confirmar trece veces lo mismo — y es la
+ * forma más rápida de que un banco bloquee al agente.
+ *
+ * Viaja aquí dentro por lo mismo que el barrido de Google: este plan admite
+ * pocos crons y este ya corre a diario. La condición del día es una línea; una
+ * entrada de cron es un recurso escaso.
  */
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -59,9 +71,28 @@ export async function GET(request: Request): Promise<NextResponse> {
     return null;
   });
 
+  // El día 1, y sólo el día 1. La fecha se toma en la zona de Panamá porque el
+  // servidor en UTC ya cambió de día a las siete de la tarde.
+  const dayInPanama = Number(
+    new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Panama', day: '2-digit' }).format(
+      new Date(),
+    ),
+  );
+
+  const catalogue =
+    dayInPanama === 1
+      ? await refreshCatalogue().catch((error: unknown) => {
+          console.error('[catalogue] monthly refresh failed', error);
+          return null;
+        })
+      : null;
+
   // 503 sólo si el trabajo principal de esta ruta falló. Un buzón caído no debe
   // dejar el cron en rojo para siempre: su motivo ya quedó en la fila de
   // conexión, que es donde se mira.
   const status = reminders ? 'ok' : 'error';
-  return NextResponse.json({ status, reminders, mail, calendar }, { status: reminders ? 200 : 503 });
+  return NextResponse.json(
+    { status, reminders, mail, calendar, catalogue },
+    { status: reminders ? 200 : 503 },
+  );
 }

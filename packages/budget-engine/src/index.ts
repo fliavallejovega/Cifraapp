@@ -19,6 +19,15 @@ export {
 } from './calendar.js';
 
 export {
+  compareCards,
+  readRate,
+  type CardOffer,
+  type ComparisonResult,
+  type RankedOffer,
+  type SpendCategory,
+} from './card-compare.js';
+
+export {
   computeCoverage,
   COVERAGE_HORIZON_DAYS,
   type CommitmentCoverage,

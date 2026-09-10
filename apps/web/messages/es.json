@@ -879,7 +879,8 @@
     },
     "investments": "Inversiones",
     "console": "Consola SaaS",
-    "cards": "Tarjetas"
+    "cards": "Tarjetas",
+    "offers": "Ofertas"
   },
   "accounts": {
     "title": "Tus cuentas",
@@ -3596,6 +3597,80 @@
         "expired": "Vencido",
         "noCatalogue": "Cifraapp no trae cargados los beneficios de las tarjetas de Panamá. Cambian por nivel de tarjeta, por promoción y por mes, y son términos de tu contrato: una tabla desactualizada te diría que tenés un seguro que no tenés. Lo que anotes acá sale de tu contrato, y por eso se puede confiar."
       }
+    },
+    "compare": {
+      "title": "¿Con cuál conviene pagar?",
+      "detail": "Elegí en qué vas a gastar y ordena lo que tenés anotado, junto con lo que ofrece el mercado este mes.",
+      "category": "Voy a gastar en",
+      "best": "La mejor según lo cargado",
+      "unquantified": "Dan algo, pero sin cifra que comparar",
+      "unquantifiedHint": "Millas, puntos, salas VIP. Cuánto valen depende de cómo los uses, y el producto no lo va a adivinar por vos.",
+      "expired": "Vencidas",
+      "mine": "Tuya",
+      "notMine": "Del mercado",
+      "emptyTitle": "Nada que comparar en esta categoría",
+      "emptyBody": "Anotá los beneficios de tus tarjetas en «Gestionar → Beneficios», o esperá al barrido del mes que trae las promociones de los bancos."
+    }
+  },
+  "offers": {
+    "title": "Ofertas del mes",
+    "detail": "Qué comercio da qué descuento este mes, y con cuál de tus tarjetas se paga. De todos los bancos, crédito y débito.",
+    "note": "Cifraapp no tiene acuerdo con ningún banco ni cobra por aparecer acá. Cada oferta lleva la página de donde salió y la fecha en que se leyó: confirmá las condiciones en el comercio antes de contar con el descuento.",
+    "lastRefresh": "El barrido leyó las páginas de los bancos por última vez el {when}.",
+    "neverRefreshed": "El barrido automático todavía no ha corrido. Lo que ves lo cargó una persona a mano.",
+    "summary": {
+      "today": "Te sirven hoy",
+      "todayDetail": "Con una de tus tarjetas y en un día que aplica.",
+      "mine": "Podés usar",
+      "mineDetail": "Del total, las que aceptan alguna tarjeta tuya.",
+      "all": "En el mercado",
+      "allDetail": "Todas las que hay cargadas, tengas cuenta ahí o no."
+    },
+    "board": {
+      "title": "Una por una",
+      "detail": "Ordenadas por lo que podés usar hoy."
+    },
+    "filters": {
+      "onlyMine": "Sólo las que puedo usar",
+      "allCards": "Todas",
+      "everyIssuer": "Todos los bancos",
+      "everyCategory": "Todas las categorías"
+    },
+    "categories": {
+      "restaurantes": "Restaurantes",
+      "supermercados": "Supermercados",
+      "combustible": "Combustible",
+      "farmacias": "Farmacias",
+      "viajes": "Viajes",
+      "entretenimiento": "Entretenimiento",
+      "tecnologia": "Tecnología",
+      "salud": "Salud",
+      "otros": "Otros"
+    },
+    "days": {
+      "1": "lunes",
+      "2": "martes",
+      "3": "miércoles",
+      "4": "jueves",
+      "5": "viernes",
+      "6": "sábado",
+      "7": "domingo"
+    },
+    "payWith": "Pagá con: {cards}",
+    "notYours": "No tenés tarjeta de este banco.",
+    "today": "Hoy",
+    "everyDay": "todos los días",
+    "until": "hasta el {date}",
+    "cap": "Tope: {cap}",
+    "capBoth": "hasta {discount} sobre un consumo de {spend}",
+    "capDiscount": "hasta {discount}",
+    "capSpend": "sobre un consumo de hasta {spend}",
+    "unverified": "Leída automáticamente",
+    "capturedOn": "leído el {date}",
+    "noneMatch": "Ninguna oferta coincide con esos filtros. Probá quitando alguno.",
+    "empty": {
+      "title": "Todavía no hay ofertas cargadas",
+      "body": "El barrido lee las páginas de promociones de los bancos el primer día de cada mes. También se puede disparar a mano desde el panel."
     }
   }
 }

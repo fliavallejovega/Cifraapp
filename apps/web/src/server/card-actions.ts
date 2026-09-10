@@ -1,6 +1,7 @@
 'use server';
 
-import { accounts, cardBenefits, debts } from '@app/database/schema';
+import { getPlatformDb } from '@app/database';
+import { accounts, cardBenefits, cardBenefitCatalogue, debts } from '@app/database/schema';
 import { and, eq, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 
@@ -13,6 +14,8 @@ import {
   positiveAmount,
   recordName,
 } from './record-input';
+import { getServerEnv } from '@app/validation/env';
+
 import { revalidateFinancials, revalidateScreen } from './revalidate';
 import { loadSession, queryAsUser } from './session';
 import type { RecordActionResult } from '@/components/records/spec';
@@ -41,6 +44,15 @@ import type { RecordActionResult } from '@/components/records/spec';
 
 const NETWORKS = ['visa', 'mastercard', 'amex', 'discover', 'other'] as const;
 
+/**
+ * El nivel decide la mitad de lo que da una tarjeta.
+ *
+ * Sin él, el catálogo tendría que enseñar el seguro de una Infinite al lado de
+ * una Classic, que es la forma más rápida de que alguien crea que tiene una
+ * cobertura que no tiene.
+ */
+const TIERS = ['classic', 'gold', 'platinum', 'signature', 'infinite', 'black', 'other'] as const;
+
 const optionalDay = z.preprocess(
   (value) => (value === '' || value === undefined || value === null ? undefined : value),
   z.coerce.number().int().min(1).max(31).optional(),
@@ -57,6 +69,11 @@ const cardInput = z.object({
     (value) => (value === '' || value === null || value === undefined ? undefined : value),
     z.enum(NETWORKS).optional(),
   ),
+  tier: z.preprocess(
+    (value) => (value === '' || value === null || value === undefined ? undefined : value),
+    z.enum(TIERS).optional(),
+  ),
+  institutionId: optionalUuid,
   maskedNumber: z.preprocess(
     (value) => (value === '' || value === null || value === undefined ? undefined : value),
     z
@@ -81,6 +98,8 @@ const FIELD_ERRORS = {
   statementDay: 'dayInvalid',
   dueDay: 'dayInvalid',
   network: 'kindInvalid',
+  tier: 'kindInvalid',
+  institutionId: 'notFound',
 } as const;
 
 function parse(formData: FormData) {
@@ -92,6 +111,8 @@ function parse(formData: FormData) {
     creditLimit: formData.get('creditLimit'),
     annualFee: formData.get('annualFee'),
     network: formData.get('network'),
+    tier: formData.get('tier'),
+    institutionId: formData.get('institutionId'),
     maskedNumber: formData.get('maskedNumber'),
     statementDay: formData.get('statementDay'),
     dueDay: formData.get('dueDay'),
@@ -126,6 +147,8 @@ export async function createCard(
         creditLimit: data.creditLimit ?? null,
         annualFee: data.annualFee ?? null,
         cardNetwork: data.network ?? null,
+        cardTier: data.tier ?? null,
+        institutionId: data.institutionId ?? null,
         maskedNumber: data.maskedNumber ?? null,
         interestRate: data.apr,
         currency,
@@ -196,6 +219,8 @@ export async function updateCard(
         creditLimit: data.creditLimit ?? null,
         annualFee: data.annualFee ?? null,
         cardNetwork: data.network ?? null,
+        cardTier: data.tier ?? null,
+        institutionId: data.institutionId ?? null,
         maskedNumber: data.maskedNumber ?? null,
         interestRate: data.apr,
         personId: data.personId ?? null,
@@ -422,6 +447,90 @@ export async function removeCardBenefit(
   );
 
   if (!removed) return { error: 'notFound' };
+
+  revalidateScreen(formData, 'cards');
+  return { ok: true };
+}
+
+/**
+ * Adoptar un beneficio del catálogo como propio.
+ *
+ * El catálogo dice lo que un emisor publicó; esto dice lo que **esta** casa
+ * tiene. La diferencia no es formal: una es información de referencia que
+ * envejece sola, y la otra es una afirmación de alguien sobre su propio
+ * contrato. Por eso se copia en vez de enlazarse — el día que el banco cambie
+ * su página, lo que la casa confirmó sigue siendo lo que confirmó.
+ *
+ * La fuente viaja con la copia, y con ella la fecha en que se leyó. Sin eso,
+ * dentro de un año la línea sería indistinguible de una que alguien tecleó de
+ * memoria.
+ *
+ * Nada se adopta solo. El botón lo pulsa una persona que, idealmente, acaba de
+ * mirar su contrato — y la pantalla se lo pide con esas palabras.
+ */
+export async function adoptCatalogueBenefit(
+  _previous: RecordActionResult,
+  formData: FormData,
+): Promise<RecordActionResult> {
+  const session = await loadSession();
+  if (!session?.activeHouseholdId) return { error: 'signInRequired' };
+
+  const accountId = z.uuid().safeParse(formData.get('accountId'));
+  const entryId = z.uuid().safeParse(formData.get('entryId'));
+  if (!accountId.success || !entryId.success) return { error: 'notFound' };
+
+  const householdId = session.activeHouseholdId;
+
+  // El catálogo vive en `platform` y no pertenece a ningún hogar, así que se
+  // lee con la conexión de plataforma y fuera de la transacción del hogar.
+  const [entry] = await getPlatformDb(getServerEnv().DATABASE_URL)
+    .select({
+      kind: cardBenefitCatalogue.kind,
+      label: cardBenefitCatalogue.label,
+      value: cardBenefitCatalogue.value,
+      sourceName: cardBenefitCatalogue.sourceName,
+      sourceUrl: cardBenefitCatalogue.sourceUrl,
+      capturedOn: cardBenefitCatalogue.capturedOn,
+      validUntil: cardBenefitCatalogue.validUntil,
+    })
+    .from(cardBenefitCatalogue)
+    .where(eq(cardBenefitCatalogue.id, entryId.data))
+    .limit(1);
+
+  if (!entry) return { error: 'notFound' };
+
+  const outcome = await queryAsUser(session, async (tx) => {
+    const [account] = await tx
+      .select({ id: accounts.id })
+      .from(accounts)
+      .where(
+        and(
+          eq(accounts.id, accountId.data),
+          eq(accounts.householdId, householdId),
+          eq(accounts.accountType, 'credit_card'),
+          isNull(accounts.deletedAt),
+        ),
+      )
+      .limit(1);
+
+    if (!account) return 'notFound' as const;
+
+    await tx.insert(cardBenefits).values({
+      householdId,
+      accountId: account.id,
+      kind: entry.kind,
+      label: entry.label,
+      value: entry.value,
+      // La fuente y la fecha de lectura, pegadas: sin ellas, dentro de un año
+      // esta línea sería indistinguible de una tecleada de memoria.
+      source: `${entry.sourceName} · leído el ${entry.capturedOn}`,
+      expiresOn: entry.validUntil,
+    });
+
+    return 'ok' as const;
+  });
+
+  if (outcome !== 'ok') return { error: outcome };
 
   revalidateScreen(formData, 'cards');
   return { ok: true };

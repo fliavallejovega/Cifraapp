@@ -21,6 +21,7 @@ export const PROTECTED_SEGMENTS = [
   '/welcome',
   '/accounts',
   '/cards',
+  '/offers',
   '/movements',
 
   '/commitments',

@@ -67,6 +67,23 @@ export const cardNetwork = pgEnum('card_network', [
 ]);
 
 /**
+ * El nivel de una tarjeta.
+ *
+ * Decide la mitad de lo que da: una Infinite y una Classic del mismo banco no
+ * comparten ni el seguro ni la cobertura de fraude. Es lo que permite que el
+ * catálogo enseñe lo que aplica a *esta* tarjeta y no a la familia entera.
+ */
+export const cardTier = pgEnum('card_tier', [
+  'classic',
+  'gold',
+  'platinum',
+  'signature',
+  'infinite',
+  'black',
+  'other',
+]);
+
+/**
  * Qué piensa hacer la casa con una posición.
  *
  * `long_term` no se toca; `hold` se mantiene sin plazo; `exit` va a volverse
@@ -168,6 +185,8 @@ export const accounts = appSchema.table(
     creditLimit: money('credit_limit'),
     /** Visa, Mastercard, Amex. Sólo en tarjetas; la base lo exige. */
     cardNetwork: cardNetwork('card_network'),
+    /** Classic, Gold, Platinum, Signature, Infinite, Black. */
+    cardTier: cardTier('card_tier'),
     /** Lo que cuesta tenerla al año. Nulo es «nadie lo dijo»; cero es «no cobra». */
     annualFee: money('annual_fee'),
     /**
@@ -642,6 +661,8 @@ export const debts = appSchema.table(
     creditLimit: money('credit_limit'),
     /** Visa, Mastercard, Amex. Sólo en tarjetas; la base lo exige. */
     cardNetwork: cardNetwork('card_network'),
+    /** Classic, Gold, Platinum, Signature, Infinite, Black. */
+    cardTier: cardTier('card_tier'),
     /** Lo que cuesta tenerla al año. Nulo es «nadie lo dijo»; cero es «no cobra». */
     annualFee: money('annual_fee'),
     /**

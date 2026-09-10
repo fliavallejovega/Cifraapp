@@ -1,5 +1,8 @@
 import 'server-only';
 
+import { getPlatformDb } from '@app/database';
+import { getServerEnv } from '@app/validation/env';
+
 import {
   accounts,
   categories,
@@ -8,6 +11,7 @@ import {
   householdMembers,
   householdPeople,
   householdSettings,
+  institutions,
   obligations,
   profiles,
   recurringSeries,
@@ -703,4 +707,20 @@ function scalarText(value: unknown): string {
   if (typeof value === 'string') return value;
   if (typeof value === 'number' || typeof value === 'boolean') return String(value);
   return '';
+}
+
+/**
+ * Los bancos de la lista, para poder decir cuál emite una tarjeta.
+ *
+ * Dato de referencia, compartido por todos los hogares: leerlo no necesita la
+ * sesión de nadie. Es lo que permite casar una tarjeta con lo que su emisor
+ * publicó, sin depender de cómo esté escrito el nombre en el campo libre.
+ */
+export async function loadInstitutions(): Promise<
+  readonly { readonly id: string; readonly name: string }[]
+> {
+  return getPlatformDb(getServerEnv().DATABASE_URL)
+    .select({ id: institutions.id, name: institutions.name })
+    .from(institutions)
+    .orderBy(asc(institutions.name));
 }

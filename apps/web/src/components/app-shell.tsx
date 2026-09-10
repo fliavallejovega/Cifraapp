@@ -29,6 +29,9 @@ const DESTINATIONS = [
   // Detrás de Cuentas y delante de Movimientos: una tarjeta es una cuenta, y lo
   // que se mira en ella —cupo, mínimo, en qué se está usando— está entre las dos.
   { href: '/cards', key: 'cards', group: 'money' },
+  // Las ofertas van pegadas a las tarjetas porque son la misma decisión vista
+  // desde el otro lado: la tarjeta dice qué tenés, la oferta con cuál pagar.
+  { href: '/offers', key: 'offers', group: 'money' },
   { href: '/movements', key: 'movements', group: 'money' },
 
   { href: '/commitments', key: 'commitments', group: 'claims' },

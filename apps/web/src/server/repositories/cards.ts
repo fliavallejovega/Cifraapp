@@ -6,6 +6,7 @@ import {
   debts,
   households,
   householdPeople,
+  institutions,
   transactions,
 } from '@app/database/schema';
 import { unitRatio } from '@app/budget-engine';
@@ -72,6 +73,11 @@ export interface CardView {
   readonly name: string;
   readonly maskedNumber: string | null;
   readonly network: string | null;
+  readonly tier: string | null;
+  /** El banco que la emite, y su llave estable para casar con el catálogo. */
+  readonly institutionId: string | null;
+  readonly issuerName: string | null;
+  readonly issuerKey: string | null;
   readonly annualFee: Money | null;
   readonly holder: string | null;
   readonly holderId: string | null;
@@ -134,6 +140,10 @@ export async function loadCards(
         name: accounts.name,
         maskedNumber: accounts.maskedNumber,
         network: accounts.cardNetwork,
+        tier: accounts.cardTier,
+        institutionId: accounts.institutionId,
+        issuerName: institutions.name,
+        issuerKey: institutions.parserKey,
         annualFee: accounts.annualFee,
         holderId: accounts.personId,
         status: accounts.status,
@@ -156,6 +166,7 @@ export async function loadCards(
       })
       .from(accounts)
       .leftJoin(householdPeople, eq(householdPeople.id, accounts.personId))
+      .leftJoin(institutions, eq(institutions.id, accounts.institutionId))
       // La deuda que esta cuenta respalda. `left`, porque una tarjeta puede
       // existir como cuenta sin que nadie la haya registrado como deuda —y esa
       // ausencia es justo lo que la pantalla tiene que poder señalar.
@@ -284,6 +295,10 @@ export async function loadCards(
         name: row.name,
         maskedNumber: row.maskedNumber,
         network: row.network,
+        tier: row.tier,
+        institutionId: row.institutionId,
+        issuerName: row.issuerName,
+        issuerKey: row.issuerKey,
         annualFee: row.annualFee ? Money.fromDecimalString(row.annualFee, currency) : null,
         holder: row.holder,
         holderId: row.holderId,

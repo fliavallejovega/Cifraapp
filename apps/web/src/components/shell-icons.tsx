@@ -70,6 +70,22 @@ export function IconCards() {
   );
 }
 
+/**
+ * Ofertas: una etiqueta de precio.
+ *
+ * Un rombo con su ojal y su punto, que es la silueta universal de un descuento
+ * sin recurrir a un porcentaje —un «%» a veinte píxeles es una mancha— ni a una
+ * estrella, que en esta familia ya significa otra cosa.
+ */
+export function IconOffers() {
+  return (
+    <Icon>
+      <path d="M10.5 2.5H16a1.5 1.5 0 0 1 1.5 1.5v5.5L9 18 2 11l8.5-8.5Z" />
+      <circle cx="13.5" cy="6.5" r="1" />
+    </Icon>
+  );
+}
+
 /** Import: a statement arriving into the tray. */
 export function IconImport() {
   return (

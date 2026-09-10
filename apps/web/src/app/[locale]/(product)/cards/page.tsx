@@ -12,10 +12,14 @@ import {
 } from '@app/ui';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
+import { CardCompare } from '@/components/card-compare';
 import { CardsManager } from '@/components/cards-manager';
 import { ImportForm } from '@/components/import-form';
 import { formatPlainDate, trimRate } from '@/lib/format';
-import { loadPeople } from '@/server/repositories/administration';
+import { loadHouseholdContext } from '@/server/household-context';
+import { loadInstitutions, loadPeople } from '@/server/repositories/administration';
+import { loadCatalogueFor } from '@/server/repositories/card-catalogue';
+import { COMPARE_CATEGORIES, compareByCategory } from '@/server/repositories/card-comparison';
 import { loadCards } from '@/server/repositories/cards';
 import { requireHousehold } from '@/server/session';
 
@@ -44,15 +48,61 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
   const session = await requireHousehold(locale);
   const household = session.households.find((entry) => entry.id === session.activeHouseholdId);
   const currency = (household?.baseCurrency.trim() ?? 'USD') as CurrencyCode;
+  const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
 
-  const [view, people] = await Promise.all([
+  const [view, people, issuers] = await Promise.all([
     loadCards(session, session.activeHouseholdId, currency),
     loadPeople(session, session.activeHouseholdId),
+    loadInstitutions(),
   ]);
+
+  /**
+   * El catálogo de cada tarjeta, resuelto en paralelo.
+   *
+   * Una consulta por tarjeta y no una para todas: el filtro depende de la red,
+   * el nivel y el emisor de cada una, y una consulta común obligaría a filtrar
+   * en memoria lo que la base ya sabe hacer con un índice.
+   */
+  const catalogues = Object.fromEntries(
+    await Promise.all(
+      view.cards.map(async (card) => [
+        card.accountId,
+        await loadCatalogueFor(
+          { issuerKey: card.issuerKey, network: card.network, tier: card.tier },
+          context.today,
+        ),
+      ] as const),
+    ),
+  );
 
   const t = await getTranslations('cards');
   const documents = await getTranslations('documents');
+  const offersCopy = await getTranslations('offers');
   const shared = await getTranslations('records');
+
+  /**
+   * El comparativo, sobre lo propio y lo del mercado a la vez.
+   *
+   * Lo que la casa anotó de su contrato entra como confirmado; lo del mercado,
+   * con la marca que traiga. Van a la misma comparación porque contestan la
+   * misma pregunta — cuál conviene aquí — y lo que las distingue es de dónde
+   * salieron, no en qué lista aparecen.
+   */
+  const comparison = await compareByCategory(
+    view.cards.flatMap((card) =>
+      card.benefits.map((benefit) => ({
+        cardId: card.accountId,
+        cardName: card.name,
+        issuerName: card.issuerName,
+        kind: benefit.kind,
+        label: benefit.label,
+        value: benefit.value,
+        capturedOn: context.today,
+        expiresOn: benefit.expiresOn,
+      })),
+    ),
+    context.today,
+  );
   const moneyLocale = locale === 'en' ? 'en-US' : 'es-PA';
   const money = (value: Parameters<typeof formatMoney>[0]) =>
     formatMoney(value, { locale: moneyLocale });
@@ -80,6 +130,20 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
         discover: t('networks.discover'),
         other: t('networks.other'),
       },
+      tier: t('manage.form.tier'),
+      tierNone: t('manage.form.tierNone'),
+      tiers: {
+        classic: t('tiers.classic'),
+        gold: t('tiers.gold'),
+        platinum: t('tiers.platinum'),
+        signature: t('tiers.signature'),
+        infinite: t('tiers.infinite'),
+        black: t('tiers.black'),
+        other: t('tiers.other'),
+      },
+      issuer: t('manage.form.issuer'),
+      issuerNone: t('manage.form.issuerNone'),
+      issuerHint: t('manage.form.issuerHint'),
       mask: t('manage.form.mask'),
       maskHint: t('manage.form.maskHint'),
       balance: t('manage.form.balance'),
@@ -131,6 +195,18 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
       remove: t('manage.benefits.remove'),
       expired: t('manage.benefits.expired'),
       noCatalogue: t('manage.benefits.noCatalogue'),
+      catalogue: {
+        title: t('manage.catalogue.title'),
+        detail: t('manage.catalogue.detail'),
+        empty: t('manage.catalogue.empty'),
+        capturedOn: rawOf(t)('manage.catalogue.capturedOn'),
+        validUntil: rawOf(t)('manage.catalogue.validUntil'),
+        reviewBy: rawOf(t)('manage.catalogue.reviewBy'),
+        stale: t('manage.catalogue.stale'),
+        adopt: t('manage.catalogue.adopt'),
+        openSource: t('manage.catalogue.openSource'),
+        warning: t('manage.catalogue.warning'),
+      },
     },
     addCard: t('manage.addCard'),
     addCardTitle: t('manage.addCardTitle'),
@@ -185,6 +261,7 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
             locale={locale}
             currencySymbol={getCurrency(currency).symbol}
             people={people.map((person) => ({ id: person.id, name: person.displayName }))}
+            issuers={issuers}
             cards={[]}
             statementFor={{}}
             labels={managerLabels}
@@ -219,6 +296,51 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
           </Card>
         )}
       </div>
+
+      {/* El comparativo antes del listado: quien abre esta pantalla suele venir
+          con una compra en la mano, y «cuál uso» se contesta antes que «qué
+          tengo». */}
+      <Section title={t('compare.title')} detail={t('compare.detail')} className="mt-12">
+        <CardCompare
+          categories={[...COMPARE_CATEGORIES]}
+          byCategory={Object.fromEntries(
+            Object.entries(comparison).map(([category, result]) => [
+              category,
+              {
+                ranked: result.ranked.map(toCompareOffer(locale)),
+                unquantified: result.unquantified.map(toCompareOffer(locale)),
+                expired: result.expired.map(toCompareOffer(locale)),
+              },
+            ]),
+          )}
+          labels={{
+            title: t('compare.title'),
+            detail: t('compare.detail'),
+            category: t('compare.category'),
+            categories: {
+              restaurantes: offersCopy('categories.restaurantes'),
+              supermercados: offersCopy('categories.supermercados'),
+              combustible: offersCopy('categories.combustible'),
+              farmacias: offersCopy('categories.farmacias'),
+              viajes: offersCopy('categories.viajes'),
+              entretenimiento: offersCopy('categories.entretenimiento'),
+              tecnologia: offersCopy('categories.tecnologia'),
+              salud: offersCopy('categories.salud'),
+              otros: offersCopy('categories.otros'),
+            },
+            best: t('compare.best'),
+            unquantified: t('compare.unquantified'),
+            unquantifiedHint: t('compare.unquantifiedHint'),
+            expired: t('compare.expired'),
+            mine: t('compare.mine'),
+            notMine: t('compare.notMine'),
+            unverified: offersCopy('unverified'),
+            capturedOn: rawOf(offersCopy)('capturedOn'),
+            emptyTitle: t('compare.emptyTitle'),
+            emptyBody: t('compare.emptyBody'),
+          }}
+        />
+      </Section>
 
       <Section title={t('list.title')} detail={t('list.detail')} className="mt-12">
         <div className="flex flex-col gap-4">
@@ -377,11 +499,28 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
             locale={locale}
             currencySymbol={getCurrency(currency).symbol}
             people={people.map((person) => ({ id: person.id, name: person.displayName }))}
+            issuers={issuers}
             cards={view.cards.map((card) => ({
               accountId: card.accountId,
               name: card.name,
               maskedNumber: card.maskedNumber,
               network: card.network,
+              tier: card.tier,
+              institutionId: card.institutionId,
+              catalogue: (catalogues[card.accountId] ?? []).map((entry) => ({
+                id: entry.id,
+                kind: entry.kind,
+                label: entry.label,
+                value: entry.value,
+                program: entry.program,
+                sourceName: entry.sourceName,
+                sourceUrl: entry.sourceUrl,
+                capturedOn: formatPlainDate(entry.capturedOn, locale),
+                validUntil: entry.validUntil ? formatPlainDate(entry.validUntil, locale) : null,
+                reviewBy: entry.reviewBy ? formatPlainDate(entry.reviewBy, locale) : null,
+                notes: entry.notes,
+                isStale: entry.isStale,
+              })),
               holderId: card.holderId,
               // La deuda es la que el formulario edita: la cuenta guarda lo que
               // dice el banco y no se pisa desde aquí.
@@ -445,4 +584,39 @@ function errorsOf(
   return Object.fromEntries(
     Object.entries(value).filter((entry): entry is [string, string] => typeof entry[1] === 'string'),
   );
+}
+
+/** Una plantilla cuyos marcadores se rellenan donde están los valores. */
+function rawOf(catalogue: { raw: (key: string) => unknown }): (key: string) => string {
+  return (key) => {
+    const value = catalogue.raw(key);
+    return typeof value === 'string' ? value : '';
+  };
+}
+
+/** Una oferta comparada, lista para cruzar al cliente como datos. */
+function toCompareOffer(locale: string) {
+  return (offer: {
+    cardId: string;
+    cardName: string;
+    issuerName: string | null;
+    headline: string;
+    detail: string | null;
+    isVerified: boolean;
+    isOwned: boolean;
+    capturedOn: string;
+    rate: number | null;
+    position: number;
+  }) => ({
+    cardId: offer.cardId,
+    cardName: offer.cardName,
+    issuerName: offer.issuerName,
+    headline: offer.headline,
+    detail: offer.detail,
+    isVerified: offer.isVerified,
+    isOwned: offer.isOwned,
+    capturedOn: formatPlainDate(offer.capturedOn, locale),
+    rate: offer.rate,
+    position: offer.position,
+  });
 }

@@ -879,7 +879,8 @@
     },
     "investments": "Investing",
     "console": "SaaS console",
-    "cards": "Cards"
+    "cards": "Cards",
+    "offers": "Offers"
   },
   "accounts": {
     "title": "Your accounts",
@@ -3596,6 +3597,80 @@
         "expired": "Expired",
         "noCatalogue": "Cifraapp does not ship the benefits of Panamanian cards. They change by card tier, by promotion and by month, and they are terms of your contract: a stale table would tell you that you have insurance you do not have. What you record here comes from your contract, and that is why it can be trusted."
       }
+    },
+    "compare": {
+      "title": "Which one should you pay with?",
+      "detail": "Pick what you are about to spend on and it sorts what you have recorded, alongside what the market offers this month.",
+      "category": "I am spending on",
+      "best": "Best of what is loaded",
+      "unquantified": "They give something, without a comparable figure",
+      "unquantifiedHint": "Miles, points, lounges. What they are worth depends on how you use them, and the product will not guess that for you.",
+      "expired": "Expired",
+      "mine": "Yours",
+      "notMine": "Market",
+      "emptyTitle": "Nothing to compare in this category",
+      "emptyBody": "Record your cards’ benefits under «Manage → Benefits», or wait for the monthly sweep that brings the banks’ promotions."
+    }
+  },
+  "offers": {
+    "title": "This month’s offers",
+    "detail": "Which merchant gives what discount this month, and which of your cards pays for it. Every bank, credit and debit.",
+    "note": "Cifraapp has no agreement with any bank and charges nothing to appear here. Each offer carries the page it came from and the date it was read: confirm the conditions at the merchant before counting on the discount.",
+    "lastRefresh": "The sweep last read the banks’ pages on {when}.",
+    "neverRefreshed": "The automatic sweep has not run yet. What you see was loaded by hand.",
+    "summary": {
+      "today": "Usable today",
+      "todayDetail": "With one of your cards, on a day that applies.",
+      "mine": "You can use",
+      "mineDetail": "Of the total, the ones that take a card of yours.",
+      "all": "In the market",
+      "allDetail": "Everything loaded, whether you bank there or not."
+    },
+    "board": {
+      "title": "One by one",
+      "detail": "Sorted by what you can use today."
+    },
+    "filters": {
+      "onlyMine": "Only what I can use",
+      "allCards": "All",
+      "everyIssuer": "Every bank",
+      "everyCategory": "Every category"
+    },
+    "categories": {
+      "restaurantes": "Restaurants",
+      "supermercados": "Supermarkets",
+      "combustible": "Fuel",
+      "farmacias": "Pharmacies",
+      "viajes": "Travel",
+      "entretenimiento": "Entertainment",
+      "tecnologia": "Technology",
+      "salud": "Health",
+      "otros": "Other"
+    },
+    "days": {
+      "1": "Monday",
+      "2": "Tuesday",
+      "3": "Wednesday",
+      "4": "Thursday",
+      "5": "Friday",
+      "6": "Saturday",
+      "7": "Sunday"
+    },
+    "payWith": "Pay with: {cards}",
+    "notYours": "You have no card from this bank.",
+    "today": "Today",
+    "everyDay": "every day",
+    "until": "until {date}",
+    "cap": "Cap: {cap}",
+    "capBoth": "up to {discount} on spend of {spend}",
+    "capDiscount": "up to {discount}",
+    "capSpend": "on spend of up to {spend}",
+    "unverified": "Read automatically",
+    "capturedOn": "read on {date}",
+    "noneMatch": "No offer matches those filters. Try removing one.",
+    "empty": {
+      "title": "No offers loaded yet",
+      "body": "The sweep reads the banks’ promotion pages on the first of each month. It can also be triggered by hand from the panel."
     }
   }
 }
