@@ -1,3 +1,17 @@
+'use client';
+
+/*
+  Cliente, aunque no tenga estado.
+
+  Este módulo renderiza <Field>, que es un componente de cliente y recibe sus
+  hijos como función. Sin esta directiva el módulo se resuelve como servidor, la
+  función cruza la frontera, React no la puede serializar y la petición falla
+  entera con «Functions cannot be passed directly to Client Components».
+
+  Compila, pasa el typecheck, pasa las pruebas y pasa el build. Sólo se ve al
+  abrir la página. Ya pasó tres veces en este repositorio.
+*/
+
 import { Button, Field, Input, Select } from '@app/ui';
 
 /**

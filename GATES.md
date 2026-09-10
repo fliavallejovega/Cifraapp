@@ -88,6 +88,11 @@ entienda entra a un asistente donde se clasifica o se crea el rubro.
       EXPECT: SOURCES ARE AUTHORITATIVE OK
       EVIDENCE: automatic-evidence=v1; definition-sha256=15c568aad049fec06d0f98a5c97d23032f69eb7a1d0af12a2efbd68530f62b59; exit=0; EXPECT=matched; output-sha256=5fe3c3d5e12fcafafb32419d2c8de84227f5afcffcdab32505153051d8ff80b8; output-bytes=40; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar; path=6dc919bb4189/22 entries
 
+- [x] G18: Ninguna función cruza de un componente de servidor a uno de cliente — el fallo que más veces tumbó este producto y que ni lint, ni typecheck, ni las pruebas, ni el build pueden ver
+      CHECK: node scripts/gates/assert-no-functions-cross-the-boundary.mjs
+      EXPECT: NO FUNCTIONS CROSS OK
+      EVIDENCE: automatic-evidence=v1; definition-sha256=aa4ef57e369b7a62dcdd41ed25a6fa2b20f2ed28a7495aeb0d22c3ffa9f3322a; exit=0; EXPECT=matched; output-sha256=be0e5b9993a40a340eec0ab9423fbb2e6d7440fbba5e58249a038bba701655c7; output-bytes=59; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar; path=6dc919bb4189/22 entries
+
 - [x] G10: Cada clave de copy que una pantalla pide existe en español y en inglés
       CHECK: node scripts/gates/assert-copy-complete.mjs
       EXPECT: COPY COMPLETE OK
