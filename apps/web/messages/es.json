@@ -1888,10 +1888,6 @@
       "used": "{percent}% del cupo"
     },
     "carry": "Llevarla como cuenta",
-    "badges": {
-      "carried": "Se lleva como cuenta",
-      "notCarried": "Sin cuenta que la lleve"
-    },
     "kinds": {
       "credit_card": "Tarjeta de crédito",
       "auto_loan": "Préstamo de auto",
@@ -3491,8 +3487,7 @@
     "note": "El saldo es el que declaraste o el que trajo el último estado de cuenta importado. Los movimientos son el detalle de cómo llegó ahí; no cambian este número por su cuenta.",
     "empty": {
       "title": "Todavía no hay tarjetas",
-      "body": "Una tarjeta se registra como deuda —con su saldo, su tasa y su mínimo— y el producto la convierte también en cuenta, para que su estado de cuenta tenga contra qué importarse.",
-      "action": "Ir a Deudas"
+      "body": "Agregá tu primera tarjeta acá abajo. Se registra una sola vez y aparece completa: su cupo, su mínimo, sus movimientos y sus beneficios."
     },
     "summary": {
       "owed": "Debés en tarjetas",
@@ -3518,7 +3513,89 @@
       "movements": "Movimientos",
       "noMovements": "Ninguno",
       "lastMovement": "Último movimiento el {date}: {description}",
-      "mismatch": "El banco dice {bank} y vos estás gestionando {managed}. No es un error del sistema: es la diferencia, y vale la pena mirarla."
+      "mismatch": "El banco dice {bank} y vos estás gestionando {managed}. No es un error del sistema: es la diferencia, y vale la pena mirarla.",
+      "annualFee": "anualidad {fee}",
+      "noLimit": "No declaraste el cupo de esta tarjeta, así que no se puede calcular cuánto llevás usado. Ponelo en «Gestionar» y aparece la barra.",
+      "moreBenefits": "y {count} más"
+    },
+    "networks": {
+      "visa": "Visa",
+      "mastercard": "Mastercard",
+      "amex": "American Express",
+      "discover": "Discover",
+      "other": "Otra red"
+    },
+    "benefitKinds": {
+      "cashback": "Devolución",
+      "miles": "Millas",
+      "points": "Puntos",
+      "insurance": "Seguro",
+      "lounge": "Sala VIP",
+      "discount": "Descuento",
+      "waiver": "Exoneración",
+      "other": "Otro"
+    },
+    "bands": {
+      "comfortable": "Holgada · {used}",
+      "tight": "Apretada · {used}",
+      "stretched": "Al límite · {used}"
+    },
+    "manage": {
+      "open": "Gestionar",
+      "close": "Cerrar",
+      "addCard": "Agregar una tarjeta",
+      "addCardTitle": "Nueva tarjeta",
+      "tabs": {
+        "data": "Datos",
+        "benefits": "Beneficios",
+        "statement": "Estado de cuenta"
+      },
+      "form": {
+        "name": "Cómo la reconocés",
+        "nameHint": "Por ejemplo, «Visa Banco General de Davo».",
+        "network": "Red",
+        "networkNone": "Sin especificar",
+        "mask": "Últimos 4 dígitos",
+        "maskHint": "Es lo que distingue una Visa de otra cuando llega el estado de cuenta. Nunca guardamos el número completo.",
+        "balance": "¿Cuánto debés hoy?",
+        "balanceHint": "En positivo. Es lo que vos gestionás; el saldo del banco se actualiza al importar.",
+        "apr": "Tasa anual",
+        "minimum": "Pago mínimo del mes",
+        "limit": "Cupo",
+        "limitHint": "Sin esto no se puede calcular cuánto llevás usado, y la barra no aparece.",
+        "annualFee": "Anualidad",
+        "annualFeeHint": "Lo que te cobran al año por tenerla. Vacío es «no sé»; cero es «no cobra».",
+        "statementDay": "Día de corte",
+        "statementDayHint": "Cuando el banco cierra el mes.",
+        "dueDay": "Día de pago",
+        "dueDayHint": "Cuando vence.",
+        "person": "¿De quién es?",
+        "personHousehold": "Del hogar",
+        "save": "Guardar los cambios",
+        "create": "Agregar esta tarjeta",
+        "archive": "Archivar esta tarjeta",
+        "archiveConfirm": "¿Archivarla? Sus movimientos se conservan.",
+        "archiveConfirmYes": "Sí, archivarla"
+      },
+      "benefits": {
+        "title": "Beneficios",
+        "detail": "Anotá lo que da tu tarjeta, leyéndolo de tu contrato. Es lo que te permite saber cuál conviene usar en cada compra.",
+        "emptyTitle": "Todavía no anotaste beneficios",
+        "emptyBody": "Devolución en supermercados, millas, seguro de alquiler de auto, sala VIP. Anotalos con su fuente y su fecha de vencimiento, y quedan a mano cuando tengas que decidir con cuál pagar.",
+        "kind": "Qué tipo",
+        "label": "Cuál es",
+        "labelHint": "Por ejemplo, «3% en supermercados».",
+        "value": "El detalle",
+        "valueHint": "Opcional. «Hasta $200 al mes en comercios afiliados».",
+        "source": "¿De dónde lo sacaste?",
+        "sourceHint": "Opcional. «Contrato p. 4», «app del banco». Es lo que lo hace comprobable dentro de un año.",
+        "expires": "¿Hasta cuándo?",
+        "expiresHint": "Opcional. Media promoción tiene fecha, y una vencida que se sigue mostrando es peor que ninguna.",
+        "add": "Anotar este beneficio",
+        "remove": "Quitar",
+        "expired": "Vencido",
+        "noCatalogue": "Cifraapp no trae cargados los beneficios de las tarjetas de Panamá. Cambian por nivel de tarjeta, por promoción y por mes, y son términos de tu contrato: una tabla desactualizada te diría que tenés un seguro que no tenés. Lo que anotes acá sale de tu contrato, y por eso se puede confiar."
+      }
     }
   }
 }

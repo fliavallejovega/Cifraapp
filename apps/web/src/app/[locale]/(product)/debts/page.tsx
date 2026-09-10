@@ -201,14 +201,11 @@ export default async function DebtsPage({ params }: { params: Promise<{ locale: 
         : []),
     ].join(' · '),
     amount: formatMoney(debt.currentBalance, { locale: context.moneyLocale }),
-    badges: [
-      ...(debt.personName ? [{ label: debt.personName, tone: 'neutral' as const }] : []),
-      ...(debt.accountId
-        ? [{ label: t('badges.carried'), tone: 'positive' as const }]
-        : debt.kind === 'credit_card'
-          ? [{ label: t('badges.notCarried'), tone: 'caution' as const }]
-          : []),
-    ],
+    // «Se lleva como cuenta» era plomería contada en voz alta: que una tarjeta
+    // tenga cuenta detrás es cómo funciona el producto, no una noticia sobre la
+    // deuda de alguien. Quien mira esta lista quiere saber cuánto debe y a qué
+    // tasa; de quién es la deuda sí importa, porque decide quién la paga.
+    badges: debt.personName ? [{ label: debt.personName, tone: 'neutral' as const }] : [],
     // Offered only while there is nothing carrying it yet. A debt already
     // backed by an account must not be able to open a second one holding the
     // same money.

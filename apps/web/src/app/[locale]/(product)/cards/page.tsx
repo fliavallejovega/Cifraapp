@@ -1,4 +1,4 @@
-import { formatMoney, type CurrencyCode } from '@app/domain';
+import { formatMoney, getCurrency, type CurrencyCode } from '@app/domain';
 import {
   Amount,
   Card,
@@ -12,8 +12,10 @@ import {
 } from '@app/ui';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
-import { Link } from '@/i18n/navigation';
+import { CardsManager } from '@/components/cards-manager';
+import { ImportForm } from '@/components/import-form';
 import { formatPlainDate, trimRate } from '@/lib/format';
+import { loadPeople } from '@/server/repositories/administration';
 import { loadCards } from '@/server/repositories/cards';
 import { requireHousehold } from '@/server/session';
 
@@ -43,9 +45,14 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
   const household = session.households.find((entry) => entry.id === session.activeHouseholdId);
   const currency = (household?.baseCurrency.trim() ?? 'USD') as CurrencyCode;
 
-  const view = await loadCards(session, session.activeHouseholdId, currency);
+  const [view, people] = await Promise.all([
+    loadCards(session, session.activeHouseholdId, currency),
+    loadPeople(session, session.activeHouseholdId),
+  ]);
 
   const t = await getTranslations('cards');
+  const documents = await getTranslations('documents');
+  const shared = await getTranslations('records');
   const moneyLocale = locale === 'en' ? 'en-US' : 'es-PA';
   const money = (value: Parameters<typeof formatMoney>[0]) =>
     formatMoney(value, { locale: moneyLocale });
@@ -53,24 +60,136 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
   /** La utilización como porcentaje entero. Un decimal aquí no cambia ninguna decisión. */
   const percent = (ratio: number) => `${String(Math.round(ratio * 100))}%`;
 
+  const managerLabels = {
+    manage: t('manage.open'),
+    close: t('manage.close'),
+    tabs: {
+      data: t('manage.tabs.data'),
+      benefits: t('manage.tabs.benefits'),
+      statement: t('manage.tabs.statement'),
+    },
+    form: {
+      name: t('manage.form.name'),
+      nameHint: t('manage.form.nameHint'),
+      network: t('manage.form.network'),
+      networkNone: t('manage.form.networkNone'),
+      networks: {
+        visa: t('networks.visa'),
+        mastercard: t('networks.mastercard'),
+        amex: t('networks.amex'),
+        discover: t('networks.discover'),
+        other: t('networks.other'),
+      },
+      mask: t('manage.form.mask'),
+      maskHint: t('manage.form.maskHint'),
+      balance: t('manage.form.balance'),
+      balanceHint: t('manage.form.balanceHint'),
+      apr: t('manage.form.apr'),
+      minimum: t('manage.form.minimum'),
+      limit: t('manage.form.limit'),
+      limitHint: t('manage.form.limitHint'),
+      annualFee: t('manage.form.annualFee'),
+      annualFeeHint: t('manage.form.annualFeeHint'),
+      statementDay: t('manage.form.statementDay'),
+      statementDayHint: t('manage.form.statementDayHint'),
+      dueDay: t('manage.form.dueDay'),
+      dueDayHint: t('manage.form.dueDayHint'),
+      person: t('manage.form.person'),
+      personHousehold: t('manage.form.personHousehold'),
+      save: t('manage.form.save'),
+      create: t('manage.form.create'),
+      cancel: shared('cancel'),
+      archive: t('manage.form.archive'),
+      archiveConfirm: t('manage.form.archiveConfirm'),
+      archiveConfirmYes: t('manage.form.archiveConfirmYes'),
+    },
+    benefits: {
+      title: t('manage.benefits.title'),
+      detail: t('manage.benefits.detail'),
+      emptyTitle: t('manage.benefits.emptyTitle'),
+      emptyBody: t('manage.benefits.emptyBody'),
+      kind: t('manage.benefits.kind'),
+      kinds: {
+        cashback: t('benefitKinds.cashback'),
+        miles: t('benefitKinds.miles'),
+        points: t('benefitKinds.points'),
+        insurance: t('benefitKinds.insurance'),
+        lounge: t('benefitKinds.lounge'),
+        discount: t('benefitKinds.discount'),
+        waiver: t('benefitKinds.waiver'),
+        other: t('benefitKinds.other'),
+      },
+      label: t('manage.benefits.label'),
+      labelHint: t('manage.benefits.labelHint'),
+      value: t('manage.benefits.value'),
+      valueHint: t('manage.benefits.valueHint'),
+      source: t('manage.benefits.source'),
+      sourceHint: t('manage.benefits.sourceHint'),
+      expires: t('manage.benefits.expires'),
+      expiresHint: t('manage.benefits.expiresHint'),
+      add: t('manage.benefits.add'),
+      remove: t('manage.benefits.remove'),
+      expired: t('manage.benefits.expired'),
+      noCatalogue: t('manage.benefits.noCatalogue'),
+    },
+    addCard: t('manage.addCard'),
+    addCardTitle: t('manage.addCardTitle'),
+    errorTitle: shared('errorTitle'),
+    errors: errorsOf(shared),
+  };
+
+  /**
+   * El formulario de importación de cada tarjeta, armado en el servidor.
+   *
+   * Uno por tarjeta y con la cuenta fijada: se está mirando esa tarjeta, así que
+   * un selector con todas las cuentas del hogar sería una pregunta cuya
+   * respuesta ya está en la pantalla — y la ocasión de archivar el estado de
+   * cuenta de la Visa contra la Mastercard.
+   */
+  const statementFor = Object.fromEntries(
+    view.cards.map((card) => [
+      card.accountId,
+      <ImportForm
+        key={card.accountId}
+        locale={locale}
+        accounts={[]}
+        fixedAccountId={card.accountId}
+        labels={{
+          file: documents('form.file'),
+          fileHint: documents('form.fileHint'),
+          account: documents('form.account'),
+          accountHint: documents('form.accountHint'),
+          submit: documents('form.submit'),
+          errorTitle: documents('errors.title'),
+          queuedHeading: documents('queued.heading'),
+          queuedDetail: documents('queued.detail'),
+          watchLink: documents('queued.watch'),
+          errors: errorsOf(documents, 'errors'),
+        }}
+      />,
+    ]),
+  );
+
   if (view.isEmpty) {
     return (
       <Page>
         <PageHeader title={t('title')} detail={t('detail')} />
         <Card>
-          <EmptyState
-            title={t('empty.title')}
-            body={t('empty.body')}
-            action={
-              <Link
-                href="/debts"
-                className="text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
-              >
-                {t('empty.action')}
-              </Link>
-            }
-          />
+          <EmptyState title={t('empty.title')} body={t('empty.body')} />
         </Card>
+        {/* La primera acción, aquí mismo: mandar a otra pantalla a crear lo que
+            esta pantalla administra es la razón por la que había que registrar
+            una tarjeta en dos sitios. */}
+        <div className="mt-6">
+          <CardsManager
+            locale={locale}
+            currencySymbol={getCurrency(currency).symbol}
+            people={people.map((person) => ({ id: person.id, name: person.displayName }))}
+            cards={[]}
+            statementFor={{}}
+            labels={managerLabels}
+          />
+        </div>
       </Page>
     );
   }
@@ -112,7 +231,11 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
                     {card.maskedNumber && (
                       <span className="tabular">{t('list.mask', { mask: card.maskedNumber })}</span>
                     )}
+                    {card.network && <span>{t(`networks.${card.network}`)}</span>}
                     {card.holder && <span>{card.holder}</span>}
+                    {card.annualFee && !card.annualFee.isZero() && (
+                      <span>{t('list.annualFee', { fee: money(card.annualFee) })}</span>
+                    )}
                     {card.isArchived && <Status tone="neutral">{t('list.archived')}</Status>}
                     {/* Sin deuda ligada, el motor no la ataca y nadie lo sabría
                         mirando esta tarjeta. Se dice, con el camino al lado. */}
@@ -128,14 +251,20 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
                   producto: es el umbral por encima del cual la utilización
                   empieza a pesar en un puntaje de crédito, y decirlo con una
                   marca es más honesto que teñir la barra de rojo sin explicar. */}
-              {card.creditLimit && card.available && card.utilization !== null && (
+              {card.creditLimit && card.available && card.utilization !== null && card.band && (
                 <div className="mt-5">
                   <Gauge
                     value={card.owed}
                     max={card.creditLimit}
                     label={t('list.gauge', { name: card.name })}
                     locale={moneyLocale}
-                    tone={card.utilization > 0.3 ? 'caution' : 'neutral'}
+                    tone={
+                      card.band === 'stretched'
+                        ? 'negative'
+                        : card.band === 'tight'
+                          ? 'caution'
+                          : 'neutral'
+                    }
                     thresholds={[
                       {
                         at: card.creditLimit.percentage(30),
@@ -144,14 +273,42 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
                       },
                     ]}
                   />
-                  <p className="mt-3 text-sm text-[color:var(--color-ink-secondary)]">
-                    {t('list.availableOf', {
-                      available: money(card.available),
-                      limit: money(card.creditLimit),
-                      used: percent(card.utilization),
-                    })}
+                  <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[color:var(--color-ink-secondary)]">
+                    {/*
+                      La banda lleva su palabra y no sólo su color. Quien no
+                      distingue el ámbar del rojo tiene que poder leer lo mismo,
+                      y en una cifra que decide si conviene usar la tarjeta este
+                      mes eso no es un detalle de accesibilidad, es la
+                      información.
+                    */}
+                    <Status
+                      tone={
+                        card.band === 'stretched'
+                          ? 'negative'
+                          : card.band === 'tight'
+                            ? 'caution'
+                            : 'positive'
+                      }
+                    >
+                      {t(`bands.${card.band}`, { used: percent(card.utilization) })}
+                    </Status>
+                    <span>
+                      {t('list.availableOf', {
+                        available: money(card.available),
+                        limit: money(card.creditLimit),
+                        used: percent(card.utilization),
+                      })}
+                    </span>
                   </p>
                 </div>
+              )}
+
+              {/* Sin cupo declarado no hay porcentaje que calcular, y el
+                  producto prefiere decirlo a inventarlo. */}
+              {card.creditLimit === null && (
+                <p className="mt-4 text-sm text-[color:var(--color-ink-secondary)]">
+                  {t('list.noLimit')}
+                </p>
               )}
 
               <dl className="mt-5 grid grid-cols-2 gap-4 border-t border-[color:var(--color-rule)] pt-4 sm:grid-cols-4">
@@ -192,8 +349,63 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
                   })}
                 </p>
               )}
+
+              {/* Los beneficios que la casa anotó, resumidos. El detalle y la
+                  edición viven en el panel, para no llenar la tarjeta de
+                  formulario cuando lo que se vino a hacer es mirar. */}
+              {card.benefits.length > 0 && (
+                <p className="mt-4 flex flex-wrap items-center gap-2 text-xs text-[color:var(--color-ink-secondary)]">
+                  {card.benefits.slice(0, 4).map((benefit) => (
+                    <Status
+                      key={benefit.id}
+                      tone={benefit.isExpired ? 'neutral' : 'positive'}
+                    >
+                      {benefit.label}
+                    </Status>
+                  ))}
+                  {card.benefits.length > 4 && (
+                    <span>{t('list.moreBenefits', { count: card.benefits.length - 4 })}</span>
+                  )}
+                </p>
+              )}
             </Card>
           ))}
+        </div>
+
+        <div className="mt-6">
+          <CardsManager
+            locale={locale}
+            currencySymbol={getCurrency(currency).symbol}
+            people={people.map((person) => ({ id: person.id, name: person.displayName }))}
+            cards={view.cards.map((card) => ({
+              accountId: card.accountId,
+              name: card.name,
+              maskedNumber: card.maskedNumber,
+              network: card.network,
+              holderId: card.holderId,
+              // La deuda es la que el formulario edita: la cuenta guarda lo que
+              // dice el banco y no se pisa desde aquí.
+              balance: (card.managed ?? card.owed).toDecimalString(),
+              apr: card.apr ? trimRate(card.apr) : '',
+              minimumPayment: card.minimumPayment?.toDecimalString() ?? '',
+              creditLimit: card.creditLimit?.toDecimalString() ?? '',
+              annualFee: card.annualFee?.toDecimalString() ?? '',
+              statementDay: card.statementDay === null ? '' : String(card.statementDay),
+              dueDay: card.dueDay === null ? '' : String(card.dueDay),
+              benefits: card.benefits.map((benefit) => ({
+                id: benefit.id,
+                kind: benefit.kind,
+                label: benefit.label,
+                value: benefit.value,
+                source: benefit.source,
+                expiresOn: benefit.expiresOn,
+                isExpired: benefit.isExpired,
+              })),
+              isArchived: card.isArchived,
+            }))}
+            statementFor={statementFor}
+            labels={managerLabels}
+          />
         </div>
       </Section>
 
@@ -212,5 +424,25 @@ function Detail({ label, value }: { readonly label: string; readonly value: stri
       </dt>
       <dd className="tabular text-sm">{value}</dd>
     </div>
+  );
+}
+
+/**
+ * El diccionario de errores de un catálogo, como datos.
+ *
+ * Datos y no la función `t`: lo que cruza a un componente de cliente tiene que
+ * poder serializarse, y pasar `t` compila, construye, pasa el gate entero y
+ * revienta en producción con «Functions cannot be passed directly to Client
+ * Components». Ya pasó una vez en este repositorio.
+ */
+function errorsOf(
+  catalogue: { raw: (key: string) => unknown },
+  key = 'errors',
+): Record<string, string> {
+  const value = catalogue.raw(key);
+  if (typeof value !== 'object' || value === null) return {};
+
+  return Object.fromEntries(
+    Object.entries(value).filter((entry): entry is [string, string] => typeof entry[1] === 'string'),
   );
 }

@@ -52,6 +52,21 @@ export const accountType = pgEnum('account_type', [
 export const accountStatus = pgEnum('account_status', ['active', 'closed', 'archived']);
 
 /**
+ * La red de una tarjeta: Visa, Mastercard, Amex.
+ *
+ * Un hecho estable, impreso en el plástico, que decide dónde se acepta y qué
+ * seguros aplican. Se declara y no se deduce del nombre — «Visa Blei» casi
+ * seguro es Visa, y «casi seguro» no es un dato.
+ */
+export const cardNetwork = pgEnum('card_network', [
+  'visa',
+  'mastercard',
+  'amex',
+  'discover',
+  'other',
+]);
+
+/**
  * Qué piensa hacer la casa con una posición.
  *
  * `long_term` no se toca; `hold` se mantiene sin plazo; `exit` va a volverse
@@ -151,6 +166,10 @@ export const accounts = appSchema.table(
     currentBalance: money('current_balance').notNull().default('0'),
     availableBalance: money('available_balance'),
     creditLimit: money('credit_limit'),
+    /** Visa, Mastercard, Amex. Sólo en tarjetas; la base lo exige. */
+    cardNetwork: cardNetwork('card_network'),
+    /** Lo que cuesta tenerla al año. Nulo es «nadie lo dijo»; cero es «no cobra». */
+    annualFee: money('annual_fee'),
     /**
      * What the account earns, as a percentage: 3.250 is 3.25%.
      *
@@ -621,6 +640,10 @@ export const debts = appSchema.table(
     dueDay: smallint('due_day'),
     statementDay: smallint('statement_day'),
     creditLimit: money('credit_limit'),
+    /** Visa, Mastercard, Amex. Sólo en tarjetas; la base lo exige. */
+    cardNetwork: cardNetwork('card_network'),
+    /** Lo que cuesta tenerla al año. Nulo es «nadie lo dijo»; cero es «no cobra». */
+    annualFee: money('annual_fee'),
     /**
      * Qué clase de deuda es.
      *
@@ -790,4 +813,40 @@ export const holdings = appSchema.table(
     deletedAt: timestamp('deleted_at', { withTimezone: true }),
   },
   (table) => [index('holdings_household_idx').on(table.householdId)],
+);
+
+/**
+ * Lo que da una tarjeta, según su propio titular.
+ *
+ * Espeja `20260909390000_card_network_and_benefits.sql`. El producto **no trae
+ * un catálogo** de las tarjetas de Panamá: los beneficios cambian por nivel, por
+ * promoción y por mes, son términos contractuales, y una tabla desactualizada
+ * dentro de una aplicación financiera le dice a alguien que tiene un seguro que
+ * no tiene. Lo que se guarda es lo que el titular leyó en su contrato, con
+ * `source` para que siga siendo comprobable dentro de un año.
+ */
+export const cardBenefits = appSchema.table(
+  'card_benefits',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .default(sql`public.uuid_generate_v7()`),
+    householdId: uuid('household_id')
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    accountId: uuid('account_id')
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    kind: text('kind').notNull(),
+    label: text('label').notNull(),
+    /** Texto libre: «3% hasta $200 al mes» no es un porcentaje limpio. */
+    value: text('value'),
+    /** De dónde salió: «contrato p. 4», «app del banco». */
+    source: text('source'),
+    /** La mitad de los beneficios son promociones con fecha. */
+    expiresOn: date('expires_on'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index('card_benefits_account_idx').on(table.accountId)],
 );

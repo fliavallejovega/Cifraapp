@@ -41,6 +41,14 @@ export interface ImportFormProps {
     /** Whose it is, when it belongs to somebody rather than to the household. */
     readonly personName: string | null;
   }[];
+  /**
+   * La cuenta ya está decidida: se sube desde su propia pantalla.
+   *
+   * Un selector de una sola opción no es una elección, es una pregunta cuya
+   * respuesta ya está en la pantalla. Va como campo oculto y el encabezado de
+   * arriba dice contra qué se está importando.
+   */
+  readonly fixedAccountId?: string;
   readonly labels: {
     readonly file: string;
     readonly fileHint: string;
@@ -55,7 +63,7 @@ export interface ImportFormProps {
   };
 }
 
-export function ImportForm({ locale, accounts, labels }: ImportFormProps) {
+export function ImportForm({ locale, accounts, fixedAccountId, labels }: ImportFormProps) {
   const [state, formAction, pending] = useActionState<ImportActionResult, FormData>(
     importStatement,
     {},
@@ -92,7 +100,11 @@ export function ImportForm({ locale, accounts, labels }: ImportFormProps) {
         </div>
       )}
 
-      {accounts.length > 0 && (
+      {fixedAccountId !== undefined && (
+        <input type="hidden" name="accountId" value={fixedAccountId} />
+      )}
+
+      {fixedAccountId === undefined && accounts.length > 0 && (
         <Field label={labels.account} hint={labels.accountHint} required>
           {({ id, describedBy }) => (
             <Select id={id} name="accountId" aria-describedby={describedBy} required>

@@ -1,8 +1,15 @@
 import 'server-only';
 
-import { accounts, debts, householdPeople, transactions } from '@app/database/schema';
+import {
+  accounts,
+  cardBenefits,
+  debts,
+  households,
+  householdPeople,
+  transactions,
+} from '@app/database/schema';
 import { unitRatio } from '@app/budget-engine';
-import { Money, type CurrencyCode, type PlainDate } from '@app/domain';
+import { Money, todayIn, type CurrencyCode, type PlainDate } from '@app/domain';
 import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 
 import { queryAsUser, type Session } from '../session';
@@ -26,19 +33,49 @@ import { queryAsUser, type Session } from '../session';
  * diferencia es el hallazgo**, no un error que tapar. La pantalla los enseña
  * juntos cuando no coinciden en vez de elegir uno.
  *
- * ## La utilización
+ * ## La utilización, y por qué tiene bandas
  *
- * Cuánto del cupo está usado. Es la cifra que mueve un puntaje de crédito y la
- * que nadie mira hasta que ya está alta, y sale de dos números que la casa ya
- * declaró — no hay modelo ni estimación detrás.
+ * Cuánto del cupo está usado. Sale de dos números que la casa declaró — no hay
+ * modelo ni estimación detrás — y es la cifra que mueve un puntaje de crédito y
+ * la que nadie mira hasta que ya está alta.
+ *
+ * Las bandas son las que usa la industria y no una invención del producto: por
+ * debajo del 30% la utilización no pesa, entre 30% y 70% empieza a pesar, y por
+ * encima del 70% pesa mucho. Cada banda lleva **su palabra**, no sólo su color:
+ * quien no distingue el verde del ámbar tiene que poder leer lo mismo.
+ *
+ * ## Y por qué no hay catálogo de beneficios
+ *
+ * Los beneficios los declara el titular leyendo su propio contrato. Meter una
+ * tabla de «los beneficios de las tarjetas de Panamá» dentro del producto sería
+ * afirmar términos contractuales que cambian por nivel, por promoción y por mes;
+ * una desactualizada le dice a alguien que tiene un seguro que no tiene.
  */
+
+/** Cómo está el cupo. La palabra manda; el color la acompaña. */
+export type UtilizationBand = 'comfortable' | 'tight' | 'stretched';
+
+export interface CardBenefitView {
+  readonly id: string;
+  readonly kind: string;
+  readonly label: string;
+  readonly value: string | null;
+  readonly source: string | null;
+  readonly expiresOn: PlainDate | null;
+  /** Vencido, según la fecha del hogar. Se enseña tachado, no se esconde. */
+  readonly isExpired: boolean;
+}
 
 export interface CardView {
   readonly accountId: string;
   readonly debtId: string | null;
   readonly name: string;
   readonly maskedNumber: string | null;
+  readonly network: string | null;
+  readonly annualFee: Money | null;
   readonly holder: string | null;
+  readonly holderId: string | null;
+  readonly benefits: readonly CardBenefitView[];
   /** Lo que dice el banco hoy, en positivo: lo que se debe. */
   readonly owed: Money;
   /** Lo que la casa está gestionando como deuda. Nulo si no hay deuda ligada. */
@@ -50,6 +87,8 @@ export interface CardView {
   readonly available: Money | null;
   /** 0–1. Nulo sin límite. Es la cifra que mueve un puntaje y nadie mira a tiempo. */
   readonly utilization: number | null;
+  /** En qué banda cae. Nulo sin cupo declarado: sin límite no hay porcentaje. */
+  readonly band: UtilizationBand | null;
   readonly apr: string | null;
   readonly minimumPayment: Money | null;
   /** El día del mes en que vence. Nulo cuando nadie lo declaró. */
@@ -79,11 +118,24 @@ export async function loadCards(
   currency: CurrencyCode,
 ): Promise<CardsView> {
   return queryAsUser(session, async (tx) => {
+    const [household] = await tx
+      .select({ timeZone: households.timeZone })
+      .from(households)
+      .where(eq(households.id, householdId))
+      .limit(1);
+
+    // La fecha del hogar y no la del servidor: una promoción que vence hoy no
+    // puede aparecer vencida porque el servidor ya cambió de día en UTC.
+    const today = todayIn(household?.timeZone ?? 'America/Panama');
+
     const rows = await tx
       .select({
         accountId: accounts.id,
         name: accounts.name,
         maskedNumber: accounts.maskedNumber,
+        network: accounts.cardNetwork,
+        annualFee: accounts.annualFee,
+        holderId: accounts.personId,
         status: accounts.status,
         balance: accounts.currentBalance,
         accountLimit: accounts.creditLimit,
@@ -151,6 +203,51 @@ export async function loadCards(
       )
       .orderBy(desc(transactions.transactionDate), desc(transactions.createdAt));
 
+    /**
+     * Los beneficios, leídos de una vez para todas las tarjetas.
+     *
+     * Uno por consulta sería una consulta por tarjeta, y un hogar con seis
+     * tarjetas no debería costar seis viajes para enseñar una lista.
+     */
+    const benefitRows = await tx
+      .select({
+        id: cardBenefits.id,
+        accountId: cardBenefits.accountId,
+        kind: cardBenefits.kind,
+        label: cardBenefits.label,
+        value: cardBenefits.value,
+        source: cardBenefits.source,
+        expiresOn: cardBenefits.expiresOn,
+      })
+      .from(cardBenefits)
+      .where(
+        and(
+          eq(cardBenefits.householdId, householdId),
+          inArray(
+            cardBenefits.accountId,
+            rows.map((row) => row.accountId),
+          ),
+        ),
+      )
+      .orderBy(cardBenefits.kind, cardBenefits.label);
+
+    const benefitsByCard = new Map<string, CardBenefitView[]>();
+    for (const benefit of benefitRows) {
+      const list = benefitsByCard.get(benefit.accountId) ?? [];
+      list.push({
+        id: benefit.id,
+        kind: benefit.kind,
+        label: benefit.label,
+        value: benefit.value,
+        source: benefit.source,
+        expiresOn: (benefit.expiresOn as PlainDate | null) ?? null,
+        // Vencido se enseña tachado y no se esconde: saber que una promoción
+        // se acabó es la mitad de la razón para haberla anotado.
+        isExpired: benefit.expiresOn !== null && (benefit.expiresOn as PlainDate) < today,
+      });
+      benefitsByCard.set(benefit.accountId, list);
+    }
+
     const latest = new Map<string, { date: PlainDate; description: string }>();
     for (const movement of lastMovements) {
       if (latest.has(movement.accountId)) continue;
@@ -177,20 +274,27 @@ export async function loadCards(
 
       const last = latest.get(row.accountId) ?? null;
 
+      const utilization = creditLimit?.isPositive()
+        ? unitRatio(owed.scaledUnits, creditLimit.scaledUnits)
+        : null;
+
       return {
         accountId: row.accountId,
         debtId: row.debtId,
         name: row.name,
         maskedNumber: row.maskedNumber,
+        network: row.network,
+        annualFee: row.annualFee ? Money.fromDecimalString(row.annualFee, currency) : null,
         holder: row.holder,
+        holderId: row.holderId,
+        benefits: benefitsByCard.get(row.accountId) ?? [],
         owed,
         managed,
         balancesDiffer: managed !== null && !managed.equals(owed),
         creditLimit,
         available,
-        utilization: creditLimit?.isPositive()
-          ? unitRatio(owed.scaledUnits, creditLimit.scaledUnits)
-          : null,
+        utilization,
+        band: utilization === null ? null : bandOf(utilization),
         apr: row.apr,
         minimumPayment: row.minimumPayment
           ? Money.fromDecimalString(row.minimumPayment, currency)
@@ -246,4 +350,22 @@ export async function loadCards(
       isEmpty: false,
     };
   });
+}
+
+/**
+ * En qué banda cae una utilización.
+ *
+ * Los cortes son los que usa la industria del crédito, no una invención del
+ * producto: por debajo del 30% la utilización no pesa en un puntaje, entre 30% y
+ * 70% empieza a pesar, y por encima del 70% pesa mucho. Están aquí, en una
+ * función con nombre, y no repartidos por la pantalla — el día que haya que
+ * moverlos se mueven una vez.
+ */
+export const UTILIZATION_COMFORTABLE = 0.3;
+export const UTILIZATION_STRETCHED = 0.7;
+
+export function bandOf(utilization: number): UtilizationBand {
+  if (utilization < UTILIZATION_COMFORTABLE) return 'comfortable';
+  if (utilization < UTILIZATION_STRETCHED) return 'tight';
+  return 'stretched';
 }

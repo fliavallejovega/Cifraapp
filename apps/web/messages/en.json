@@ -1888,10 +1888,6 @@
       "used": "{percent}% of the limit"
     },
     "carry": "Carry it as an account",
-    "badges": {
-      "carried": "Carried as an account",
-      "notCarried": "No account carries it"
-    },
     "kinds": {
       "credit_card": "Credit card",
       "auto_loan": "Auto loan",
@@ -3491,8 +3487,7 @@
     "note": "The balance is the one you stated or the one the last imported statement brought. Movements are the detail of how it got there; they do not change this number on their own.",
     "empty": {
       "title": "No cards yet",
-      "body": "A card is recorded as a debt — with its balance, its rate and its minimum — and the product also turns it into an account, so its statement has something to be imported against.",
-      "action": "Go to Debts"
+      "body": "Add your first card below. It is recorded once and shows up complete: its limit, its minimum, its movements and its benefits."
     },
     "summary": {
       "owed": "Owed on cards",
@@ -3518,7 +3513,89 @@
       "movements": "Movements",
       "noMovements": "None",
       "lastMovement": "Last movement on {date}: {description}",
-      "mismatch": "The bank says {bank} and you are managing {managed}. This is not a system error: it is the gap, and it is worth a look."
+      "mismatch": "The bank says {bank} and you are managing {managed}. This is not a system error: it is the gap, and it is worth a look.",
+      "annualFee": "{fee} a year",
+      "noLimit": "You have not stated this card’s limit, so there is no way to work out how much you have used. Set it under «Manage» and the bar appears.",
+      "moreBenefits": "and {count} more"
+    },
+    "networks": {
+      "visa": "Visa",
+      "mastercard": "Mastercard",
+      "amex": "American Express",
+      "discover": "Discover",
+      "other": "Other network"
+    },
+    "benefitKinds": {
+      "cashback": "Cashback",
+      "miles": "Miles",
+      "points": "Points",
+      "insurance": "Insurance",
+      "lounge": "Lounge",
+      "discount": "Discount",
+      "waiver": "Waiver",
+      "other": "Other"
+    },
+    "bands": {
+      "comfortable": "Comfortable · {used}",
+      "tight": "Tight · {used}",
+      "stretched": "Stretched · {used}"
+    },
+    "manage": {
+      "open": "Manage",
+      "close": "Close",
+      "addCard": "Add a card",
+      "addCardTitle": "New card",
+      "tabs": {
+        "data": "Details",
+        "benefits": "Benefits",
+        "statement": "Statement"
+      },
+      "form": {
+        "name": "How you recognise it",
+        "nameHint": "For example, «Davo’s Banco General Visa».",
+        "network": "Network",
+        "networkNone": "Not stated",
+        "mask": "Last 4 digits",
+        "maskHint": "It is what tells one Visa from another when the statement arrives. We never store the full number.",
+        "balance": "What do you owe today?",
+        "balanceHint": "As a positive figure. This is what you manage; the bank balance updates when you import.",
+        "apr": "Annual rate",
+        "minimum": "Minimum payment",
+        "limit": "Limit",
+        "limitHint": "Without it there is no way to work out how much you have used, and the bar does not appear.",
+        "annualFee": "Annual fee",
+        "annualFeeHint": "What holding it costs per year. Blank is «I do not know»; zero is «it charges nothing».",
+        "statementDay": "Statement day",
+        "statementDayHint": "When the bank closes the month.",
+        "dueDay": "Due day",
+        "dueDayHint": "When it is due.",
+        "person": "Whose is it?",
+        "personHousehold": "The household’s",
+        "save": "Save the changes",
+        "create": "Add this card",
+        "archive": "Archive this card",
+        "archiveConfirm": "Archive it? Its movements are kept.",
+        "archiveConfirmYes": "Yes, archive it"
+      },
+      "benefits": {
+        "title": "Benefits",
+        "detail": "Record what your card gives, reading it from your contract. It is what lets you know which one to use for each purchase.",
+        "emptyTitle": "No benefits recorded yet",
+        "emptyBody": "Cashback at supermarkets, miles, car rental insurance, lounge access. Record them with their source and expiry and they are at hand when you have to decide which card to pay with.",
+        "kind": "What kind",
+        "label": "Which one",
+        "labelHint": "For example, «3% at supermarkets».",
+        "value": "The detail",
+        "valueHint": "Optional. «Up to $200 a month at participating merchants».",
+        "source": "Where did you get it?",
+        "sourceHint": "Optional. «Contract p. 4», «the bank app». It is what keeps it checkable a year from now.",
+        "expires": "Until when?",
+        "expiresHint": "Optional. Half of them are dated promotions, and an expired one still on screen is worse than none.",
+        "add": "Record this benefit",
+        "remove": "Remove",
+        "expired": "Expired",
+        "noCatalogue": "Cifraapp does not ship the benefits of Panamanian cards. They change by card tier, by promotion and by month, and they are terms of your contract: a stale table would tell you that you have insurance you do not have. What you record here comes from your contract, and that is why it can be trusted."
+      }
     }
   }
 }
