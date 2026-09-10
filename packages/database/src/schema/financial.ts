@@ -187,6 +187,15 @@ export const accounts = appSchema.table(
     cardNetwork: cardNetwork('card_network'),
     /** Classic, Gold, Platinum, Signature, Infinite, Black. */
     cardTier: cardTier('card_tier'),
+    /**
+     * El programa de lealtad declarado: `estrellas`, `connectmiles`, `regalate`.
+     *
+     * Dos Visa Platinum del mismo banco pueden acumular cosas distintas, y eso
+     * decide qué promoción le sirve a cada una. Nulo es «nadie lo dijo», que no
+     * es «no tiene»: sin programa declarado se enseñan las promociones que no
+     * lo exigen y se dice que podrían faltar las que sí.
+     */
+    cardProgram: text('card_program'),
     /** Lo que cuesta tenerla al año. Nulo es «nadie lo dijo»; cero es «no cobra». */
     annualFee: money('annual_fee'),
     /**
@@ -663,6 +672,15 @@ export const debts = appSchema.table(
     cardNetwork: cardNetwork('card_network'),
     /** Classic, Gold, Platinum, Signature, Infinite, Black. */
     cardTier: cardTier('card_tier'),
+    /**
+     * El programa de lealtad declarado: `estrellas`, `connectmiles`, `regalate`.
+     *
+     * Dos Visa Platinum del mismo banco pueden acumular cosas distintas, y eso
+     * decide qué promoción le sirve a cada una. Nulo es «nadie lo dijo», que no
+     * es «no tiene»: sin programa declarado se enseñan las promociones que no
+     * lo exigen y se dice que podrían faltar las que sí.
+     */
+    cardProgram: text('card_program'),
     /** Lo que cuesta tenerla al año. Nulo es «nadie lo dijo»; cero es «no cobra». */
     annualFee: money('annual_fee'),
     /**

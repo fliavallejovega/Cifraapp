@@ -56,3 +56,8 @@ export {
   type StatusProps,
   type StatusTone,
 } from './components/status';
+export {
+  UtilizationBar,
+  type UtilizationBand,
+  type UtilizationBarProps,
+} from './components/utilization-bar';

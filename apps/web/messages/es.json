@@ -3521,7 +3521,8 @@
       "mismatch": "El banco dice {bank} y vos estás gestionando {managed}. No es un error del sistema: es la diferencia, y vale la pena mirarla.",
       "annualFee": "anualidad {fee}",
       "noLimit": "No declaraste el cupo de esta tarjeta, así que no se puede calcular cuánto llevás usado. Ponelo en «Gestionar» y aparece la barra.",
-      "moreBenefits": "y {count} más"
+      "moreBenefits": "y {count} más",
+      "gaugeValue": "{name}: {used} del cupo usado, te quedan {available}."
     },
     "networks": {
       "visa": "Visa",
@@ -3589,7 +3590,13 @@
         "tierHint": "Clásica, Oro, Platinum, Signature, Infinite. Los seguros de viaje y las salas VIP dependen del nivel.",
         "issuer": "¿Qué banco la emite?",
         "issuerNone": "Sin especificar",
-        "issuerHint": "Es lo primero que se cruza: sin banco no se puede saber si una promoción es tuya."
+        "issuerHint": "Es lo primero que se cruza: sin banco no se puede saber si una promoción es tuya.",
+        "program": "Programa de lealtad",
+        "programNone": "Sin programa / no sé",
+        "programHint": "Es lo que distingue dos Visa Platinum del mismo banco: una acumula ConnectMiles y la otra Estrellas, y no les sirve la misma promoción.",
+        "programNeedsIssuer": "Elegí primero el banco que la emite y aquí aparecen sus programas.",
+        "programNoneKnown": "Todavía no leímos ningún programa de este banco. Si tu tarjeta pertenece a uno, anotalo como beneficio mientras tanto.",
+        "programSource": "Según {source}, leído el {date}."
       },
       "benefits": {
         "title": "Beneficios",
@@ -3617,7 +3624,11 @@
         "needsTypeTitle": "Falta saber qué tarjeta es",
         "needsTypeBody": "Para cruzar las promociones hace falta el banco que la emite y la red. Sin esos dos datos no se puede decir cuál aplica, y una lista vacía se leería como «no hay ninguna».",
         "goToData": "Completar en Datos",
-        "seeAll": "Ver todas las ofertas del mes, de todos los bancos"
+        "seeAll": "Ver todas las ofertas del mes, de todos los bancos",
+        "requiresProgram": "Pide {programs}",
+        "maybeTitle": "Podrían servirte, pero falta un dato",
+        "maybeBody": "Estas promociones piden un programa concreto y esta tarjeta todavía no declaró el suyo. No decimos que son tuyas ni que no lo son: no se sabe. Declaralo en Datos y pasan a la lista de arriba o desaparecen.",
+        "maybeTag": "Por confirmar"
       },
       "catalogue": {
         "title": "Lo que publica el mercado",

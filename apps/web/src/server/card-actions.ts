@@ -73,6 +73,18 @@ const cardInput = z.object({
     (value) => (value === '' || value === null || value === undefined ? undefined : value),
     z.enum(TIERS).optional(),
   ),
+  /**
+   * La llave del programa de lealtad. Se valida contra el catálogo después de
+   * parsear: la lista vive en la base y cambia sin recompilar.
+   */
+  cardProgram: z.preprocess(
+    (value) => (value === '' || value === null || value === undefined ? undefined : value),
+    z
+      .string()
+      .trim()
+      .regex(/^[a-z0-9_]{1,60}$/)
+      .optional(),
+  ),
   institutionId: optionalUuid,
   maskedNumber: z.preprocess(
     (value) => (value === '' || value === null || value === undefined ? undefined : value),
@@ -99,6 +111,7 @@ const FIELD_ERRORS = {
   dueDay: 'dayInvalid',
   network: 'kindInvalid',
   tier: 'kindInvalid',
+  cardProgram: 'kindInvalid',
   institutionId: 'notFound',
 } as const;
 
@@ -112,6 +125,7 @@ function parse(formData: FormData) {
     annualFee: formData.get('annualFee'),
     network: formData.get('network'),
     tier: formData.get('tier'),
+    cardProgram: formData.get('cardProgram'),
     institutionId: formData.get('institutionId'),
     maskedNumber: formData.get('maskedNumber'),
     statementDay: formData.get('statementDay'),
@@ -148,6 +162,7 @@ export async function createCard(
         annualFee: data.annualFee ?? null,
         cardNetwork: data.network ?? null,
         cardTier: data.tier ?? null,
+        cardProgram: data.cardProgram ?? null,
         institutionId: data.institutionId ?? null,
         maskedNumber: data.maskedNumber ?? null,
         interestRate: data.apr,
@@ -220,6 +235,7 @@ export async function updateCard(
         annualFee: data.annualFee ?? null,
         cardNetwork: data.network ?? null,
         cardTier: data.tier ?? null,
+        cardProgram: data.cardProgram ?? null,
         institutionId: data.institutionId ?? null,
         maskedNumber: data.maskedNumber ?? null,
         interestRate: data.apr,

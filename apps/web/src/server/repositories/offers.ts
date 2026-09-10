@@ -8,6 +8,9 @@ import { and, asc, eq, isNull, or, sql } from 'drizzle-orm';
 
 import { queryAsUser, type Session } from '../session';
 
+import { loadProgramNames } from './card-programs';
+import { matches } from './offer-match';
+
 /**
  * Las ofertas del mes, y cuáles puede usar esta casa.
  *
@@ -32,6 +35,13 @@ import { queryAsUser, type Session } from '../session';
  * El tipo cuenta: la mitad de las promociones de Panamá son de débito, y una
  * casa con tarjeta de crédito de BAC no puede usar la de débito de BAC. Las
  * cuentas de banco cuentan como débito, que es lo que son cuando se pagan.
+ *
+ * Y el programa cuenta cuando la promoción lo nombra. «Doble millas
+ * ConnectMiles este mes» no le sirve a la Visa Estrellas del mismo banco, con
+ * la misma red y el mismo nivel. Una tarjeta que todavía no declaró su programa
+ * no se descarta —eso escondería promociones que quizá sí puede usar— pero
+ * tampoco se afirma que la promoción es suya: queda como incierta, y la
+ * pantalla lo dice en vez de decidir por la casa.
  */
 
 export interface OfferView {
@@ -71,6 +81,16 @@ export interface OfferView {
   readonly usableWithIds: readonly string[];
   /** Verdadero si hoy es uno de sus días. Contesta «¿me sirve ahora?». */
   readonly isToday: boolean;
+  /**
+   * Las tarjetas que encajan en todo menos el programa, porque no lo declararon.
+   *
+   * Ni suyas ni ajenas: no se sabe. Descartarlas escondería una promoción que
+   * quizá aplica; contarlas como suyas afirmaría algo que nadie dijo.
+   */
+  readonly maybeWith: readonly string[];
+  readonly maybeWithIds: readonly string[];
+  /** Los programas que exige, por nombre. Vacío es «no exige ninguno». */
+  readonly programNames: readonly string[];
 }
 
 export interface OffersView {
@@ -107,6 +127,7 @@ export async function loadOffers(
         name: accounts.name,
         type: accounts.accountType,
         network: accounts.cardNetwork,
+        program: accounts.cardProgram,
         issuerKey: sql<string | null>`(
           select i.parser_key from app.institutions i where i.id = ${accounts.institutionId}
         )`,
@@ -127,6 +148,7 @@ export async function loadOffers(
   );
 
   const db = getPlatformDb(getServerEnv().DATABASE_URL);
+  const programNames = await loadProgramNames();
 
   const rows = await db
     .select()
@@ -144,26 +166,9 @@ export async function loadOffers(
      * la red, y sólo si la promoción la nombra — una que no la nombra aplica a
      * todas las de ese banco.
      */
-    const usable = mine
-      .filter((card) => {
-        if (!card.issuerKey || card.issuerKey !== row.issuerKey) return false;
-
-        const isCredit = card.type === 'credit_card';
-        const wantedTypes = row.cardTypes;
-        if (wantedTypes.length > 0) {
-          if (isCredit && !wantedTypes.includes('credit')) return false;
-          if (!isCredit && !wantedTypes.includes('debit')) return false;
-        }
-
-        // La red sólo se exige a las tarjetas: una cuenta de la que sale un
-        // débito no declara red, y descartarla por eso sería descartar la mitad
-        // de las promociones de Panamá.
-        if (row.networks.length > 0 && isCredit) {
-          if (!card.network || !row.networks.includes(card.network)) return false;
-        }
-
-        return true;
-      });
+    const verdicts = mine.map((card) => [card, matches(card, row)] as const);
+    const usable = verdicts.filter(([, verdict]) => verdict === 'yes').map(([card]) => card);
+    const maybe = verdicts.filter(([, verdict]) => verdict === 'maybe').map(([card]) => card);
 
     const usableWith = usable.map((card) => card.name);
 
@@ -191,6 +196,9 @@ export async function loadOffers(
       isMine: usableWith.length > 0,
       usableWith,
       usableWithIds: usable.map((card) => card.id),
+      maybeWith: maybe.map((card) => card.name),
+      maybeWithIds: maybe.map((card) => card.id),
+      programNames: row.programs.map((key) => programNames.get(key) ?? key),
       // Vacío es todos los días, que es lo que dice una promoción sin restricción.
       isToday: row.weekdays.length === 0 || row.weekdays.includes(weekdayToday),
     };

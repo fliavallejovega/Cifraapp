@@ -13,6 +13,8 @@ import { unitRatio } from '@app/budget-engine';
 import { Money, todayIn, type CurrencyCode, type PlainDate } from '@app/domain';
 import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 
+import { loadProgramNames } from './card-programs';
+
 import { queryAsUser, type Session } from '../session';
 
 /**
@@ -74,6 +76,10 @@ export interface CardView {
   readonly maskedNumber: string | null;
   readonly network: string | null;
   readonly tier: string | null;
+  /** La llave del programa declarado, o nulo cuando nadie lo dijo. */
+  readonly programKey: string | null;
+  /** Su nombre comercial, cuando el catálogo lo conoce: «Estrellas». */
+  readonly programName: string | null;
   /** El banco que la emite, y su llave estable para casar con el catálogo. */
   readonly institutionId: string | null;
   readonly issuerName: string | null;
@@ -123,6 +129,10 @@ export async function loadCards(
   householdId: string,
   currency: CurrencyCode,
 ): Promise<CardsView> {
+  // El catálogo de programas vive en `platform`, fuera del alcance de RLS, así
+  // que se lee antes de entrar en la consulta del hogar.
+  const programNames = await loadProgramNames();
+
   return queryAsUser(session, async (tx) => {
     const [household] = await tx
       .select({ timeZone: households.timeZone })
@@ -141,6 +151,7 @@ export async function loadCards(
         maskedNumber: accounts.maskedNumber,
         network: accounts.cardNetwork,
         tier: accounts.cardTier,
+        programKey: accounts.cardProgram,
         institutionId: accounts.institutionId,
         issuerName: institutions.name,
         issuerKey: institutions.parserKey,
@@ -296,6 +307,8 @@ export async function loadCards(
         maskedNumber: row.maskedNumber,
         network: row.network,
         tier: row.tier,
+        programKey: row.programKey,
+        programName: row.programKey ? (programNames.get(row.programKey) ?? null) : null,
         institutionId: row.institutionId,
         issuerName: row.issuerName,
         issuerKey: row.issuerKey,

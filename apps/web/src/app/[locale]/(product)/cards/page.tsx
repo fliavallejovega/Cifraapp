@@ -3,12 +3,12 @@ import {
   Amount,
   Card,
   EmptyState,
-  Gauge,
   Page,
   PageHeader,
   Section,
   Stat,
   Status,
+  UtilizationBar,
 } from '@app/ui';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
@@ -18,6 +18,7 @@ import { formatPlainDate, trimRate } from '@/lib/format';
 import { loadHouseholdContext } from '@/server/household-context';
 import { loadInstitutions, loadPeople } from '@/server/repositories/administration';
 import { loadCatalogueFor } from '@/server/repositories/card-catalogue';
+import { loadCardPrograms } from '@/server/repositories/card-programs';
 import { loadCards } from '@/server/repositories/cards';
 import { loadOffers } from '@/server/repositories/offers';
 import { requireHousehold } from '@/server/session';
@@ -49,14 +50,25 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
   const currency = (household?.baseCurrency.trim() ?? 'USD') as CurrencyCode;
   const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
 
-  const [view, people, issuers, offersView] = await Promise.all([
+  const [view, people, issuers, offersView, programs] = await Promise.all([
     loadCards(session, session.activeHouseholdId, currency),
     loadPeople(session, session.activeHouseholdId),
     loadInstitutions(),
     // Las mismas ofertas del mes que alimentan su propia pantalla. Aquí sólo se
     // usan las que cada tarjeta puede pagar; el tablero completo vive allá.
     loadOffers(session, session.activeHouseholdId, currency, context.today),
+    loadCardPrograms(),
   ]);
+
+  /** El catálogo de programas, como datos listos para cruzar al cliente. */
+  const programOptions = programs.map((program) => ({
+    issuerKey: program.issuerKey,
+    programKey: program.programKey,
+    name: program.name,
+    sourceName: program.sourceName,
+    sourceUrl: program.sourceUrl,
+    capturedOn: formatPlainDate(program.capturedOn, locale),
+  }));
 
   /**
    * El catálogo de cada tarjeta, resuelto en paralelo.
@@ -127,6 +139,12 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
       issuer: t('manage.form.issuer'),
       issuerNone: t('manage.form.issuerNone'),
       issuerHint: t('manage.form.issuerHint'),
+      program: t('manage.form.program'),
+      programNone: t('manage.form.programNone'),
+      programHint: t('manage.form.programHint'),
+      programNeedsIssuer: t('manage.form.programNeedsIssuer'),
+      programNoneKnown: t('manage.form.programNoneKnown'),
+      programSource: rawOf(t)('manage.form.programSource'),
       mask: t('manage.form.mask'),
       maskHint: t('manage.form.maskHint'),
       balance: t('manage.form.balance'),
@@ -204,6 +222,10 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
       unverified: offersCopy('unverified'),
       capturedOn: rawOf(offersCopy)('capturedOn'),
       seeAll: t('manage.offers.seeAll'),
+      requiresProgram: rawOf(t)('manage.offers.requiresProgram'),
+      maybeTitle: t('manage.offers.maybeTitle'),
+      maybeBody: t('manage.offers.maybeBody'),
+      maybeTag: t('manage.offers.maybeTag'),
     },
     addCard: t('manage.addCard'),
     addCardTitle: t('manage.addCardTitle'),
@@ -242,7 +264,10 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
    */
   const offersFor = (accountId: string) =>
     offersView.offers
-      .filter((offer) => offer.usableWithIds.includes(accountId))
+      .filter(
+        (offer) =>
+          offer.usableWithIds.includes(accountId) || offer.maybeWithIds.includes(accountId),
+      )
       .sort((a, b) => {
         if (a.isToday !== b.isToday) return a.isToday ? -1 : 1;
         return a.merchantName.localeCompare(b.merchantName);
@@ -263,6 +288,8 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
         capturedOn: formatPlainDate(offer.capturedOn, locale),
         isVerified: offer.status === 'verified',
         isToday: offer.isToday,
+        requiresPrograms: offer.programNames,
+        isMaybe: offer.maybeWithIds.includes(accountId),
       }));
 
   /** Lo que el panel de una tarjeta necesita saber de ella, como datos. */
@@ -272,6 +299,7 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
     maskedNumber: card.maskedNumber,
     network: card.network,
     tier: card.tier,
+    programKey: card.programKey,
     institutionId: card.institutionId,
     catalogue: (catalogues[card.accountId] ?? []).map((entry) => ({
       id: entry.id,
@@ -358,6 +386,7 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
             currencySymbol={getCurrency(currency).symbol}
             people={people.map((person) => ({ id: person.id, name: person.displayName }))}
             issuers={issuers}
+            programs={programOptions}
             labels={managerLabels}
           />
         </div>
@@ -403,6 +432,9 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
                       <span className="tabular">{t('list.mask', { mask: card.maskedNumber })}</span>
                     )}
                     {card.network && <span>{t(`networks.${card.network}`)}</span>}
+                    {/* El programa: es lo que distingue dos Visa Platinum del
+                        mismo banco, y lo que decide qué promoción le sirve. */}
+                    {card.programName && <Status tone="signal">{card.programName}</Status>}
                     {card.holder && <span>{card.holder}</span>}
                     {card.annualFee && !card.annualFee.isZero() && (
                       <span>{t('list.annualFee', { fee: money(card.annualFee) })}</span>
@@ -418,59 +450,31 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
                 <Amount value={card.owed} locale={moneyLocale} size="lg" tone="plain" />
               </div>
 
-              {/* El cupo, cuando se declaró. La marca del 30% no es una regla del
-                  producto: es el umbral por encima del cual la utilización
-                  empieza a pesar en un puntaje de crédito, y decirlo con una
-                  marca es más honesto que teñir la barra de rojo sin explicar. */}
+              {/* El cupo, desde afuera y sin abrir nada.
+                  «Cuánto me queda» es la pregunta con que se abre esta
+                  pantalla; ponerla detrás de un botón la convierte en la más
+                  cara de contestar. La barra crece desde cero al aparecer
+                  porque el ojo detecta movimiento antes que color, y lleva su
+                  palabra al lado porque el color solo no informa a todos. */}
               {card.creditLimit && card.available && card.utilization !== null && card.band && (
                 <div className="mt-5">
-                  <Gauge
-                    value={card.owed}
-                    max={card.creditLimit}
+                  <UtilizationBar
+                    ratio={card.utilization}
+                    band={card.band}
                     label={t('list.gauge', { name: card.name })}
-                    locale={moneyLocale}
-                    tone={
-                      card.band === 'stretched'
-                        ? 'negative'
-                        : card.band === 'tight'
-                          ? 'caution'
-                          : 'neutral'
-                    }
-                    thresholds={[
-                      {
-                        at: card.creditLimit.percentage(30),
-                        label: t('list.threshold'),
-                        kind: 'target',
-                      },
-                    ]}
+                    bandLabel={t(`bands.${card.band}`, { used: percent(card.utilization) })}
+                    caption={t('list.availableOf', {
+                      available: money(card.available),
+                      limit: money(card.creditLimit),
+                      used: percent(card.utilization),
+                    })}
+                    thresholdLabel={t('list.threshold')}
+                    valueText={t('list.gaugeValue', {
+                      name: card.name,
+                      used: percent(card.utilization),
+                      available: money(card.available),
+                    })}
                   />
-                  <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[color:var(--color-ink-secondary)]">
-                    {/*
-                      La banda lleva su palabra y no sólo su color. Quien no
-                      distingue el ámbar del rojo tiene que poder leer lo mismo,
-                      y en una cifra que decide si conviene usar la tarjeta este
-                      mes eso no es un detalle de accesibilidad, es la
-                      información.
-                    */}
-                    <Status
-                      tone={
-                        card.band === 'stretched'
-                          ? 'negative'
-                          : card.band === 'tight'
-                            ? 'caution'
-                            : 'positive'
-                      }
-                    >
-                      {t(`bands.${card.band}`, { used: percent(card.utilization) })}
-                    </Status>
-                    <span>
-                      {t('list.availableOf', {
-                        available: money(card.available),
-                        limit: money(card.creditLimit),
-                        used: percent(card.utilization),
-                      })}
-                    </span>
-                  </p>
                 </div>
               )}
 
@@ -549,6 +553,7 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
                 currencySymbol={getCurrency(currency).symbol}
                 people={people.map((person) => ({ id: person.id, name: person.displayName }))}
                 issuers={issuers}
+                programs={programOptions}
                 card={rowFor(card)}
                 statement={statementFor[card.accountId]}
                 offersHref={`/${locale}/offers`}
@@ -564,6 +569,7 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
             currencySymbol={getCurrency(currency).symbol}
             people={people.map((person) => ({ id: person.id, name: person.displayName }))}
             issuers={issuers}
+            programs={programOptions}
             labels={managerLabels}
           />
         </div>

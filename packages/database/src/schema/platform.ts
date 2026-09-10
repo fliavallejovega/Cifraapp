@@ -165,6 +165,8 @@ export const cardPromotions = platformSchema.table('card_promotions', {
   networks: text('networks').array().notNull().default(sql`'{}'`),
   cardTypes: text('card_types').array().notNull().default(sql`'{}'`),
   tiers: text('tiers').array().notNull().default(sql`'{}'`),
+  /** Vacío es «a todas las del emisor», que es lo que dice una que no lo nombra. */
+  programs: text('programs').array().notNull().default(sql`'{}'`),
   merchantName: text('merchant_name').notNull(),
   merchantNote: text('merchant_note'),
   category: text('category'),
@@ -186,3 +188,43 @@ export const cardPromotions = platformSchema.table('card_promotions', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
+
+/**
+ * Los programas de lealtad con nombre propio de cada banco.
+ *
+ * Cada fila cuelga de un emisor porque ConnectMiles es de Copa y cinco bancos
+ * lo co-emiten con condiciones propias: «bac + connectmiles» y
+ * «banco_general + connectmiles» son dos productos distintos con la misma
+ * moneda de lealtad, y cada uno lleva su fuente.
+ *
+ * Un catálogo y no texto libre para poder cruzarlo: «ConnectMiles»,
+ * «Connect Miles» y «connectmiles» escritos a mano son tres cosas distintas
+ * para una consulta y la misma para una persona.
+ */
+export const cardPrograms = platformSchema.table(
+  'card_programs',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .default(sql`public.uuid_generate_v7()`),
+    issuerKey: text('issuer_key').notNull(),
+    /** La llave estable. Es lo que una promoción nombra para alcanzar la tarjeta. */
+    programKey: text('program_key').notNull(),
+    name: text('name').notNull(),
+    kind: text('kind').notNull(),
+    /** Vacío es «en todas»: un programa que no distingue red aplica a todas. */
+    networks: text('networks').array().notNull().default(sql`'{}'`),
+    tiers: text('tiers').array().notNull().default(sql`'{}'`),
+    detail: text('detail'),
+    sourceName: text('source_name').notNull(),
+    sourceUrl: text('source_url').notNull(),
+    /** Cuándo se leyó. Sin esto, lo que el programa da es una afirmación sin fecha. */
+    capturedOn: date('captured_on').notNull(),
+    validUntil: date('valid_until'),
+    reviewBy: date('review_by'),
+    status: text('status').notNull().default('verified'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index('card_programs_issuer_idx').on(table.issuerKey)],
+);

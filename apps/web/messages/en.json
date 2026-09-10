@@ -3521,7 +3521,8 @@
       "mismatch": "The bank says {bank} and you are managing {managed}. This is not a system error: it is the gap, and it is worth a look.",
       "annualFee": "{fee} a year",
       "noLimit": "You have not stated this card’s limit, so there is no way to work out how much you have used. Set it under «Manage» and the bar appears.",
-      "moreBenefits": "and {count} more"
+      "moreBenefits": "and {count} more",
+      "gaugeValue": "{name}: {used} of the limit used, {available} left."
     },
     "networks": {
       "visa": "Visa",
@@ -3589,7 +3590,13 @@
         "tierHint": "Classic, Gold, Platinum, Signature, Infinite. Travel insurance and lounge access depend on the tier.",
         "issuer": "Which bank issues it?",
         "issuerNone": "Not specified",
-        "issuerHint": "It is the first thing matched: without the bank there is no way to know whether a promotion is yours."
+        "issuerHint": "It is the first thing matched: without the bank there is no way to know whether a promotion is yours.",
+        "program": "Rewards program",
+        "programNone": "No program / not sure",
+        "programHint": "It is what tells two Visa Platinums from the same bank apart: one earns ConnectMiles and the other Estrellas, and the same promotion does not serve both.",
+        "programNeedsIssuer": "Pick the issuing bank first and its programs appear here.",
+        "programNoneKnown": "We have not read any program from this bank yet. If your card belongs to one, note it as a benefit in the meantime.",
+        "programSource": "Per {source}, read on {date}."
       },
       "benefits": {
         "title": "Benefits",
@@ -3617,7 +3624,11 @@
         "needsTypeTitle": "We still do not know what card this is",
         "needsTypeBody": "Matching promotions needs the issuing bank and the network. Without those two, there is no way to say which one applies, and an empty list would read as «there are none».",
         "goToData": "Fill it in under Details",
-        "seeAll": "See every offer this month, from every bank"
+        "seeAll": "See every offer this month, from every bank",
+        "requiresProgram": "Requires {programs}",
+        "maybeTitle": "These might work, but one field is missing",
+        "maybeBody": "These promotions ask for a specific program and this card has not declared its own. We are not saying they are yours or that they are not: it is unknown. Declare it under Details and they either move up or drop off.",
+        "maybeTag": "To confirm"
       },
       "catalogue": {
         "title": "What the market publishes",

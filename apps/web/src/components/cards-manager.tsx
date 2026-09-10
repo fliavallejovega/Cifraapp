@@ -108,6 +108,23 @@ export interface CardOfferRow {
   readonly capturedOn: string;
   readonly isVerified: boolean;
   readonly isToday: boolean;
+  /** Los programas que exige, por nombre. Vacío es «no exige ninguno». */
+  readonly requiresPrograms: readonly string[];
+  /**
+   * Verdadero cuando encaja en todo salvo el programa, que la tarjeta no
+   * declaró. Ni suya ni ajena: no se sabe, y se enseña diciéndolo.
+   */
+  readonly isMaybe: boolean;
+}
+
+/** Un programa del catálogo, tal como lo ofrece el selector. */
+export interface ProgramOption {
+  readonly issuerKey: string;
+  readonly programKey: string;
+  readonly name: string;
+  readonly sourceName: string;
+  readonly sourceUrl: string;
+  readonly capturedOn: string;
 }
 
 export interface CardRow {
@@ -116,6 +133,7 @@ export interface CardRow {
   readonly maskedNumber: string | null;
   readonly network: string | null;
   readonly tier: string | null;
+  readonly programKey: string | null;
   readonly institutionId: string | null;
   readonly catalogue: readonly CatalogueRow[];
   readonly holderId: string | null;
@@ -157,6 +175,14 @@ export interface CardsManagerLabels {
     /** Por qué la red, el nivel y el emisor deciden qué ofertas se enseñan. */
     readonly identityNote: string;
     readonly networkHint: string;
+    readonly program: string;
+    readonly programNone: string;
+    readonly programHint: string;
+    /** Cuando el emisor todavía no se eligió, no hay lista que ofrecer. */
+    readonly programNeedsIssuer: string;
+    /** Cuando ese emisor no tiene ningún programa leído. */
+    readonly programNoneKnown: string;
+    readonly programSource: string;
     readonly mask: string;
     readonly maskHint: string;
     readonly balance: string;
@@ -226,6 +252,12 @@ export interface CardsManagerLabels {
     readonly unverified: string;
     readonly capturedOn: string;
     readonly seeAll: string;
+    /** «Pide {programs}» — qué programa exige una promoción. */
+    readonly requiresProgram: string;
+    /** Las que quizá sirven porque el programa de la tarjeta no se declaró. */
+    readonly maybeTitle: string;
+    readonly maybeBody: string;
+    readonly maybeTag: string;
   };
   readonly addCard: string;
   readonly addCardTitle: string;
@@ -260,6 +292,7 @@ export function CardManage({
   people,
   issuers,
   card,
+  programs,
   labels,
   statement,
   offersHref,
@@ -268,7 +301,14 @@ export function CardManage({
   readonly currencySymbol: string;
   readonly people: readonly { readonly id: string; readonly name: string }[];
   /** Los bancos de la lista, para poder decir cuál emite esta tarjeta. */
-  readonly issuers: readonly { readonly id: string; readonly name: string }[];
+  readonly issuers: readonly {
+    readonly id: string;
+    readonly name: string;
+    /** La llave del catálogo. Es lo que enlaza el banco con sus programas. */
+    readonly key: string | null;
+  }[];
+  /** El catálogo de programas de lealtad, para el selector. */
+  readonly programs: readonly ProgramOption[];
   readonly card: CardRow;
   readonly labels: CardsManagerLabels;
   /** El formulario de importación de esta tarjeta, armado en el servidor. */
@@ -301,6 +341,7 @@ export function CardManage({
             currencySymbol={currencySymbol}
             people={people}
             issuers={issuers}
+            programs={programs}
             card={card}
             labels={labels}
             statement={statement}
@@ -326,12 +367,19 @@ export function AddCard({
   currencySymbol,
   people,
   issuers,
+  programs,
   labels,
 }: {
   readonly locale: string;
   readonly currencySymbol: string;
   readonly people: readonly { readonly id: string; readonly name: string }[];
-  readonly issuers: readonly { readonly id: string; readonly name: string }[];
+  readonly issuers: readonly {
+    readonly id: string;
+    readonly name: string;
+    /** La llave del catálogo. Es lo que enlaza el banco con sus programas. */
+    readonly key: string | null;
+  }[];
+  readonly programs: readonly ProgramOption[];
   readonly labels: CardsManagerLabels;
 }) {
   const [creating, setCreating] = useState(false);
@@ -358,6 +406,7 @@ export function AddCard({
         currencySymbol={currencySymbol}
         people={people}
         issuers={issuers}
+        programs={programs}
         card={null}
         labels={labels}
         onDone={() => {
@@ -374,6 +423,7 @@ function CardPanel({
   people,
   issuers,
   card,
+  programs,
   labels,
   statement,
   offersHref,
@@ -382,7 +432,13 @@ function CardPanel({
   readonly locale: string;
   readonly currencySymbol: string;
   readonly people: readonly { readonly id: string; readonly name: string }[];
-  readonly issuers: readonly { readonly id: string; readonly name: string }[];
+  readonly issuers: readonly {
+    readonly id: string;
+    readonly name: string;
+    /** La llave del catálogo. Es lo que enlaza el banco con sus programas. */
+    readonly key: string | null;
+  }[];
+  readonly programs: readonly ProgramOption[];
   readonly card: CardRow;
   readonly labels: CardsManagerLabels;
   readonly statement: ReactNode;
@@ -430,6 +486,7 @@ function CardPanel({
             currencySymbol={currencySymbol}
             people={people}
             issuers={issuers}
+            programs={programs}
             card={card}
             labels={labels}
             onDone={onDone}
@@ -457,6 +514,7 @@ function CardForm({
   currencySymbol,
   people,
   issuers,
+  programs,
   card,
   labels,
   onDone,
@@ -464,7 +522,13 @@ function CardForm({
   readonly locale: string;
   readonly currencySymbol: string;
   readonly people: readonly { readonly id: string; readonly name: string }[];
-  readonly issuers: readonly { readonly id: string; readonly name: string }[];
+  readonly issuers: readonly {
+    readonly id: string;
+    readonly name: string;
+    /** La llave del catálogo. Es lo que enlaza el banco con sus programas. */
+    readonly key: string | null;
+  }[];
+  readonly programs: readonly ProgramOption[];
   readonly card: CardRow | null;
   readonly labels: CardsManagerLabels;
   readonly onDone: () => void;
@@ -474,6 +538,18 @@ function CardForm({
     {},
   );
   const [confirming, setConfirming] = useState(false);
+
+  /*
+    El emisor elegido, en estado, porque de él depende la lista de programas.
+    Un selector con los once programas del país obligaría a la casa a saber cuál
+    de ellos es de su banco — que es exactamente lo que el catálogo ya sabe.
+  */
+  const [issuerId, setIssuerId] = useState(card?.institutionId ?? '');
+  const issuerKey = issuers.find((issuer) => issuer.id === issuerId)?.key ?? null;
+  const forIssuer = issuerKey
+    ? programs.filter((program) => program.issuerKey === issuerKey)
+    : [];
+  const chosen = forIssuer.find((program) => program.programKey === card?.programKey) ?? null;
 
   useEffect(() => {
     if (state.ok || state.created) onDone();
@@ -593,7 +669,10 @@ function CardForm({
               <Select
                 id={id}
                 name="institutionId"
-                defaultValue={card?.institutionId ?? ''}
+                value={issuerId}
+                onChange={(event) => {
+                  setIssuerId(event.target.value);
+                }}
                 aria-describedby={describedBy}
               >
                 <option value="">{labels.form.issuerNone}</option>
@@ -604,6 +683,63 @@ function CardForm({
                 ))}
               </Select>
             )}
+          </Field>
+
+          {/*
+            El programa de lealtad: Estrellas, ConnectMiles, Regálate.
+
+            Es lo que distingue dos Visa Platinum del mismo banco. La lista sale
+            del catálogo y se filtra por el emisor que se acaba de elegir, así
+            que la casa nunca tiene que decidir cuál de los once programas del
+            país es el suyo. Y lleva su fuente al lado: un nombre de programa sin
+            de dónde salió es una afirmación sin respaldo, igual que cualquier
+            otra línea de este catálogo.
+          */}
+          <Field
+            label={labels.form.program}
+            {...(forIssuer.length > 0 ? { hint: labels.form.programHint } : {})}
+            className="sm:col-span-2"
+          >
+            {({ id, describedBy }) =>
+              issuerKey === null ? (
+                <p
+                  id={describedBy}
+                  className="max-w-[68ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]"
+                >
+                  {labels.form.programNeedsIssuer}
+                </p>
+              ) : forIssuer.length === 0 ? (
+                <p
+                  id={describedBy}
+                  className="max-w-[68ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]"
+                >
+                  {labels.form.programNoneKnown}
+                </p>
+              ) : (
+                <>
+                  <Select
+                    id={id}
+                    name="cardProgram"
+                    defaultValue={card?.programKey ?? ''}
+                    aria-describedby={describedBy}
+                  >
+                    <option value="">{labels.form.programNone}</option>
+                    {forIssuer.map((program) => (
+                      <option key={program.programKey} value={program.programKey}>
+                        {program.name}
+                      </option>
+                    ))}
+                  </Select>
+                  {chosen && (
+                    <p className="mt-2 text-xs text-[color:var(--color-ink-tertiary)]">
+                      {labels.form.programSource
+                        .replace('{source}', chosen.sourceName)
+                        .replace('{date}', chosen.capturedOn)}
+                    </p>
+                  )}
+                </>
+              )
+            }
           </Field>
 
           <Field label={labels.form.mask} hint={labels.form.maskHint}>
@@ -1008,6 +1144,8 @@ function Offers({
   readonly onFixType: () => void;
 }) {
   const knowsWhatItIs = card.institutionId !== null && card.network !== null;
+  const sure = card.offers.filter((offer) => !offer.isMaybe);
+  const maybe = card.offers.filter((offer) => offer.isMaybe);
 
   if (!knowsWhatItIs) {
     return (
@@ -1032,7 +1170,7 @@ function Offers({
         <EmptyState title={labels.offers.emptyTitle} body={labels.offers.emptyBody} />
       ) : (
         <ul className="flex list-none flex-col gap-3 p-0">
-          {card.offers.map((offer) => (
+          {sure.map((offer) => (
             <li key={offer.id}>
               <Card tone="sunk">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -1080,6 +1218,18 @@ function Offers({
                     {offer.sourceName}
                   </a>
                   <span>{labels.offers.capturedOn.replace('{date}', offer.capturedOn)}</span>
+                  {/* Qué programa exige, cuando exige alguno. Es lo que separa
+                      «doble millas ConnectMiles» de una promoción del banco
+                      entero, y sin decirlo la casa no puede juzgar si le toca. */}
+                  {offer.requiresPrograms.length > 0 && (
+                    <span>
+                      {labels.offers.requiresProgram.replace(
+                        '{programs}',
+                        offer.requiresPrograms.join(' · '),
+                      )}
+                    </span>
+                  )}
+                  {offer.isMaybe && <Status tone="signal">{labels.offers.maybeTag}</Status>}
                   {!offer.isVerified && (
                     <Status tone="caution">{labels.offers.unverified}</Status>
                   )}
@@ -1088,6 +1238,49 @@ function Offers({
             </li>
           ))}
         </ul>
+      )}
+
+      {/*
+        Las inciertas, en su propia sección y detrás de las seguras.
+
+        Encajan en banco, red y tipo, pero la promoción pide un programa y esta
+        tarjeta no declaró el suyo. Mezclarlas con las seguras afirmaría que son
+        suyas; esconderlas escondería promociones que quizá sí puede usar. Van
+        aparte, dichas por su nombre, con el camino a resolverlo.
+      */}
+      {maybe.length > 0 && (
+        <section className="border-t border-[color:var(--color-rule)] pt-5">
+          <h4 className="text-sm font-medium">{labels.offers.maybeTitle}</h4>
+          <p className="mt-1 max-w-[68ch] text-xs text-pretty text-[color:var(--color-ink-secondary)]">
+            {labels.offers.maybeBody}
+          </p>
+          <ul className="mt-4 flex list-none flex-col p-0">
+            {maybe.map((offer) => (
+              <li
+                key={offer.id}
+                className="border-b border-[color:var(--color-rule)] py-3 last:border-b-0"
+              >
+                <span className="text-sm font-medium">{offer.merchantName}</span>
+                <span className="ml-2 text-sm text-[color:var(--color-ink-secondary)]">
+                  {offer.headline}
+                </span>
+                {offer.requiresPrograms.length > 0 && (
+                  <span className="mt-1 block text-xs text-[color:var(--color-ink-tertiary)]">
+                    {labels.offers.requiresProgram.replace(
+                      '{programs}',
+                      offer.requiresPrograms.join(' · '),
+                    )}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+          <div className="mt-4">
+            <Button type="button" size="sm" variant="secondary" onClick={onFixType}>
+              {labels.offers.goToData}
+            </Button>
+          </div>
+        </section>
       )}
 
       <p className="text-sm">

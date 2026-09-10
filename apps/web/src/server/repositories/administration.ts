@@ -717,10 +717,13 @@ function scalarText(value: unknown): string {
  * publicó, sin depender de cómo esté escrito el nombre en el campo libre.
  */
 export async function loadInstitutions(): Promise<
-  readonly { readonly id: string; readonly name: string }[]
+  readonly { readonly id: string; readonly name: string; readonly key: string | null }[]
 > {
+  // La llave estable viaja con el banco: es lo que enlaza una institución con
+  // los programas y las promociones de su catálogo, y sin ella la pantalla
+  // tendría que emparejar por nombre — que cambia cuando un banco se fusiona.
   return getPlatformDb(getServerEnv().DATABASE_URL)
-    .select({ id: institutions.id, name: institutions.name })
+    .select({ id: institutions.id, name: institutions.name, key: institutions.parserKey })
     .from(institutions)
     .orderBy(asc(institutions.name));
 }
