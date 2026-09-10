@@ -44,6 +44,8 @@ export interface ImportReview {
   readonly currency: CurrencyCode;
   readonly status: string;
   readonly startedAt: Date;
+  /** Verdadero cuando estas filas salieron de transcribir un escaneo. */
+  readonly readByOcr: boolean;
   readonly rows: readonly ImportRowView[];
   readonly counts: {
     readonly new: number;
@@ -68,6 +70,7 @@ export async function loadImportReview(
         id: imports.id,
         status: imports.status,
         startedAt: imports.startedAt,
+        readByOcr: imports.readByOcr,
         accountId: imports.accountId,
         accountName: accounts.name,
         fileName: documents.fileName,
@@ -132,6 +135,7 @@ export async function loadImportReview(
       currency,
       status: header.status,
       startedAt: header.startedAt,
+      readByOcr: header.readByOcr,
       rows: views,
       counts,
       isSettled:

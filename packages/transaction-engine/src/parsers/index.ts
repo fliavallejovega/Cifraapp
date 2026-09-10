@@ -110,6 +110,7 @@ export function parseDocument(bytes: Uint8Array, options: ParseOptions): ParsedS
 
 export { parseCsvStatement, parseAmountText, parseStatementDate, splitCsvLine } from './csv.js';
 export { parseOfxStatement, parseOfxDate } from './ofx.js';
+export { readOcrRows, type OcrParseOptions, type OcrRow } from './ocr.js';
 export { extractPdfLines, parsePdfStatement, type PdfParseOptions } from './pdf.js';
 export { parseXlsxStatement, readXlsxSheet, type XlsxParseOptions } from './xlsx.js';
 export { findHeaderRow, normalizeHeader, parseTable, type TableParseOptions } from './table.js';

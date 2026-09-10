@@ -59,7 +59,7 @@ export function copilotIsConfigured(): boolean {
   return false;
 }
 
-function buildProvider(): AIProvider {
+export function buildProvider(): AIProvider {
   const env = getServerEnv();
 
   if (env.AI_PROVIDER === 'anthropic' && env.ANTHROPIC_API_KEY) {

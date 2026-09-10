@@ -84,9 +84,28 @@ export type OutputValue = string | number | boolean | readonly string[] | readon
 export type OutputRecord = Readonly<Record<string, string | number | boolean>>;
 export type StructuredOutput = Readonly<Record<string, OutputValue>>;
 
+/**
+ * A document handed to the model to be *read*, not judged.
+ *
+ * Transcription is the one job where a model may look at raw input this system
+ * has not already parsed: a scanned statement has no columns to read, and
+ * refusing to read it does not make the numbers safer — it makes them absent.
+ * What comes back is still a claim, and deterministic code still decides
+ * whether each row is usable. The model reads; it does not post.
+ */
+export interface Attachment {
+  /** `pdf` goes as a document block, images as an image block. */
+  readonly kind: 'pdf' | 'image';
+  /** `application/pdf`, `image/png`, `image/jpeg`, `image/webp`, `image/gif`. */
+  readonly mediaType: string;
+  readonly dataBase64: string;
+}
+
 export interface ProviderRequest {
   readonly system: string;
   readonly user: string;
+  /** A file for the model to read. Absent for every ordinary prompt. */
+  readonly attachment?: Attachment;
   /** JSON Schema the provider must emit against. Built from the prompt's shape. */
   readonly outputSchema: JsonSchema;
   readonly maxOutputTokens: number;

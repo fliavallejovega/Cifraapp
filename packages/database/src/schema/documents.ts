@@ -1,6 +1,7 @@
 import { relations, sql } from 'drizzle-orm';
 import {
   bigint,
+  boolean,
   date,
   index,
   integer,
@@ -99,6 +100,14 @@ export const imports = appSchema.table(
     startedBy: uuid('started_by').references(() => profiles.id, { onDelete: 'set null' }),
     /** The background job that produced this import, when one did. */
     jobId: uuid('job_id'),
+    /**
+     * Verdadero cuando las filas salieron de transcribir un escaneo.
+     *
+     * Un CSV se parsea y el resultado es reproducible; un escaneo se transcribe
+     * y se equivoca de otras formas — un 8 que era un 3, una línea saltada.
+     * Quien revisa merece saber cuál de las dos está mirando.
+     */
+    readByOcr: boolean('read_by_ocr').notNull().default(false),
     source: importSource('source').notNull().default('upload'),
     status: importStatus('status').notNull().default('uploaded'),
     format: text('format'),

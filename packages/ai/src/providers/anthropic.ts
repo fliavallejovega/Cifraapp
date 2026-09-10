@@ -1,4 +1,10 @@
-import type { AIProvider, JsonSchema, ProviderRequest, ProviderResult } from '../types.js';
+import type {
+  AIProvider,
+  Attachment,
+  JsonSchema,
+  ProviderRequest,
+  ProviderResult,
+} from '../types.js';
 
 /**
  * Anthropic's Messages API, reached with `fetch` and nothing else.
@@ -59,7 +65,7 @@ export class AnthropicProvider implements AIProvider {
           max_tokens: request.maxOutputTokens,
           temperature: request.temperature,
           system: request.system,
-          messages: [{ role: 'user', content: request.user }],
+          messages: [{ role: 'user', content: contentOf(request) }],
           tools: [
             {
               name: EMIT_TOOL,
@@ -99,6 +105,33 @@ export class AnthropicProvider implements AIProvider {
       clearTimeout(timeout);
     }
   }
+}
+
+/**
+ * The user turn: the prompt, and the file to read when there is one.
+ *
+ * The document goes **before** the text. The order is not cosmetic — the
+ * instructions have to be the last thing read, so «transcribe only what is
+ * printed» is not competing with a page of the bank's own marketing copy that
+ * arrived after it.
+ */
+function contentOf(request: ProviderRequest): unknown {
+  const { attachment } = request;
+  if (!attachment) return request.user;
+
+  return [blockOf(attachment), { type: 'text', text: request.user }];
+}
+
+function blockOf(attachment: Attachment): unknown {
+  const source = {
+    type: 'base64',
+    media_type: attachment.mediaType,
+    data: attachment.dataBase64,
+  };
+
+  return attachment.kind === 'pdf'
+    ? { type: 'document', source }
+    : { type: 'image', source };
 }
 
 function readMessage(body: unknown, model: string): ProviderResult {

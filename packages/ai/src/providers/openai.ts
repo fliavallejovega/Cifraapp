@@ -55,7 +55,7 @@ export class OpenAIProvider implements AIProvider {
           temperature: request.temperature,
           messages: [
             { role: 'system', content: request.system },
-            { role: 'user', content: request.user },
+            { role: 'user', content: contentOf(request) },
           ],
           response_format: {
             type: 'json_schema',
@@ -147,4 +147,28 @@ function readCompletion(body: unknown, model: string): ProviderResult {
 
 function asCount(value: unknown): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+}
+
+/**
+ * El turno del usuario: el texto, y el archivo a leer cuando lo hay.
+ *
+ * La Chat Completions API acepta partes tipadas. Una imagen viaja como
+ * `image_url` con un data URI —no hace falta subirla a ningún lado antes— y un
+ * PDF como `file` con su contenido en base64. El documento va **antes** del
+ * texto: las instrucciones tienen que ser lo último que se lee, para que
+ * «transcribí sólo lo impreso» no compita con la página de publicidad que el
+ * banco imprimió después.
+ */
+function contentOf(request: ProviderRequest): unknown {
+  const { attachment } = request;
+  if (!attachment) return request.user;
+
+  const dataUri = `data:${attachment.mediaType};base64,${attachment.dataBase64}`;
+
+  const block =
+    attachment.kind === 'pdf'
+      ? { type: 'file', file: { filename: 'statement.pdf', file_data: dataUri } }
+      : { type: 'image_url', image_url: { url: dataUri } };
+
+  return [block, { type: 'text', text: request.user }];
 }

@@ -16,6 +16,7 @@ import { and, eq, gte, isNull, lte } from 'drizzle-orm';
 
 import { enqueueJob, registerJobHandler } from './jobs';
 import { queryAsUser, type Session } from './session';
+import { canReadByOcr, readStatementByOcr, type OcrFailure } from './statement-ocr';
 import { buildStorageKey, putDocument, readDocument } from './storage';
 
 /**
@@ -52,6 +53,13 @@ const ACCEPTED_MIME_TYPES = new Set([
   'application/x-ofx',
   'application/ofx',
   'application/pdf',
+  // Una foto del estado de cuenta. Es lo que la mitad de la gente tiene a mano,
+  // y rechazarla obligaba a buscar una computadora para hacer algo que se hace
+  // desde el teléfono en diez segundos.
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'image/gif',
   'application/octet-stream',
 ]);
 
@@ -103,8 +111,18 @@ export async function stageDocument(
     return { ok: false, reason: 'unsupportedType' };
   }
 
+  /*
+    El olfateo de formato mira los primeros bytes y decide si esto es un CSV, un
+    OFX, un XLSX o un PDF. Un escaneo no es ninguno de los cuatro — un PDF de
+    imagen pasa el `%PDF` pero una foto no pasa nada— y antes eso bastaba para
+    rechazarlo en la puerta.
+
+    Ahora el veto sólo aplica a lo que tampoco se puede mirar. Un archivo que el
+    lector visual puede abrir sigue de largo y se resuelve al parsear: si trae
+    capa de texto la lee el parser determinista, y si no, se transcribe.
+  */
   const head = new TextDecoder('latin1').decode(request.bytes.subarray(0, 2048));
-  if (detectStatementFormat(head, request.fileName) === null) {
+  if (detectStatementFormat(head, request.fileName) === null && !canReadByOcr(request.mimeType)) {
     return { ok: false, reason: 'unsupportedType' };
   }
 
@@ -181,6 +199,7 @@ registerJobHandler(STATEMENT_IMPORT_JOB, async (job, report) => {
     accountId?: string;
     currency?: string;
     fileName?: string;
+    mimeType?: string;
     storageKey?: string;
   };
 
@@ -204,6 +223,9 @@ registerJobHandler(STATEMENT_IMPORT_JOB, async (job, report) => {
 
   await report(35, 'parsing');
 
+  const mimeType = payload.mimeType ?? '';
+
+  let readByOcr = false;
   let parsed;
   try {
     parsed = parseDocument(bytes, {
@@ -212,16 +234,42 @@ registerJobHandler(STATEMENT_IMPORT_JOB, async (job, report) => {
       ...(payload.fileName ? { fileName: payload.fileName } : {}),
     });
   } catch (error: unknown) {
-    // A file that will not parse will not parse next time either. Retrying
-    // three times to print the same sentence wastes fifteen minutes of the
-    // household's patience.
-    return {
-      failure:
-        error instanceof StatementParseError
-          ? error.message
-          : 'The file could not be read as a statement.',
-      retryable: false,
-    };
+    /*
+      El parser determinista no pudo. Antes esto terminaba aquí.
+
+      Un escaneo y una foto no tienen columnas que recorrer, y hasta hoy se
+      rechazaban por su nombre — honesto, pero inútil en un producto cuyo
+      trabajo central es leer estados de cuenta. Cuando el archivo es algo que
+      se puede mirar, se mira: el documento viaja como adjunto al proveedor que
+      ya está configurado y vuelve transcrito, línea por línea.
+
+      La transcripción **no** entra al libro. Pasa por el mismo validador de
+      montos y fechas que las demás rutas y cae en la misma cola de revisión,
+      así que lo que un modelo leyó mal lo corrige una persona antes de que sea
+      un movimiento — no después de haberlo sido.
+    */
+    if (canReadByOcr(mimeType)) {
+      await report(45, 'reading_scan');
+
+      const read = await readStatementByOcr({ bytes, mimeType, accountId, currency });
+      if (read.ok) {
+        parsed = read.statement;
+        readByOcr = true;
+      } else {
+        return { failure: ocrFailureMessage(read.reason), retryable: read.reason === 'transport' };
+      }
+    } else {
+      // A file that will not parse will not parse next time either. Retrying
+      // three times to print the same sentence wastes fifteen minutes of the
+      // household's patience.
+      return {
+        failure:
+          error instanceof StatementParseError
+            ? error.message
+            : 'The file could not be read as a statement.',
+        retryable: false,
+      };
+    }
   }
 
   await report(65, 'matching');
@@ -233,6 +281,7 @@ registerJobHandler(STATEMENT_IMPORT_JOB, async (job, report) => {
     currency,
     jobId: job.id,
     parsed,
+    readByOcr,
   });
 
   await report(100, 'ready');
@@ -247,6 +296,7 @@ interface FileRowsInput {
   readonly currency: CurrencyCode;
   readonly jobId: string;
   readonly parsed: ReturnType<typeof parseDocument>;
+  readonly readByOcr: boolean;
 }
 
 async function fileImportRows(
@@ -366,6 +416,7 @@ async function fileImportRows(
     jobId: input.jobId,
     status: 'review',
     format: input.parsed.format,
+    readByOcr: input.readByOcr,
     rowsFound: counts.found,
     rowsNew: counts.created,
     rowsDuplicate: counts.duplicate,
@@ -400,4 +451,28 @@ function shiftDate(date: PlainDate, days: number): string {
   const [year = '0', month = '1', day = '1'] = date.split('-');
   const shifted = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day) + days));
   return shifted.toISOString().slice(0, 10);
+}
+
+/**
+ * Por qué no se pudo leer un escaneo, en una frase que le sirva a quien subió.
+ *
+ * «Falló el OCR» no le dice a nadie qué hacer. Cada motivo tiene una salida
+ * distinta —conseguir otro archivo, achicarlo, esperar, avisarle a alguien— y
+ * decir cuál es la diferencia entre un error y una instrucción.
+ */
+function ocrFailureMessage(reason: OcrFailure): string {
+  switch (reason) {
+    case 'not_configured':
+      return 'This deployment has no AI provider configured, so a scanned statement cannot be read. Upload the CSV, OFX or XLSX your bank offers.';
+    case 'unsupported_type':
+      return 'This file is neither a statement this system can parse nor a document it can look at.';
+    case 'too_large':
+      return 'This scan is too large to read. Export fewer pages, or lower the scan resolution.';
+    case 'transport':
+      return 'The reader could not be reached. This will be retried.';
+    case 'malformed':
+      return 'The scan was read but the answer came back unusable. Try a clearer scan.';
+    case 'no_rows':
+      return 'No movement lines could be read from this scan. It may be a summary page, or too blurred to read. This is not the same as an empty statement.';
+  }
 }

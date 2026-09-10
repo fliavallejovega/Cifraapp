@@ -67,6 +67,16 @@ export default async function ImportReviewPage({
         }
       />
 
+      {/* Cómo se leyó, antes de la lista y no después.
+          Revisar una lista transcrita de un escaneo es un trabajo distinto de
+          confirmar una parseada de un CSV: se equivoca de otras formas, y no
+          decirlo invita a aprobar en bloque. */}
+      {review.readByOcr && (
+        <p className="mb-6 max-w-[68ch] text-sm text-pretty text-[color:var(--color-caution)]">
+          {t('review.ocrRead')}
+        </p>
+      )}
+
       <p className="tabular mb-8 text-sm text-[color:var(--color-ink-secondary)]">
         {t('review.counts', {
           new: review.counts.new,

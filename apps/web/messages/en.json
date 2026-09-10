@@ -722,7 +722,7 @@
     "backToOverview": "Back to your position",
     "form": {
       "file": "Statement file",
-      "fileHint": "CSV or OFX. Up to 15 MB.",
+      "fileHint": "CSV, OFX, XLSX or your bank’s PDF. If all you have is paper, a photo or scan works: we read it and it goes through the same review. Up to 15 MB.",
       "submit": "Analyze file",
       "errorTitle": "We couldn't import",
       "errors": {
@@ -808,7 +808,8 @@
         "nothingFiled": "Nothing you ticked was still waiting to be filed.",
         "signInRequired": "Your session expired. Sign in again.",
         "generic": "Something went wrong. Try again."
-      }
+      },
+      "ocrRead": "This file was read as a scan. Check every line before confirming: a transcription goes wrong in different ways than a CSV does."
     },
     "accountGroups": {
       "cards": "Cards",

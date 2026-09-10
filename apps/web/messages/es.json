@@ -722,7 +722,7 @@
     "backToOverview": "Volver a tu posición",
     "form": {
       "file": "Archivo del estado de cuenta",
-      "fileHint": "CSV u OFX. Máximo 15 MB.",
+      "fileHint": "CSV, OFX, XLSX o PDF del banco. Si sólo tenés el papel, sirve una foto o un escaneo: lo leemos y lo pasamos por la misma revisión. Máximo 15 MB.",
       "submit": "Analizar archivo",
       "errorTitle": "No pudimos importar",
       "errors": {
@@ -808,7 +808,8 @@
         "nothingFiled": "No quedaba nada por registrar de lo que marcaste.",
         "signInRequired": "Tu sesión venció. Vuelve a entrar.",
         "generic": "Algo no salió bien. Intenta de nuevo."
-      }
+      },
+      "ocrRead": "Este archivo se leyó como escaneo. Revisá cada línea antes de confirmar: una transcripción se equivoca de formas distintas a un CSV."
     },
     "accountGroups": {
       "cards": "Tarjetas",
