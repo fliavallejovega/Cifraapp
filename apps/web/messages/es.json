@@ -1073,6 +1073,18 @@
       "leaving": "Va a volverse efectivo",
       "leavingDetail": "Lo que decidiste vender. El plan cuenta con que entra.",
       "undecided": "Sin decidir: {count}"
+    },
+    "quick": {
+      "description": "¿Qué fue?",
+      "amount": "Monto",
+      "date": "¿Cuándo?",
+      "direction": "¿Entró o salió?",
+      "outflow": "Salió",
+      "inflow": "Entró",
+      "category": "Rubro",
+      "categoryNone": "Sin rubro por ahora",
+      "save": "Anotarlo",
+      "saved": "Anotado. El saldo ya se movió."
     }
   },
   "setup": {
@@ -3571,9 +3583,7 @@
       "noLimit": "No declaraste el cupo de esta tarjeta, así que no se puede calcular cuánto llevás usado. Ponelo en «Gestionar» y aparece la barra.",
       "moreBenefits": "y {count} más",
       "gaugeValue": "{name}: {used} del cupo usado, te quedan {available}.",
-      "overLimit": "Te pasaste por {over} de tu cupo de {limit}.",
-      "addMovement": "Registrar un movimiento",
-      "addPayment": "Registrar un pago"
+      "overLimit": "Te pasaste por {over} de tu cupo de {limit}."
     },
     "networks": {
       "visa": "Visa",
@@ -3606,7 +3616,8 @@
         "data": "Datos",
         "benefits": "Beneficios",
         "statement": "Estado de cuenta",
-        "offers": "Ofertas"
+        "offers": "Ofertas",
+        "movements": "Movimientos"
       },
       "form": {
         "name": "Cómo la reconocés",
@@ -3692,6 +3703,24 @@
         "adopt": "Tengo este",
         "openSource": "Ver la fuente",
         "warning": "Esta información puede variar sin aviso: los bancos cambian condiciones, topes y comercios cuando quieren. Cada línea dice de cuándo es y hasta cuándo se leyó vigente. Antes de decidir algo con plata, confirmalo con tu banco."
+      },
+      "movements": {
+        "detail": "Anotá acá lo que esta tarjeta no trae todavía en su estado de cuenta.",
+        "charge": "Un consumo",
+        "chargeHint": "Algo que compraste con ella.",
+        "payment": "Un pago",
+        "paymentHint": "Plata que le abonaste.",
+        "amount": "Monto",
+        "date": "¿Cuándo?",
+        "description": "¿Qué fue?",
+        "descriptionHint": "Como lo reconocerías después: «Super 99», «taxi al aeropuerto».",
+        "category": "Rubro",
+        "categoryNone": "Sin rubro por ahora",
+        "save": "Anotarlo",
+        "saved": "Anotado. El saldo ya se movió.",
+        "chargeEffect": "Sube lo que debés, que hoy es {balance}.",
+        "paymentEffect": "Baja lo que debés, que hoy es {balance}.",
+        "noDebt": "Esta tarjeta todavía no lleva una deuda, así que un pago no tendría qué bajar. Marcala como tarjeta en Deudas y aparece."
       }
     },
     "compare": {

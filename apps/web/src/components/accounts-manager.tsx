@@ -1,9 +1,11 @@
 'use client';
 
-import { Button, EmptyState, Problem } from '@app/ui';
+import { Button, EmptyState, Field, Input, Problem, Select, Status } from '@app/ui';
 import { useActionState, useState } from 'react';
 
+import type { RecordActionResult } from '@/components/records/spec';
 import { setAccountStatus, type AccountActionResult } from '@/server/account-actions';
+import { createManualMovement } from '@/server/movement-actions';
 import { AccountForm, type AccountFormLabels } from './account-form';
 
 /**
@@ -50,8 +52,20 @@ export interface AccountsManagerLabels {
   readonly archivedBadge: string;
   readonly movements: string;
   readonly noMovements: string;
-  /** «Registrar un movimiento», con esta cuenta ya elegida. */
+  /** «Registrar un movimiento», que abre el formulario aquí mismo. */
   readonly addMovement: string;
+  readonly quick: {
+    readonly description: string;
+    readonly amount: string;
+    readonly date: string;
+    readonly direction: string;
+    readonly outflow: string;
+    readonly inflow: string;
+    readonly category: string;
+    readonly categoryNone: string;
+    readonly save: string;
+    readonly saved: string;
+  };
   readonly maskPrefix: string;
   readonly emptyTitle: string;
   readonly emptyBody: string;
@@ -64,6 +78,10 @@ export interface AccountsManagerProps {
   readonly locale: string;
   readonly currencySymbol: string;
   readonly accounts: readonly AccountRowView[];
+  /** Los rubros del hogar, para clasificar un movimiento al anotarlo. */
+  readonly categories: readonly CategoryOption[];
+  /** La fecha del hogar. Lo que se anota a mano suele ser de hoy. */
+  readonly today: string;
   readonly groups: readonly { readonly key: string; readonly types: readonly string[] }[];
   readonly people: readonly { readonly id: string; readonly name: string }[];
   readonly labels: AccountsManagerLabels;
@@ -75,6 +93,8 @@ export function AccountsManager({
   accounts,
   groups,
   people,
+  categories,
+  today,
   labels,
 }: AccountsManagerProps) {
   // With nothing yet, the form is the screen — hiding the only useful action
@@ -117,7 +137,10 @@ export function AccountsManager({
               ) : (
                 <AccountRow
                   locale={locale}
+                  currencySymbol={currencySymbol}
                   account={account}
+                  categories={categories}
+                  today={today}
                   labels={labels}
                   onEdit={() => {
                     setEditing(account.id);
@@ -168,16 +191,23 @@ export function AccountsManager({
 
 function AccountRow({
   locale,
+  currencySymbol,
   account,
+  categories,
+  today,
   labels,
   onEdit,
 }: {
   readonly locale: string;
+  readonly currencySymbol: string;
   readonly account: AccountRowView;
+  readonly categories: readonly CategoryOption[];
+  readonly today: string;
   readonly labels: AccountsManagerLabels;
   readonly onEdit: () => void;
 }) {
   const [confirming, setConfirming] = useState(false);
+  const [recording, setRecording] = useState(false);
   const [state, formAction, pending] = useActionState<AccountActionResult, FormData>(
     setAccountStatus,
     {},
@@ -213,19 +243,37 @@ function AccountRow({
             ? labels.noMovements
             : labels.movements.replace('{count}', String(account.transactionCount))}
         </p>
-        {/* Registrar a mano, con la cuenta ya elegida. El efectivo es donde las
-            cifras de una casa dejan de coincidir con su vida, y mandarlo a otra
+        {/* Registrar a mano, aquí mismo. El efectivo es donde las cifras de una
+            casa dejan de coincidir con su vida, y sacar a alguien a otra
             pantalla a buscar esta misma cuenta en una lista es el paso que hace
             que no se registre. */}
         {!archived && (
-          <p className="mt-2 text-sm">
-            <a
-              href={`/${locale}/movements/new?account=${account.id}`}
-              className="underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
+          <div className="mt-3">
+            <button
+              type="button"
+              aria-expanded={recording}
+              onClick={() => {
+                setRecording(!recording);
+              }}
+              className="text-sm underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
             >
-              {labels.addMovement}
-            </a>
-          </p>
+              {recording ? labels.cancel : labels.addMovement}
+            </button>
+
+            {recording && (
+              <QuickMovement
+                locale={locale}
+                currencySymbol={currencySymbol}
+                accountId={account.id}
+                today={today}
+                categories={categories}
+                labels={labels}
+                onDone={() => {
+                  setRecording(false);
+                }}
+              />
+            )}
+          </div>
         )}
         {state.error && (
           <div className="mt-3 max-w-sm">
@@ -293,5 +341,129 @@ function AccountRow({
         )}
       </div>
     </div>
+  );
+}
+
+/** Un rubro del hogar, para clasificar sin salir de la cuenta. */
+export interface CategoryOption {
+  readonly id: string;
+  readonly name: string;
+}
+
+/**
+ * Anotar un movimiento en esta cuenta, sin salir de la lista.
+ *
+ * El efectivo es donde las cifras de una casa dejan de coincidir con su vida:
+ * el taxi, la fonda, los veinte dólares al vecino. Nada de eso aparece en un
+ * estado de cuenta, y un producto que sólo sabe lo que sabe el banco reporta
+ * menos gasto del que hubo — lo que hace «disponible» generoso justo en la
+ * dirección que duele.
+ *
+ * Lo que decide si se anota o no es cuántos pasos cuesta. Por eso vive aquí,
+ * con la cuenta ya puesta y la fecha en hoy.
+ */
+function QuickMovement({
+  locale,
+  currencySymbol,
+  accountId,
+  today,
+  categories,
+  labels,
+  onDone,
+}: {
+  readonly locale: string;
+  readonly currencySymbol: string;
+  readonly accountId: string;
+  readonly today: string;
+  readonly categories: readonly CategoryOption[];
+  readonly labels: AccountsManagerLabels;
+  readonly onDone: () => void;
+}) {
+  const [state, formAction, pending] = useActionState<RecordActionResult, FormData>(
+    createManualMovement,
+    {},
+  );
+
+  return (
+    <form action={formAction} className="mt-4 flex flex-col gap-4">
+      <input type="hidden" name="locale" value={locale} />
+      <input type="hidden" name="accountId" value={accountId} />
+      <input type="hidden" name="stay" value="true" />
+
+      {state.error && (
+        <Problem
+          title={labels.errorTitle}
+          body={labels.errors[state.error] ?? labels.errors['generic'] ?? ''}
+        />
+      )}
+      {state.ok && <Status tone="positive">{labels.quick.saved}</Status>}
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label={labels.quick.description} required className="sm:col-span-2">
+          {({ id }) => <Input id={id} name="description" required maxLength={200} />}
+        </Field>
+
+        <Field label={labels.quick.amount} required>
+          {({ id }) => (
+            <div className="relative">
+              <span
+                aria-hidden
+                className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm text-[color:var(--color-ink-tertiary)]"
+              >
+                {currencySymbol}
+              </span>
+              <Input
+                id={id}
+                name="amount"
+                numeric
+                inputMode="decimal"
+                required
+                placeholder="0.00"
+                className="pl-8"
+              />
+            </div>
+          )}
+        </Field>
+
+        <Field label={labels.quick.date} required>
+          {({ id }) => (
+            <Input id={id} name="transactionDate" type="date" required defaultValue={today} />
+          )}
+        </Field>
+
+        <Field label={labels.quick.direction}>
+          {({ id }) => (
+            <Select id={id} name="direction" defaultValue="outflow">
+              <option value="outflow">{labels.quick.outflow}</option>
+              <option value="inflow">{labels.quick.inflow}</option>
+            </Select>
+          )}
+        </Field>
+
+        {categories.length > 0 && (
+          <Field label={labels.quick.category}>
+            {({ id }) => (
+              <Select id={id} name="categoryId" defaultValue="">
+                <option value="">{labels.quick.categoryNone}</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
+        )}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <Button type="submit" size="sm" disabled={pending}>
+          {labels.quick.save}
+        </Button>
+        <Button type="button" variant="ghost" size="sm" onClick={onDone}>
+          {labels.cancel}
+        </Button>
+      </div>
+    </form>
   );
 }

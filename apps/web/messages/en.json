@@ -1073,6 +1073,18 @@
       "leaving": "Becoming cash",
       "leavingDetail": "What you decided to sell. The plan counts on it arriving.",
       "undecided": "Undecided: {count}"
+    },
+    "quick": {
+      "description": "What was it?",
+      "amount": "Amount",
+      "date": "When?",
+      "direction": "In or out?",
+      "outflow": "Out",
+      "inflow": "In",
+      "category": "Category",
+      "categoryNone": "No category for now",
+      "save": "Record it",
+      "saved": "Recorded. The balance already moved."
     }
   },
   "setup": {
@@ -3571,9 +3583,7 @@
       "noLimit": "You have not stated this card’s limit, so there is no way to work out how much you have used. Set it under «Manage» and the bar appears.",
       "moreBenefits": "and {count} more",
       "gaugeValue": "{name}: {used} of the limit used, {available} left.",
-      "overLimit": "You are {over} over your {limit} limit.",
-      "addMovement": "Record a movement",
-      "addPayment": "Record a payment"
+      "overLimit": "You are {over} over your {limit} limit."
     },
     "networks": {
       "visa": "Visa",
@@ -3606,7 +3616,8 @@
         "data": "Details",
         "benefits": "Benefits",
         "statement": "Statement",
-        "offers": "Offers"
+        "offers": "Offers",
+        "movements": "Movements"
       },
       "form": {
         "name": "How you recognise it",
@@ -3692,6 +3703,24 @@
         "adopt": "I have this one",
         "openSource": "See the source",
         "warning": "This information can change without notice: banks change terms, caps and merchants whenever they like. Every line says when it was read and how long it was read as valid. Before deciding anything with money on it, confirm with your bank."
+      },
+      "movements": {
+        "detail": "Record here what this card’s statement has not brought in yet.",
+        "charge": "A charge",
+        "chargeHint": "Something you bought with it.",
+        "payment": "A payment",
+        "paymentHint": "Money you paid toward it.",
+        "amount": "Amount",
+        "date": "When?",
+        "description": "What was it?",
+        "descriptionHint": "How you would recognise it later: «Super 99», «taxi to the airport».",
+        "category": "Category",
+        "categoryNone": "No category for now",
+        "save": "Record it",
+        "saved": "Recorded. The balance already moved.",
+        "chargeEffect": "Raises what you owe, which today is {balance}.",
+        "paymentEffect": "Lowers what you owe, which today is {balance}.",
+        "noDebt": "This card does not carry a debt yet, so a payment would have nothing to pay down. Mark it as a card under Debts and it appears."
       }
     },
     "compare": {

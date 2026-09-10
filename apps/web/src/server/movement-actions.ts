@@ -4,6 +4,7 @@ import {
   accounts,
   categories,
   classificationLog,
+  debts,
   transactionSplits,
   transactions,
 } from '@app/database/schema';
@@ -426,19 +427,43 @@ export async function createManualMovement(
       la explique, son las dos formas de que los números dejen de cuadrar.
       Ninguna de las dos puede existir ni por un instante.
 
-      Sólo una salida baja una deuda. Una entrada la subiría, o es otra cosa, y
-      en los dos casos no es esto.
+      ## Un pago no se reconoce por su signo
+
+      Pagar una tarjeta es dinero **entrando** a la cuenta de esa tarjeta: el
+      saldo sube hacia cero y la deuda baja. Pagarle a Giovanni desde la cuenta
+      de ahorros es dinero **saliendo** de una cuenta que no es la de la deuda.
+      Las dos cosas son pagos y tienen signos opuestos.
+
+      La regla que cubre las dos: el movimiento baja la deuda cuando **entra a
+      la cuenta que la lleva**, o cuando **sale de cualquier otra**. Exigir
+      «salida» a secas —que es lo que este código hacía— dejaba sin efecto
+      exactamente el caso más común, el pago a la tarjeta.
     */
-    if (parsed.data.debtId && parsed.data.direction === 'outflow') {
-      await applyPaymentToDebt(tx, {
-        householdId,
-        debtId: parsed.data.debtId,
-        transactionId: row.id,
-        amount: magnitude,
-        currency,
-        paidOn: parsed.data.transactionDate,
-        appliedBy: session.user.id,
-      });
+    if (parsed.data.debtId) {
+      const [target] = await tx
+        .select({ accountId: debts.accountId })
+        .from(debts)
+        .where(and(eq(debts.id, parsed.data.debtId), eq(debts.householdId, householdId)))
+        .limit(1);
+
+      if (target) {
+        const paysIt =
+          target.accountId === parsed.data.accountId
+            ? parsed.data.direction === 'inflow'
+            : parsed.data.direction === 'outflow';
+
+        if (paysIt) {
+          await applyPaymentToDebt(tx, {
+            householdId,
+            debtId: parsed.data.debtId,
+            transactionId: row.id,
+            amount: magnitude,
+            currency,
+            paidOn: parsed.data.transactionDate,
+            appliedBy: session.user.id,
+          });
+        }
+      }
     }
 
     if (parsed.data.categoryId) {
@@ -459,6 +484,17 @@ export async function createManualMovement(
   if (!created) return { error: 'accountRequired' };
 
   revalidateFinancials(formData);
+
+  /*
+    Quedarse, cuando se registró desde dentro de una tarjeta o una cuenta.
+
+    Mandar a la pantalla del movimiento recién creado tiene sentido cuando
+    alguien vino a la pantalla de registrar; no lo tiene cuando estaba mirando
+    su tarjeta y anotó un consumo sin moverse. Sacarlo de ahí para enseñarle lo
+    que acaba de escribir le cobra el viaje de vuelta.
+  */
+  if (formData.get('stay') === 'true') return { ok: true, created: created.id };
+
   redirect(`/${localeOf(formData)}/movements/${created.id}`);
 }
 

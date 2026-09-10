@@ -121,16 +121,31 @@ export default async function NewMovementPage({
       half: true,
       options: accounts.map((account) => ({ value: account.id, label: account.name })),
     },
-    {
-      kind: 'select',
-      name: 'direction',
-      label: t('direction'),
-      half: true,
-      options: [
-        { value: 'outflow', label: t('outflow') },
-        { value: 'inflow', label: t('inflow') },
-      ],
-    },
+    /*
+      La dirección, salvo cuando se vino a registrar un pago.
+
+      Un pago hecho desde esta pantalla sale siempre de la cuenta que se elija:
+      se le paga a Giovanni desde la cuenta de ahorros, o se le paga a la
+      tarjeta desde la cuenta de ahorros. El caso contrario —plata entrando a la
+      tarjeta— se anota en la tarjeta misma, donde así es como se piensa.
+
+      Ofrecer la opción aquí sería pedirle a la casa que decida un signo
+      contable para poder registrar algo que ya sabía qué era.
+    */
+    ...(isPayment
+      ? []
+      : [
+          {
+            kind: 'select' as const,
+            name: 'direction',
+            label: t('direction'),
+            half: true,
+            options: [
+              { value: 'outflow', label: t('outflow') },
+              { value: 'inflow', label: t('inflow') },
+            ],
+          },
+        ]),
     {
       kind: 'select',
       name: 'categoryId',
@@ -159,7 +174,8 @@ export default async function NewMovementPage({
             name: 'debtId',
             label: t('debt'),
             hint: t('debtHint'),
-            showWhen: { field: 'direction', is: ['outflow'] as const },
+            required: isPayment,
+            ...(isPayment ? {} : { showWhen: { field: 'direction', is: ['outflow'] as const } }),
             options: [
               { value: '', label: t('noDebt') },
               ...debts.map((debt) => ({

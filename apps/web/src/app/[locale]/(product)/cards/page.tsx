@@ -13,13 +13,13 @@ import {
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { AddCard, CardManage } from '@/components/cards-manager';
-import { Link } from '@/i18n/navigation';
 import { ImportForm } from '@/components/import-form';
 import { formatPlainDate, trimRate } from '@/lib/format';
 import { loadHouseholdContext } from '@/server/household-context';
 import { loadInstitutions, loadPeople } from '@/server/repositories/administration';
 import { loadCatalogueFor } from '@/server/repositories/card-catalogue';
 import { loadCardPrograms } from '@/server/repositories/card-programs';
+import { loadCategoryOptions } from '@/server/repositories/review-options';
 import { loadCards } from '@/server/repositories/cards';
 import { loadOffers } from '@/server/repositories/offers';
 import { requireHousehold } from '@/server/session';
@@ -51,7 +51,7 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
   const currency = (household?.baseCurrency.trim() ?? 'USD') as CurrencyCode;
   const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
 
-  const [view, people, issuers, offersView, programs] = await Promise.all([
+  const [view, people, issuers, offersView, programs, categoryOptions] = await Promise.all([
     loadCards(session, session.activeHouseholdId, currency),
     loadPeople(session, session.activeHouseholdId),
     loadInstitutions(),
@@ -59,6 +59,8 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
     // usan las que cada tarjeta puede pagar; el tablero completo vive allá.
     loadOffers(session, session.activeHouseholdId, currency, context.today),
     loadCardPrograms(),
+    // Los rubros, para poder clasificar un consumo en el mismo acto de anotarlo.
+    loadCategoryOptions(session, session.activeHouseholdId),
   ]);
 
   /** El catálogo de programas, como datos listos para cruzar al cliente. */
@@ -107,6 +109,7 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
     close: t('manage.close'),
     tabs: {
       data: t('manage.tabs.data'),
+      movements: t('manage.tabs.movements'),
       benefits: t('manage.tabs.benefits'),
       offers: t('manage.tabs.offers'),
       statement: t('manage.tabs.statement'),
@@ -209,6 +212,24 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
         openSource: t('manage.catalogue.openSource'),
         warning: t('manage.catalogue.warning'),
       },
+    },
+    movements: {
+      detail: t('manage.movements.detail'),
+      charge: t('manage.movements.charge'),
+      chargeHint: t('manage.movements.chargeHint'),
+      payment: t('manage.movements.payment'),
+      paymentHint: t('manage.movements.paymentHint'),
+      amount: t('manage.movements.amount'),
+      date: t('manage.movements.date'),
+      description: t('manage.movements.description'),
+      descriptionHint: t('manage.movements.descriptionHint'),
+      category: t('manage.movements.category'),
+      categoryNone: t('manage.movements.categoryNone'),
+      save: t('manage.movements.save'),
+      saved: t('manage.movements.saved'),
+      chargeEffect: rawOf(t)('manage.movements.chargeEffect'),
+      paymentEffect: rawOf(t)('manage.movements.paymentEffect'),
+      noDebt: t('manage.movements.noDebt'),
     },
     offers: {
       detail: t('manage.offers.detail'),
@@ -336,6 +357,8 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
       isExpired: benefit.isExpired,
     })),
     offers: offersFor(card.accountId),
+    debtId: card.debtId,
+    owed: money(card.managed ?? card.owed),
     isArchived: card.isArchived,
   });
 
@@ -562,34 +585,14 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
                   Antes eran tres botones «Gestionar» apilados al pie de la
                   lista, sin nada que dijera cuál era de cuál: un control que no
                   toca lo que modifica obliga a contar posiciones. */}
-              {/* Registrar a mano, sin salir a buscar la cuenta en otra
-                  pantalla. Un gasto en efectivo con esta tarjeta y un pago que
-                  la baja son las dos cosas que un estado de cuenta no trae a
-                  tiempo, y son distintas: una sale del mes, la otra baja el
-                  saldo. */}
-              <p className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
-                <Link
-                  href={`/movements/new?account=${card.accountId}`}
-                  className="underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
-                >
-                  {t('list.addMovement')}
-                </Link>
-                {card.debtId && (
-                  <Link
-                    href={`/movements/new?account=${card.accountId}&debt=${card.debtId}`}
-                    className="underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
-                  >
-                    {t('list.addPayment')}
-                  </Link>
-                )}
-              </p>
-
               <CardManage
                 locale={locale}
                 currencySymbol={getCurrency(currency).symbol}
                 people={people.map((person) => ({ id: person.id, name: person.displayName }))}
                 issuers={issuers}
                 programs={programOptions}
+                categories={categoryOptions}
+                today={context.today}
                 card={rowFor(card)}
                 statement={statementFor[card.accountId]}
                 offersHref={`/${locale}/offers`}

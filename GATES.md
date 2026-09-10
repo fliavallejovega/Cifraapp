@@ -63,6 +63,11 @@ entienda entra a un asistente donde se clasifica o se crea el rubro.
       EXPECT: CARD PAYMENT OK
       EVIDENCE: automatic-evidence=v1; definition-sha256=a5206ed0e34190bb893d82a179977152b5ba3d761b8096761585c5f5d7a52f3f; exit=0; EXPECT=matched; output-sha256=dcac40b69d19f12e864f36da33aa63ae24ca8454f0813c693969298e5f14d243; output-bytes=16; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar; path=6dc919bb4189/22 entries
 
+- [x] G13: Una tarjeta o una cuenta se opera desde donde está, y un pago se reconoce por hacia dónde va el dinero y no por su signo
+      CHECK: node scripts/gates/assert-inline-interactions.mjs
+      EXPECT: INLINE INTERACTIONS OK
+      EVIDENCE: automatic-evidence=v1; definition-sha256=d8cee3036a035e16991872121f271b66192e58fe31d0ad9f01d935db2c89bdb4; exit=0; EXPECT=matched; output-sha256=36307ce3b9c162c898c28cceb6e15a28d386bb568ac052235317555a9d365c82; output-bytes=23; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar; path=6dc919bb4189/22 entries
+
 - [x] G10: Cada clave de copy que una pantalla pide existe en español y en inglés
       CHECK: node scripts/gates/assert-copy-complete.mjs
       EXPECT: COPY COMPLETE OK

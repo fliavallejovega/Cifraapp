@@ -21,6 +21,7 @@ import { HoldingsManager } from '@/components/holdings-manager';
 import { formatMoment } from '@/lib/format';
 import { ACCOUNT_TYPE_GROUPS, ACCOUNT_TYPES, loadAccounts } from '@/server/repositories/accounts';
 import { loadHouseholdContext } from '@/server/household-context';
+import { loadCategoryOptions } from '@/server/repositories/review-options';
 import { loadPeople } from '@/server/repositories/administration';
 import { loadPortfolio } from '@/server/repositories/portfolio';
 import { requireHousehold } from '@/server/session';
@@ -47,10 +48,12 @@ export default async function AccountsPage({ params }: { params: Promise<{ local
   const currency = (household?.baseCurrency.trim() ?? 'USD') as CurrencyCode;
   const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
 
-  const [view, people, portfolio] = await Promise.all([
+  const [view, people, portfolio, categoryOptions] = await Promise.all([
     loadAccounts(session, session.activeHouseholdId, currency),
     loadPeople(session, session.activeHouseholdId),
     loadPortfolio(session, session.activeHouseholdId, currency),
+    // Los rubros, para clasificar un movimiento en el mismo acto de anotarlo.
+    loadCategoryOptions(session, session.activeHouseholdId),
   ]);
   const personNames = new Map(people.map((person) => [person.id, person.displayName]));
 
@@ -161,6 +164,8 @@ export default async function AccountsPage({ params }: { params: Promise<{ local
             locale={locale}
             currencySymbol={getCurrency(currency).symbol}
             accounts={rows}
+            categories={categoryOptions}
+            today={context.today}
             groups={ACCOUNT_TYPE_GROUPS.map((group) => ({ key: group.key, types: group.types }))}
             labels={{
               form: {
@@ -199,6 +204,18 @@ export default async function AccountsPage({ params }: { params: Promise<{ local
               movements: raw('list.movements'),
               noMovements: t('list.noMovements'),
               addMovement: t('list.addMovement'),
+              quick: {
+                description: t('quick.description'),
+                amount: t('quick.amount'),
+                date: t('quick.date'),
+                direction: t('quick.direction'),
+                outflow: t('quick.outflow'),
+                inflow: t('quick.inflow'),
+                category: t('quick.category'),
+                categoryNone: t('quick.categoryNone'),
+                save: t('quick.save'),
+                saved: t('quick.saved'),
+              },
               maskPrefix: t('list.maskPrefix'),
               emptyTitle: t('empty.title'),
               emptyBody: t('empty.body'),

@@ -4,6 +4,7 @@ import { Button, Card, EmptyState, Field, Input, Problem, Select, Status } from 
 import { useActionState, useEffect, useState, type ReactNode } from 'react';
 
 import type { RecordActionResult } from '@/components/records/spec';
+import { createManualMovement } from '@/server/movement-actions';
 import {
   addCardBenefit,
   adoptCatalogueBenefit,
@@ -117,6 +118,12 @@ export interface CardOfferRow {
   readonly isMaybe: boolean;
 }
 
+/** Un rubro del hogar, para clasificar un consumo sin salir de la tarjeta. */
+export interface CategoryOption {
+  readonly id: string;
+  readonly name: string;
+}
+
 /** Un programa del catálogo, tal como lo ofrece el selector. */
 export interface ProgramOption {
   readonly issuerKey: string;
@@ -147,6 +154,10 @@ export interface CardRow {
   readonly benefits: readonly CardBenefitRow[];
   /** Las ofertas del mes que esta tarjeta puede pagar, ya cruzadas. */
   readonly offers: readonly CardOfferRow[];
+  /** La deuda que esta tarjeta lleva. Sin ella un pago no baja nada. */
+  readonly debtId: string | null;
+  /** Lo que se debe hoy, ya formateado. Es la mitad de la frase de un pago. */
+  readonly owed: string;
   readonly isArchived: boolean;
 }
 
@@ -155,6 +166,7 @@ export interface CardsManagerLabels {
   readonly close: string;
   readonly tabs: {
     readonly data: string;
+    readonly movements: string;
     readonly benefits: string;
     readonly offers: string;
     readonly statement: string;
@@ -259,6 +271,26 @@ export interface CardsManagerLabels {
     readonly maybeBody: string;
     readonly maybeTag: string;
   };
+  readonly movements: {
+    readonly detail: string;
+    /** Los dos actos, nombrados por lo que le hacen a la tarjeta. */
+    readonly charge: string;
+    readonly chargeHint: string;
+    readonly payment: string;
+    readonly paymentHint: string;
+    readonly amount: string;
+    readonly date: string;
+    readonly description: string;
+    readonly descriptionHint: string;
+    readonly category: string;
+    readonly categoryNone: string;
+    readonly save: string;
+    readonly saved: string;
+    /** «Baja tu saldo de {balance}» / «Sube tu saldo a …» */
+    readonly chargeEffect: string;
+    readonly paymentEffect: string;
+    readonly noDebt: string;
+  };
   readonly addCard: string;
   readonly addCardTitle: string;
   readonly errorTitle: string;
@@ -293,6 +325,8 @@ export function CardManage({
   issuers,
   card,
   programs,
+  categories,
+  today,
   labels,
   statement,
   offersHref,
@@ -309,6 +343,10 @@ export function CardManage({
   }[];
   /** El catálogo de programas de lealtad, para el selector. */
   readonly programs: readonly ProgramOption[];
+  /** Los rubros del hogar, para clasificar un consumo al anotarlo. */
+  readonly categories: readonly CategoryOption[];
+  /** La fecha del hogar. Un consumo es de hoy casi siempre. */
+  readonly today: string;
   readonly card: CardRow;
   readonly labels: CardsManagerLabels;
   /** El formulario de importación de esta tarjeta, armado en el servidor. */
@@ -342,6 +380,8 @@ export function CardManage({
             people={people}
             issuers={issuers}
             programs={programs}
+            categories={categories}
+            today={today}
             card={card}
             labels={labels}
             statement={statement}
@@ -424,6 +464,8 @@ function CardPanel({
   issuers,
   card,
   programs,
+  categories,
+  today,
   labels,
   statement,
   offersHref,
@@ -439,16 +481,21 @@ function CardPanel({
     readonly key: string | null;
   }[];
   readonly programs: readonly ProgramOption[];
+  readonly categories: readonly CategoryOption[];
+  readonly today: string;
   readonly card: CardRow;
   readonly labels: CardsManagerLabels;
   readonly statement: ReactNode;
   readonly offersHref: string;
   readonly onDone: () => void;
 }) {
-  const [tab, setTab] = useState<'data' | 'benefits' | 'offers' | 'statement'>('data');
+  const [tab, setTab] = useState<'data' | 'movements' | 'benefits' | 'offers' | 'statement'>(
+    'data',
+  );
 
   const tabs = [
     ['data', labels.tabs.data],
+    ['movements', labels.tabs.movements],
     ['benefits', labels.tabs.benefits],
     ['offers', labels.tabs.offers],
     ['statement', labels.tabs.statement],
@@ -490,6 +537,16 @@ function CardPanel({
             card={card}
             labels={labels}
             onDone={onDone}
+          />
+        )}
+        {tab === 'movements' && (
+          <CardMovements
+            locale={locale}
+            currencySymbol={currencySymbol}
+            card={card}
+            categories={categories}
+            today={today}
+            labels={labels}
           />
         )}
         {tab === 'benefits' && <Benefits locale={locale} card={card} labels={labels} />}
@@ -1291,6 +1348,197 @@ function Offers({
           {labels.offers.seeAll}
         </a>
       </p>
+    </div>
+  );
+}
+
+/**
+ * Anotar un consumo o un pago, sin salir de la tarjeta.
+ *
+ * ## Por qué vive aquí y no en otra pantalla
+ *
+ * Porque es la misma razón por la que el panel entero vive dentro de su
+ * tarjeta: un control que no toca lo que modifica obliga a contar posiciones,
+ * y un enlace que saca a alguien de donde estaba le cobra el viaje de vuelta.
+ * Quien está mirando su Visa y se acuerda del taxi de ayer no debería tener que
+ * buscar esa misma Visa en un selector de otra pantalla.
+ *
+ * ## Los dos actos son opuestos y se nombran así
+ *
+ * Un **consumo** sube lo que se debe. Un **pago** lo baja. En la contabilidad
+ * de la cuenta tienen signos contrarios —el consumo sale, el pago entra— y esa
+ * es exactamente la parte que nadie tiene por qué saber: la pantalla pregunta
+ * cuál de los dos es, en las palabras en que la gente lo piensa, y el signo lo
+ * pone el sistema.
+ *
+ * Sólo el consumo pide rubro. Un pago a la tarjeta no es un gasto: es plata
+ * moviéndose de un bolsillo a otro de la misma casa, y clasificarlo como gasto
+ * lo contaría dos veces — una al comprar, otra al pagar.
+ */
+function CardMovements({
+  locale,
+  currencySymbol,
+  card,
+  categories,
+  today,
+  labels,
+}: {
+  readonly locale: string;
+  readonly currencySymbol: string;
+  readonly card: CardRow;
+  readonly categories: readonly CategoryOption[];
+  readonly today: string;
+  readonly labels: CardsManagerLabels;
+}) {
+  const [mode, setMode] = useState<'charge' | 'payment'>('charge');
+  const [state, formAction, pending] = useActionState<RecordActionResult, FormData>(
+    createManualMovement,
+    {},
+  );
+
+  const isPayment = mode === 'payment';
+  const canPay = card.debtId !== null;
+
+  return (
+    <div className="flex flex-col gap-5">
+      <p className="max-w-[68ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]">
+        {labels.movements.detail}
+      </p>
+
+      {/* Los dos actos, elegidos antes que nada: cambian qué se pregunta y qué
+          le pasa al saldo, así que preguntarlo al final sería pedir que se
+          rellene un formulario sin saber cuál. */}
+      <div role="radiogroup" aria-label={labels.tabs.movements} className="flex flex-wrap gap-3">
+        {(['charge', 'payment'] as const).map((one) => {
+          const active = mode === one;
+          const disabled = one === 'payment' && !canPay;
+
+          return (
+            <button
+              key={one}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              disabled={disabled}
+              onClick={() => {
+                setMode(one);
+              }}
+              className={`min-h-11 rounded-(--radius-sm) border px-4 text-sm transition-colors ${
+                active
+                  ? 'border-[color:var(--color-ink)] bg-[color:var(--color-surface)] font-medium'
+                  : 'border-[color:var(--color-rule)] text-[color:var(--color-ink-secondary)] hover:text-[color:var(--color-ink)]'
+              } ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
+            >
+              {one === 'charge' ? labels.movements.charge : labels.movements.payment}
+            </button>
+          );
+        })}
+      </div>
+
+      <p className="max-w-[68ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]">
+        {!canPay && isPayment
+          ? labels.movements.noDebt
+          : isPayment
+            ? labels.movements.paymentEffect.replace('{balance}', card.owed)
+            : labels.movements.chargeEffect.replace('{balance}', card.owed)}
+      </p>
+
+      {state.error && (
+        <Problem
+          title={labels.errorTitle}
+          body={labels.errors[state.error] ?? labels.errors['generic'] ?? ''}
+        />
+      )}
+
+      {state.ok && (
+        <Status tone="positive">{labels.movements.saved}</Status>
+      )}
+
+      <form action={formAction} className="flex flex-col gap-5">
+        <input type="hidden" name="locale" value={locale} />
+        <input type="hidden" name="accountId" value={card.accountId} />
+        {/* Quedarse aquí. Es la diferencia entre anotar el taxi y perder de
+            vista la tarjeta que se estaba mirando. */}
+        <input type="hidden" name="stay" value="true" />
+        {/*
+          El signo lo pone el sistema. Un consumo sale de la cuenta de la
+          tarjeta y sube lo que se debe; un pago entra y lo baja. Preguntárselo
+          a la casa sería pedirle que tradujera su vida a contabilidad.
+        */}
+        <input type="hidden" name="direction" value={isPayment ? 'inflow' : 'outflow'} />
+        {isPayment && card.debtId && <input type="hidden" name="debtId" value={card.debtId} />}
+
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field
+            label={labels.movements.description}
+            hint={labels.movements.descriptionHint}
+            required
+            className="sm:col-span-2"
+          >
+            {({ id, describedBy }) => (
+              <Input
+                id={id}
+                name="description"
+                required
+                maxLength={200}
+                aria-describedby={describedBy}
+              />
+            )}
+          </Field>
+
+          <Field label={labels.movements.amount} required>
+            {({ id }) => (
+              <div className="relative">
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm text-[color:var(--color-ink-tertiary)]"
+                >
+                  {currencySymbol}
+                </span>
+                <Input
+                  id={id}
+                  name="amount"
+                  numeric
+                  inputMode="decimal"
+                  required
+                  placeholder="0.00"
+                  className="pl-8"
+                />
+              </div>
+            )}
+          </Field>
+
+          <Field label={labels.movements.date} required>
+            {({ id }) => (
+              <Input id={id} name="transactionDate" type="date" required defaultValue={today} />
+            )}
+          </Field>
+
+          {/* Sólo el consumo. Un pago a la tarjeta no es un gasto: es plata
+              moviéndose dentro de la misma casa, y darle rubro lo contaría dos
+              veces. */}
+          {!isPayment && categories.length > 0 && (
+            <Field label={labels.movements.category} className="sm:col-span-2">
+              {({ id }) => (
+                <Select id={id} name="categoryId" defaultValue="">
+                  <option value="">{labels.movements.categoryNone}</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </Select>
+              )}
+            </Field>
+          )}
+        </div>
+
+        <div>
+          <Button type="submit" disabled={pending || (isPayment && !canPay)}>
+            {labels.movements.save}
+          </Button>
+        </div>
+      </form>
     </div>
   );
 }
