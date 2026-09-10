@@ -21,6 +21,7 @@ import {
   plainDateString,
   positiveAmount,
 } from './record-input';
+import { applyPaymentToDebt } from './debt-payments';
 import { localeOf, revalidateFinancials, revalidateScreen } from './revalidate';
 import { loadSession, queryAsUser } from './session';
 import type { RecordActionResult } from '@/components/records/spec';
@@ -292,11 +293,21 @@ const manualInput = z.object({
   direction: z.enum(['inflow', 'outflow']),
   description: z.string().trim().min(1).max(200),
   categoryId: optionalUuid,
+  /**
+   * La deuda que este movimiento paga, cuando paga una.
+   *
+   * Es lo que convierte «registrar un gasto» en «registrar un pago». Sin esto,
+   * los $500 que alguien le dio a Giovanni en efectivo salían del mes y la
+   * deuda seguía diciendo $1,800 — y la casa terminaba llevando esa cuenta en
+   * la cabeza, que es el trabajo que este producto existe para quitar.
+   */
+  debtId: optionalUuid,
   notes: optionalText,
 });
 
 const MANUAL_ERRORS = {
   accountId: 'accountRequired',
+  debtId: 'notFound',
   transactionDate: 'dateInvalid',
   amount: 'amountInvalid',
   description: 'descriptionRequired',
@@ -327,6 +338,7 @@ export async function createManualMovement(
     direction: formData.get('direction') ?? 'outflow',
     description: formData.get('description'),
     categoryId: formData.get('categoryId'),
+    debtId: formData.get('debtId'),
     notes: formData.get('notes'),
   });
 
@@ -406,6 +418,28 @@ export async function createManualMovement(
         updatedAt: new Date(),
       })
       .where(eq(accounts.id, parsed.data.accountId));
+
+    /*
+      Y si esto paga una deuda, se aplica en la misma transacción de base.
+
+      Un pago registrado cuya deuda no bajó, y una deuda que bajó sin pago que
+      la explique, son las dos formas de que los números dejen de cuadrar.
+      Ninguna de las dos puede existir ni por un instante.
+
+      Sólo una salida baja una deuda. Una entrada la subiría, o es otra cosa, y
+      en los dos casos no es esto.
+    */
+    if (parsed.data.debtId && parsed.data.direction === 'outflow') {
+      await applyPaymentToDebt(tx, {
+        householdId,
+        debtId: parsed.data.debtId,
+        transactionId: row.id,
+        amount: magnitude,
+        currency,
+        paidOn: parsed.data.transactionDate,
+        appliedBy: session.user.id,
+      });
+    }
 
     if (parsed.data.categoryId) {
       await tx.insert(classificationLog).values({

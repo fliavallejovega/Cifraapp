@@ -950,7 +950,8 @@
       "archivedBadge": "Archivada",
       "movements": "{count} movimientos",
       "noMovements": "sin movimientos todavía",
-      "maskPrefix": "····"
+      "maskPrefix": "····",
+      "addMovement": "Registrar un movimiento"
     },
     "form": {
       "name": "Nombre de la cuenta",
@@ -1594,7 +1595,8 @@
       "title": "Todavía no hay movimientos.",
       "body": "Importa un estado de cuenta y aparecerán aquí, o registra a mano el gasto en efectivo que ningún banco vio.",
       "import": "Importar un estado de cuenta",
-      "manual": "Registrar un gasto"
+      "manual": "Registrar un gasto",
+      "payment": "Registrar un pago"
     },
     "noResults": {
       "title": "Ningún movimiento coincide.",
@@ -1605,7 +1607,8 @@
       "previous": "Anteriores",
       "next": "Siguientes",
       "position": "Página {page} de {pages}"
-    }
+    },
+    "addPayment": "Registrar un pago"
   },
   "movement": {
     "title": "Movimiento",
@@ -1719,7 +1722,12 @@
       "title": "Primero necesitas una cuenta.",
       "body": "Un gasto sale de algún lado. Crea la cuenta donde tienes el efectivo y vuelve aquí.",
       "action": "Crear una cuenta"
-    }
+    },
+    "debt": "¿Baja alguna deuda?",
+    "debtHint": "Si esto es un pago, elegí a cuál. Baja el saldo al guardar, y se puede deshacer.",
+    "noDebt": "No, es un gasto",
+    "paymentTitle": "Registrar un pago",
+    "paymentDetail": "Un pago sale de una cuenta y además baja una deuda. Elegí a cuál y el saldo se mueve al guardar."
   },
   "income": {
     "title": "Tus ingresos",
@@ -1973,7 +1981,8 @@
       "detail": "Del límite que registraste."
     },
     "editTitle": "Corregir esta deuda",
-    "noLimit": "No registraste un límite para esta deuda."
+    "noLimit": "No registraste un límite para esta deuda.",
+    "recordPayment": "Registrar un pago"
   },
   "goals": {
     "title": "Tus metas",
@@ -3561,7 +3570,10 @@
       "annualFee": "anualidad {fee}",
       "noLimit": "No declaraste el cupo de esta tarjeta, así que no se puede calcular cuánto llevás usado. Ponelo en «Gestionar» y aparece la barra.",
       "moreBenefits": "y {count} más",
-      "gaugeValue": "{name}: {used} del cupo usado, te quedan {available}."
+      "gaugeValue": "{name}: {used} del cupo usado, te quedan {available}.",
+      "overLimit": "Te pasaste por {over} de tu cupo de {limit}.",
+      "addMovement": "Registrar un movimiento",
+      "addPayment": "Registrar un pago"
     },
     "networks": {
       "visa": "Visa",

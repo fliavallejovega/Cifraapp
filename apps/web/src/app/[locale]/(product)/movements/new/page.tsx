@@ -1,3 +1,4 @@
+import { formatMoney } from '@app/domain';
 import { Card, EmptyState, Page, PageHeader } from '@app/ui';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
@@ -7,6 +8,7 @@ import { Link } from '@/i18n/navigation';
 import { loadHouseholdContext } from '@/server/household-context';
 import { createManualMovement } from '@/server/movement-actions';
 import { loadAccountOptions, loadCategories } from '@/server/repositories/administration';
+import { loadDebtOptions } from '@/server/repositories/review-options';
 import { requireHousehold } from '@/server/session';
 
 /**
@@ -21,18 +23,55 @@ import { requireHousehold } from '@/server/session';
  * to money going out — because the overwhelming majority of hand-recorded
  * movements are an expense that happened today. Everything a person is likely
  * to keep is already filled in.
+ *
+ * ## Y también es donde se registra un pago
+ *
+ * Un pago es un movimiento que además baja una deuda. No hay una segunda
+ * pantalla para eso: sería la misma pantalla con un campo más y dos nombres
+ * distintos para lo mismo, y alguien terminaría registrando el pago en la
+ * equivocada. Se llega con la deuda ya elegida desde la tarjeta o la deuda que
+ * se está mirando, o se elige aquí.
  */
-export default async function NewMovementPage({ params }: { params: Promise<{ locale: string }> }) {
+export default async function NewMovementPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string }>;
+  /** `account` y `debt` llegan desde la tarjeta o la cuenta que se estaba mirando. */
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { locale } = await params;
+  const query = await searchParams;
   // eslint-disable-next-line @typescript-eslint/no-deprecated
   setRequestLocale(locale);
 
   const session = await requireHousehold(locale);
   const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
-  const [accounts, categories] = await Promise.all([
+  const [accounts, categories, debts] = await Promise.all([
     loadAccountOptions(session, session.activeHouseholdId),
     loadCategories(session, session.activeHouseholdId),
+    loadDebtOptions(session, session.activeHouseholdId, context.currency),
   ]);
+
+  /** Lo que venga en la dirección sólo cuenta si es del hogar. */
+  const asked = (key: string) => {
+    const value = query[key];
+    return typeof value === 'string' ? value : '';
+  };
+
+  const preselectedAccount = accounts.some((one) => one.id === asked('account'))
+    ? asked('account')
+    : (accounts[0]?.id ?? '');
+
+  const preselectedDebt = debts.some((one) => one.id === asked('debt')) ? asked('debt') : '';
+
+  const moneyLocale = locale === 'en' ? 'en-US' : 'es-PA';
+  /*
+    Un pago es un movimiento que además baja una deuda: la misma pantalla, no
+    otra. Lo único que cambia es el encabezado —para que quien vino a registrar
+    un pago sepa que llegó bien— y que el selector de deuda arranque abierto.
+  */
+  const isPayment = asked('kind') === 'payment' || preselectedDebt !== '';
 
   const t = await getTranslations('movementNew');
   const shared = await getTranslations('records');
@@ -105,12 +144,41 @@ export default async function NewMovementPage({ params }: { params: Promise<{ lo
         })),
       ],
     },
+    /*
+      La deuda que este movimiento paga, si paga alguna.
+
+      Sólo aparece cuando el dinero sale: una entrada no baja una deuda — la
+      sube, o es otra cosa. Y lleva el saldo al lado de cada nombre, porque
+      elegir «Préstamo de Giovanni» sin ver que quedan $1,800 no deja juzgar si
+      este pago de $500 tiene sentido ahí.
+    */
+    ...(debts.length > 0
+      ? [
+          {
+            kind: 'select' as const,
+            name: 'debtId',
+            label: t('debt'),
+            hint: t('debtHint'),
+            showWhen: { field: 'direction', is: ['outflow'] as const },
+            options: [
+              { value: '', label: t('noDebt') },
+              ...debts.map((debt) => ({
+                value: debt.id,
+                label: `${debt.name} — ${formatMoney(debt.outstanding, { locale: moneyLocale })}`,
+              })),
+            ],
+          },
+        ]
+      : []),
     { kind: 'note', name: 'notes', label: t('notes') },
   ];
 
   return (
     <Page>
-      <PageHeader title={t('title')} detail={t('detail')} />
+      <PageHeader
+        title={isPayment ? t('paymentTitle') : t('title')}
+        detail={isPayment ? t('paymentDetail') : t('detail')}
+      />
 
       <Card>
         <SingleForm
@@ -122,9 +190,10 @@ export default async function NewMovementPage({ params }: { params: Promise<{ lo
             description: '',
             amount: '',
             transactionDate: context.today,
-            accountId: accounts[0]?.id ?? '',
+            accountId: preselectedAccount,
             direction: 'outflow',
             categoryId: '',
+            debtId: preselectedDebt,
             notes: '',
           }}
           labels={{

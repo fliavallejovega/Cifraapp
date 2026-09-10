@@ -92,12 +92,23 @@ export default async function MovementsPage({
         title={t('title')}
         detail={t('detail')}
         actions={
-          <Link
-            href="/movements/new"
-            className="inline-flex h-10 items-center rounded-(--radius-sm) bg-[color:var(--color-brand)] px-4 text-sm font-semibold text-[color:var(--color-brand-contrast,#151d2e)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-brand)]"
-          >
-            {t('addManual')}
-          </Link>
+          /* Dos acciones y no una. Un gasto sale del mes; un pago además baja
+             una deuda, y llamarlos igual hace que el pago se registre como
+             gasto — el mes se ve peor de lo que fue y la deuda no se mueve. */
+          <div className="flex flex-wrap items-center gap-4">
+            <Link
+              href="/movements/new?kind=payment"
+              className="text-sm font-medium underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
+            >
+              {t('addPayment')}
+            </Link>
+            <Link
+              href="/movements/new"
+              className="inline-flex h-10 items-center rounded-(--radius-sm) bg-[color:var(--color-brand)] px-4 text-sm font-semibold text-[color:var(--color-brand-contrast,#151d2e)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-brand)]"
+            >
+              {t('addManual')}
+            </Link>
+          </div>
         }
       />
 
@@ -119,6 +130,12 @@ export default async function MovementsPage({
                   className="text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
                 >
                   {t('empty.manual')}
+                </Link>
+                <Link
+                  href="/movements/new?kind=payment"
+                  className="text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
+                >
+                  {t('empty.payment')}
                 </Link>
               </div>
             }

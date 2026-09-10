@@ -50,6 +50,8 @@ export interface AccountsManagerLabels {
   readonly archivedBadge: string;
   readonly movements: string;
   readonly noMovements: string;
+  /** «Registrar un movimiento», con esta cuenta ya elegida. */
+  readonly addMovement: string;
   readonly maskPrefix: string;
   readonly emptyTitle: string;
   readonly emptyBody: string;
@@ -211,6 +213,20 @@ function AccountRow({
             ? labels.noMovements
             : labels.movements.replace('{count}', String(account.transactionCount))}
         </p>
+        {/* Registrar a mano, con la cuenta ya elegida. El efectivo es donde las
+            cifras de una casa dejan de coincidir con su vida, y mandarlo a otra
+            pantalla a buscar esta misma cuenta en una lista es el paso que hace
+            que no se registre. */}
+        {!archived && (
+          <p className="mt-2 text-sm">
+            <a
+              href={`/${locale}/movements/new?account=${account.id}`}
+              className="underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
+            >
+              {labels.addMovement}
+            </a>
+          </p>
+        )}
         {state.error && (
           <div className="mt-3 max-w-sm">
             <Problem

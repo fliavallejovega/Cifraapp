@@ -13,6 +13,7 @@ import {
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { AddCard, CardManage } from '@/components/cards-manager';
+import { Link } from '@/i18n/navigation';
 import { ImportForm } from '@/components/import-form';
 import { formatPlainDate, trimRate } from '@/lib/format';
 import { loadHouseholdContext } from '@/server/household-context';
@@ -463,11 +464,24 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
                     band={card.band}
                     label={t('list.gauge', { name: card.name })}
                     bandLabel={t(`bands.${card.band}`, { used: percent(card.utilization) })}
-                    caption={t('list.availableOf', {
-                      available: money(card.available),
-                      limit: money(card.creditLimit),
-                      used: percent(card.utilization),
-                    })}
+                    caption={
+                      /*
+                        Pasado el cupo, «te quedan −$150» es una frase que nadie
+                        dice. Un disponible negativo no es un disponible: es un
+                        exceso, y decirlo con un menos delante obliga a traducir
+                        mentalmente una cifra que ya es mala noticia.
+                      */
+                      card.available.isNegative()
+                        ? t('list.overLimit', {
+                            over: money(card.available.abs()),
+                            limit: money(card.creditLimit),
+                          })
+                        : t('list.availableOf', {
+                            available: money(card.available),
+                            limit: money(card.creditLimit),
+                            used: percent(card.utilization),
+                          })
+                    }
                     thresholdLabel={t('list.threshold')}
                     valueText={t('list.gaugeValue', {
                       name: card.name,
@@ -548,6 +562,28 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
                   Antes eran tres botones «Gestionar» apilados al pie de la
                   lista, sin nada que dijera cuál era de cuál: un control que no
                   toca lo que modifica obliga a contar posiciones. */}
+              {/* Registrar a mano, sin salir a buscar la cuenta en otra
+                  pantalla. Un gasto en efectivo con esta tarjeta y un pago que
+                  la baja son las dos cosas que un estado de cuenta no trae a
+                  tiempo, y son distintas: una sale del mes, la otra baja el
+                  saldo. */}
+              <p className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+                <Link
+                  href={`/movements/new?account=${card.accountId}`}
+                  className="underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
+                >
+                  {t('list.addMovement')}
+                </Link>
+                {card.debtId && (
+                  <Link
+                    href={`/movements/new?account=${card.accountId}&debt=${card.debtId}`}
+                    className="underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
+                  >
+                    {t('list.addPayment')}
+                  </Link>
+                )}
+              </p>
+
               <CardManage
                 locale={locale}
                 currencySymbol={getCurrency(currency).symbol}

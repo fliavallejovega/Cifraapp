@@ -950,7 +950,8 @@
       "archivedBadge": "Archived",
       "movements": "{count} movements",
       "noMovements": "no movements yet",
-      "maskPrefix": "····"
+      "maskPrefix": "····",
+      "addMovement": "Record a movement"
     },
     "form": {
       "name": "Account name",
@@ -1594,7 +1595,8 @@
       "title": "No movements yet.",
       "body": "Import a statement and they will appear here, or record by hand the cash expense no bank ever saw.",
       "import": "Import a statement",
-      "manual": "Record an expense"
+      "manual": "Record an expense",
+      "payment": "Record a payment"
     },
     "noResults": {
       "title": "No movement matches.",
@@ -1605,7 +1607,8 @@
       "previous": "Previous",
       "next": "Next",
       "position": "Page {page} of {pages}"
-    }
+    },
+    "addPayment": "Record a payment"
   },
   "movement": {
     "title": "Movement",
@@ -1719,7 +1722,12 @@
       "title": "You need an account first.",
       "body": "An expense comes from somewhere. Create the account where you keep the cash and come back.",
       "action": "Create an account"
-    }
+    },
+    "debt": "Does this pay down a debt?",
+    "debtHint": "If this is a payment, pick which one. The balance drops on save, and it can be undone.",
+    "noDebt": "No, it is spending",
+    "paymentTitle": "Record a payment",
+    "paymentDetail": "A payment leaves an account and also pays down a debt. Pick which one and the balance moves on save."
   },
   "income": {
     "title": "Your income",
@@ -1973,7 +1981,8 @@
       "detail": "Of the limit you recorded."
     },
     "editTitle": "Correct this debt",
-    "noLimit": "You did not record a limit for this debt."
+    "noLimit": "You did not record a limit for this debt.",
+    "recordPayment": "Record a payment"
   },
   "goals": {
     "title": "Your goals",
@@ -3561,7 +3570,10 @@
       "annualFee": "{fee} a year",
       "noLimit": "You have not stated this card’s limit, so there is no way to work out how much you have used. Set it under «Manage» and the bar appears.",
       "moreBenefits": "and {count} more",
-      "gaugeValue": "{name}: {used} of the limit used, {available} left."
+      "gaugeValue": "{name}: {used} of the limit used, {available} left.",
+      "overLimit": "You are {over} over your {limit} limit.",
+      "addMovement": "Record a movement",
+      "addPayment": "Record a payment"
     },
     "networks": {
       "visa": "Visa",

@@ -198,6 +198,7 @@ export default async function AccountsPage({ params }: { params: Promise<{ local
               archivedBadge: t('list.archivedBadge'),
               movements: raw('list.movements'),
               noMovements: t('list.noMovements'),
+              addMovement: t('list.addMovement'),
               maskPrefix: t('list.maskPrefix'),
               emptyTitle: t('empty.title'),
               emptyBody: t('empty.body'),

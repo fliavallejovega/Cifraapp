@@ -161,7 +161,25 @@ export default async function DebtPage({
         </Link>
       </div>
 
-      <PageHeader title={debt.name} detail={listT('row.apr', { apr: trimRate(debt.apr) })} />
+      <PageHeader
+        title={debt.name}
+        detail={listT('row.apr', { apr: trimRate(debt.apr) })}
+        actions={
+          /* El pago vive donde está la deuda. Buscar la deuda en un selector
+             desde otra pantalla, cuando ya se está mirando ésta, es el paso que
+             hace que el pago se registre como un gasto suelto. */
+          <Link
+            href={
+              debt.accountId
+                ? `/movements/new?debt=${debt.id}&account=${debt.accountId}`
+                : `/movements/new?debt=${debt.id}`
+            }
+            className="inline-flex h-10 items-center rounded-(--radius-sm) bg-[color:var(--color-brand)] px-4 text-sm font-semibold text-[color:var(--color-brand-contrast,#151d2e)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-brand)]"
+          >
+            {t('recordPayment')}
+          </Link>
+        }
+      />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
