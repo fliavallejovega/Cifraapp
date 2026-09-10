@@ -58,8 +58,22 @@ export const optionalRate = z.preprocess(
 
 export const recordName = z.string().trim().min(1).max(120);
 
+/**
+ * Texto opcional, que también puede no venir.
+ *
+ * `formData.get('notes')` devuelve `null` cuando el formulario no tiene ese
+ * campo, y `null` no es ni una cadena vacía ni `undefined`: caía al validador,
+ * fallaba, y como `notes` no está en el mapa de errores de ningún formulario, la
+ * persona veía «Falta algo o hay un dato que no entendimos» sin nada marcado.
+ *
+ * Un formulario corto que omite un campo opcional es exactamente lo que debería
+ * poder hacer. El que faltaba no era el dato: era este `null`.
+ */
 export const optionalText = z.preprocess(
-  (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
+  (value) =>
+    value === null || value === undefined || (typeof value === 'string' && value.trim() === '')
+      ? undefined
+      : value,
   z.string().trim().max(1000).optional(),
 );
 

@@ -25,6 +25,14 @@ import { matches } from './offer-match';
  * El filtro «sólo las mías» existe para el momento de decidir. El resto no
  * desaparece: se ordena detrás.
  *
+ * ## Lo que la fuente no dijo, no se dice
+ *
+ * Un arreglo de días vacío significa que la página del banco no los declaró. No
+ * significa «todos los días». Este producto trató el silencio como afirmación
+ * una vez —un 50% en restaurantes que en realidad es los martes salía marcado
+ * «Hoy» un jueves— y eso no es un error de presentación: es mandar a alguien a
+ * comer confiando en un descuento que no existe ese día.
+ *
  * ## Cómo se decide que una oferta es «tuya»
  *
  * Por emisor y por red. Una promoción de Banco General para Visa y Mastercard
@@ -79,8 +87,17 @@ export interface OfferView {
    * tarjetas de la misma casa se pueden llamar igual.
    */
   readonly usableWithIds: readonly string[];
-  /** Verdadero si hoy es uno de sus días. Contesta «¿me sirve ahora?». */
+  /**
+   * Verdadero si hoy es uno de sus días **declarados**.
+   *
+   * Una promoción que no dice qué días no es una promoción de todos los días:
+   * es una que no lo dice. Tratar el silencio de la fuente como «todos» ponía
+   * un «Hoy» verde sobre un descuento que quizá es sólo los martes, y mandaba a
+   * alguien a un restaurante a pagar el precio completo.
+   */
   readonly isToday: boolean;
+  /** Falso cuando la fuente no declaró días. Se enseña; no se rellena. */
+  readonly daysKnown: boolean;
   /**
    * Las tarjetas que encajan en todo menos el programa, porque no lo declararon.
    *
@@ -199,8 +216,11 @@ export async function loadOffers(
       maybeWith: maybe.map((card) => card.name),
       maybeWithIds: maybe.map((card) => card.id),
       programNames: row.programs.map((key) => programNames.get(key) ?? key),
-      // Vacío es todos los días, que es lo que dice una promoción sin restricción.
-      isToday: row.weekdays.length === 0 || row.weekdays.includes(weekdayToday),
+      // Vacío es «no se sabe», no «todos». La diferencia entre las dos es la
+      // diferencia entre un aviso útil y uno que manda a alguien a pagar el
+      // precio completo.
+      isToday: row.weekdays.length > 0 && row.weekdays.includes(weekdayToday),
+      daysKnown: row.weekdays.length > 0,
     };
   });
 

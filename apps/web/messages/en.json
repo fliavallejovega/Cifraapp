@@ -3792,7 +3792,6 @@
     "payWith": "Pay with: {cards}",
     "notYours": "You have no card from this bank.",
     "today": "Today",
-    "everyDay": "every day",
     "until": "until {date}",
     "cap": "Cap: {cap}",
     "capBoth": "up to {discount} on spend of {spend}",
@@ -3804,6 +3803,7 @@
     "empty": {
       "title": "No offers loaded yet",
       "body": "The sweep reads the banks’ promotion pages on the first of each month. It can also be triggered by hand from the panel."
-    }
+    },
+    "daysUnknown": "days not confirmed"
   }
 }

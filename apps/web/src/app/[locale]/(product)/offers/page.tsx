@@ -162,7 +162,7 @@ export default async function OffersPage({ params }: { params: Promise<{ locale:
             payWith: rawOf(t)('payWith'),
             notYours: t('notYours'),
             today: t('today'),
-            everyDay: t('everyDay'),
+            daysUnknown: t('daysUnknown'),
             until: rawOf(t)('until'),
             cap: rawOf(t)('cap'),
             unverified: t('unverified'),

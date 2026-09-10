@@ -259,7 +259,13 @@ export interface CardsManagerLabels {
     readonly needsTypeBody: string;
     readonly goToData: string;
     readonly today: string;
-    readonly everyDay: string;
+    /**
+   * Qué se dice cuando la fuente no declaró días.
+   *
+   * No «todos los días». Ese texto era una afirmación que ninguna página del
+   * banco había hecho, y venía con un «Hoy» verde encima.
+   */
+  readonly daysUnknown: string;
     readonly until: string;
     readonly unverified: string;
     readonly capturedOn: string;
@@ -1258,7 +1264,7 @@ function Offers({
                 <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[color:var(--color-ink-tertiary)]">
                   <span>
                     {offer.weekdayNames.length === 0
-                      ? labels.offers.everyDay
+                      ? labels.offers.daysUnknown
                       : offer.weekdayNames.join(' · ')}
                   </span>
                   {offer.categoryName && <span>{offer.categoryName}</span>}

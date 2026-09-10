@@ -68,6 +68,11 @@ entienda entra a un asistente donde se clasifica o se crea el rubro.
       EXPECT: INLINE INTERACTIONS OK
       EVIDENCE: automatic-evidence=v1; definition-sha256=d8cee3036a035e16991872121f271b66192e58fe31d0ad9f01d935db2c89bdb4; exit=0; EXPECT=matched; output-sha256=36307ce3b9c162c898c28cceb6e15a28d386bb568ac052235317555a9d365c82; output-bytes=23; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar; path=6dc919bb4189/22 entries
 
+- [x] G14: Una promoción sin días declarados nunca sale como disponible hoy, ni en la consulta, ni en el texto, ni en la base
+      CHECK: node scripts/gates/assert-no-day-claims.mjs
+      EXPECT: NO DAY CLAIMS OK
+      EVIDENCE: automatic-evidence=v1; definition-sha256=af8ab4ed8e6c28e1b1b293461165fc7f62aec73fb2a7b2d99049c31128d70681; exit=0; EXPECT=matched; output-sha256=1d4ba86631979560caffef11d0fee0e2934047f28fb53b21a4a8e8b8b10fa762; output-bytes=17; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar; path=6dc919bb4189/22 entries
+
 - [x] G10: Cada clave de copy que una pantalla pide existe en español y en inglés
       CHECK: node scripts/gates/assert-copy-complete.mjs
       EXPECT: COPY COMPLETE OK

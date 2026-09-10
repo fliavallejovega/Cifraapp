@@ -239,7 +239,7 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
       needsTypeBody: t('manage.offers.needsTypeBody'),
       goToData: t('manage.offers.goToData'),
       today: offersCopy('today'),
-      everyDay: offersCopy('everyDay'),
+      daysUnknown: offersCopy('daysUnknown'),
       until: rawOf(offersCopy)('until'),
       unverified: offersCopy('unverified'),
       capturedOn: rawOf(offersCopy)('capturedOn'),

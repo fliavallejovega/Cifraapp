@@ -58,7 +58,13 @@ export interface OffersBoardLabels {
   readonly payWith: string;
   readonly notYours: string;
   readonly today: string;
-  readonly everyDay: string;
+  /**
+   * Qué se dice cuando la fuente no declaró días.
+   *
+   * No «todos los días». Ese texto era una afirmación que ninguna página del
+   * banco había hecho, y venía con un «Hoy» verde encima.
+   */
+  readonly daysUnknown: string;
   readonly until: string;
   readonly cap: string;
   readonly unverified: string;
@@ -170,7 +176,7 @@ export function OffersBoard({
                 {offer.category && <span>{labels.categories[offer.category] ?? offer.category}</span>}
                 <span>
                   {offer.weekdayNames.length === 0
-                    ? labels.everyDay
+                    ? labels.daysUnknown
                     : offer.weekdayNames.join(', ')}
                 </span>
                 {offer.validUntil && (

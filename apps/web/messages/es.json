@@ -3792,7 +3792,6 @@
     "payWith": "Pagá con: {cards}",
     "notYours": "No tenés tarjeta de este banco.",
     "today": "Hoy",
-    "everyDay": "todos los días",
     "until": "hasta el {date}",
     "cap": "Tope: {cap}",
     "capBoth": "hasta {discount} sobre un consumo de {spend}",
@@ -3804,6 +3803,7 @@
     "empty": {
       "title": "Todavía no hay ofertas cargadas",
       "body": "El barrido lee las páginas de promociones de los bancos el primer día de cada mes. También se puede disparar a mano desde el panel."
-    }
+    },
+    "daysUnknown": "días sin confirmar"
   }
 }
