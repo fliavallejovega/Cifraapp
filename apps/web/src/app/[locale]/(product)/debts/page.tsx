@@ -113,6 +113,23 @@ export default async function DebtsPage({ params }: { params: Promise<{ locale: 
     },
     { kind: 'money', name: 'minimumPayment', label: t('form.minimum'), required: true, half: true },
 
+    /*
+      A quién se le debe, cuando no es un banco.
+
+      Sólo para las deudas informales y los préstamos personales: preguntarle a
+      una hipoteca quién es la contraparte es preguntarle algo que ya contestó
+      al elegir el banco. Y es lo que hace que un pago con ese nombre en el
+      concepto baje esta deuda sola en vez de entrar como un gasto suelto.
+    */
+    {
+      kind: 'text',
+      name: 'counterpartyName',
+      label: t('form.counterparty'),
+      hint: t('form.counterpartyHint'),
+      maxLength: 120,
+      showWhen: { field: 'kind', is: ['informal', 'personal_loan', 'other'] },
+    },
+
     // ── Sólo tarjeta ──────────────────────────────────────────────────────────
     {
       kind: 'money',

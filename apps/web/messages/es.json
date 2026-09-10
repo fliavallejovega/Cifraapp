@@ -809,7 +809,35 @@
         "signInRequired": "Tu sesión venció. Vuelve a entrar.",
         "generic": "Algo no salió bien. Intenta de nuevo."
       },
-      "ocrRead": "Este archivo se leyó como escaneo. Revisá cada línea antes de confirmar: una transcripción se equivoca de formas distintas a un CSV."
+      "ocrRead": "Este archivo se leyó como escaneo. Revisá cada línea antes de confirmar: una transcripción se equivoca de formas distintas a un CSV.",
+      "wizard": {
+        "category": "Rubro",
+        "categoryNone": "Sin rubro",
+        "categoryUnknown": "Sin rubro todavía",
+        "sources": {
+          "rule": "por una regla tuya",
+          "merchant": "por el comercio",
+          "ai": "sugerido"
+        },
+        "chosen": "lo elegiste vos",
+        "newCategory": "Crear un rubro nuevo",
+        "newCategoryName": "Cómo se llama",
+        "newCategoryKind": "Qué tipo es",
+        "kinds": {
+          "expense": "Gasto",
+          "income": "Ingreso",
+          "transfer": "Transferencia",
+          "investment": "Inversión"
+        },
+        "create": "Crear y usarlo",
+        "debt": "¿Baja alguna deuda?",
+        "debtNone": "No, es un gasto",
+        "debtEffect": "Baja {debt}, que debe {amount}",
+        "matchedIn": "Ya registrado en {account}",
+        "aiSaid": "Segunda lectura: {reason}",
+        "edit": "Ajustar",
+        "done": "Listo"
+      }
     },
     "accountGroups": {
       "cards": "Tarjetas",
@@ -829,6 +857,14 @@
       "tax_reserve": "Reserva fiscal",
       "other_asset": "Otro activo",
       "other_liability": "Otro pasivo"
+    },
+    "missing": {
+      "title": "Lo que falta por subir",
+      "detail": "Con estos documentos el mes queda completo. Un hueco no se ve como un hueco: se ve como un mes barato.",
+      "bank": "Cuenta {digits}",
+      "card": "Tarjeta {digits}",
+      "months": "falta {months}",
+      "never": "nunca subiste un estado de cuenta de esta"
     }
   },
   "nav": {
@@ -1885,7 +1921,9 @@
       "termMonths": "Cuántas cuotas en total",
       "termMonthsHint": "Opcional. Si son 60, poné 60.",
       "paidMonths": "Cuántas van pagadas",
-      "paidMonthsHint": "Opcional. «Voy 18 de 60» es lo que casi todo el mundo sabe de memoria."
+      "paidMonthsHint": "Opcional. «Voy 18 de 60» es lo que casi todo el mundo sabe de memoria.",
+      "counterparty": "¿A quién le debés?",
+      "counterpartyHint": "El nombre completo, como aparece en tus transferencias. Es lo que hace que un pago a esa persona baje esta deuda solo, en vez de entrar como un gasto suelto."
     },
     "row": {
       "apr": "{apr}% anual",

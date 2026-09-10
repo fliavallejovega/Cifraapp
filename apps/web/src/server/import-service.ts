@@ -1,19 +1,25 @@
 import 'server-only';
 
 import { getAdminDb, type Database } from '@app/database';
-import { documents, imports, importRows, transactions } from '@app/database/schema';
+import { debts, documents, imports, importRows, transactions } from '@app/database/schema';
 import { Money, newId, type CurrencyCode, type PlainDate } from '@app/domain';
+import { classify } from '@app/category-engine';
 import {
+  adjudicate,
   assessDuplicate,
+  proposeDebt,
   computeDocumentHash,
   detectStatementFormat,
   parseDocument,
   StatementParseError,
+  type DebtTarget,
   type ExistingTransaction,
 } from '@app/transaction-engine';
 import { getServerEnv } from '@app/validation/env';
-import { and, eq, gte, isNull, lte } from 'drizzle-orm';
+import { and, eq, gte, isNull, lte, sql } from 'drizzle-orm';
 
+import { askAboutNearMisses } from './duplicate-opinion';
+import { loadClassificationInputs } from './classification-context';
 import { enqueueJob, registerJobHandler } from './jobs';
 import { queryAsUser, type Session } from './session';
 import { canReadByOcr, readStatementByOcr, type OcrFailure } from './statement-ocr';
@@ -312,13 +318,24 @@ async function fileImportRows(
   const earliest = dates[0];
   const latest = dates[dates.length - 1];
 
-  const stored: ExistingTransaction[] =
+  /**
+   * De dónde salió cada movimiento que ya estaba, para poder decirlo.
+   *
+   * «Esto ya está registrado» no le sirve a nadie. «Esto ya lo anotó Vale a
+   * mano en su cuenta el 7» es lo que deja decidir sin salir de la pantalla.
+   */
+  const provenance = new Map<string, { accountId: string; accountName: string | null; source: string }>();
+
+  const storedRows =
     earliest && latest
-      ? (
-          await db
+      ? await db
             .select({
               id: transactions.id,
               accountId: transactions.accountId,
+              accountName: sql<string | null>`(
+                select a.name from app.accounts a where a.id = ${transactions.accountId}
+              )`,
+              source: transactions.source,
               transactionDate: transactions.transactionDate,
               postedDate: transactions.postedDate,
               amount: transactions.amount,
@@ -331,25 +348,48 @@ async function fileImportRows(
             .from(transactions)
             .where(
               and(
-                eq(transactions.accountId, input.accountId),
+                /*
+                  Todo el hogar, no la cuenta que se está importando.
+
+                  Antes esto decía `eq(transactions.accountId, input.accountId)`
+                  y ese `and` de una línea era el motivo de que un pago que una
+                  persona anotó a mano en su cuenta no apareciera al importar el
+                  estado de cuenta de la otra: la fila llegaba a la pantalla
+                  marcada «nueva», se confirmaba, y el mismo movimiento quedaba
+                  registrado dos veces. Recién un barrido posterior lo notaba,
+                  cuando ya era plata en el libro.
+
+                  Una casa no lleva sus cuentas por cuenta bancaria. Lleva una
+                  sola, y el mismo pago sale de donde salga.
+                */
+                eq(transactions.householdId, input.householdId),
                 isNull(transactions.deletedAt),
                 gte(transactions.transactionDate, shiftDate(earliest, -10)),
                 lte(transactions.transactionDate, shiftDate(latest, 10)),
               ),
             )
-        ).map((row) => ({
-          id: row.id,
-          accountId: row.accountId,
-          transactionDate: row.transactionDate as PlainDate,
-          postedDate: (row.postedDate as PlainDate | null) ?? null,
-          amount: Money.fromDecimalString(row.amount, input.currency),
-          descriptionNormalized: row.descriptionNormalized,
-          externalReference: row.externalReference,
-          fingerprint: row.fingerprint,
-          merchantId: row.merchantId,
-          sourceDocumentId: row.sourceDocumentId,
-        }))
       : [];
+
+  const stored: ExistingTransaction[] = storedRows.map((row) => {
+    provenance.set(row.id, {
+      accountId: row.accountId,
+      accountName: row.accountName,
+      source: row.source,
+    });
+
+    return {
+      id: row.id,
+      accountId: row.accountId,
+      transactionDate: row.transactionDate as PlainDate,
+      postedDate: (row.postedDate as PlainDate | null) ?? null,
+      amount: Money.fromDecimalString(row.amount, input.currency),
+      descriptionNormalized: row.descriptionNormalized,
+      externalReference: row.externalReference,
+      fingerprint: row.fingerprint,
+      merchantId: row.merchantId,
+      sourceDocumentId: row.sourceDocumentId,
+    };
+  });
 
   const counts = {
     found: input.parsed.transactions.length,
@@ -361,31 +401,167 @@ async function fileImportRows(
 
   const rows: (typeof importRows.$inferInsert)[] = [];
 
+  /*
+    Clasificar aquí y no después de confirmar.
+
+    Antes la categorización corría **al confirmar**: la casa aprobaba una lista
+    de descripciones crudas sin saber con qué rubro iban a quedar ni qué le
+    iban a hacer al presupuesto del mes. Aprobar algo que todavía no se puede
+    mirar no es aprobar, es firmar.
+
+    Las reglas y los comercios se cargan una vez para toda la corrida, con sus
+    alias — que hasta hoy se pasaban vacíos.
+  */
+  const inputs = await loadClassificationInputs(db, input.householdId);
+
+  /*
+    Las deudas de la casa, para reconocer un pago cuando pasa.
+
+    Sin esto un pago de $600 a la tarjeta es un gasto de $600 —el mes se ve peor
+    de lo que fue— y la tarjeta sigue debiendo lo mismo. Es dinero moviéndose de
+    un bolsillo a otro de la misma casa, y contarlo como gasto es contarlo dos
+    veces: una al comprar, otra al pagar.
+  */
+  const debtTargets: DebtTarget[] = (
+    await db
+      .select({
+        debtId: debts.id,
+        label: debts.name,
+        counterpartyNormalized: debts.counterpartyNormalized,
+        kind: debts.kind,
+        outstanding: debts.currentBalance,
+        maskedNumber: sql<string | null>`(
+          select a.masked_number from app.accounts a where a.id = ${debts.accountId}
+        )`,
+      })
+      .from(debts)
+      .where(and(eq(debts.householdId, input.householdId), isNull(debts.deletedAt)))
+  ).map((row) => ({
+    debtId: row.debtId,
+    label: row.label,
+    counterpartyNormalized: row.counterpartyNormalized,
+    maskedNumber: row.maskedNumber,
+    isCard: row.kind === 'credit_card',
+    outstanding: Money.fromDecimalString(row.outstanding, input.currency),
+  }));
+
   // Rows already assessed in this run join the comparison set, so a statement
   // that repeats a line inside itself is caught too.
   const seen = [...stored];
 
+  interface Pending {
+    readonly candidate: (typeof input.parsed.transactions)[number];
+    readonly assessment: ReturnType<typeof assessDuplicate>;
+    readonly classification: ReturnType<typeof classify>;
+    readonly nearMiss: ExistingTransaction | null;
+  }
+
+  const pending: Pending[] = [];
+
   for (const candidate of input.parsed.transactions) {
     const assessment = assessDuplicate(candidate, seen);
+
+    const classification = classify(
+      {
+        id: candidate.fingerprint,
+        descriptionNormalized: candidate.descriptionNormalized,
+        amount: candidate.amount,
+        direction: candidate.direction,
+        transactionDate: candidate.transactionDate,
+      },
+      inputs,
+    );
+
+    /*
+      El casi-acierto: un movimiento ya registrado del mismo monto exacto y
+      dentro de la ventana, que el motor no llegó a marcar.
+
+      Es el único sitio donde una segunda lectura cambia algo. «Pago a Giovanni»
+      contra «GIOVANNI CINTIONE» es evidente para cualquier persona y opaco para
+      un trigrama, y sin este paso la fila llega a la pantalla como nueva.
+    */
+    const nearMiss =
+      assessment.verdict === 'new'
+        ? (stored.find(
+            (one) =>
+              one.amount.abs().equals(candidate.amount.abs()) &&
+              withinDays(one.transactionDate, candidate.transactionDate, 4),
+          ) ?? null)
+        : null;
+
+    pending.push({ candidate, assessment, classification, nearMiss });
+  }
+
+  /*
+    La segunda lectura, sólo sobre los casi-aciertos, y sólo para subir a
+    revisión. Si el proveedor no está configurado o falla, la importación sigue
+    con el veredicto del motor: una lectura que no llegó no puede bloquear una
+    importación, y el veredicto determinista nunca dependió de ella.
+  */
+  const opinions = await askAboutNearMisses(
+    pending
+      .filter((one): one is Pending & { nearMiss: ExistingTransaction } => one.nearMiss !== null)
+      .map((one) => ({
+        key: one.candidate.fingerprint,
+        incoming: one.candidate.descriptionOriginal,
+        existing: one.nearMiss.descriptionNormalized,
+        amount: one.candidate.amount.toDecimalString(),
+        existingAccount: provenance.get(one.nearMiss.id)?.accountName ?? null,
+      })),
+  );
+
+  for (const one of pending) {
+    const opinion = opinions.get(one.candidate.fingerprint) ?? null;
+    const ruling = adjudicate(one.assessment.verdict, opinion?.verdict ?? null);
+
+    const matchedId = ruling.aiChangedIt
+      ? (one.nearMiss?.id ?? one.assessment.matchedTransactionId)
+      : one.assessment.matchedTransactionId;
+
+    const signals = ruling.aiChangedIt
+      ? [...one.assessment.signals, 'ai_saw_the_same_movement']
+      : [...one.assessment.signals];
 
     rows.push({
       importId,
       householdId: input.householdId,
-      transactionDate: candidate.transactionDate,
-      amount: candidate.amount.toDecimalString(),
+      transactionDate: one.candidate.transactionDate,
+      amount: one.candidate.amount.toDecimalString(),
       currency: input.currency,
-      descriptionOriginal: candidate.descriptionOriginal,
-      descriptionNormalized: candidate.descriptionNormalized,
-      externalReference: candidate.externalReference ?? null,
-      fingerprint: candidate.fingerprint,
-      verdict: assessment.verdict,
-      confidence: assessment.confidence.toFixed(3),
-      matchedTransactionId: assessment.matchedTransactionId,
-      matchedSignals: [...assessment.signals],
+      descriptionOriginal: one.candidate.descriptionOriginal,
+      descriptionNormalized: one.candidate.descriptionNormalized,
+      externalReference: one.candidate.externalReference ?? null,
+      fingerprint: one.candidate.fingerprint,
+      verdict: ruling.verdict,
+      confidence: one.assessment.confidence.toFixed(3),
+      matchedTransactionId: matchedId,
+      matchedAccountId: matchedId ? (provenance.get(matchedId)?.accountId ?? null) : null,
+      matchedSignals: signals,
+      proposedCategoryId: one.classification.categoryId,
+      proposedConfidence: one.classification.confidence.toFixed(3),
+      proposedSource: one.classification.appliedRuleId
+        ? 'rule'
+        : one.classification.categoryId
+          ? 'merchant'
+          : null,
+      // La deuda llega preseleccionada, no aplicada. Equivocarse de deuda mueve
+      // plata de un saldo a otro sin que nadie lo note, así que alguien lo
+      // confirma en la revisión — la preselección ahorra el trabajo, no lo
+      // reemplaza.
+      applyToDebtId:
+        proposeDebt(
+          {
+            descriptionNormalized: one.candidate.descriptionNormalized,
+            direction: one.candidate.direction,
+          },
+          debtTargets,
+        )?.debtId ?? null,
+      aiOpinion: opinion?.verdict ?? null,
+      aiReason: opinion?.reason ?? null,
     });
 
-    if (assessment.verdict === 'duplicate') counts.duplicate += 1;
-    else if (assessment.verdict === 'review') counts.review += 1;
+    if (ruling.verdict === 'duplicate') counts.duplicate += 1;
+    else if (ruling.verdict === 'review') counts.review += 1;
     else counts.created += 1;
   }
 
@@ -447,6 +623,12 @@ async function fileImportRows(
 }
 
 /** Shifts a calendar date without going near a `Date`'s timezone. */
+/** Si dos fechas caen dentro de una ventana, sin pasar por la zona del servidor. */
+function withinDays(a: PlainDate, b: PlainDate, days: number): boolean {
+  const gap = Math.abs(Date.parse(`${a}T00:00:00Z`) - Date.parse(`${b}T00:00:00Z`));
+  return gap <= days * 24 * 60 * 60 * 1000;
+}
+
 function shiftDate(date: PlainDate, days: number): string {
   const [year = '0', month = '1', day = '1'] = date.split('-');
   const shifted = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day) + days));

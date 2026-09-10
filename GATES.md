@@ -1,69 +1,74 @@
-# Gates: catálogo de tarjetas de Panamá, comparativo y refresco mensual
+# Gates: el flujo completo de importación
 
-OWNS: apps/web/**, packages/**, supabase/migrations/**, scripts/**, docs/**
+OWNS: apps/web/src/**, packages/transaction-engine/src/**, packages/category-engine/src/**, packages/database/src/schema/**, supabase/migrations/**, apps/web/messages/**, scripts/gates/**
 
-Scope: un catálogo de las tarjetas de Panamá —crédito y débito, de todos los
-bancos, tenga el hogar cuenta ahí o no— con la procedencia de cada línea; las
-**promociones del mes** con sus comercios; una pantalla que las compara y las
-filtra por lo que el hogar de verdad tiene; y un barrido mensual que vuelve a
-leer las fuentes oficiales y sube lo nuevo sin presentarlo como confirmado.
+Scope: al subir un estado de cuenta —archivo o escaneo— cada movimiento se cruza
+contra todo lo que el hogar ya registró (incluido lo que otra persona anotó a
+mano en otra cuenta), se propone una categoría antes de confirmar, un pago a una
+contraparte descuenta de lo que se le debe, y toda fila que el sistema no
+entienda entra a un asistente donde se clasifica o se crea el rubro.
 
-- [x] G1: Toda fila del catálogo tiene fuente, dirección y fecha de lectura. Ninguna
-      línea sin procedencia entra a la base.
-  CHECK: node scripts/gates/assert-catalogue-provenance.mjs
-  EXPECT: GATE OK
-  EVIDENCE: automatic-evidence=v1; definition-sha256=4d47254cbfdca6d13986004e66e161df7069fa82a661962b7c17af0945d8c354; exit=0; EXPECT=matched; output-sha256=c3917e1311aefab06137639e3120d6c07120b00333539d1a6d74d3a83d0f9d77; output-bytes=73; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar; path=6dc919bb4189/22 entries
+- [x] G1: El conjunto de comparación de una importación abarca el hogar entero, no una sola cuenta, y las coincidencias de otra cuenta viajan con el nombre de esa cuenta
+      CHECK: node scripts/gates/assert-household-scope.mjs
+      EXPECT: HOUSEHOLD SCOPE OK
+      EVIDENCE: automatic-evidence=v1; definition-sha256=b8984555af9fa06408bb0d57e9745696ca3a48f834c32da3535e1b893785bf9f; exit=0; EXPECT=matched; output-sha256=0310234580d4ce2721db1c366a14902707a995dc383e2d2513327f0743e9f9b7; output-bytes=19; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar; path=6dc919bb4189/22 entries
 
-- [x] G2: La cobertura por banco está declarada: cada institución sembrada aparece
-      cubierta o explícitamente pendiente, y la pantalla lo dice.
-  CHECK: node scripts/gates/assert-catalogue-coverage.mjs
-  EXPECT: GATE OK
-  EVIDENCE: automatic-evidence=v1; definition-sha256=9776459f1b730abd3c01cd24fcef69e3dc4e3c744ed11f86e6faf5f0cf4a8fd5; exit=0; EXPECT=matched; output-sha256=7da728234f2219386bd7f44164c21b8e5d97529954812c24a56ba95d55327404; output-bytes=267; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar; path=6dc919bb4189/22 entries
+- [x] G2: El esquema puede expresar «le debemos $1,800 a Giovanni» — una deuda con contraparte que no es una persona del hogar ni una cuenta bancaria
+      CHECK: node scripts/gates/assert-counterparty-debt.mjs
+      EXPECT: COUNTERPARTY DEBT OK
+      EVIDENCE: automatic-evidence=v1; definition-sha256=e4a0a1a32fdaf29a4a75c3231272b6e2087022a4a8504f3de5fc68d94bf0994a; exit=0; EXPECT=matched; output-sha256=03b2fc0ed876c8fe1c7c7934ddd7786e3d24b6b182b4436e9f96a41133c09fe7; output-bytes=21; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar; path=6dc919bb4189/22 entries
 
-- [x] G3: El comparativo ordena las tarjetas por lo que devuelven en una categoría
-      y no inventa un ganador donde no hay dato.
-  CHECK: pnpm exec vitest run card-compare
-  EXPECT: 1 passed (1)
-  CWD: packages/budget-engine
-  EVIDENCE: automatic-evidence=v1; definition-sha256=c9260b68ca4f8d1951963c1d90b33738faf418346fcda4e9cd2eecac5f00149f; exit=0; EXPECT=matched; output-sha256=eefb41e1b945cd2fb04398aa237df76d09ba9c97ea224996138c45161a790785; output-bytes=264; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar/packages/budget-engine; path=6dc919bb4189/22 entries
+- [x] G3: Aplicar un movimiento a una deuda de contraparte reduce su saldo por el monto exacto, deja rastro de quién y desde qué movimiento, y se puede deshacer
+      CHECK: node scripts/gates/assert-debt-application.mjs
+      EXPECT: DEBT APPLICATION OK
+      EVIDENCE: automatic-evidence=v1; definition-sha256=39c8f75462e6f2825e5796b8fe8bda72458a4db720e7f27aadcbe032c87e4a24; exit=0; EXPECT=matched; output-sha256=11d84eb78db0c33c7e924790f42ba984eef11844e8eaed503f2feb6bffbeda84; output-bytes=20; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar; path=6dc919bb4189/22 entries
 
-- [x] G4: El refresco mensual existe, vuelve a leer cada fuente, compara contra la
-      huella guardada y marca lo que cambió sin reescribir el dato.
-  CHECK: pnpm exec vitest run catalogue-refresh
-  EXPECT: 1 passed (1)
-  CWD: apps/web
-  EVIDENCE: automatic-evidence=v1; definition-sha256=adc1312be085a2dccd7c13158d92108ddd35e0b93f7d31016b1d125deb023452; exit=0; EXPECT=matched; output-sha256=7311ec2e8d32cf4a8201344ee653b72df7815782556ebe01891b018217988ae1; output-bytes=248; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar/apps/web; path=6dc919bb4189/22 entries
+- [x] G4: La IA puede subir un par a revisión pero nunca archivarlo ni descartarlo sola; su veredicto viaja marcado como suyo
+      CHECK: node scripts/gates/assert-ai-cannot-decide.mjs
+      EXPECT: AI CANNOT DECIDE OK
+      EVIDENCE: automatic-evidence=v1; definition-sha256=7a85066742293fd0472db79e7b5b2d2e2ff359b1ec0718f1f2da6879cc2d642d; exit=0; EXPECT=matched; output-sha256=123c46ec6aa7a7f00a6d1c534afb0285fbb4c62a8d4f7957e5a223b0737cb96a; output-bytes=20; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar; path=6dc919bb4189/22 entries
 
-- [x] G5: La pantalla de tarjetas enseña el comparativo y la frescura de cada línea.
-  CHECK: node scripts/gates/assert-contains.mjs 'apps/web/src/app/[locale]/(product)/cards/page.tsx' CardCompare
-  EXPECT: GATE OK
-  EVIDENCE: automatic-evidence=v1; definition-sha256=175dd800aae207f8756b7b4252beb6674a4e7dd8238371601298e17830950cc1; exit=0; EXPECT=matched; output-sha256=b6efa63224b5159da57951e3b01fb38541fdb96d4334b533c14f2679439988e1; output-bytes=83; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar; path=6dc919bb4189/22 entries
+- [x] G5: Los alias de comercio se leen de la base en las dos rutas que los usaban vacíos, y un alias declarado hace coincidir un comercio que sin él no coincidiría
+      CHECK: node scripts/gates/assert-aliases-live.mjs
+      EXPECT: ALIASES LIVE OK
+      EVIDENCE: automatic-evidence=v1; definition-sha256=a6d5fb08c2782762a552930199aa3915e3d144b58910d97a66e4a37a7589d4a8; exit=0; EXPECT=matched; output-sha256=44ac7ffb643190f89696690f886b2686fd98a8a320a327eec7c60bd71939ff05; output-bytes=16; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar; path=6dc919bb4189/22 entries
 
-- [x] G6: Las migraciones nuevas están aplicadas en la base real, no sólo escritas.
-  CHECK: node scripts/gates/assert-migrations-applied.mjs
-  EXPECT: GATE OK
-  EVIDENCE: automatic-evidence=v1; definition-sha256=1754af94cbe3537be5f508ae8db8da7a80ba2b3c4dc40556fce0078135e4f36f; exit=0; EXPECT=matched; output-sha256=2c1c84e0707137329730accff039a1ec45c4210885be70f17d64dc2a91a36d75; output-bytes=113; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar; path=6dc919bb4189/22 entries
+- [x] G6: Cada fila llega a la pantalla de revisión con su categoría propuesta y el efecto sobre el presupuesto del mes, antes de confirmar
+      CHECK: node scripts/gates/assert-category-before-confirm.mjs
+      EXPECT: CATEGORY BEFORE CONFIRM OK
+      EVIDENCE: automatic-evidence=v1; definition-sha256=5aa959bc54c0d84ec6ff31595103fd1d24df04d1ee01620c82b2b84e1c6b5f0c; exit=0; EXPECT=matched; output-sha256=0f6835534272d907fce11bccaecb66d7d8e198ca5e610d950e8ffeb39bf6b592; output-bytes=27; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar; path=6dc919bb4189/22 entries
 
-- [x] G7: Las promociones del mes existen como dato propio —comercio, descuento,
-      días, vigencia— separado de los beneficios permanentes del contrato.
-  CHECK: node scripts/gates/assert-contains.mjs supabase/migrations/20260910130000_card_promotions.sql merchant_name
-  EXPECT: GATE OK
-  EVIDENCE: automatic-evidence=v1; definition-sha256=12eccecf4ecded57e872ef62da99857091e7a032dc1e3ac564a0f448a03c2eb9; exit=0; EXPECT=matched; output-sha256=2aafe343694b6fbc4d03f862e5762c2b9650234905b01d0bc304dae50712561e; output-bytes=89; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar; path=6dc919bb4189/22 entries
+- [x] G7: El asistente de revisión permite cambiar la categoría de una fila y crear un rubro nuevo sin salir, y ninguna fila queda sin cola
+      CHECK: node scripts/gates/assert-review-wizard.mjs
+      EXPECT: REVIEW WIZARD OK
+      EVIDENCE: automatic-evidence=v1; definition-sha256=2f934c220b86d6e99e2db91e77e6ff4cafbd8e2e77c13ef1a5b4a965186f9806; exit=0; EXPECT=matched; output-sha256=c1ad776df42535c58c7a5d49c9e2cad8f1435e6788219962a9815aed4e80a1e6; output-bytes=17; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar; path=6dc919bb4189/22 entries
 
-- [x] G8: El barrido mensual extrae promociones de las páginas oficiales y las sube
-      marcadas como no confirmadas, nunca como hecho.
-  CHECK: pnpm exec vitest run promotion-extract
-  EXPECT: 1 passed (1)
-  CWD: apps/web
-  EVIDENCE: automatic-evidence=v1; definition-sha256=ce6472e0f5ebaee5ff98517422ae4382c639f8bc7eb2d9e0d9d7e2491940cec3; exit=0; EXPECT=matched; output-sha256=b3698006969ab5448c871ed515843af7998542c7fd2593904a6904c7166e97e6; output-bytes=250; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar/apps/web; path=6dc919bb4189/22 entries
+- [x] G8: Toda migración nueva de esta tanda está aplicada y verificada contra la base real, no dada por hecho
+      CHECK: node scripts/gates/assert-migrations-applied.mjs
+      EXPECT: MIGRATIONS APPLIED OK
+      EVIDENCE: automatic-evidence=v1; definition-sha256=1630827e17f61129e924a0088c0193255825541c8edb66d5f73388ab5afc0168; exit=0; EXPECT=matched; output-sha256=bf4682df3bacf197191acca26cede09d543c707545c0a7df52a6b2f151bdb952; output-bytes=22; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar; path=6dc919bb4189/22 entries
 
-- [x] G9: La pantalla de ofertas incluye débito y otros bancos, y filtra por lo que
-      el hogar tiene sin esconder el resto.
-  CHECK: node scripts/gates/assert-contains.mjs 'apps/web/src/app/[locale]/(product)/offers/page.tsx' onlyMine
-  EXPECT: GATE OK
-  EVIDENCE: automatic-evidence=v1; definition-sha256=6e03ffc7ddb0802e26c733f603c1f5e3415d20e6a239d6a0e5f7857a85db642b; exit=0; EXPECT=matched; output-sha256=023a9e721a32fa0f0bb6336450f74899597ac759a5a1a23fd48595c4799b74d5; output-bytes=81; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar; path=6dc919bb4189/22 entries
+- [x] G9: El gate del repositorio entero pasa: lint, typecheck, pruebas y build
+      CHECK: node scripts/gates/full-gate.mjs
+      EXPECT: FULL GATE OK
+      EVIDENCE: automatic-evidence=v1; definition-sha256=955fbfb6a060b7e483ed27eeaca9077ab7fb59e5f72f040fdc2380ee1ace1b85; exit=0; EXPECT=matched; output-sha256=3994169a6f984ddee024c86b7be7f499dee81151649775b1087b348b5e517b2c; output-bytes=43097; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar; path=6dc919bb4189/22 entries
 
-- [x] G10: El gate del repositorio pasa: lint, typecheck y test.
-  CHECK: node scripts/gates/full-gate.mjs
-  EXPECT: GATE OK
-  EVIDENCE: automatic-evidence=v1; definition-sha256=d1b4bacfe182c2ac5af1fc0fced2b38d719640b07b54c48e4a1cc9f6e0baaaea; exit=0; EXPECT=matched; output-sha256=72d33431d108261463fc8bff248ba7087a8d2bff7e30737787333992b812eb24; output-bytes=31557; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar; path=6dc919bb4189/22 entries
+- [x] G11: Después de cada importación el sistema dice qué documentos faltan, por cuenta y por mes, nombrando la cuenta por sus últimos cuatro dígitos
+      CHECK: node scripts/gates/assert-coverage-gaps.mjs
+      EXPECT: COVERAGE GAPS OK
+      EVIDENCE: automatic-evidence=v1; definition-sha256=ed7c890f2c0cc76273146adec3b8a1ee361a1aeb4b30d43808a5273d3f8ce2ba; exit=0; EXPECT=matched; output-sha256=7894554e3e47953f53912ce6ce933800268f1960ffc69902b4c113d2cd9c03a1; output-bytes=17; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar; path=6dc919bb4189/22 entries
+
+- [x] G12: Un pago a tarjeta de crédito reconocido en un estado de cuenta baja el saldo de esa tarjeta, y no se cuenta como gasto
+      CHECK: node scripts/gates/assert-card-payment.mjs
+      EXPECT: CARD PAYMENT OK
+      EVIDENCE: automatic-evidence=v1; definition-sha256=a5206ed0e34190bb893d82a179977152b5ba3d761b8096761585c5f5d7a52f3f; exit=0; EXPECT=matched; output-sha256=dcac40b69d19f12e864f36da33aa63ae24ca8454f0813c693969298e5f14d243; output-bytes=16; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar; path=6dc919bb4189/22 entries
+
+- [x] G10: Cada clave de copy que una pantalla pide existe en español y en inglés
+      CHECK: node scripts/gates/assert-copy-complete.mjs
+      EXPECT: COPY COMPLETE OK
+      EVIDENCE: automatic-evidence=v1; definition-sha256=5e309be5ae4a100797b328ec35481e5a01f0b73f7e31e7690e1b2ee42a778432; exit=0; EXPECT=matched; output-sha256=b762b20bc4464eca1d84f3b89f3bb2c201b5ba35f6f6b57a8c3fec60c8b5c19b; output-bytes=17; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar; path=6dc919bb4189/22 entries
+
+<!--
+Cada gate negativo (G4) se comprueba contra un control positivo conocido antes
+de confiar en su ausencia. El control queda anotado en la evidencia del gate.
+-->

@@ -809,7 +809,35 @@
         "signInRequired": "Your session expired. Sign in again.",
         "generic": "Something went wrong. Try again."
       },
-      "ocrRead": "This file was read as a scan. Check every line before confirming: a transcription goes wrong in different ways than a CSV does."
+      "ocrRead": "This file was read as a scan. Check every line before confirming: a transcription goes wrong in different ways than a CSV does.",
+      "wizard": {
+        "category": "Category",
+        "categoryNone": "No category",
+        "categoryUnknown": "No category yet",
+        "sources": {
+          "rule": "from a rule of yours",
+          "merchant": "from the merchant",
+          "ai": "suggested"
+        },
+        "chosen": "you chose it",
+        "newCategory": "Create a new category",
+        "newCategoryName": "What it is called",
+        "newCategoryKind": "What kind it is",
+        "kinds": {
+          "expense": "Expense",
+          "income": "Income",
+          "transfer": "Transfer",
+          "investment": "Investment"
+        },
+        "create": "Create and use it",
+        "debt": "Does this pay down a debt?",
+        "debtNone": "No, it is spending",
+        "debtEffect": "Pays down {debt}, which owes {amount}",
+        "matchedIn": "Already recorded in {account}",
+        "aiSaid": "Second read: {reason}",
+        "edit": "Adjust",
+        "done": "Done"
+      }
     },
     "accountGroups": {
       "cards": "Cards",
@@ -829,6 +857,14 @@
       "tax_reserve": "Tax reserve",
       "other_asset": "Other asset",
       "other_liability": "Other liability"
+    },
+    "missing": {
+      "title": "What is still missing",
+      "detail": "With these documents the month is complete. A gap does not look like a gap: it looks like a cheap month.",
+      "bank": "Account {digits}",
+      "card": "Card {digits}",
+      "months": "missing {months}",
+      "never": "no statement has ever been uploaded for this one"
     }
   },
   "nav": {
@@ -1885,7 +1921,9 @@
       "termMonths": "How many instalments in total",
       "termMonthsHint": "Optional. If it is 60, put 60.",
       "paidMonths": "How many are paid",
-      "paidMonthsHint": "Optional. «I am 18 of 60» is what almost everybody knows by heart."
+      "paidMonthsHint": "Optional. «I am 18 of 60» is what almost everybody knows by heart.",
+      "counterparty": "Who do you owe?",
+      "counterpartyHint": "The full name, as it appears in your transfers. It is what makes a payment to that person pay this debt down on its own, instead of landing as loose spending."
     },
     "row": {
       "apr": "{apr}% a year",

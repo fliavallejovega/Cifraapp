@@ -58,6 +58,17 @@ const debtInput = z.object({
   statementDay: optionalDay,
   creditLimit: optionalAmount,
   /** Los últimos cuatro de la tarjeta. Nunca el número completo. */
+  /**
+   * A quién se le debe, cuando no es un banco.
+   *
+   * Se guarda tal como se escribió y además normalizado: la forma normalizada
+   * es contra lo que se cruza la descripción de un movimiento, y normalizar al
+   * leer en vez de al guardar haría el cruce distinto según quién consulte.
+   */
+  counterpartyName: z.preprocess(
+    (value) => (value === '' || value === null || value === undefined ? undefined : value),
+    z.string().trim().min(1).max(120).optional(),
+  ),
   maskedNumber: z.preprocess(
     (value) => (value === '' || value === undefined || value === null ? undefined : value),
     z
@@ -102,6 +113,7 @@ function parse(formData: FormData) {
     dueDay: formData.get('dueDay'),
     statementDay: formData.get('statementDay'),
     creditLimit: formData.get('creditLimit'),
+    counterpartyName: formData.get('counterpartyName'),
     maskedNumber: formData.get('maskedNumber'),
     instalmentDay: formData.get('instalmentDay'),
     termMonths: formData.get('termMonths'),
@@ -230,6 +242,10 @@ export async function createDebt(
         currency: currencyOf(session, householdId),
         apr: parsed.data.apr,
         minimumPayment: parsed.data.minimumPayment,
+        counterpartyName: parsed.data.counterpartyName ?? null,
+        counterpartyNormalized: parsed.data.counterpartyName
+          ? normalizeName(parsed.data.counterpartyName)
+          : null,
         ...(parsed.data.dueDay === undefined ? {} : { dueDay: parsed.data.dueDay }),
         ...(parsed.data.statementDay === undefined
           ? {}
@@ -299,6 +315,10 @@ export async function updateDebt(
         dueDay: parsed.data.dueDay ?? null,
         statementDay: parsed.data.statementDay ?? null,
         creditLimit: parsed.data.creditLimit ?? null,
+        counterpartyName: parsed.data.counterpartyName ?? null,
+        counterpartyNormalized: parsed.data.counterpartyName
+          ? normalizeName(parsed.data.counterpartyName)
+          : null,
         instalmentDay: parsed.data.instalmentDay ?? null,
         termMonths: parsed.data.termMonths ?? null,
         paidMonths: parsed.data.paidMonths ?? null,
@@ -470,4 +490,21 @@ export async function backDebtWithAccount(
   revalidateFinancials(formData);
   revalidateScreen(formData, 'accounts', 'documents');
   return { ok: true };
+}
+
+/**
+ * El nombre de una contraparte, en la forma con que se cruza.
+ *
+ * Minúsculas, sin tildes y sin puntuación, que es como llega el nombre en la
+ * descripción de un estado de cuenta: «GIOVANNI C. CINTIONE» y «Giovanni
+ * Cintione» tienen que ser la misma cosa, o el pago no encuentra su deuda.
+ */
+function normalizeName(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }

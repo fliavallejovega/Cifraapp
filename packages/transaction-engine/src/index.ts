@@ -71,6 +71,8 @@ export {
   type ZipEntry,
 } from './parsers/index.js';
 
+export { adjudicate, worthAsking, type Adjudication, type AiOpinion } from './adjudicate.js';
+
 export {
   StatementParseError,
   type CandidateTransaction,
@@ -80,3 +82,16 @@ export {
   type StatementFormat,
 } from './types.js';
 export * from './receivable-match.js';
+
+export {
+  findCoverageGaps,
+  monthOf,
+  nextMonth,
+  previousMonth,
+  type AccountActivity,
+  type CoverageGap,
+  type CoverageReport,
+  type YearMonth,
+} from './statement-coverage.js';
+
+export { proposeDebt, type DebtProposal, type DebtTarget } from './debt-match.js';

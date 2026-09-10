@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation';
 import { ImportReview, type ReviewRow } from '@/components/import-review';
 import { Link } from '@/i18n/navigation';
 import { loadImportReview } from '@/server/repositories/import-review';
+import { loadCategoryOptions, loadDebtOptions } from '@/server/repositories/review-options';
 import { requireHousehold } from '@/server/session';
 
 /**
@@ -32,6 +33,13 @@ export default async function ImportReviewPage({
   const review = await loadImportReview(session, session.activeHouseholdId, importId, currency);
   if (!review) notFound();
 
+  // Los rubros y las deudas del hogar: es lo que el asistente ofrece para que
+  // una fila se pueda resolver sin salir de esta pantalla.
+  const [categoryOptions, debtOptions] = await Promise.all([
+    loadCategoryOptions(session, session.activeHouseholdId),
+    loadDebtOptions(session, session.activeHouseholdId, currency),
+  ]);
+
   const t = await getTranslations('documents');
   const raw = rawOf(t);
   const format = await getFormatter();
@@ -50,6 +58,14 @@ export default async function ImportReviewPage({
     signals: row.signals,
     rejectionReason: row.rejectionReason,
     alreadyFiled: row.createdTransactionId !== null,
+    matchedAccountName: row.matchedAccountName,
+    categoryId: row.categoryId,
+    categoryName: row.categoryName,
+    categorySource: row.categorySource,
+    categoryChosen: row.categoryChosen,
+    debtId: row.debtId,
+    debtName: row.debtName,
+    aiReason: row.aiReason,
   }));
 
   return (
@@ -90,6 +106,12 @@ export default async function ImportReviewPage({
         locale={locale}
         importId={review.id}
         rows={rows}
+        categories={categoryOptions}
+        debts={debtOptions.map((debt) => ({
+          id: debt.id,
+          name: debt.name,
+          outstanding: formatMoney(debt.outstanding, { locale: moneyLocale }),
+        }))}
         labels={{
           selectAll: t('review.selectAll'),
           clearAll: t('review.clearAll'),
@@ -106,6 +128,35 @@ export default async function ImportReviewPage({
           columnDate: t('history.columns.when'),
           columnDescription: t('review.columnDescription'),
           columnAmount: t('history.columns.found'),
+          wizard: {
+            category: t('review.wizard.category'),
+            categoryNone: t('review.wizard.categoryNone'),
+            categoryUnknown: t('review.wizard.categoryUnknown'),
+            sources: {
+              rule: t('review.wizard.sources.rule'),
+              merchant: t('review.wizard.sources.merchant'),
+              ai: t('review.wizard.sources.ai'),
+            },
+            chosen: t('review.wizard.chosen'),
+            newCategory: t('review.wizard.newCategory'),
+            newCategoryName: t('review.wizard.newCategoryName'),
+            newCategoryKind: t('review.wizard.newCategoryKind'),
+            kinds: {
+              expense: t('review.wizard.kinds.expense'),
+              income: t('review.wizard.kinds.income'),
+              transfer: t('review.wizard.kinds.transfer'),
+              investment: t('review.wizard.kinds.investment'),
+            },
+            create: t('review.wizard.create'),
+            cancel: t('review.cancel'),
+            debt: t('review.wizard.debt'),
+            debtNone: t('review.wizard.debtNone'),
+            debtEffect: raw('review.wizard.debtEffect'),
+            matchedIn: raw('review.wizard.matchedIn'),
+            aiSaid: raw('review.wizard.aiSaid'),
+            edit: t('review.wizard.edit'),
+            done: t('review.wizard.done'),
+          },
           verdicts: {
             new: t('review.verdicts.new'),
             duplicate: t('review.verdicts.duplicate'),

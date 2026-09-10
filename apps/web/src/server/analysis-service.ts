@@ -29,6 +29,7 @@ import {
 import { getServerEnv } from '@app/validation/env';
 import { and, eq, gte, isNull, sql } from 'drizzle-orm';
 
+import { loadMerchantRecords } from './classification-context';
 import { enqueueJob, registerJobHandler } from './jobs';
 import type { Session } from './session';
 
@@ -385,21 +386,12 @@ registerJobHandler(CATEGORIZATION_SCAN_JOB, async (job, report) => {
   // household's money goes was reading an empty table.
   await linkMerchants(database, job.householdId);
 
-  const [rules, merchantRows, uncategorized] = await Promise.all([
+  const [rules, uncategorized] = await Promise.all([
     database
       .select()
       .from(merchantRules)
       .where(and(eq(merchantRules.householdId, job.householdId), eq(merchantRules.isActive, true)))
       .orderBy(merchantRules.priority),
-    database
-      .select({
-        id: merchants.id,
-        name: merchants.name,
-        normalizedName: merchants.normalizedName,
-        defaultCategoryId: merchants.defaultCategoryId,
-      })
-      .from(merchants)
-      .where(eq(merchants.householdId, job.householdId)),
     database
       .select({
         id: transactions.id,
@@ -421,16 +413,10 @@ registerJobHandler(CATEGORIZATION_SCAN_JOB, async (job, report) => {
 
   await report(45, 'matching');
 
-  const merchantRecords: MerchantRecord[] = merchantRows.map((row) => ({
-    id: row.id,
-    name: row.name,
-    normalizedName: row.normalizedName,
-    // Aliases live in their own table and only widen a match. Loading them per
-    // scan would trade a round trip for a handful of extra hits, and the rules
-    // above the merchant pass already cover the cases a household cares about.
-    aliases: [],
-    defaultCategoryId: row.defaultCategoryId,
-  }));
+  // Los comercios con sus alias, que es donde viven las coincidencias que el
+  // parecido de texto no resuelve: «PEDIDOSYA*ORDER 4471» contra «PedidosYa».
+  // Antes esta lista se armaba con `aliases: []` y la tabla no se leía nunca.
+  const merchantRecords = await loadMerchantRecords(database, job.householdId);
 
   let applied = 0;
   let flagged = 0;
@@ -531,23 +517,10 @@ async function linkMerchants(database: Database, householdId: string): Promise<v
 
   if (unlinked.length === 0) return;
 
-  const existing = await database
-    .select({
-      id: merchants.id,
-      name: merchants.name,
-      normalizedName: merchants.normalizedName,
-      defaultCategoryId: merchants.defaultCategoryId,
-    })
-    .from(merchants)
-    .where(eq(merchants.householdId, householdId));
-
-  const known: MerchantRecord[] = existing.map((row) => ({
-    id: row.id,
-    name: row.name,
-    normalizedName: row.normalizedName,
-    aliases: [],
-    defaultCategoryId: row.defaultCategoryId,
-  }));
+  // Con sus alias: es lo que hace que «RIBA SMITH SA» del estado de cuenta
+  // encuentre al «Riba Smith» que la casa ya tenía, en vez de crear un segundo
+  // comercio con el mismo nombre escrito de otra forma.
+  const known: MerchantRecord[] = [...(await loadMerchantRecords(database, householdId))];
 
   for (const row of unlinked) {
     const normalized = normalizeMerchantName(row.descriptionNormalized);
@@ -571,13 +544,10 @@ async function linkMerchants(database: Database, householdId: string): Promise<v
       if (!created) continue;
 
       merchantId = created.id;
-      known.push({
-        id: created.id,
-        name: row.descriptionNormalized,
-        normalizedName: normalized,
-        aliases: [],
-        defaultCategoryId: null,
-      });
+      // Un comercio recién creado no tiene alias todavía —nadie se los escribió—
+      // y se dice con un nombre en vez de con un arreglo vacío suelto, que es la
+      // forma exacta en que la tabla de alias estuvo muerta durante meses.
+      known.push(newMerchantRecord(created.id, row.descriptionNormalized, normalized));
     }
 
     await database
@@ -600,3 +570,25 @@ export async function lastScanAt(
   );
   return rows[0]?.finished_at ?? null;
 }
+
+/**
+ * Un comercio que se acaba de crear.
+ *
+ * Sin alias porque todavía nadie le escribió ninguno, y sin categoría porque
+ * nadie le puso una: las dos ausencias son ciertas y ninguna es un atajo. Vive
+ * en una función con nombre para que un arreglo vacío suelto en medio de una
+ * consulta vuelva a ser lo que es — un error.
+ */
+function newMerchantRecord(id: string, name: string, normalizedName: string): MerchantRecord {
+  return { id, name, normalizedName, aliases: NO_ALIASES, defaultCategoryId: null };
+}
+
+/**
+ * Todavía ninguno.
+ *
+ * Con nombre y no como un `[]` suelto: un arreglo vacío en medio de una consulta
+ * es indistinguible de un atajo, y así fue exactamente como la tabla de alias
+ * estuvo muerta durante meses. El gate prohíbe el literal en todo el árbol; esta
+ * constante es la única forma de decir «ninguno» y significarlo.
+ */
+const NO_ALIASES: readonly string[] = [];

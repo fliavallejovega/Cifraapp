@@ -717,11 +717,68 @@ export const debts = appSchema.table(
     promotionalApr: numeric('promotional_apr', { precision: 6, scale: 3, mode: 'string' }),
     promotionalExpiresOn: date('promotional_expires_on'),
     strategyPriority: integer('strategy_priority'),
+    /**
+     * A quién se le debe, cuando no es un banco.
+     *
+     * `institutionId` cubre a las instituciones de la lista y `personId` a la
+     * gente del hogar. Faltaba lo más común entre gente real: «le debemos mil
+     * ochocientos a Giovanni», que no es ninguna de las dos. Sin esto, un pago
+     * a Giovanni entra como un gasto suelto y la deuda dice mil ochocientos
+     * para siempre.
+     */
+    counterpartyName: text('counterparty_name'),
+    /** La forma contra la que se cruza la descripción de un movimiento. */
+    counterpartyNormalized: text('counterparty_normalized'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
     deletedAt: timestamp('deleted_at', { withTimezone: true }),
   },
   (table) => [index('debts_household_idx').on(table.householdId)],
+);
+
+/**
+ * Cada vez que un movimiento se aplica a una deuda.
+ *
+ * Restar y ya es irreversible y no se puede explicar. Un saldo que bajó de 1800
+ * a 1300 sin rastro obliga a creerle; con el rastro se puede preguntar cuál de
+ * los pagos fue, quién lo aplicó y deshacerlo si se equivocó de deuda.
+ *
+ * Deshacer no borra: marca. Una fila borrada no explica por qué el saldo volvió
+ * a subir.
+ */
+export const debtPayments = appSchema.table(
+  'debt_payments',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .default(sql`public.uuid_generate_v7()`),
+    householdId: uuid('household_id')
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    debtId: uuid('debt_id')
+      .notNull()
+      .references(() => debts.id, { onDelete: 'cascade' }),
+    /**
+     * El movimiento del que salió.
+     *
+     * Nulo cuando alguien registra a mano un pago que nunca pasó por una cuenta
+     * —efectivo, un favor devuelto— que es frecuente justamente en las deudas
+     * informales, que son las que esta tabla existe para servir.
+     */
+    transactionId: uuid('transaction_id').references(() => transactions.id, {
+      onDelete: 'set null',
+    }),
+    amount: money('amount').notNull(),
+    currency: char('currency', { length: 3 }).notNull().default('USD'),
+    paidOn: date('paid_on').notNull(),
+    note: text('note'),
+    appliedBy: uuid('applied_by').references(() => profiles.id, { onDelete: 'set null' }),
+    appliedAt: timestamp('applied_at', { withTimezone: true }).notNull().defaultNow(),
+    reversedAt: timestamp('reversed_at', { withTimezone: true }),
+    reversedBy: uuid('reversed_by').references(() => profiles.id, { onDelete: 'set null' }),
+    reversalReason: text('reversal_reason'),
+  },
+  (table) => [index('debt_payments_debt_idx').on(table.debtId)],
 );
 
 export const householdSettings = appSchema.table('household_settings', {

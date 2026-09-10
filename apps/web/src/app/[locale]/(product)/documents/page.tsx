@@ -20,7 +20,9 @@ import { getFormatter, getTranslations, setRequestLocale } from 'next-intl/serve
 
 import { ImportForm } from '@/components/import-form';
 import { Link } from '@/i18n/navigation';
+import { loadHouseholdContext } from '@/server/household-context';
 import { loadAccountOptions } from '@/server/repositories/administration';
+import { loadStatementCoverage } from '@/server/repositories/statement-coverage';
 import { queryAsUser, requireHousehold } from '@/server/session';
 
 /**
@@ -64,6 +66,15 @@ export default async function DocumentsPage({ params }: { params: Promise<{ loca
   const importAccounts = await loadAccountOptions(session, session.activeHouseholdId);
   const hasAccount = importAccounts.length > 0;
 
+  // Qué falta por subir. Se lee de los movimientos ya registrados, no de una
+  // lista de archivos: un documento puede traer un trimestre.
+  const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
+  const coverage = await loadStatementCoverage(
+    session,
+    session.activeHouseholdId,
+    context.today.slice(0, 7),
+  );
+
   return (
     <Page>
       <PageHeader title={t('title')} detail={t('detail')} />
@@ -82,6 +93,54 @@ export default async function DocumentsPage({ params }: { params: Promise<{ loca
               </Link>
             }
           />
+        </div>
+      )}
+
+      {/*
+        Lo que falta, antes del selector de archivo.
+
+        Un hogar con dos personas, cuatro cuentas y tres tarjetas sube siete
+        documentos por mes, y el que se olvida no se nota: la pantalla enseña un
+        mes que se ve normal con menos gastos de los que hubo. Un hueco
+        silencioso no se lee como un hueco — se lee como un buen mes. Por eso
+        esto no espera a que alguien pregunte.
+      */}
+      {!coverage.isComplete && (
+        <div className="mb-8">
+          <Card tone="sunk">
+            <h2 className="text-base font-medium">{t('missing.title')}</h2>
+            <p className="mt-1 max-w-[68ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]">
+              {t('missing.detail')}
+            </p>
+            <ul className="mt-4 flex list-none flex-col gap-2 p-0">
+              {coverage.gaps.map((gap) => (
+                <li key={gap.accountId} className="text-sm">
+                  <span className="font-medium">
+                    {gap.maskedNumber
+                      ? t(`missing.${gap.kind}`, { digits: gap.maskedNumber })
+                      : gap.name}
+                  </span>
+                  <span className="ml-2 text-[color:var(--color-ink-secondary)]">
+                    {t('missing.months', {
+                      months: gap.missing.map((month) => monthName(month, locale)).join(', '),
+                    })}
+                  </span>
+                </li>
+              ))}
+              {coverage.neverImported.map((account) => (
+                <li key={account.accountId} className="text-sm">
+                  <span className="font-medium">
+                    {account.maskedNumber
+                      ? t(`missing.${account.kind}`, { digits: account.maskedNumber })
+                      : account.name}
+                  </span>
+                  <span className="ml-2 text-[color:var(--color-caution)]">
+                    {t('missing.never')}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </Card>
         </div>
       )}
 
@@ -198,4 +257,20 @@ function groupForAccountType(type: string): 'cards' | 'bank' | 'other' {
     return 'bank';
   }
   return 'other';
+}
+
+/**
+ * `2026-08` como «agosto de 2026», en el idioma de quien mira.
+ *
+ * El nombre y no el número: «te falta 2026-08» obliga a traducir un código
+ * mentalmente antes de saber qué buscar en el banco.
+ */
+function monthName(month: string, locale: string): string {
+  const [year = '', index = ''] = month.split('-');
+  const date = new Date(Date.UTC(Number(year), Number(index) - 1, 1));
+  return new Intl.DateTimeFormat(locale === 'en' ? 'en-US' : 'es-PA', {
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(date);
 }

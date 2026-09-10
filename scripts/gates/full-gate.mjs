@@ -3,7 +3,9 @@
 // cuál, porque «el gate falló» sin nombre obliga a correrlo otra vez a mano.
 import { spawnSync } from 'node:child_process';
 
-const steps = ['lint', 'typecheck', 'test'];
+// El build entra: un componente de servidor que cruza mal a cliente compila y
+// pasa las pruebas, y sólo el build de producción lo mira.
+const steps = ['lint', 'typecheck', 'test', 'build'];
 
 for (const step of steps) {
   const run = spawnSync('pnpm', [step], { stdio: 'inherit', env: { ...process.env, SKIP_ENV_VALIDATION: 'true' } });
@@ -13,4 +15,4 @@ for (const step of steps) {
   }
 }
 
-console.log('\nGATE OK — lint, typecheck y test en verde.');
+console.log('\nFULL GATE OK');

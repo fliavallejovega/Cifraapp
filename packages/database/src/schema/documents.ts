@@ -16,7 +16,7 @@ import {
 } from 'drizzle-orm/pg-core';
 
 import { appSchema } from './app.js';
-import { accounts, transactions } from './financial.js';
+import { accounts, categories, transactions } from './financial.js';
 import { households, profiles } from './identity.js';
 
 /**
@@ -150,8 +150,46 @@ export const importRows = appSchema.table(
     matchedTransactionId: uuid('matched_transaction_id').references(() => transactions.id, {
       onDelete: 'set null',
     }),
+    /**
+     * La cuenta donde vive la coincidencia, cuando no es la que se importa.
+     *
+     * Es la mitad de la frase que hace útil una alerta: «esto ya está
+     * registrado» no sirve; «esto ya lo anotó Vale en su cuenta el 7» sí.
+     */
+    matchedAccountId: uuid('matched_account_id').references(() => accounts.id, {
+      onDelete: 'set null',
+    }),
     /** Which rules fired, so a decision can be justified after the fact. */
     matchedSignals: jsonb('matched_signals').notNull().default([]),
+    /** La categoría que el motor propone, resuelta antes de confirmar. */
+    proposedCategoryId: uuid('proposed_category_id').references(() => categories.id, {
+      onDelete: 'set null',
+    }),
+    proposedConfidence: numeric('proposed_confidence', { precision: 4, scale: 3, mode: 'string' }),
+    /**
+     * De dónde salió la propuesta: `rule`, `merchant`, `ai`.
+     *
+     * Se enseña. Una categoría propuesta por una regla que la casa escribió y
+     * una adivinada por un modelo merecen distinta confianza, y esconder cuál
+     * es cuál las iguala hacia abajo.
+     */
+    proposedSource: text('proposed_source'),
+    /** El rubro que la persona eligió al revisar, que gana sobre la propuesta. */
+    chosenCategoryId: uuid('chosen_category_id').references(() => categories.id, {
+      onDelete: 'set null',
+    }),
+    /** La deuda a la que esta fila se aplica al confirmar, si alguien lo pidió. */
+    applyToDebtId: uuid('apply_to_debt_id'),
+    /**
+     * Lo que la IA opinó sobre si esto ya estaba registrado: `same`,
+     * `different` o `unsure`.
+     *
+     * Aparte del veredicto determinista a propósito. El veredicto es del motor;
+     * esto es una segunda lectura que puede **subir** una fila a revisión y
+     * nunca archivarla ni descartarla. Mezclarlos borraría quién dijo qué.
+     */
+    aiOpinion: text('ai_opinion'),
+    aiReason: text('ai_reason'),
     rejectionReason: text('rejection_reason'),
     createdTransactionId: uuid('created_transaction_id').references(() => transactions.id, {
       onDelete: 'set null',

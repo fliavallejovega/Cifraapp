@@ -2,7 +2,7 @@ import 'server-only';
 
 import { accounts, documents, importRows, imports } from '@app/database/schema';
 import { Money, type CurrencyCode, type PlainDate } from '@app/domain';
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, sql } from 'drizzle-orm';
 
 import { queryAsUser, type Session } from '../session';
 
@@ -34,6 +34,15 @@ export interface ImportRowView {
   readonly raw: string | null;
   /** Set once this row has become a transaction. It cannot become a second one. */
   readonly createdTransactionId: string | null;
+  /** En qué cuenta vive la coincidencia, cuando no es la que se importa. */
+  readonly matchedAccountName: string | null;
+  readonly categoryId: string | null;
+  readonly categoryName: string | null;
+  readonly categorySource: string | null;
+  readonly categoryChosen: boolean;
+  readonly debtId: string | null;
+  readonly debtName: string | null;
+  readonly aiReason: string | null;
 }
 
 export interface ImportReview {
@@ -96,6 +105,21 @@ export async function loadImportReview(
         rejectionReason: importRows.rejectionReason,
         raw: importRows.raw,
         createdTransactionId: importRows.createdTransactionId,
+        proposedCategoryId: importRows.proposedCategoryId,
+        chosenCategoryId: importRows.chosenCategoryId,
+        proposedSource: importRows.proposedSource,
+        applyToDebtId: importRows.applyToDebtId,
+        aiReason: importRows.aiReason,
+        matchedAccountName: sql<string | null>`(
+          select a.name from app.accounts a where a.id = ${importRows.matchedAccountId}
+        )`,
+        categoryName: sql<string | null>`(
+          select c.name from app.categories c
+          where c.id = coalesce(${importRows.chosenCategoryId}, ${importRows.proposedCategoryId})
+        )`,
+        debtName: sql<string | null>`(
+          select d.name from app.debts d where d.id = ${importRows.applyToDebtId}
+        )`,
       })
       .from(importRows)
       .where(eq(importRows.importId, importId))
@@ -115,6 +139,16 @@ export async function loadImportReview(
       rejectionReason: row.rejectionReason,
       raw: row.raw,
       createdTransactionId: row.createdTransactionId,
+      matchedAccountName: row.matchedAccountName,
+      // Lo elegido gana sobre lo propuesto; es la misma precedencia con que se
+      // aplica al confirmar, y tienen que coincidir o la pantalla mentiría.
+      categoryId: row.chosenCategoryId ?? row.proposedCategoryId,
+      categoryName: row.categoryName,
+      categorySource: row.proposedSource,
+      categoryChosen: row.chosenCategoryId !== null,
+      debtId: row.applyToDebtId,
+      debtName: row.debtName,
+      aiReason: row.aiReason,
     }));
 
     const counts = {

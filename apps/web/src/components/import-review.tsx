@@ -4,6 +4,11 @@ import { Button, Problem, Status } from '@app/ui';
 import { useActionState, useState } from 'react';
 
 import { confirmImport, discardImport, type ConfirmActionResult } from '@/server/import-actions';
+import {
+  createCategoryForRow,
+  setRowCategory,
+  setRowDebt,
+} from '@/server/review-row-actions';
 
 /**
  * Deciding what enters the ledger.
@@ -29,6 +34,30 @@ export interface ReviewRow {
   readonly signals: readonly string[];
   readonly rejectionReason: string | null;
   readonly alreadyFiled: boolean;
+  /** La cuenta donde vive la coincidencia, cuando no es la que se importa. */
+  readonly matchedAccountName: string | null;
+  /** El rubro que va a quedar: el elegido, o el propuesto. */
+  readonly categoryId: string | null;
+  readonly categoryName: string | null;
+  /** `rule`, `merchant` o nulo. Se enseña: no toda propuesta pesa lo mismo. */
+  readonly categorySource: string | null;
+  /** Verdadero cuando la persona ya lo eligió a mano. */
+  readonly categoryChosen: boolean;
+  readonly debtId: string | null;
+  readonly debtName: string | null;
+  /** Lo que la segunda lectura opinó, cuando opinó. */
+  readonly aiReason: string | null;
+}
+
+export interface CategoryOption {
+  readonly id: string;
+  readonly name: string;
+}
+
+export interface DebtOption {
+  readonly id: string;
+  readonly name: string;
+  readonly outstanding: string;
 }
 
 export interface ImportReviewLabels {
@@ -52,6 +81,27 @@ export interface ImportReviewLabels {
   readonly signalLabel: string;
   readonly errorTitle: string;
   readonly errors: Record<string, string>;
+  readonly wizard: {
+    readonly category: string;
+    readonly categoryNone: string;
+    readonly categoryUnknown: string;
+    readonly sources: Record<string, string>;
+    readonly chosen: string;
+    readonly newCategory: string;
+    readonly newCategoryName: string;
+    readonly newCategoryKind: string;
+    readonly kinds: Record<string, string>;
+    readonly create: string;
+    readonly cancel: string;
+    readonly debt: string;
+    readonly debtNone: string;
+    /** «Baja {debt}, que debe {amount}» */
+    readonly debtEffect: string;
+    readonly matchedIn: string;
+    readonly aiSaid: string;
+    readonly edit: string;
+    readonly done: string;
+  };
 }
 
 export function ImportReview({
@@ -59,11 +109,17 @@ export function ImportReview({
   importId,
   rows,
   labels,
+  categories,
+  debts,
 }: {
   readonly locale: string;
   readonly importId: string;
   readonly rows: readonly ReviewRow[];
   readonly labels: ImportReviewLabels;
+  /** Los rubros del hogar, para elegir sin salir de aquí. */
+  readonly categories: readonly CategoryOption[];
+  /** Las deudas vivas, para poder decir que este pago baja una de ellas. */
+  readonly debts: readonly DebtOption[];
 }) {
   const [confirmState, confirmAction, confirming] = useActionState<ConfirmActionResult, FormData>(
     confirmImport,
@@ -87,7 +143,15 @@ export function ImportReview({
     return (
       <div className="flex flex-col gap-6">
         <Status tone="positive">{labels.settled}</Status>
-        <RowList rows={rows} labels={labels} selected={selected} onToggle={null} />
+        <RowList
+          locale={locale}
+          rows={rows}
+          labels={labels}
+          selected={selected}
+          onToggle={null}
+          categories={categories}
+          debts={debts}
+        />
       </div>
     );
   }
@@ -138,6 +202,9 @@ export function ImportReview({
         ))}
 
         <RowList
+          locale={locale}
+          categories={categories}
+          debts={debts}
           rows={rows}
           labels={labels}
           selected={selected}
@@ -203,15 +270,21 @@ export function ImportReview({
 }
 
 function RowList({
+  locale,
   rows,
   labels,
   selected,
   onToggle,
+  categories,
+  debts,
 }: {
+  readonly locale: string;
   readonly rows: readonly ReviewRow[];
   readonly labels: ImportReviewLabels;
   readonly selected: ReadonlySet<string>;
   readonly onToggle: ((id: string) => void) | null;
+  readonly categories: readonly CategoryOption[];
+  readonly debts: readonly DebtOption[];
 }) {
   return (
     <ul className="flex flex-col overflow-hidden rounded-(--radius-lg) border border-[color:var(--color-surface-border)] bg-[color:var(--color-surface)] shadow-(--shadow-card)">
@@ -262,7 +335,33 @@ function RowList({
                           ? `${labels.signalLabel} ${row.signals.join(', ')}`
                           : (labels.verdictHints[row.verdict] ?? ''))}
                     </span>
+                    {/* Dónde vive la coincidencia. «Esto ya está registrado» no
+                        sirve; «esto ya lo anotó Vale en su cuenta» sí. */}
+                    {row.matchedAccountName && (
+                      <Status tone="signal">
+                        {labels.wizard.matchedIn.replace('{account}', row.matchedAccountName)}
+                      </Status>
+                    )}
+                    {row.aiReason && (
+                      <span className="text-xs text-[color:var(--color-ink-tertiary)]">
+                        {labels.wizard.aiSaid.replace('{reason}', row.aiReason)}
+                      </span>
+                    )}
                   </span>
+
+                  {/* El asistente: qué rubro va a quedar y si esto baja una
+                      deuda. Antes esto no existía y la casa aprobaba una lista
+                      de descripciones crudas sin saber qué se iba a hacer con
+                      ellas — eso no es aprobar, es firmar. */}
+                  {!locked && (
+                    <RowWizard
+                      locale={locale}
+                      row={row}
+                      labels={labels}
+                      categories={categories}
+                      debts={debts}
+                    />
+                  )}
                 </span>
 
                 <span
@@ -281,5 +380,208 @@ function RowList({
         );
       })}
     </ul>
+  );
+}
+
+/**
+ * Lo que se decide sobre una fila antes de que sea un movimiento.
+ *
+ * Dos preguntas y nada más: **con qué rubro queda** y **si esto baja una
+ * deuda**. Las dos llegan contestadas cuando el sistema pudo; ésta es la
+ * oportunidad de corregirlo, no de empezar de cero.
+ *
+ * Colapsado por defecto. Una lista de cuarenta filas con dos selectores cada
+ * una es una pantalla que nadie termina de revisar, y lo que hay que ver de un
+ * vistazo es la propuesta, no el control para cambiarla.
+ */
+function RowWizard({
+  locale,
+  row,
+  labels,
+  categories,
+  debts,
+}: {
+  readonly locale: string;
+  readonly row: ReviewRow;
+  readonly labels: ImportReviewLabels;
+  readonly categories: readonly CategoryOption[];
+  readonly debts: readonly DebtOption[];
+}) {
+  const [open, setOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+
+  const [, categoryAction] = useActionState(setRowCategory, {});
+  const [, debtAction] = useActionState(setRowDebt, {});
+  const [createState, createAction] = useActionState(createCategoryForRow, {});
+
+  const debt = debts.find((one) => one.id === row.debtId) ?? null;
+
+  return (
+    <span
+      className="mt-2 block"
+      // El resumen vive dentro de un `<label>` que marca la casilla; sin esto,
+      // abrir el asistente cambiaría la selección de la fila.
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+      }}
+      onKeyDown={(event) => {
+        event.stopPropagation();
+      }}
+      role="presentation"
+    >
+      <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+        <Status tone={row.categoryName ? 'neutral' : 'caution'}>
+          {row.categoryName ?? labels.wizard.categoryUnknown}
+        </Status>
+        {row.categoryName && (
+          <span className="text-[color:var(--color-ink-tertiary)]">
+            {row.categoryChosen
+              ? labels.wizard.chosen
+              : (labels.wizard.sources[row.categorySource ?? ''] ?? '')}
+          </span>
+        )}
+        {debt && (
+          <Status tone="signal">
+            {labels.wizard.debtEffect
+              .replace('{debt}', debt.name)
+              .replace('{amount}', debt.outstanding)}
+          </Status>
+        )}
+        <button
+          type="button"
+          onClick={() => {
+            setOpen(!open);
+          }}
+          className="underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
+        >
+          {open ? labels.wizard.done : labels.wizard.edit}
+        </button>
+      </span>
+
+      {open && (
+        <span className="mt-3 grid gap-3 sm:grid-cols-2">
+          <form action={categoryAction} className="flex flex-col gap-1">
+            <input type="hidden" name="locale" value={locale} />
+            <input type="hidden" name="rowId" value={row.id} />
+            <label
+              htmlFor={`cat-${row.id}`}
+              className="gradation-label text-[color:var(--color-ink-tertiary)] uppercase"
+            >
+              {labels.wizard.category}
+            </label>
+            <select
+              id={`cat-${row.id}`}
+              name="categoryId"
+              defaultValue={row.categoryId ?? ''}
+              onChange={(event) => {
+                event.currentTarget.form?.requestSubmit();
+              }}
+              className="min-h-11 rounded-(--radius-sm) border border-[color:var(--color-surface-border)] bg-[color:var(--color-surface)] px-3 text-sm"
+            >
+              <option value="">{labels.wizard.categoryNone}</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => {
+                setCreating(!creating);
+              }}
+              className="self-start text-xs underline decoration-[color:var(--color-rule-strong)] underline-offset-4"
+            >
+              {labels.wizard.newCategory}
+            </button>
+          </form>
+
+          {debts.length > 0 && (
+            <form action={debtAction} className="flex flex-col gap-1">
+              <input type="hidden" name="locale" value={locale} />
+              <input type="hidden" name="rowId" value={row.id} />
+              <label
+                htmlFor={`debt-${row.id}`}
+                className="gradation-label text-[color:var(--color-ink-tertiary)] uppercase"
+              >
+                {labels.wizard.debt}
+              </label>
+              <select
+                id={`debt-${row.id}`}
+                name="debtId"
+                defaultValue={row.debtId ?? ''}
+                onChange={(event) => {
+                  event.currentTarget.form?.requestSubmit();
+                }}
+                className="min-h-11 rounded-(--radius-sm) border border-[color:var(--color-surface-border)] bg-[color:var(--color-surface)] px-3 text-sm"
+              >
+                <option value="">{labels.wizard.debtNone}</option>
+                {debts.map((one) => (
+                  <option key={one.id} value={one.id}>
+                    {one.name} — {one.outstanding}
+                  </option>
+                ))}
+              </select>
+            </form>
+          )}
+
+          {/* Crear un rubro sin salir. Mandar a alguien a otra pantalla y de
+              vuelta a buscar la fila donde estaba es cómo se abandona una
+              revisión a la mitad. */}
+          {creating && (
+            <form action={createAction} className="flex flex-wrap items-end gap-2 sm:col-span-2">
+              <input type="hidden" name="locale" value={locale} />
+              <input type="hidden" name="rowId" value={row.id} />
+              <span className="flex min-w-40 flex-1 flex-col gap-1">
+                <label
+                  htmlFor={`new-${row.id}`}
+                  className="gradation-label text-[color:var(--color-ink-tertiary)] uppercase"
+                >
+                  {labels.wizard.newCategoryName}
+                </label>
+                <input
+                  id={`new-${row.id}`}
+                  name="name"
+                  required
+                  maxLength={80}
+                  className="min-h-11 rounded-(--radius-sm) border border-[color:var(--color-surface-border)] bg-[color:var(--color-surface)] px-3 text-sm"
+                />
+              </span>
+              <select
+                name="kind"
+                defaultValue="expense"
+                aria-label={labels.wizard.newCategoryKind}
+                className="min-h-11 rounded-(--radius-sm) border border-[color:var(--color-surface-border)] bg-[color:var(--color-surface)] px-3 text-sm"
+              >
+                {['expense', 'income', 'transfer', 'investment'].map((kind) => (
+                  <option key={kind} value={kind}>
+                    {labels.wizard.kinds[kind] ?? kind}
+                  </option>
+                ))}
+              </select>
+              <Button type="submit" size="sm">
+                {labels.wizard.create}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setCreating(false);
+                }}
+              >
+                {labels.wizard.cancel}
+              </Button>
+              {createState.error && (
+                <span className="text-xs text-[color:var(--color-negative)]">
+                  {labels.errors[createState.error] ?? labels.errors['generic'] ?? ''}
+                </span>
+              )}
+            </form>
+          )}
+        </span>
+      )}
+    </span>
   );
 }

@@ -8,6 +8,7 @@ import { after } from 'next/server';
 import { z } from 'zod';
 
 import { scheduleAnalysis } from './analysis-service';
+import { applyPaymentToDebt } from './debt-payments';
 import { stageDocument } from './import-service';
 import { runJobNow, runQueuedJobs } from './jobs';
 import { loadSession, queryAsUser } from './session';
@@ -179,6 +180,9 @@ export async function confirmImport(
         fingerprint: importRows.fingerprint,
         verdict: importRows.verdict,
         createdTransactionId: importRows.createdTransactionId,
+        proposedCategoryId: importRows.proposedCategoryId,
+        chosenCategoryId: importRows.chosenCategoryId,
+        applyToDebtId: importRows.applyToDebtId,
       })
       .from(importRows)
       .where(eq(importRows.importId, header.id));
@@ -212,6 +216,10 @@ export async function confirmImport(
           // The sign in the statement is the direction. Nothing infers it from
           // the description, which is where categorization guesses go wrong.
           direction: amount.isNegative() ? 'outflow' : 'inflow',
+          // El rubro que la persona eligió al revisar gana sobre el que el
+          // motor propuso; sin ninguno de los dos, nulo — y una fila sin rubro
+          // entra a la cola de categorías en vez de quedarse invisible.
+          categoryId: row.chosenCategoryId ?? row.proposedCategoryId,
           descriptionOriginal: description,
           descriptionNormalized: row.descriptionNormalized ?? description,
           externalReference: row.externalReference,
@@ -229,6 +237,31 @@ export async function confirmImport(
         .update(importRows)
         .set({ createdTransactionId: created.id })
         .where(eq(importRows.id, row.id));
+
+      /*
+        Y si esta fila es un pago a una deuda, se aplica ahora.
+
+        Este es el paso que faltaba entero. Un pago a Giovanni entraba como un
+        gasto suelto: salía del mes, no bajaba de ningún saldo, y la deuda
+        seguía diciendo mil ochocientos para siempre. La casa terminaba llevando
+        esa cuenta en la cabeza, que es el trabajo que este producto existe para
+        quitar.
+
+        Se aplica dentro de la misma transacción de base que creó el movimiento:
+        un pago registrado cuya deuda no bajó, o una deuda que bajó sin pago que
+        la explique, son dos formas de que los números dejen de cuadrar.
+      */
+      if (row.applyToDebtId) {
+        await applyPaymentToDebt(tx, {
+          householdId,
+          debtId: row.applyToDebtId,
+          transactionId: created.id,
+          amount: amount.abs(),
+          currency,
+          paidOn: row.transactionDate ?? '',
+          appliedBy: session.user.id,
+        });
+      }
 
       count += 1;
     }
