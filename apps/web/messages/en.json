@@ -3707,7 +3707,9 @@
         "forThisCard": "What your bank publishes for a {identity}. It does not come from your contract: it is the reference that tells you what to ask about.",
         "needsProgram": "This card’s program is not declared yet, so the benefits that depend on it are not shown. Set it under Details and they fill in.",
         "market": "How it compares to the market",
-        "marketDetail": "What other banks charge for a card of the same tier, per the ACODECO study. A reference for negotiating, not something you have."
+        "marketDetail": "What other banks charge for a card of the same tier, per the ACODECO study. A reference for negotiating, not something you have.",
+        "disputed": "The bank contradicts itself",
+        "disputedSource": "See the other document"
       },
       "movements": {
         "detail": "Record here what this card’s statement has not brought in yet.",

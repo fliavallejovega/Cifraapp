@@ -83,6 +83,11 @@ entienda entra a un asistente donde se clasifica o se crea el rubro.
       EXPECT: TABLES ARE REACHABLE OK
       EVIDENCE: automatic-evidence=v1; definition-sha256=896eed2f0d0f1b5447d6ae99b2f29f65f4cf8687bee782fcf509b5f23a77ae27; exit=0; EXPECT=matched; output-sha256=25f6805432956a4aee537dd1804cfd31e2d8afec926d23e0468d0cb3c5c0791b; output-bytes=36; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar; path=6dc919bb4189/22 entries
 
+- [x] G17: Ningún término de una tarjeta sale de una fuente sin autoridad — ni de un blog, ni de un diario, ni una tasa de acumulación desde una promoción
+      CHECK: node scripts/gates/assert-sources-are-authoritative.mjs
+      EXPECT: SOURCES ARE AUTHORITATIVE OK
+      EVIDENCE: automatic-evidence=v1; definition-sha256=15c568aad049fec06d0f98a5c97d23032f69eb7a1d0af12a2efbd68530f62b59; exit=0; EXPECT=matched; output-sha256=5fe3c3d5e12fcafafb32419d2c8de84227f5afcffcdab32505153051d8ff80b8; output-bytes=40; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar; path=6dc919bb4189/22 entries
+
 - [x] G10: Cada clave de copy que una pantalla pide existe en español y en inglés
       CHECK: node scripts/gates/assert-copy-complete.mjs
       EXPECT: COPY COMPLETE OK

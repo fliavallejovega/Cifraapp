@@ -84,8 +84,16 @@ export async function refreshCatalogue(): Promise<RefreshResult> {
       const response = await fetch(source.url, {
         signal: controller.signal,
         headers: {
-          // Un agente honesto. Un barrido mensual que se disfraza de navegador
-          // es un barrido que alguien va a bloquear con razón.
+          /*
+            Un agente honesto. Un barrido mensual que se disfraza de navegador
+            es un barrido que alguien va a bloquear con razón.
+
+            Y además funciona mejor. baccredomatic.com cuelga la conexión —cero
+            bytes, sin código de estado— cuando recibe una cabecera de Chrome, y
+            responde normal sin ella. Cuatro de sus páginas se dieron por muertas
+            durante una auditoría porque se leyeron con user-agent de navegador;
+            estaban vivas todas. Disfrazarse no es sólo deshonesto: es frágil.
+          */
           'user-agent': 'Cifraapp/1.0 (catálogo de tarjetas de Panamá; contacto vía cifraapp)',
           accept: 'text/html,application/xhtml+xml',
         },

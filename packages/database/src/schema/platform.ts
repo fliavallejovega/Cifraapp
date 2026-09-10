@@ -118,6 +118,17 @@ export const cardBenefitCatalogue = platformSchema.table(
     /** Sugerencia de este producto, no término del emisor. */
     reviewBy: date('review_by'),
     notes: text('notes'),
+    /**
+     * Verdadero cuando otra publicación del mismo emisor dice algo distinto.
+     *
+     * Credicorp anuncia «3 puntos x $1.00» en su página y su propio reglamento
+     * dice «1.25». No se elige un ganador: elegir sería inventar la resolución
+     * de un conflicto que las fuentes no resuelven. Se enseñan las dos, y la
+     * casa sabe qué preguntarle al banco.
+     */
+    isDisputed: boolean('is_disputed').notNull().default(false),
+    disputeNote: text('dispute_note'),
+    disputeSourceUrl: text('dispute_source_url'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index('card_benefit_catalogue_lookup_idx').on(table.issuerKey, table.network, table.tier)],

@@ -81,6 +81,10 @@ export interface CatalogueRow {
   readonly validUntil: string | null;
   readonly reviewBy: string | null;
   readonly notes: string | null;
+  /** Otra publicación del mismo banco dice algo distinto. Se enseñan las dos. */
+  readonly isDisputed: boolean;
+  readonly disputeNote: string | null;
+  readonly disputeSourceUrl: string | null;
   readonly isStale: boolean;
 }
 
@@ -272,6 +276,9 @@ export interface CardsManagerLabels {
       readonly reviewBy: string;
       readonly stale: string;
       readonly adopt: string;
+      /** «Su propio reglamento dice otra cosa» */
+      readonly disputed: string;
+      readonly disputedSource: string;
       /** «Esto es lo que Banco General publica para tu {identity}.» */
       readonly forThisCard: string;
       /** Cuando el programa no se declaró, falta la mitad del catálogo. */
@@ -1186,6 +1193,36 @@ function Benefits({
                   {entry.notes && (
                     <span className="mt-1 block text-xs text-pretty text-[color:var(--color-caution)]">
                       {entry.notes}
+                    </span>
+                  )}
+
+                  {/*
+                    El conflicto, entero y con el otro documento a la mano.
+
+                    Elegir un ganador sería inventar la resolución de algo que
+                    las fuentes no resuelven: el reglamento es más viejo y tiene
+                    fuerza contractual, la página es actual y es mercadeo, y cuál
+                    rige hoy sólo lo sabe el banco. Quien ve las dos sabe qué
+                    preguntar; quien ve una cree que sabe.
+                  */}
+                  {entry.isDisputed && entry.disputeNote && (
+                    <span className="mt-2 block rounded-(--radius-sm) border border-[color:var(--color-caution)]/30 bg-[color:var(--color-caution-sunk)] px-3 py-2">
+                      <span className="block text-xs font-medium text-[color:var(--color-caution)]">
+                        {labels.benefits.catalogue.disputed}
+                      </span>
+                      <span className="mt-1 block text-xs text-pretty text-[color:var(--color-ink-secondary)]">
+                        {entry.disputeNote}
+                      </span>
+                      {entry.disputeSourceUrl && (
+                        <a
+                          href={entry.disputeSourceUrl}
+                          target="_blank"
+                          rel="noreferrer noopener"
+                          className="mt-1 inline-block text-xs underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
+                        >
+                          {labels.benefits.catalogue.disputedSource}
+                        </a>
+                      )}
                     </span>
                   )}
 

@@ -1,0 +1,223 @@
+- generic [ref=e1]:
+  - alert [ref=e2]
+  - banner:
+    - generic [ref=e5]:
+      - generic [ref=e7]:
+        - link [ref=e9] [cursor=pointer]:
+          - /url: /
+          - img "Logo Mercantil Banco" [ref=e10]
+        - generic [ref=e11]:
+          - link [ref=e13] [cursor=pointer]:
+            - /url: /
+            - img "Logo Mercantil Banco" [ref=e14]
+          - link "Hazte cliente" [ref=e16] [cursor=pointer]:
+            - /url: https://onboard.mercantilbanco.com.pa
+            - button "Abrir cuenta" [ref=e17]
+          - button "Mercantil en Línea" [ref=e21] [cursor=pointer]
+          - img [aria-hidden] [ref=e24] [cursor=pointer]
+      - generic [ref=e27]:
+        - listitem [ref=e28]:
+          - link "Personas" [ref=e29] [cursor=pointer]:
+            - /url: "#"
+        - listitem [ref=e30]:
+          - link "Empresas" [ref=e31] [cursor=pointer]:
+            - /url: "#"
+        - listitem [ref=e32]:
+          - link "Banca Internacional" [ref=e33] [cursor=pointer]:
+            - /url: "#"
+        - listitem [ref=e34]:
+          - link "Soluciones Digitales" [ref=e35] [cursor=pointer]:
+            - /url: "#"
+        - listitem [ref=e36]:
+          - link "Grupo Financiero" [ref=e37] [cursor=pointer]:
+            - /url: "#"
+        - listitem [ref=e38]:
+          - link "Seguros" [ref=e39] [cursor=pointer]:
+            - /url: "#"
+        - listitem [ref=e40]:
+          - link [ref=e41] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=e42]:
+              - img "Promociones icon" [ref=e43]
+              - text: Promociones
+        - listitem [ref=e44]:
+          - link "Bienes Reposeídos" [ref=e45] [cursor=pointer]:
+            - /url: "#"
+        - text:  
+  - generic [ref=e51]:
+    - heading "Mastercard Platinum" [level=1] [ref=e52]
+    - separator [ref=e53]
+    - heading [level=2] [ref=e54]:
+      - text: La tarjeta de crédito que te ofrece experiencias únicas y mayor valor en cada beneficio. Disfruta un mundo de beneficios pensados para ti.
+      - link [ref=e55] [cursor=pointer]:
+        - /url: /formularios/tarjetas-local-internacional
+        - button "Solicita tu Mastercard Platinum" [ref=e56]
+    - paragraph [ref=e57]: Conoce los beneficios que tenemos para ti
+    - generic [ref=e58]:
+      - generic [ref=e61]:
+        - text: Recibe cash back en tus compras internacionales
+        - link "Afíliate a Mastercard Travel Rewards" [ref=e62] [cursor=pointer]:
+          - /url: https://mtr.mastercardservices.com/es-MX/login
+      - generic [ref=e65]:
+        - generic [ref=e66]: Un año de membresía ¡Sin costo!
+        - text: para ti y tus adicionales
+      - generic [ref=e69]:
+        - generic [ref=e70]: 10,000 puntos bienvenida
+        - text: por facturar $2,500 en 60 días
+        - link "Conoce Mercantil Puntos" [ref=e71] [cursor=pointer]:
+          - /url: /promociones/mercantil-puntos
+    - paragraph [ref=e72]: ¿Cuáles son sus características?
+    - list [ref=e73]:
+      - listitem [ref=e74]: 1 punto por cada dólar en todas tus compras del día a día.
+      - listitem [ref=e75]:
+        - text: Viajes que se viven en grande con Mastercard Priceless Cities, Travel Life Services y Concierge.
+        - link "Conoce en Mastercard" [ref=e76] [cursor=pointer]:
+          - /url: https://www.mastercard.com/cam/es/personal/find-a-card/credit-card/platinum-credit-card.html
+      - listitem [ref=e77]:
+        - text: Tranquilidad en cada destino gracias a asistencia médica, cobertura para autos rentados y protección de equipaje.
+        - link "Conoce en Mastercard" [ref=e78] [cursor=pointer]:
+          - /url: https://www.mastercard.com/cam/es/personal/find-a-card/credit-card/platinum-credit-card.html
+    - generic [ref=e79]:
+      - generic [ref=e80]: "Te facilitamos los enlaces de interés:"
+      - link "Conoce nuestras promociones" [ref=e81] [cursor=pointer]:
+        - /url: /promociones
+      - link "Compramos el saldo al 0%" [ref=e84] [cursor=pointer]:
+        - /url: /promociones/compras-saldo
+    - generic [ref=e87]:
+      - paragraph [ref=e88]: ¿Necesitas saber más?
+      - generic [ref=e89]:
+        - generic [ref=e91] [cursor=pointer]:
+          - img "plus" [ref=e92]
+          - text: ¿Tengo que ser cliente de Mercantil para solicitar una Tarjeta de Crédito?
+        - generic [ref=e94] [cursor=pointer]:
+          - img "plus" [ref=e95]
+          - text: ¿Tengo que ser cliente de Mercantil para solicitar una Tarjeta de Crédito internacional?
+        - generic [ref=e97] [cursor=pointer]:
+          - img "plus" [ref=e98]
+          - text: ¿A cuál dirección se envía la tarjeta de crédito internacional?
+        - generic [ref=e100] [cursor=pointer]:
+          - img "plus" [ref=e101]
+          - text: ¿Cuáles son las comisiones de las Tarjeta de Crédito?
+        - generic [ref=e103] [cursor=pointer]:
+          - img "plus" [ref=e104]
+          - text: ¿Cada cuanto se envían los estados de cuenta de las Tarjetas de Crédito?
+        - generic [ref=e106] [cursor=pointer]:
+          - img "plus" [ref=e107]
+          - text: ¿Puedo pedir tarjetas adicionales?
+        - generic [ref=e109] [cursor=pointer]:
+          - img "plus" [ref=e110]
+          - text: ¿Puedo pedir aumento o disminución del límite?
+        - generic [ref=e112] [cursor=pointer]:
+          - img "plus" [ref=e113]
+          - text: ¿Qué es el PIN?
+        - generic [ref=e115] [cursor=pointer]:
+          - img "plus" [ref=e116]
+          - text: ¿Cómo puedo solicitar el PIN?
+        - generic [ref=e118] [cursor=pointer]:
+          - img "plus" [ref=e119]
+          - text: ¿Cómo puedo activar la Tarjeta de Crédito?
+        - generic [ref=e121] [cursor=pointer]:
+          - img "plus" [ref=e122]
+          - text: ¿Cómo puedo bloquear o desbloquear la Tarjeta de Crédito?
+        - generic [ref=e124] [cursor=pointer]:
+          - img "plus" [ref=e125]
+          - text: ¿Cómo puedo solicitar un reemplazo de la Tarjeta de Crédito?
+        - generic [ref=e127] [cursor=pointer]:
+          - img "plus" [ref=e128]
+          - text: ¿Las Tarjetas de Crédito Internacionales aplican para el programa de lealtad asociados a acumulación de puntos?
+        - generic [ref=e130] [cursor=pointer]:
+          - img "plus" [ref=e131]
+          - text: ¿Dónde puedo ver las condiciones del programa de lealtad?
+        - generic [ref=e133] [cursor=pointer]:
+          - img "plus" [ref=e134]
+          - text: ¿Dónde puedo validar la cobertura de las Tarjetas de Crédito con Mastercard?
+        - generic [ref=e136] [cursor=pointer]:
+          - img "plus" [ref=e137]
+          - text: ¿Qué hago si la Tarjeta de Crédito presenta un bloqueo por mora?
+  - dialog [active] [ref=e139]:
+    - generic [ref=e140]:
+      - button "Close" [ref=e142] [cursor=pointer]
+      - generic [ref=e144]:
+        - img "cookies" [ref=e145]
+        - heading "Utilizamos cookies para mejorar tu experiencia." [level=3] [ref=e146]
+        - generic [ref=e147]:
+          - generic [ref=e148]:
+            - text: Si continúas visitando nuestro sitio, estarás aceptando expresamente su uso.
+            - button "learn more about cookies" [ref=e149] [cursor=pointer]: Política de Privacidad
+          - button "Entendido" [ref=e151] [cursor=pointer]
+  - contentinfo [ref=e152]:
+    - generic [ref=e153]: Mercantil impulsa tu mundo
+    - generic [ref=e154]:
+      - generic [ref=e155]:
+        - paragraph [ref=e156]: Ubícanos
+        - link "Oficinas, Sucursales, ATMs" [ref=e158] [cursor=pointer]:
+          - /url: /sucursales
+        - paragraph [ref=e159]: Contáctanos
+        - link "Canales de atención" [ref=e161] [cursor=pointer]:
+          - /url: /canales-de-atencion
+        - link "Calendario" [ref=e163] [cursor=pointer]:
+          - /url: /calendario
+        - link "Actualización de datos" [ref=e165] [cursor=pointer]:
+          - /url: /actualizacion-de-datos
+        - generic [ref=e166]:
+          - link [ref=e167] [cursor=pointer]:
+            - /url: https://www.facebook.com/mercantilbancopanama/?modal=admin_todo_tour
+            - img "Facebook" [ref=e168]
+          - link [ref=e169] [cursor=pointer]:
+            - /url: https://www.instagram.com/mercantilpanama/
+            - img "Instagram" [ref=e170]
+          - link [ref=e171] [cursor=pointer]:
+            - /url: https://twitter.com/Mercantilbanpa
+            - img "Twitter" [ref=e172]
+          - link [ref=e173] [cursor=pointer]:
+            - /url: https://www.youtube.com/channel/UCczIdbwwsetVp7o3AQEdW9w
+            - img "Youtube" [ref=e174]
+      - generic [ref=e175]:
+        - paragraph [ref=e176]: Conócenos
+        - link "Información corporativa" [ref=e178] [cursor=pointer]:
+          - /url: /informacion-corporativa
+        - link "Compromiso social" [ref=e180] [cursor=pointer]:
+          - /url: /compromiso-social
+        - link "Información financiera" [ref=e182] [cursor=pointer]:
+          - /url: /informacion-financiera
+        - link "Código de ética" [ref=e184] [cursor=pointer]:
+          - /url: /codigo-de-etica
+        - link "PLC/FT y PADM" [ref=e186] [cursor=pointer]:
+          - /url: /pclft-y-padm
+        - link "Gestión de riesgos" [ref=e188] [cursor=pointer]:
+          - /url: /gestion-de-riesgos
+        - link "Comunicados" [ref=e190] [cursor=pointer]:
+          - /url: /comunicados
+      - generic [ref=e191]:
+        - paragraph [ref=e192]: Enlaces de interés
+        - link "Preguntas frecuentes" [ref=e194] [cursor=pointer]:
+          - /url: /faq
+        - link "Servicios especiales" [ref=e196] [cursor=pointer]:
+          - /url: /servicios-especiales
+        - link "Formulario e instrucciones" [ref=e198] [cursor=pointer]:
+          - /url: /faq?section=Formularios-e-instrucciones
+        - link "Reclamos" [ref=e200] [cursor=pointer]:
+          - /url: /reclamos
+        - link "Seguridad" [ref=e202] [cursor=pointer]:
+          - /url: /seguridad
+        - link "Contrato único" [ref=e204] [cursor=pointer]:
+          - /url: https://media.mercantilbanco.com.pa/public-media/pdf/contrato_unico.pdf?v=1789070531666
+        - link "Denuncias anónimas" [ref=e206] [cursor=pointer]:
+          - /url: /formularios/reportes-de-incidencias
+      - generic [ref=e207]:
+        - paragraph [ref=e208]: Tasas, tarifas y comisiones
+        - link "Tarifas y comisiones banco" [ref=e210] [cursor=pointer]:
+          - /url: https://media.mercantilbanco.com.pa/public-media/pdf/Tarifas_y_Comisiones.pdf?v=1789070531666
+        - link "Tasas de interés segmento local" [ref=e212] [cursor=pointer]:
+          - /url: https://media.mercantilbanco.com.pa/public-media/pdf/Tasas_de_interes.pdf?v=1789070531666
+        - link "Tasas de interés segmento internacional" [ref=e214] [cursor=pointer]:
+          - /url: https://media.mercantilbanco.com.pa/public-media/pdf/Tasas_de_interes_internacional.pdf?v=1789070531666
+    - text: + + + +
+    - generic [ref=e215]:
+      - img "SBP" [ref=e216]
+      - link "Política de Privacidad y Protección de Datos" [ref=e218] [cursor=pointer]:
+        - /url: /politicas-de-privacidad
+    - generic [ref=e219]:
+      - text: © Copyright 2009 Mercantil Banco, S.A. Todos los derechos reservados. Entidad regulada y supervisada por la Superintendencia de Bancos de Panamá. - Powered by
+      - link "Darien Technology" [ref=e220] [cursor=pointer]:
+        - /url: https://darient.com

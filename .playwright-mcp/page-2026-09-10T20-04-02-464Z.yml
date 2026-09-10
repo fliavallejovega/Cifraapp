@@ -1,0 +1,44 @@
+- generic [active] [ref=f10e1]:
+  - banner "header" [ref=f10e2]:
+    - generic [ref=f10e3]:
+      - generic:
+        - link "Saltar al contenido":
+          - /url: "#skipTo"
+      - generic [ref=f10e5]:
+        - link [ref=f10e7] [cursor=pointer]:
+          - /url: https://www.visa.com.pa/
+          - img "Visa Home" [ref=f10e8]
+        - generic [ref=f10e12]:
+          - navigation "Site" [ref=f10e13]:
+            - text:  
+            - list [ref=f10e14]:
+              - listitem [ref=f10e15]:
+                - button "Personas" [ref=f10e16] [cursor=pointer]
+              - listitem [ref=f10e17]:
+                - button "Negocios" [ref=f10e18] [cursor=pointer]
+              - listitem [ref=f10e19]:
+                - button "Innovadores" [ref=f10e20] [cursor=pointer]
+              - listitem [ref=f10e21]:
+                - button "Todos" [ref=f10e22] [cursor=pointer]
+          - generic [ref=f10e24]:
+            - button "Search visa.com" [ref=f10e25] [cursor=pointer]: 
+            - text: 
+      - text:  
+  - main:
+    - alert [ref=f10e26]
+  - contentinfo "footer":
+    - navigation "Recurso de pie de página" [ref=f10e28]:
+      - generic [ref=f10e29]:
+        - generic "footer" [ref=f10e31]:
+          - list [ref=f10e35]:
+            - listitem [ref=f10e36]:
+              - link "Legal" [ref=f10e37] [cursor=pointer]:
+                - /url: https://www.visa.com.pa/legal.html
+            - listitem [ref=f10e38]:
+              - link "Aviso de Privacidad" [ref=f10e39] [cursor=pointer]:
+                - /url: https://www.visa.com.pa/legal/global-privacy-notice.html
+            - listitem [ref=f10e40]:
+              - link "Preferencias sobre las cookies (Abrir en Nueva ventana, Enlace externo)" [ref=f10e41] [cursor=pointer]:
+                - /url: https://policy.cookiereports.com/de676c86-es.html
+                - text: Preferencias sobre las cookies
+        - paragraph [ref=f10e43]: © Copyright 1996 - 2026. Todos los derechos reservados.

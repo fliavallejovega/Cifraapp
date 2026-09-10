@@ -1,0 +1,4 @@
+- generic [active] [ref=f13e1]:
+  - banner "header" [ref=f13e2]
+  - main
+  - contentinfo "footer"

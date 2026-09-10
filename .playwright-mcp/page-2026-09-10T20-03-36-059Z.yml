@@ -1,0 +1,764 @@
+- generic [active] [ref=f6e1]:
+  - banner "header" [ref=f6e2]:
+    - generic [ref=f6e3]:
+      - generic:
+        - link "Saltar al contenido":
+          - /url: "#skipTo"
+      - generic [ref=f6e5]:
+        - link [ref=f6e7] [cursor=pointer]:
+          - /url: https://www.visa.com.pa/
+          - img "Visa Home" [ref=f6e8]
+        - generic [ref=f6e12]:
+          - navigation "Site" [ref=f6e13]:
+            - text:  
+            - list [ref=f6e14]:
+              - listitem [ref=f6e15]:
+                - button "Personas" [ref=f6e16] [cursor=pointer]
+              - listitem [ref=f6e17]:
+                - button "Negocios" [ref=f6e18] [cursor=pointer]
+              - listitem [ref=f6e19]:
+                - button "Innovadores" [ref=f6e20] [cursor=pointer]
+              - listitem [ref=f6e21]:
+                - button "Todos" [ref=f6e22] [cursor=pointer]
+          - generic [ref=f6e24]:
+            - button "Search visa.com" [ref=f6e25] [cursor=pointer]: 
+            - text: 
+      - text:  
+  - main [ref=f6e26]:
+    - generic [ref=f6e28]:
+      - generic [ref=f6e30]:
+        - heading "Promociones y descuentos de Visa" [level=1] [ref=f6e32]
+        - paragraph [ref=f6e33]: Disfruta de los mejores descuentos, promociones y ofertas pagando con tus tarjetas Visa. Encuentra viajes, restaurantes, entretenimiento y mucho más.
+      - region "Filtros de ofertas" [ref=f6e35]:
+        - generic [ref=f6e37]:
+          - generic [ref=f6e38]:
+            - form "Categorías de comercios" [ref=f6e42]:
+              - generic [ref=f6e43]:
+                - generic [ref=f6e45]:
+                  - generic [ref=f6e46]: Filter offers will update listing
+                  - combobox "Filtro por categorías" [ref=f6e47]:
+                    - option "Categorías de comercios" [selected]
+                    - option "Apparel & Accessories"
+                    - option "Básicos de empresa"
+                    - option "Compras"
+                    - option "Entertainment & Recreation"
+                    - option "Entretenimiento"
+                    - option "Event / Lifestyle Offers"
+                    - option "Otras"
+                    - option "Protección"
+                    - option "Restaurantes"
+                    - option "Sustainability"
+                    - option "Viajes"
+                - generic: 
+            - form "Tipos de tarjetas" [ref=f6e51]:
+              - generic [ref=f6e52]:
+                - generic [ref=f6e54]:
+                  - generic: Tipos de tarjetas
+                  - generic [ref=f6e55]: Filter offers will update listing
+                  - combobox "Filtro por producto de tarjeta" [ref=f6e56]:
+                    - option "Tipos de tarjetas"
+                    - option "Visa Business"
+                    - option "Visa Clásica"
+                    - option "Visa Electron"
+                    - option "Visa Gold"
+                    - option "Visa Infinite"
+                    - option "Visa Platinum"
+                    - option "Visa Signature" [selected]
+                - generic: 
+            - form "Tipos de pagos" [ref=f6e60]:
+              - generic [ref=f6e61]:
+                - generic [ref=f6e63]:
+                  - generic [ref=f6e64]: Filter offers will update listing
+                  - combobox "Filtro por tipo de pago" [ref=f6e65]:
+                    - option "Tipos de pagos" [selected]
+                    - option "Crédito"
+                    - option "Débito"
+                    - option "Prepago"
+                - generic: 
+            - form "Países de redención" [ref=f6e69]:
+              - generic [ref=f6e70]:
+                - generic [ref=f6e72]:
+                  - generic [ref=f6e73]: Filter offers will update listing
+                  - combobox "Filtro por país en donde puede canjearse la oferta" [ref=f6e74]:
+                    - option "Países de redención" [selected]
+                    - option "Afganistán"
+                    - option "Albania"
+                    - option "Alemania"
+                    - option "Andorra"
+                    - option "Angola"
+                    - option "Anguila"
+                    - option "Antigua y Barbuda"
+                    - option "Antillas Holandesas"
+                    - option "Arabia Saudí"
+                    - option "Argelia"
+                    - option "Argentina"
+                    - option "Armenia"
+                    - option "Aruba"
+                    - option "Australia"
+                    - option "Austria"
+                    - option "Azerbaiyán"
+                    - option "Bahamas"
+                    - option "Bahrein"
+                    - option "Bangladesh"
+                    - option "Barbados"
+                    - option "Bélgica"
+                    - option "Belice"
+                    - option "Benin"
+                    - option "Bermuda"
+                    - option "Bhutan"
+                    - option "Bielorrusia"
+                    - option "Bolivia"
+                    - option "Bosnia and Herzegovina"
+                    - option "Botsuana"
+                    - option "Brasil"
+                    - option "Brunei"
+                    - option "Bulgaria"
+                    - option "Burkina Faso"
+                    - option "Burundi"
+                    - option "Cabo Verde"
+                    - option "Camboya"
+                    - option "Camerún"
+                    - option "Canadá"
+                    - option "Chad"
+                    - option "Chile"
+                    - option "China continental"
+                    - option "Chipre"
+                    - option "Colombia"
+                    - option "Comoros"
+                    - option "Congo"
+                    - option "Corea del Sur"
+                    - option "Costa de Marfil"
+                    - option "Costa Rica"
+                    - option "Croacia"
+                    - option "Curasao"
+                    - option "Dinamarca"
+                    - option "Djibouti"
+                    - option "Dominica"
+                    - option "Ecuador"
+                    - option "Egipto"
+                    - option "El Salvador"
+                    - option "Emiratos Arabes Unidos"
+                    - option "Eritrea"
+                    - option "Eslovaquia"
+                    - option "Eslovenia"
+                    - option "España"
+                    - option "Estados Unidos"
+                    - option "Estonia"
+                    - option "Etiopía"
+                    - option "Fiji"
+                    - option "Filipinas"
+                    - option "Finlandia"
+                    - option "Francia"
+                    - option "Gabón"
+                    - option "Gambia"
+                    - option "Georgia"
+                    - option "Ghana"
+                    - option "Gibraltar"
+                    - option "Granada"
+                    - option "Grecia"
+                    - option "Groenlandia"
+                    - option "Guadalupe"
+                    - option "Guam"
+                    - option "Guatemala"
+                    - option "Guayana Francesa"
+                    - option "Guernsey"
+                    - option "Guinea"
+                    - option "Guinea Ecuatorial"
+                    - option "Guinea-Bissau"
+                    - option "Guyana"
+                    - option "Haiti"
+                    - option "Holanda"
+                    - option "Honduras"
+                    - option "Hong Kong"
+                    - option "Hungría"
+                    - option "India"
+                    - option "Indonesia"
+                    - option "Iraq"
+                    - option "Irlanda"
+                    - option "Isla Ascensión"
+                    - option "Isla Bouvet"
+                    - option "Isla de Man"
+                    - option "Isla Navidad"
+                    - option "Isla Norfolk"
+                    - option "Isla Pitcairn"
+                    - option "Isla Reunión"
+                    - option "Islandia"
+                    - option "Islas Bes"
+                    - option "Islas Caimán"
+                    - option "Islas Cocos"
+                    - option "Islas Cook"
+                    - option "Islas Feroe"
+                    - option "Islas Georgia del Sur y Sandwich del Sur"
+                    - option "Islas Heard y Mc Donald"
+                    - option "Islas Malvinas"
+                    - option "Islas Marianas del Norte"
+                    - option "Islas Marshall"
+                    - option "Islas Salomón"
+                    - option "Islas Svalbard y Jan Mayen"
+                    - option "Islas Vírgenes Británicas"
+                    - option "Islas Vírgenes de Estados Unidos"
+                    - option "Islas Wallis y Futuna"
+                    - option "Israel"
+                    - option "Italia"
+                    - option "Jamaica"
+                    - option "Japón"
+                    - option "Jersey"
+                    - option "Jordania"
+                    - option "Kazakhstan"
+                    - option "Kenya"
+                    - option "Kiribati"
+                    - option "Kosovo"
+                    - option "Kuwait"
+                    - option "Kyrgyzstan"
+                    - option "Laos"
+                    - option "Lesotho"
+                    - option "Letonia"
+                    - option "Líbano"
+                    - option "Liberia"
+                    - option "Libia"
+                    - option "Liechtenstein"
+                    - option "Lituania"
+                    - option "Luxemburgo"
+                    - option "Macao"
+                    - option "Macedonia"
+                    - option "Madagascar"
+                    - option "Malasia"
+                    - option "Malawi"
+                    - option "Maldivas"
+                    - option "Mali"
+                    - option "Malta"
+                    - option "Marruecos"
+                    - option "Martinica"
+                    - option "Mauricio"
+                    - option "Mauritania"
+                    - option "Mayotte"
+                    - option "Metropolitana francesa"
+                    - option "México"
+                    - option "Micronesia"
+                    - option "Moldavia"
+                    - option "Mónaco"
+                    - option "Mongolia"
+                    - option "Montenegro"
+                    - option "Montserrat"
+                    - option "Mozambique"
+                    - option "Myanmar"
+                    - option "Namibia"
+                    - option "Nauru"
+                    - option "Nepal"
+                    - option "Nicaragua"
+                    - option "Niger"
+                    - option "Nigeria"
+                    - option "Niue"
+                    - option "Noruega"
+                    - option "Nueva Caledonia"
+                    - option "Nueva Zelanda"
+                    - option "Omán"
+                    - option "Pakistán"
+                    - option "Palau"
+                    - option "Palestina"
+                    - option "Panamá"
+                    - option "Papua Nueva Guinea"
+                    - option "Paraguay"
+                    - option "Perú"
+                    - option "Polinesia Francesa"
+                    - option "Polonia"
+                    - option "Portugal"
+                    - option "Puerto Rico"
+                    - option "Qatar"
+                    - option "Reino Unido"
+                    - option "República Centroafricana"
+                    - option "República Checa"
+                    - option "República Democrática del Congo"
+                    - option "República Dominicana"
+                    - option "Ruanda"
+                    - option "Rumanía"
+                    - option "Sáhara Occidental"
+                    - option "Samoa"
+                    - option "Samoa Americana"
+                    - option "San Bartolomé"
+                    - option "San Marino"
+                    - option "San Martin"
+                    - option "Santa Helena"
+                    - option "Santa Sede"
+                    - option "Santo Tomé y Príncipe"
+                    - option "Senegal"
+                    - option "Serbia"
+                    - option "Seychelles"
+                    - option "Sierra Leone"
+                    - option "Singapur"
+                    - option "Somalia"
+                    - option "Sri Lanka"
+                    - option "St. Kitts-Nevis"
+                    - option "St. Lucia"
+                    - option "St. Vincent y Granadinas"
+                    - option "Sudáfrica"
+                    - option "Sudán"
+                    - option "Sudán del Sur"
+                    - option "Suecia"
+                    - option "Suiza"
+                    - option "Suriname"
+                    - option "Swazilandia"
+                    - option "Tailandia"
+                    - option "Taiwan"
+                    - option "Tajikistán"
+                    - option "Tanzania"
+                    - option "Territorio Oceánico de las Indias Británicas"
+                    - option "Territorios franceses del sur"
+                    - option "Timor Oriental"
+                    - option "Timor-Leste"
+                    - option "Togo"
+                    - option "Tokelau"
+                    - option "Tonga"
+                    - option "Trinidad y Tobago"
+                    - option "Túnez"
+                    - option "Turkmenistan"
+                    - option "Turks y Caicos"
+                    - option "Turquía"
+                    - option "Tuvalu"
+                    - option "U.S. Minor Outlying Islands"
+                    - option "Ucrania"
+                    - option "Uganda"
+                    - option "Uruguay"
+                    - option "Uzbekistán"
+                    - option "Vanuatu"
+                    - option "Vaticano"
+                    - option "Venezuela"
+                    - option "Vietnam"
+                    - option "Yemen"
+                    - option "Zambia"
+                    - option "Zimbabwe"
+                - generic: 
+          - button "  Más" [ref=f6e76] [cursor=pointer]:
+            - generic [ref=f6e77]:
+              - generic [ref=f6e78]:
+                - generic [ref=f6e79]: 
+                - generic [ref=f6e80]: 
+              - text: Más
+          - alert [ref=f6e81]
+          - alert [ref=f6e82]
+      - generic [ref=f6e84]:
+        - region "SPECIAL_OFFERS perks list" [ref=f6e86]:
+          - list [ref=f6e87]:
+            - listitem [ref=f6e88]:
+              - generic [ref=f6e91] [cursor=pointer]:
+                - generic [ref=f6e92]: .
+                - generic [ref=f6e97]:
+                  - heading "Garantía Extendida" [level=3] [ref=f6e98]
+                  - list [ref=f6e101]:
+                    - listitem [ref=f6e102]: Visa Infinite
+                    - listitem [ref=f6e103]: Visa Signature
+                    - listitem [ref=f6e104]: Visa Platinum
+                    - listitem [ref=f6e105]: Visa Gold
+                  - link "Garantía Extendida Extiende la garantía de tus compras con Visa y protege tus productos por más tiempo. Disfruta respaldo adicional y compra con confianza." [ref=f6e106]:
+                    - /url: /es_PA/promociones/garantia-extendida/153011?cardProduct=65
+                    - paragraph [ref=f6e107]: Extiende la garantía de tus compras con Visa y protege tus productos por más tiempo. Disfruta respaldo adicional y compra con confianza. 
+            - listitem [ref=f6e108]:
+              - generic [ref=f6e111] [cursor=pointer]:
+                - generic [ref=f6e112]: .
+                - generic [ref=f6e117]:
+                  - heading "Seguro de Retraso de Equipaje" [level=3] [ref=f6e118]
+                  - list [ref=f6e121]:
+                    - listitem [ref=f6e122]: Visa Infinite
+                    - listitem [ref=f6e123]: Visa Signature
+                  - link "Seguro de Retraso de Equipaje Con Visa viajas protegido. El Seguro de Retraso de Equipaje te da la tranquilidad que necesitas al viajar. Conoce más sobre la protección de equipaje." [ref=f6e124]:
+                    - /url: /es_PA/promociones/seguro-de-retraso-de-equipaje/153026?cardProduct=65
+                    - paragraph [ref=f6e125]: Con Visa viajas protegido. El Seguro de Retraso de Equipaje te da la tranquilidad que necesitas al viajar. Conoce más sobre la protección de equipaje. 
+            - listitem [ref=f6e126]:
+              - generic [ref=f6e129] [cursor=pointer]:
+                - generic [ref=f6e130]: .
+                - generic [ref=f6e135]:
+                  - heading "Centro de Atención al Cliente Visa" [level=3] [ref=f6e136]
+                  - list [ref=f6e139]:
+                    - listitem [ref=f6e140]: Visa Infinite
+                    - listitem [ref=f6e141]: Visa Signature
+                    - listitem [ref=f6e142]: Visa Platinum
+                    - listitem [ref=f6e143]: Visa Gold
+                    - listitem [ref=f6e144]: Visa Classic
+                  - link "Centro de Atención al Cliente Visa Contacta el centro de atención Visa en Ecuador para soporte, consultas o reportar tu tarjeta. Atención rápida y asistencia global." [ref=f6e145]:
+                    - /url: /es_PA/promociones/centro-de-atencion-al-cliente-visa/153049?cardProduct=65
+                    - paragraph [ref=f6e146]: Contacta el centro de atención Visa en Ecuador para soporte, consultas o reportar tu tarjeta. Atención rápida y asistencia global. 
+            - listitem [ref=f6e147]:
+              - generic [ref=f6e150] [cursor=pointer]:
+                - generic [ref=f6e151]: .
+                - generic [ref=f6e156]:
+                  - heading "Seguro de Alquiler de Vehículos" [level=3] [ref=f6e157]
+                  - list [ref=f6e160]:
+                    - listitem [ref=f6e161]: Visa Infinite
+                    - listitem [ref=f6e162]: Visa Signature
+                  - link "Seguro de Alquiler de Vehículos Alquilar un auto con Visa tiene más beneficios. Paga con tu Visa y recibe el Seguro de Alquiler de Vehículos de Visa. Accede al beneficio." [ref=f6e163]:
+                    - /url: /es_PA/promociones/seguro-de-alquiler-de-vehiculos/178434?cardProduct=65
+                    - paragraph [ref=f6e164]: Alquilar un auto con Visa tiene más beneficios. Paga con tu Visa y recibe el Seguro de Alquiler de Vehículos de Visa. Accede al beneficio. 
+            - listitem [ref=f6e165]:
+              - generic [ref=f6e168] [cursor=pointer]:
+                - generic [ref=f6e169]: .
+                - generic [ref=f6e174]:
+                  - heading "Servicios Médicos de Emergencia Internacional" [level=3] [ref=f6e175]
+                  - list [ref=f6e178]:
+                    - listitem [ref=f6e179]: Visa Infinite
+                    - listitem [ref=f6e180]: Visa Signature
+                    - listitem [ref=f6e181]: Visa Platinum
+                  - link "Servicios Médicos de Emergencia Internacional Viaja con tranquilidad con asistencia médica de emergencia internacional Visa. Cobertura global y soporte 24/7. Conoce más." [ref=f6e182]:
+                    - /url: /es_PA/promociones/servicios-medicos-de-emergencia-internacional/153027?cardProduct=65
+                    - paragraph [ref=f6e183]: Viaja con tranquilidad con asistencia médica de emergencia internacional Visa. Cobertura global y soporte 24/7. Conoce más. 
+            - listitem [ref=f6e184]:
+              - generic [ref=f6e187] [cursor=pointer]:
+                - generic [ref=f6e188]: .
+                - generic [ref=f6e193]:
+                  - heading "Línea de Asesoramiento de Enfermería" [level=3] [ref=f6e194]
+                  - list [ref=f6e197]:
+                    - listitem [ref=f6e198]: Visa Infinite
+                    - listitem [ref=f6e199]: Visa Signature
+                  - link "Línea de Asesoramiento de Enfermería ¿Tienes dudas sobre sintomas o necesitas información sobre una condicion médica? Visa te brinda el beneficio Nurse Advice linea las 24 hs. Conoce más." [ref=f6e200]:
+                    - /url: /es_PA/promociones/linea-de-asesoramiento-de-enfermeria/159294?cardProduct=65
+                    - paragraph [ref=f6e201]: ¿Tienes dudas sobre sintomas o necesitas información sobre una condicion médica? Visa te brinda el beneficio Nurse Advice linea las 24 hs. Conoce más. 
+            - listitem [ref=f6e202]:
+              - generic [ref=f6e205] [cursor=pointer]:
+                - generic [ref=f6e206]: .
+                - generic [ref=f6e211]:
+                  - heading "Visa Luxury Hotel Collection" [level=3] [ref=f6e212]
+                  - list [ref=f6e215]:
+                    - listitem [ref=f6e216]: Visa Infinite
+                    - listitem [ref=f6e217]: Visa Signature
+                    - listitem [ref=f6e218]: Visa Platinum
+                  - link "Visa Luxury Hotel Collection Con Visa viajas como te mereces, accede a beneficios exclusivos y a la colección de hoteles más prestigiosos del mundo, con upgrade y muchas ventajas." [ref=f6e219]:
+                    - /url: /es_PA/promociones/visa-luxury-hotel-collection/153044?cardProduct=65
+                    - paragraph [ref=f6e220]: Con Visa viajas como te mereces, accede a beneficios exclusivos y a la colección de hoteles más prestigiosos del mundo, con upgrade y muchas ventajas. 
+            - listitem [ref=f6e221]:
+              - generic [ref=f6e224] [cursor=pointer]:
+                - generic [ref=f6e225]: .
+                - generic [ref=f6e230]:
+                  - heading "Visa Digital Concierge" [level=3] [ref=f6e231]
+                  - list [ref=f6e234]:
+                    - listitem [ref=f6e235]: Visa Infinite
+                    - listitem [ref=f6e236]: Visa Signature
+                    - listitem [ref=f6e237]: Visa Platinum
+                  - link "Visa Digital Concierge Con Visa tienes un Concierge personal disponible para hacer tu vida más fácil. Desde una reserva o planificar un viaje, contacta al Visa Digital Concierge." [ref=f6e238]:
+                    - /url: /es_PA/promociones/visa-digital-concierge/157950?cardProduct=65
+                    - paragraph [ref=f6e239]: Con Visa tienes un Concierge personal disponible para hacer tu vida más fácil. Desde una reserva o planificar un viaje, contacta al Visa Digital Concierge. 
+            - listitem [ref=f6e240]:
+              - generic [ref=f6e243] [cursor=pointer]:
+                - generic [ref=f6e244]: .
+                - generic [ref=f6e249]:
+                  - heading "Visa Médico Online" [level=3] [ref=f6e250]
+                  - list [ref=f6e253]:
+                    - listitem [ref=f6e254]: Visa Infinite
+                    - listitem [ref=f6e255]: Visa Signature
+                    - listitem [ref=f6e256]: Visa Platinum
+                  - link "Visa Médico Online Al viajar es esencial poder acceder fácilmente a un médico cuando lo necesites. Visa te brinda el beneficio Visa Médico Online las 24 hs, desde donde estés." [ref=f6e257]:
+                    - /url: /es_PA/promociones/visa-medico-online/153041?cardProduct=65
+                    - paragraph [ref=f6e258]: Al viajar es esencial poder acceder fácilmente a un médico cuando lo necesites. Visa te brinda el beneficio Visa Médico Online las 24 hs, desde donde estés. 
+            - listitem [ref=f6e259]:
+              - generic [ref=f6e262] [cursor=pointer]:
+                - generic [ref=f6e263]: .
+                - generic [ref=f6e268]:
+                  - heading "Seguro de Pérdida de Equipaje" [level=3] [ref=f6e269]
+                  - list [ref=f6e272]:
+                    - listitem [ref=f6e273]: Visa Infinite
+                    - listitem [ref=f6e274]: Visa Signature
+                  - link "Seguro de Pérdida de Equipaje Con Visa viajas protegido. El Seguro de Pérdida de Equipaje te da la tranquilidad que necesitas al viajar. Conoce más sobre seguros de viaje." [ref=f6e275]:
+                    - /url: /es_PA/promociones/seguro-de-perdida-de-equipaje/153024?cardProduct=65
+                    - paragraph [ref=f6e276]: Con Visa viajas protegido. El Seguro de Pérdida de Equipaje te da la tranquilidad que necesitas al viajar. Conoce más sobre seguros de viaje. 
+            - listitem [ref=f6e277]:
+              - generic [ref=f6e280] [cursor=pointer]:
+                - generic [ref=f6e281]: .
+                - generic [ref=f6e286]:
+                  - heading "Hertz" [level=3] [ref=f6e287]
+                  - list [ref=f6e290]:
+                    - listitem [ref=f6e291]: Visa Infinite
+                    - listitem [ref=f6e292]: Visa Signature
+                    - listitem [ref=f6e293]: Visa Platinum
+                    - listitem [ref=f6e294]: Visa Gold
+                    - listitem [ref=f6e295]: Visa Classic
+                    - listitem [ref=f6e296]: Visa Business
+                  - link "Hertz Reserva online y consigue hasta un 30% de descuento en Hertz" [ref=f6e297]:
+                    - /url: /es_PA/promociones/hertz/169710?cardProduct=65
+                    - paragraph [ref=f6e298]: Reserva online y consigue hasta un 30% de descuento en Hertz 
+            - listitem [ref=f6e299]:
+              - generic [ref=f6e302] [cursor=pointer]:
+                - generic [ref=f6e303]: .
+                - generic [ref=f6e308]:
+                  - heading "Protección de Precio" [level=3] [ref=f6e309]
+                  - list [ref=f6e312]:
+                    - listitem [ref=f6e313]: Visa Infinite
+                    - listitem [ref=f6e314]: Visa Signature
+                    - listitem [ref=f6e315]: Visa Platinum
+                    - listitem [ref=f6e316]: Visa Gold
+                    - listitem [ref=f6e317]: Visa Classic
+                  - link "Protección de Precio Aprovecha la protección de precio Visa y recibe reembolso si encuentras un precio menor. Compra con confianza y respaldo. Conoce más." [ref=f6e318]:
+                    - /url: /es_PA/promociones/proteccion-de-precio/153014?cardProduct=65
+                    - paragraph [ref=f6e319]: Aprovecha la protección de precio Visa y recibe reembolso si encuentras un precio menor. Compra con confianza y respaldo. Conoce más. 
+            - listitem [ref=f6e320]:
+              - generic [ref=f6e323] [cursor=pointer]:
+                - generic [ref=f6e324]: .
+                - generic [ref=f6e329]:
+                  - heading "Servicio de Reemplazo de Tarjetas" [level=3] [ref=f6e330]
+                  - list [ref=f6e333]:
+                    - listitem [ref=f6e334]: Visa Infinite
+                    - listitem [ref=f6e335]: Visa Signature
+                    - listitem [ref=f6e336]: Visa Platinum
+                    - listitem [ref=f6e337]: Visa Gold
+                    - listitem [ref=f6e338]: Visa Classic
+                  - link "Servicio de Reemplazo de Tarjetas Obtén reemplazo de tu tarjeta Visa en caso de pérdida o robo. Asistencia global rápida y segura para seguir pagando sin interrupciones." [ref=f6e339]:
+                    - /url: /es_PA/promociones/servicio-de-reemplazo-de-tarjetas/153008?cardProduct=65
+                    - paragraph [ref=f6e340]: Obtén reemplazo de tu tarjeta Visa en caso de pérdida o robo. Asistencia global rápida y segura para seguir pagando sin interrupciones. 
+            - listitem [ref=f6e341]:
+              - generic [ref=f6e344] [cursor=pointer]:
+                - generic [ref=f6e345]: .
+                - generic [ref=f6e350]:
+                  - heading "Visa Airport Companion" [level=3] [ref=f6e351]
+                  - list [ref=f6e354]:
+                    - listitem [ref=f6e355]: Visa Infinite
+                    - listitem [ref=f6e356]: Visa Signature
+                    - listitem [ref=f6e357]: Visa Platinum
+                  - link "Visa Airport Companion Disfruta cada viaje con beneficios en aeropuertos de todo el mundo, en restaurantes y tiendas, salas VIP y más. Descarga la APP Visa Aiport Companion." [ref=f6e358]:
+                    - /url: /es_PA/promociones/visa-airport-companion/153826?cardProduct=65
+                    - paragraph [ref=f6e359]: Disfruta cada viaje con beneficios en aeropuertos de todo el mundo, en restaurantes y tiendas, salas VIP y más. Descarga la APP Visa Aiport Companion. 
+            - listitem [ref=f6e360]:
+              - generic [ref=f6e363] [cursor=pointer]:
+                - generic [ref=f6e364]: .
+                - generic [ref=f6e369]:
+                  - heading "Gotuuri.com" [level=3] [ref=f6e370]
+                  - list [ref=f6e373]:
+                    - listitem [ref=f6e374]: Visa Infinite
+                    - listitem [ref=f6e375]: Visa Signature
+                    - listitem [ref=f6e376]: Visa Platinum
+                    - listitem [ref=f6e377]: Visa Gold
+                    - listitem [ref=f6e378]: Visa Classic
+                  - link "Gotuuri.com Utiliza el código VISA10 y paga con tus tarjetas Visa Crédito, Débito o Prepaga y obtén 10% de descuento en todos los tours y experiencias. ¡Conoce más!" [ref=f6e379]:
+                    - /url: /es_PA/promociones/gotuuricom/160288?cardProduct=65
+                    - paragraph [ref=f6e380]: Utiliza el código VISA10 y paga con tus tarjetas Visa Crédito, Débito o Prepaga y obtén 10% de descuento en todos los tours y experiencias. ¡Conoce más! 
+          - separator [ref=f6e381]
+        - region "DEFAULT perks list" [ref=f6e383]:
+          - list [ref=f6e384]:
+            - listitem [ref=f6e385]:
+              - generic [ref=f6e388] [cursor=pointer]:
+                - generic [ref=f6e389]: .
+                - generic [ref=f6e394]:
+                  - heading "Avis" [level=3] [ref=f6e395]
+                  - list [ref=f6e398]:
+                    - listitem [ref=f6e399]: Visa Infinite
+                    - listitem [ref=f6e400]: Visa Signature
+                    - listitem [ref=f6e401]: Visa Platinum
+                    - listitem [ref=f6e402]: Visa Business
+                  - link "Avis Hasta 20% de descuento en renta de coche" [ref=f6e403]:
+                    - /url: /es_PA/promociones/avis/169720?cardProduct=65
+                    - paragraph [ref=f6e404]: Hasta 20% de descuento en renta de coche 
+            - listitem [ref=f6e405]:
+              - generic [ref=f6e408] [cursor=pointer]:
+                - generic [ref=f6e409]: .
+                - generic [ref=f6e414]:
+                  - heading "Visa Destinations" [level=3] [ref=f6e415]
+                  - list [ref=f6e418]:
+                    - listitem [ref=f6e419]: Visa Infinite
+                    - listitem [ref=f6e420]: Visa Signature
+                    - listitem [ref=f6e421]: Visa Platinum
+                    - listitem [ref=f6e422]: Visa Gold
+                    - listitem [ref=f6e423]: Visa Classic
+                  - link "Visa Destinations Explora las maravillas de Dubái. Accede a ofertas exclusivas mientras disfrutas entretenimiento emocionante, descubres impresionantes íconos culturales y saboreas experiencias gastronómicas de primer nivel en una ciudad donde la innovación se encuentra con la tradición." [ref=f6e424]:
+                    - /url: /es_PA/promociones/visa-destinations/178694?cardProduct=65
+                    - paragraph [ref=f6e425]: Explora las maravillas de Dubái. Accede a ofertas exclusivas mientras disfrutas entretenimiento emocionante, descubres impresionantes íconos culturales y saboreas experiencias gastronómicas de primer nivel en una ciudad donde la innovación se encuentra con la tradición. 
+            - listitem [ref=f6e426]:
+              - generic [ref=f6e429] [cursor=pointer]:
+                - generic [ref=f6e430]: .
+                - generic [ref=f6e435]:
+                  - heading "Visa Destinations" [level=3] [ref=f6e436]
+                  - list [ref=f6e439]:
+                    - listitem [ref=f6e440]: Visa Infinite
+                    - listitem [ref=f6e441]: Visa Signature
+                    - listitem [ref=f6e442]: Visa Platinum
+                    - listitem [ref=f6e443]: Visa Gold
+                    - listitem [ref=f6e444]: Visa Classic
+                  - link "Visa Destinations Disfruta experiencias seleccionadas especialmente para hacer de tu recorrido por Londres una experiencia aún más gratificante. Accede a ofertas exclusivas mientras recorres barrios históricos, visitas museos de clase mundial y disfrutas propuestas gastronómicas destacadas en toda la ciudad." [ref=f6e445]:
+                    - /url: /es_PA/promociones/visa-destinations/178696?cardProduct=65
+                    - paragraph [ref=f6e446]: Disfruta experiencias seleccionadas especialmente para hacer de tu recorrido por Londres una experiencia aún más gratificante. Accede a ofertas exclusivas mientras recorres barrios históricos, visitas museos de clase mundial y disfrutas propuestas gastronómicas destacadas en toda la ciudad. 
+            - listitem [ref=f6e447]:
+              - generic [ref=f6e450] [cursor=pointer]:
+                - generic [ref=f6e451]: .
+                - generic [ref=f6e456]:
+                  - heading "Visa Destinations" [level=3] [ref=f6e457]
+                  - list [ref=f6e460]:
+                    - listitem [ref=f6e461]: Visa Infinite
+                    - listitem [ref=f6e462]: Visa Signature
+                    - listitem [ref=f6e463]: Visa Platinum
+                    - listitem [ref=f6e464]: Visa Gold
+                    - listitem [ref=f6e465]: Visa Classic
+                  - link "Visa Destinations Disfruta experiencias especialmente seleccionadas que capturan la magia atemporal de París. Aprovecha ofertas exclusivas en estadías boutique, acceso cultural privilegiado y la emblemática gastronomía parisina." [ref=f6e466]:
+                    - /url: /es_PA/promociones/visa-destinations/178692?cardProduct=65
+                    - paragraph [ref=f6e467]: Disfruta experiencias especialmente seleccionadas que capturan la magia atemporal de París. Aprovecha ofertas exclusivas en estadías boutique, acceso cultural privilegiado y la emblemática gastronomía parisina. 
+            - listitem [ref=f6e468]:
+              - generic [ref=f6e471] [cursor=pointer]:
+                - generic [ref=f6e472]: .
+                - generic [ref=f6e477]:
+                  - heading "Budget" [level=3] [ref=f6e478]
+                  - list [ref=f6e481]:
+                    - listitem [ref=f6e482]: Visa Infinite
+                    - listitem [ref=f6e483]: Visa Signature
+                    - listitem [ref=f6e484]: Visa Platinum
+                    - listitem [ref=f6e485]: Visa Gold
+                    - listitem [ref=f6e486]: Visa Classic
+                    - listitem [ref=f6e487]: Visa Business
+                  - link "Budget Hasta 20% de descuento en renta de coche" [ref=f6e488]:
+                    - /url: /es_PA/promociones/budget/169734?cardProduct=65
+                    - paragraph [ref=f6e489]: Hasta 20% de descuento en renta de coche 
+            - listitem [ref=f6e490]:
+              - generic [ref=f6e493] [cursor=pointer]:
+                - generic [ref=f6e494]: .
+                - generic [ref=f6e499]:
+                  - heading "Gamboa Rainforest Resort" [level=3] [ref=f6e500]
+                  - list [ref=f6e503]:
+                    - listitem [ref=f6e504]: Visa Infinite
+                    - listitem [ref=f6e505]: Visa Signature
+                    - listitem [ref=f6e506]: Visa Platinum
+                    - listitem [ref=f6e507]: Visa Gold
+                    - listitem [ref=f6e508]: Visa Classic
+                    - listitem [ref=f6e509]: Visa Business
+                  - link "Gamboa Rainforest Resort 10% de descuento en la tarifa. Incluye desayuno buffet y chiva nocturna para explorar la fauna de los alrededores." [ref=f6e510]:
+                    - /url: /es_PA/promociones/gamboa-rainforest-resort/171588?cardProduct=65
+                    - paragraph [ref=f6e511]: 10% de descuento en la tarifa. Incluye desayuno buffet y chiva nocturna para explorar la fauna de los alrededores. 
+            - listitem [ref=f6e512]:
+              - generic [ref=f6e515] [cursor=pointer]:
+                - generic [ref=f6e516]: .
+                - generic [ref=f6e521]:
+                  - heading "The Buenaventura Golf & Beach Resort" [level=3] [ref=f6e522]
+                  - list [ref=f6e525]:
+                    - listitem [ref=f6e526]: Visa Infinite
+                    - listitem [ref=f6e527]: Visa Signature
+                    - listitem [ref=f6e528]: Visa Platinum
+                    - listitem [ref=f6e529]: Visa Gold
+                    - listitem [ref=f6e530]: Visa Classic
+                    - listitem [ref=f6e531]: Visa Business
+                  - link "The Buenaventura Golf & Beach Resort 10% de descuento por noche en Premium rooms de lunes a domingo" [ref=f6e532]:
+                    - /url: /es_PA/promociones/the-buenaventura-golf-beach-resort/170900?cardProduct=65
+                    - paragraph [ref=f6e533]: 10% de descuento por noche en Premium rooms de lunes a domingo 
+            - listitem [ref=f6e534]:
+              - generic [ref=f6e537] [cursor=pointer]:
+                - generic [ref=f6e538]: .
+                - generic [ref=f6e543]:
+                  - heading "Hotel La Compañía del Valle" [level=3] [ref=f6e544]
+                  - list [ref=f6e547]:
+                    - listitem [ref=f6e548]: Visa Infinite
+                    - listitem [ref=f6e549]: Visa Signature
+                    - listitem [ref=f6e550]: Visa Platinum
+                    - listitem [ref=f6e551]: Visa Gold
+                    - listitem [ref=f6e552]: Visa Classic
+                    - listitem [ref=f6e553]: Visa Business
+                  - link "Hotel La Compañía del Valle Tarifa especial en servicios de transporte. Amenidad de bienvenida. Recorrido en nuestra casa de bienestar y parque de esculturas." [ref=f6e554]:
+                    - /url: /es_PA/promociones/hotel-la-compania-del-valle/174096?cardProduct=65
+                    - paragraph [ref=f6e555]: Tarifa especial en servicios de transporte. Amenidad de bienvenida. Recorrido en nuestra casa de bienestar y parque de esculturas. 
+            - listitem [ref=f6e556]:
+              - generic [ref=f6e559] [cursor=pointer]:
+                - generic [ref=f6e560]: .
+                - generic [ref=f6e565]:
+                  - heading "Hotel La Compañía Casco Antiguo" [level=3] [ref=f6e566]
+                  - list [ref=f6e569]:
+                    - listitem [ref=f6e570]: Visa Infinite
+                    - listitem [ref=f6e571]: Visa Signature
+                    - listitem [ref=f6e572]: Visa Platinum
+                    - listitem [ref=f6e573]: Visa Gold
+                    - listitem [ref=f6e574]: Visa Classic
+                    - listitem [ref=f6e575]: Visa Business
+                  - link "Hotel La Compañía Casco Antiguo Experience Both Hotels. Tarifa especial en servicios de transporte. Amenidad de bienvenida en cada hotel." [ref=f6e576]:
+                    - /url: /es_PA/promociones/hotel-la-compania-casco-antiguo/171614?cardProduct=65
+                    - paragraph [ref=f6e577]: Experience Both Hotels. Tarifa especial en servicios de transporte. Amenidad de bienvenida en cada hotel. 
+            - listitem [ref=f6e578]:
+              - generic [ref=f6e581] [cursor=pointer]:
+                - generic [ref=f6e582]: .
+                - generic [ref=f6e587]:
+                  - heading "Valle Escondido Wellness Resort" [level=3] [ref=f6e588]
+                  - list [ref=f6e591]:
+                    - listitem [ref=f6e592]: Visa Infinite
+                    - listitem [ref=f6e593]: Visa Signature
+                    - listitem [ref=f6e594]: Visa Platinum
+                    - listitem [ref=f6e595]: Visa Gold
+                    - listitem [ref=f6e596]: Visa Classic
+                    - listitem [ref=f6e597]: Visa Business
+                  - 'link "Valle Escondido Wellness Resort Opción 1: 10% sobre la tarifa de hospedaje + media pensión por mínimo 2 noches. Opción 2: En estancias de 3 o 5 noches: recibe limpieza facial de cortesía para 2 personas. Opción 3: En estancias de más de 5 noches: recibe un Town tour de cortesía para 2 personas." [ref=f6e598]':
+                    - /url: /es_PA/promociones/valle-escondido-wellness-resort/170898?cardProduct=65
+                    - paragraph [ref=f6e599]: "Opción 1: 10% sobre la tarifa de hospedaje + media pensión por mínimo 2 noches. Opción 2: En estancias de 3 o 5 noches: recibe limpieza facial de cortesía para 2 personas. Opción 3: En estancias de más de 5 noches: recibe un Town tour de cortesía para 2 personas. "
+            - listitem [ref=f6e600]:
+              - generic [ref=f6e603] [cursor=pointer]:
+                - generic [ref=f6e604]: .
+                - generic [ref=f6e609]:
+                  - heading "El Dorado" [level=3] [ref=f6e610]
+                  - list [ref=f6e613]:
+                    - listitem [ref=f6e614]: Visa Infinite
+                    - listitem [ref=f6e615]: Visa Signature
+                    - listitem [ref=f6e616]: Visa Platinum
+                    - listitem [ref=f6e617]: Visa Gold
+                    - listitem [ref=f6e618]: Visa Classic
+                  - link "El Dorado Disfruta una experiencia gastronómica de tres tiempos en un ambiente único, acompañada de música en vivo, podrás elegir entre una selección de platillos de alta calidad que incluye entrada, plato fuerte y postre, cuidadosamente preparados para complementar una velada especial. La combinación perfecta de sabores, buena compañía y entretenimiento en vivo para una noche inolvidable." [ref=f6e619]:
+                    - /url: /es_PA/promociones/el-dorado/179078?cardProduct=65
+                    - paragraph [ref=f6e620]: Disfruta una experiencia gastronómica de tres tiempos en un ambiente único, acompañada de música en vivo, podrás elegir entre una selección de platillos de alta calidad que incluye entrada, plato fuerte y postre, cuidadosamente preparados para complementar una velada especial. La combinación perfecta de sabores, buena compañía y entretenimiento en vivo para una noche inolvidable. 
+            - listitem [ref=f6e621]:
+              - generic [ref=f6e624] [cursor=pointer]:
+                - generic [ref=f6e625]: .
+                - generic [ref=f6e630]:
+                  - heading "Fiesta Americana Puerto Vallarta" [level=3] [ref=f6e631]
+                  - list [ref=f6e634]:
+                    - listitem [ref=f6e635]: Visa Infinite
+                    - listitem [ref=f6e636]: Visa Signature
+                    - listitem [ref=f6e637]: Visa Platinum
+                    - listitem [ref=f6e638]: Visa Gold
+                    - listitem [ref=f6e639]: Visa Classic
+                  - link "Fiesta Americana Puerto Vallarta Hasta 50% + 15% de descuento sobre tarifa pública." [ref=f6e640]:
+                    - /url: /es_PA/promociones/fiesta-americana-puerto-vallarta/158330?cardProduct=65
+                    - paragraph [ref=f6e641]: Hasta 50% + 15% de descuento sobre tarifa pública. 
+            - listitem [ref=f6e642]:
+              - generic [ref=f6e645] [cursor=pointer]:
+                - generic [ref=f6e646]: .
+                - generic [ref=f6e651]:
+                  - heading "Fiesta Americana Satélite" [level=3] [ref=f6e652]
+                  - list [ref=f6e655]:
+                    - listitem [ref=f6e656]: Visa Infinite
+                    - listitem [ref=f6e657]: Visa Signature
+                    - listitem [ref=f6e658]: Visa Platinum
+                    - listitem [ref=f6e659]: Visa Gold
+                    - listitem [ref=f6e660]: Visa Classic
+                    - listitem [ref=f6e661]: Visa Business
+                  - link "Fiesta Americana Satélite Hasta 50% + 15% de descuento sobre tarifa pública." [ref=f6e662]:
+                    - /url: /es_PA/promociones/fiesta-americana-satelite/158332?cardProduct=65
+                    - paragraph [ref=f6e663]: Hasta 50% + 15% de descuento sobre tarifa pública. 
+            - listitem [ref=f6e664]:
+              - generic [ref=f6e667] [cursor=pointer]:
+                - generic [ref=f6e668]: .
+                - generic [ref=f6e673]:
+                  - heading "Fiesta Americana Toreo" [level=3] [ref=f6e674]
+                  - list [ref=f6e677]:
+                    - listitem [ref=f6e678]: Visa Infinite
+                    - listitem [ref=f6e679]: Visa Signature
+                    - listitem [ref=f6e680]: Visa Platinum
+                    - listitem [ref=f6e681]: Visa Gold
+                    - listitem [ref=f6e682]: Visa Classic
+                  - link "Fiesta Americana Toreo Hasta 50% + 15% de descuento sobre tarifa pública." [ref=f6e683]:
+                    - /url: /es_PA/promociones/fiesta-americana-toreo/158334?cardProduct=65
+                    - paragraph [ref=f6e684]: Hasta 50% + 15% de descuento sobre tarifa pública. 
+            - listitem [ref=f6e685]:
+              - generic [ref=f6e688] [cursor=pointer]:
+                - generic [ref=f6e689]: .
+                - generic [ref=f6e694]:
+                  - heading "Fiesta Americana Viaducto" [level=3] [ref=f6e695]
+                  - list [ref=f6e698]:
+                    - listitem [ref=f6e699]: Visa Infinite
+                    - listitem [ref=f6e700]: Visa Signature
+                    - listitem [ref=f6e701]: Visa Platinum
+                    - listitem [ref=f6e702]: Visa Gold
+                    - listitem [ref=f6e703]: Visa Classic
+                  - link "Fiesta Americana Viaducto Hasta 50% + 15% de descuento sobre tarifa pública." [ref=f6e704]:
+                    - /url: /es_PA/promociones/fiesta-americana-viaducto/158336?cardProduct=65
+                    - paragraph [ref=f6e705]: Hasta 50% + 15% de descuento sobre tarifa pública. 
+  - contentinfo "footer":
+    - navigation "Recurso de pie de página" [ref=f6e707]:
+      - generic [ref=f6e708]:
+        - generic "footer" [ref=f6e710]:
+          - list [ref=f6e714]:
+            - listitem [ref=f6e715]:
+              - link "Legal" [ref=f6e716] [cursor=pointer]:
+                - /url: https://www.visa.com.pa/legal.html
+            - listitem [ref=f6e717]:
+              - link "Aviso de Privacidad" [ref=f6e718] [cursor=pointer]:
+                - /url: https://www.visa.com.pa/legal/global-privacy-notice.html
+            - listitem [ref=f6e719]:
+              - link "Preferencias sobre las cookies (Abrir en Nueva ventana, Enlace externo)" [ref=f6e720] [cursor=pointer]:
+                - /url: https://policy.cookiereports.com/de676c86-es.html
+                - text: Preferencias sobre las cookies
+        - paragraph [ref=f6e722]: © Copyright 1996 - 2026. Todos los derechos reservados.

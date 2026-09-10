@@ -3707,7 +3707,9 @@
         "forThisCard": "Lo que tu banco publica para una {identity}. No sale de tu contrato: es la referencia con la que sabés qué preguntar.",
         "needsProgram": "Falta declarar el programa de esta tarjeta, así que los beneficios que dependen de él no aparecen. Ponelo en Datos y se completan.",
         "market": "Cómo se compara con el mercado",
-        "marketDetail": "Lo que cobran otros bancos por una tarjeta del mismo nivel, según el estudio de ACODECO. Es una referencia para negociar, no algo que tengas."
+        "marketDetail": "Lo que cobran otros bancos por una tarjeta del mismo nivel, según el estudio de ACODECO. Es una referencia para negociar, no algo que tengas.",
+        "disputed": "El propio banco se contradice",
+        "disputedSource": "Ver el otro documento"
       },
       "movements": {
         "detail": "Anotá acá lo que esta tarjeta no trae todavía en su estado de cuenta.",

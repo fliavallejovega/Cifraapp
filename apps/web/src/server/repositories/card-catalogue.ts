@@ -59,6 +59,17 @@ export interface CatalogueEntry {
   /** Sugerencia de este producto, no término del emisor. */
   readonly reviewBy: PlainDate | null;
   readonly notes: string | null;
+  /**
+   * Verdadero cuando otra publicación del mismo emisor dice algo distinto.
+   *
+   * La página de producto de Credicorp anuncia «3 puntos x $1.00»; su propio
+   * reglamento dice «1.25». Este producto no elige: enseña las dos y dice cuál
+   * documento es cuál, porque una casa que ve el conflicto sabe qué preguntar y
+   * una que ve sólo un lado cree que sabe algo que no sabe.
+   */
+  readonly isDisputed: boolean;
+  readonly disputeNote: string | null;
+  readonly disputeSourceUrl: string | null;
   /** Verdadero cuando ya pasó la fecha sugerida de reconfirmación. */
   readonly isStale: boolean;
 }
@@ -131,6 +142,9 @@ export async function loadCatalogueFor(
     validUntil: (row.validUntil as PlainDate | null) ?? null,
     reviewBy: (row.reviewBy as PlainDate | null) ?? null,
     notes: row.notes,
+    isDisputed: row.isDisputed,
+    disputeNote: row.disputeNote,
+    disputeSourceUrl: row.disputeSourceUrl,
     // Vencido según la fuente, o pasada la fecha en que este producto sugiere
     // reconfirmar. Las dos se dicen distinto en pantalla.
     isStale:
