@@ -15,6 +15,7 @@ import {
 } from '@app/reporting';
 import { and, desc, eq, gte, isNull, lte, sql } from 'drizzle-orm';
 
+import { needsACategory } from './needs-category';
 import { queryAsUser, type Session } from '../session';
 
 /**
@@ -74,7 +75,7 @@ export async function loadClose(
         tx
           .select({ total: sql<number>`count(*)::int` })
           .from(transactions)
-          .where(and(inPeriod, isNull(transactions.categoryId))),
+          .where(and(inPeriod, needsACategory())),
 
         tx
           .select({ total: sql<number>`count(*)::int` })

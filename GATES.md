@@ -98,6 +98,11 @@ entienda entra a un asistente donde se clasifica o se crea el rubro.
       EXPECT: TABLES HAVE THEIR INSET OK
       EVIDENCE: automatic-evidence=v1; definition-sha256=c8c27b4fd82f77bca2fc5455205f8658c52016110025d2255d48a8e8581d51b7; exit=0; EXPECT=matched; output-sha256=3dfdbf8e8e1056ddbfa1ef7105bb95ab0490ad864a762ca879a96e4c8a235193; output-bytes=27; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar; path=6dc919bb4189/22 entries
 
+- [x] G20: «Sin rubro» significa «le falta uno», no «no tiene» — un pago a tarjeta no entra en la cola, y el aviso declina el plural
+      CHECK: node scripts/gates/assert-uncategorized-means-pending.mjs
+      EXPECT: UNCATEGORIZED MEANS PENDING OK
+      EVIDENCE: automatic-evidence=v1; definition-sha256=2e285d815d7a0515250270acd37ebcf06a1376d1c571970a66f44e2eee11540f; exit=0; EXPECT=matched; output-sha256=6fde00aa3a084771dd8a03530eb6e246ed0a25f7d51affef0b21a9e195d97944; output-bytes=31; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar; path=6dc919bb4189/22 entries
+
 - [x] G10: Cada clave de copy que una pantalla pide existe en español y en inglés
       CHECK: node scripts/gates/assert-copy-complete.mjs
       EXPECT: COPY COMPLETE OK

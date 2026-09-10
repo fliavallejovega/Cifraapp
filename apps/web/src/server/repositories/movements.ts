@@ -13,6 +13,7 @@ import {
 import { Money, type CurrencyCode, type PlainDate } from '@app/domain';
 import { and, asc, count, desc, eq, gte, ilike, inArray, isNull, lte, or, sql } from 'drizzle-orm';
 
+import { needsACategory } from './needs-category';
 import { queryAsUser, type Session } from '../session';
 
 /**
@@ -108,7 +109,7 @@ function predicateFor(householdId: string, filters: MovementFilters) {
 
   if (filters.accountId) clauses.push(eq(transactions.accountId, filters.accountId));
   if (filters.categoryId) clauses.push(eq(transactions.categoryId, filters.categoryId));
-  if (filters.uncategorized) clauses.push(isNull(transactions.categoryId));
+  if (filters.uncategorized) clauses.push(needsACategory());
   if (filters.from) clauses.push(gte(transactions.transactionDate, filters.from));
   if (filters.to) clauses.push(lte(transactions.transactionDate, filters.to));
   if (filters.direction) clauses.push(eq(transactions.direction, filters.direction));
@@ -215,7 +216,7 @@ export async function loadMovements(
           and(
             eq(transactions.householdId, householdId),
             isNull(transactions.deletedAt),
-            isNull(transactions.categoryId),
+            needsACategory(),
           ),
         ),
     ]);

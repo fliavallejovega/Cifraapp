@@ -4,6 +4,7 @@ import { alertDismissals, transactions } from '@app/database/schema';
 import { endOfMonth, Money, startOfMonth, type CurrencyCode, type PlainDate } from '@app/domain';
 import { and, eq, gte, isNull, sql } from 'drizzle-orm';
 
+import { needsACategory } from './needs-category';
 import { queryAsUser, type Session } from '../session';
 
 import type { BudgetSummary } from './budgets';
@@ -322,7 +323,7 @@ export async function countUncategorized(session: Session, householdId: string):
       .where(
         and(
           eq(transactions.householdId, householdId),
-          isNull(transactions.categoryId),
+          needsACategory(),
           isNull(transactions.deletedAt),
         ),
       ),

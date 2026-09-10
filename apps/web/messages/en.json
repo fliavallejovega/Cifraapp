@@ -1599,7 +1599,7 @@
     "noCategory": "No category",
     "splitBadge": "Split into {count}",
     "uncategorizedBanner": {
-      "title": "{count} movements with no category",
+      "title": "{count, plural, one {One movement with no category} other {# movements with no category}}",
       "body": "With no category they enter no budget and no statement. Categorising them is what makes every other figure mean something.",
       "action": "See the ones missing"
     },
@@ -2682,7 +2682,7 @@
       "highUtilization": "«{name}» is at {percent}% of its limit. Above 30% it starts to cost you.",
       "goalLate": "«{name}» is past its date and {amount} is still missing.",
       "reviewBacklog": "You have {count} decisions waiting under «To review».",
-      "uncategorized": "{count} movements with no category. Without one they enter no budget.",
+      "uncategorized": "{count, plural, one {One movement with no category} other {# movements with no category}}. Without one they enter no budget.",
       "categorySpike": "You spent {percent}% more on «{category}»: {amount} against the usual {usual}."
     },
     "go": "Open"

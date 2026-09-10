@@ -10,6 +10,7 @@ import {
 } from '@app/database/schema';
 import { and, count, eq, isNull, sql } from 'drizzle-orm';
 
+import { needsACategory } from './needs-category';
 import { queryAsUser, type Session } from '../session';
 
 /**
@@ -65,7 +66,7 @@ export async function listClients(session: Session): Promise<readonly ClientSumm
           .where(
             and(
               eq(transactions.householdId, grant.householdId),
-              isNull(transactions.categoryId),
+              needsACategory(),
               isNull(transactions.deletedAt),
             ),
           );

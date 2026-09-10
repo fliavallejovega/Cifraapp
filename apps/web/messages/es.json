@@ -1599,7 +1599,7 @@
     "noCategory": "Sin rubro",
     "splitBadge": "Dividido en {count}",
     "uncategorizedBanner": {
-      "title": "{count} movimientos sin rubro",
+      "title": "{count, plural, one {Un movimiento sin rubro} other {# movimientos sin rubro}}",
       "body": "Sin rubro no entran en ningún presupuesto ni en ningún estado. Ponerles rubro es lo que hace que el resto de las cifras signifiquen algo.",
       "action": "Ver los que faltan"
     },
@@ -2682,7 +2682,7 @@
       "highUtilization": "«{name}» va por el {percent}% del cupo. Encima del 30% ya empieza a costarte.",
       "goalLate": "«{name}» pasó su fecha y todavía faltan {amount}.",
       "reviewBacklog": "Tienes {count} decisiones esperándote en «Por revisar».",
-      "uncategorized": "{count} movimientos sin rubro. Sin rubro no entran en ningún presupuesto.",
+      "uncategorized": "{count, plural, one {Un movimiento sin rubro} other {# movimientos sin rubro}}. Sin rubro no entran en ningún presupuesto.",
       "categorySpike": "Gastaste {percent}% más en «{category}»: {amount} contra los {usual} de siempre."
     },
     "go": "Ver"

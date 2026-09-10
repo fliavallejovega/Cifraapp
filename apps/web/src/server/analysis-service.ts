@@ -29,6 +29,7 @@ import {
 import { getServerEnv } from '@app/validation/env';
 import { and, eq, gte, isNull, sql } from 'drizzle-orm';
 
+import { needsACategory } from './repositories/needs-category';
 import { loadMerchantRecords } from './classification-context';
 import { enqueueJob, registerJobHandler } from './jobs';
 import type { Session } from './session';
@@ -405,7 +406,7 @@ registerJobHandler(CATEGORIZATION_SCAN_JOB, async (job, report) => {
         and(
           eq(transactions.householdId, job.householdId),
           isNull(transactions.deletedAt),
-          isNull(transactions.categoryId),
+          needsACategory(),
         ),
       )
       .limit(2000),
