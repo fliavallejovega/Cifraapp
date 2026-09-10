@@ -51,7 +51,7 @@ entienda entra a un asistente donde se clasifica o se crea el rubro.
 - [x] G9: El gate del repositorio entero pasa: lint, typecheck, pruebas y build
       CHECK: node scripts/gates/full-gate.mjs
       EXPECT: FULL GATE OK
-      EVIDENCE: automatic-evidence=v1; definition-sha256=955fbfb6a060b7e483ed27eeaca9077ab7fb59e5f72f040fdc2380ee1ace1b85; exit=0; EXPECT=matched; output-sha256=ad1d4cb750f8d5773f9694a5612fab5adec1e3632f5ab4884901d7086b3d8e67; output-bytes=43047; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar; path=6dc919bb4189/22 entries
+      EVIDENCE: automatic-evidence=v1; definition-sha256=955fbfb6a060b7e483ed27eeaca9077ab7fb59e5f72f040fdc2380ee1ace1b85; exit=0; EXPECT=matched; output-sha256=1d392292bc7fe9957bcaaae621651157584d0d21d5f695de9e9a9da51ced63b4; output-bytes=43208; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar; path=6dc919bb4189/22 entries
 
 - [x] G11: Después de cada importación el sistema dice qué documentos faltan, por cuenta y por mes, nombrando la cuenta por sus últimos cuatro dígitos
       CHECK: node scripts/gates/assert-coverage-gaps.mjs

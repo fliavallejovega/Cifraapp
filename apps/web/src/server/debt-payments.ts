@@ -160,3 +160,27 @@ export async function reversePayment(
 
   return true;
 }
+
+/**
+ * Si un movimiento paga una deuda, según hacia dónde va el dinero.
+ *
+ * Pagar una tarjeta es dinero **entrando** a la cuenta de esa tarjeta: el saldo
+ * sube hacia cero y la deuda baja. Pagarle a Giovanni desde la cuenta de
+ * ahorros es dinero **saliendo** de una cuenta que no es la de la deuda. Las dos
+ * cosas son pagos y tienen signos opuestos.
+ *
+ * Exigir «salida» a secas dejaba sin efecto el caso más común, que es el pago a
+ * la tarjeta. Vive aquí y no repetido en cada ruta porque ya estuvo escrito dos
+ * veces —a mano y al confirmar una importación— y la segunda copia se quedó sin
+ * la corrección durante un día entero.
+ */
+export function paysTheDebt(input: {
+  /** La cuenta que lleva la deuda, cuando la deuda tiene una. */
+  readonly debtAccountId: string | null;
+  readonly movementAccountId: string;
+  readonly direction: 'inflow' | 'outflow';
+}): boolean {
+  return input.debtAccountId === input.movementAccountId
+    ? input.direction === 'inflow'
+    : input.direction === 'outflow';
+}

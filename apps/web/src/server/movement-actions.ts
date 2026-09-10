@@ -22,7 +22,7 @@ import {
   plainDateString,
   positiveAmount,
 } from './record-input';
-import { applyPaymentToDebt } from './debt-payments';
+import { applyPaymentToDebt, paysTheDebt } from './debt-payments';
 import { localeOf, revalidateFinancials, revalidateScreen } from './revalidate';
 import { loadSession, queryAsUser } from './session';
 import type { RecordActionResult } from '@/components/records/spec';
@@ -447,10 +447,11 @@ export async function createManualMovement(
         .limit(1);
 
       if (target) {
-        const paysIt =
-          target.accountId === parsed.data.accountId
-            ? parsed.data.direction === 'inflow'
-            : parsed.data.direction === 'outflow';
+        const paysIt = paysTheDebt({
+          debtAccountId: target.accountId,
+          movementAccountId: parsed.data.accountId,
+          direction: parsed.data.direction,
+        });
 
         if (paysIt) {
           await applyPaymentToDebt(tx, {

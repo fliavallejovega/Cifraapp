@@ -33,10 +33,20 @@ if (!repo.includes('categoryName')) {
   problems.push('la pantalla de revisión no lee la categoría de la fila');
 }
 
-// Y que al confirmar se aplique, con lo elegido ganando sobre lo propuesto.
+/*
+  Y que al confirmar se aplique, con lo elegido ganando sobre lo propuesto.
+
+  Se mide la precedencia y no la línea entera: la línea creció para dejar sin
+  rubro a los pagos —que no necesitan ninguno— y una aserción atada al texto
+  exacto falló ahí sin que nada estuviera mal. Un gate tiene que medir lo que
+  significa, o pide que lo desactiven.
+*/
 const confirm = strip(readFileSync('apps/web/src/server/import-actions.ts', 'utf8'));
-if (!confirm.includes('categoryId: row.chosenCategoryId ?? row.proposedCategoryId')) {
-  problems.push('confirmar no aplica la categoría, o no respeta la precedencia de lo elegido');
+if (!confirm.includes('row.chosenCategoryId ?? row.proposedCategoryId')) {
+  problems.push('confirmar no aplica la categoría de la fila');
+}
+if (confirm.includes('row.proposedCategoryId ?? row.chosenCategoryId')) {
+  problems.push('la propuesta del motor le gana al rubro que la persona eligió');
 }
 
 if (problems.length > 0) {

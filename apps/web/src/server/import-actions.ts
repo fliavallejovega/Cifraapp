@@ -1,6 +1,6 @@
 'use server';
 
-import { accounts, importRows, imports, transactions } from '@app/database/schema';
+import { accounts, debts, importRows, imports, transactions } from '@app/database/schema';
 import { Money } from '@app/domain';
 import { and, eq, isNull } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
@@ -8,7 +8,7 @@ import { after } from 'next/server';
 import { z } from 'zod';
 
 import { scheduleAnalysis } from './analysis-service';
-import { applyPaymentToDebt } from './debt-payments';
+import { applyPaymentToDebt, paysTheDebt } from './debt-payments';
 import { stageDocument } from './import-service';
 import { runJobNow, runQueuedJobs } from './jobs';
 import { loadSession, queryAsUser } from './session';
@@ -203,6 +203,35 @@ export async function confirmImport(
     for (const row of writable) {
       const amount = Money.fromDecimalString(row.amount ?? '0', currency);
       const description = row.descriptionOriginal ?? '';
+      const direction = amount.isNegative() ? ('outflow' as const) : ('inflow' as const);
+
+      /*
+        Si esta fila paga una deuda, se decide **antes** de insertar.
+
+        Un pago no es un gasto: es plata moviéndose de un bolsillo a otro de la
+        misma casa. Nace como transferencia y sin rubro, en una sola escritura —
+        insertarlo como gasto y corregirlo después deja un instante en que las
+        cifras del mes están mal, y el cierre del mes puede caer justo ahí.
+
+        Y hacia dónde va el dinero decide si paga: entrando a la cuenta que lleva
+        la deuda, o saliendo de cualquier otra.
+      */
+      let paysDebt = false;
+      if (row.applyToDebtId) {
+        const [target] = await tx
+          .select({ accountId: debts.accountId })
+          .from(debts)
+          .where(and(eq(debts.id, row.applyToDebtId), eq(debts.householdId, householdId)))
+          .limit(1);
+
+        paysDebt =
+          target !== undefined &&
+          paysTheDebt({
+            debtAccountId: target.accountId,
+            movementAccountId: header.accountId,
+            direction,
+          });
+      }
 
       const [created] = await tx
         .insert(transactions)
@@ -215,16 +244,19 @@ export async function confirmImport(
           currency,
           // The sign in the statement is the direction. Nothing infers it from
           // the description, which is where categorization guesses go wrong.
-          direction: amount.isNegative() ? 'outflow' : 'inflow',
-          // El rubro que la persona eligió al revisar gana sobre el que el
-          // motor propuso; sin ninguno de los dos, nulo — y una fila sin rubro
-          // entra a la cola de categorías en vez de quedarse invisible.
-          categoryId: row.chosenCategoryId ?? row.proposedCategoryId,
+          direction,
+          // Un pago no lleva rubro: no le falta uno, no le toca ninguno.
+          // Fuera de ese caso, el que la persona eligió al revisar gana sobre el
+          // que el motor propuso, y sin ninguno de los dos queda nulo — y una
+          // fila sin rubro entra a la cola en vez de quedarse invisible.
+          categoryId: paysDebt ? null : (row.chosenCategoryId ?? row.proposedCategoryId),
           descriptionOriginal: description,
           descriptionNormalized: row.descriptionNormalized ?? description,
           externalReference: row.externalReference,
           fingerprint: row.fingerprint ?? '',
-          status: 'posted',
+          // Una transferencia no es gasto ni ingreso, así que no entra en el
+          // mes ni en ningún presupuesto.
+          status: paysDebt ? 'transfer' : 'posted',
           source: 'imported',
           sourceDocumentId: header.documentId,
           sourceImportId: header.id,
@@ -251,7 +283,7 @@ export async function confirmImport(
         un pago registrado cuya deuda no bajó, o una deuda que bajó sin pago que
         la explique, son dos formas de que los números dejen de cuadrar.
       */
-      if (row.applyToDebtId) {
+      if (paysDebt && row.applyToDebtId) {
         await applyPaymentToDebt(tx, {
           householdId,
           debtId: row.applyToDebtId,

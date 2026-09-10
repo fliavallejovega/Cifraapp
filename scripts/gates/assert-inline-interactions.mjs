@@ -60,12 +60,43 @@ if (
   Giovanni es dinero saliendo de otra. Exigir «salida» a secas dejaba sin efecto
   el caso más común, que es el pago a la tarjeta.
 */
-const action = strip(readFileSync('apps/web/src/server/movement-actions.ts', 'utf8'));
-if (/direction === 'outflow'\)\s*\{\s*await applyPaymentToDebt/.test(action)) {
-  problems.push('un pago sólo se reconoce como salida; el pago a una tarjeta no bajaría nada');
+/*
+  La regla vive en un solo sitio, y las dos rutas la usan.
+
+  Estuvo escrita dos veces —al anotar a mano y al confirmar una importación— y
+  la segunda copia se quedó sin la corrección: el pago a una tarjeta importado
+  entraba como gasto y no bajaba nada. Un pago se registra por dos caminos y
+  tiene que significar lo mismo por los dos.
+*/
+const home = strip(readFileSync('apps/web/src/server/debt-payments.ts', 'utf8'));
+if (!/export function paysTheDebt\(/.test(home)) {
+  problems.push('la regla de qué cuenta como pago no vive en un solo sitio');
 }
-if (!action.includes("target.accountId === parsed.data.accountId")) {
-  problems.push('el pago no distingue si el dinero entra a la cuenta que lleva la deuda');
+if (!home.includes("direction === 'inflow'")) {
+  problems.push('la regla no reconoce que pagar una tarjeta es dinero entrando a su cuenta');
+}
+
+for (const route of [
+  ['apps/web/src/server/movement-actions.ts', 'anotar un movimiento a mano'],
+  ['apps/web/src/server/import-actions.ts', 'confirmar una importación'],
+]) {
+  const [file, what] = route;
+  const source = strip(readFileSync(file, 'utf8'));
+
+  if (source.includes('applyPaymentToDebt(') && !source.includes('paysTheDebt(')) {
+    problems.push(`${what} aplica un pago sin usar la regla compartida`);
+  }
+
+  /*
+    Y un pago nace como transferencia.
+
+    No es gasto ni ingreso: es plata moviéndose de un bolsillo a otro de la
+    misma casa. Contarlo como gasto lo cuenta dos veces, y ponerlo en la cola de
+    «sin rubro» crea un pendiente que nunca se puede resolver.
+  */
+  if (source.includes('applyPaymentToDebt(') && !source.includes("'transfer'")) {
+    problems.push(`${what} deja el pago como gasto en vez de transferencia`);
+  }
 }
 
 if (problems.length > 0) {
