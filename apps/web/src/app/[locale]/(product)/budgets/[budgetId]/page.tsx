@@ -164,7 +164,7 @@ export default async function BudgetPage({
           </Card>
         ) : (
           <Card padding="none">
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto px-5 sm:px-6">
               <Ledger caption={t('lines.title')}>
                 <LedgerHead>
                   <LedgerColumn>{t('lines.category')}</LedgerColumn>

@@ -160,7 +160,7 @@ export default async function ProjectionPage({
 
       <Section title={t('table.title')} className="mt-12">
         <Card padding="none">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto px-5 sm:px-6">
             <Ledger caption={t('table.title')}>
               <LedgerHead>
                 <LedgerColumn>{t('table.month')}</LedgerColumn>

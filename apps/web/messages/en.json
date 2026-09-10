@@ -1620,7 +1620,8 @@
       "next": "Next",
       "position": "Page {page} of {pages}"
     },
-    "addPayment": "Record a payment"
+    "addPayment": "Record a payment",
+    "paidDebt": "Payment to {debt}"
   },
   "movement": {
     "title": "Movement",

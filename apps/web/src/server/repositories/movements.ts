@@ -81,6 +81,14 @@ export interface MovementView {
   readonly notes: string | null;
   readonly source: string;
   readonly splitCount: number;
+  /**
+   * La deuda que este movimiento pagó, cuando pagó una.
+   *
+   * Es lo que hace que la columna del rubro diga «Pago a Visa Davo» en vez de
+   * «Sin rubro». A un pago no le falta un rubro: no le toca ninguno, porque no
+   * es un gasto.
+   */
+  readonly paidDebtName: string | null;
 }
 
 export interface MovementsView {
@@ -154,6 +162,12 @@ export async function loadMovements(
           accountName: accounts.name,
           categoryId: transactions.categoryId,
           categoryName: categories.name,
+          paidDebtName: sql<string | null>`(
+            select d.name from app.debt_payments p
+            join app.debts d on d.id = p.debt_id
+            where p.transaction_id = ${transactions.id} and p.reversed_at is null
+            limit 1
+          )`,
           categorySource: transactions.categorySource,
           categoryConfidence: transactions.categoryConfidence,
           merchantName: merchants.name,
@@ -227,6 +241,7 @@ export async function loadMovements(
         notes: row.notes,
         source: row.source,
         splitCount: row.splitCount,
+        paidDebtName: row.paidDebtName,
       })),
       total: matching,
       page,
@@ -285,6 +300,12 @@ export async function loadMovement(
         accountName: accounts.name,
         categoryId: transactions.categoryId,
         categoryName: categories.name,
+        paidDebtName: sql<string | null>`(
+          select d.name from app.debt_payments p
+          join app.debts d on d.id = p.debt_id
+          where p.transaction_id = ${transactions.id} and p.reversed_at is null
+          limit 1
+        )`,
         categorySource: transactions.categorySource,
         categoryConfidence: transactions.categoryConfidence,
         merchantName: merchants.name,
@@ -380,6 +401,7 @@ export async function loadMovement(
         notes: row.notes,
         source: row.source,
         splitCount: splitRows.length,
+        paidDebtName: row.paidDebtName,
       },
       splits: splitRows.map((split) => ({
         id: split.id,

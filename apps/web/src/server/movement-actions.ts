@@ -462,6 +462,22 @@ export async function createManualMovement(
             paidOn: parsed.data.transactionDate,
             appliedBy: session.user.id,
           });
+
+          /*
+            Y deja de ser un gasto.
+
+            Un pago a una tarjeta no es consumo: es plata moviéndose de un
+            bolsillo a otro de la misma casa. Contarlo como gasto lo cuenta dos
+            veces —una al comprar, otra al pagar— y le empeora el mes a un hogar
+            que hizo justamente lo correcto.
+
+            Por eso tampoco lleva rubro, y la pantalla dejó de decir «sin rubro»
+            sobre él: no le falta uno, no le toca ninguno.
+          */
+          await tx
+            .update(transactions)
+            .set({ status: 'transfer', categoryId: null })
+            .where(eq(transactions.id, row.id));
         }
       }
     }

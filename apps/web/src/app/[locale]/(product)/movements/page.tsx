@@ -243,7 +243,7 @@ export default async function MovementsPage({
               </Card>
             ) : (
               <Card padding="none">
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto px-5 sm:px-6">
                   <Ledger caption={t('title')}>
                     <LedgerHead>
                       <LedgerColumn>{t('columns.date')}</LedgerColumn>
@@ -279,10 +279,25 @@ export default async function MovementsPage({
                             </span>
                           </LedgerCell>
                           <LedgerCell secondary>
-                            {row.categoryName ?? (
-                              <span className="text-[color:var(--color-caution)]">
-                                {t('noCategory')}
+                            {/*
+                              A un pago no le falta un rubro: no le toca ninguno.
+
+                              Un pago a una tarjeta es plata moviéndose de un
+                              bolsillo a otro de la misma casa. Marcarlo «sin
+                              rubro» en ámbar lo pone en una cola de pendientes
+                              donde nunca se va a resolver, porque no hay nada
+                              que resolver.
+                            */}
+                            {row.paidDebtName ? (
+                              <span className="text-[color:var(--color-ink-secondary)]">
+                                {t('paidDebt', { debt: row.paidDebtName })}
                               </span>
+                            ) : (
+                              (row.categoryName ?? (
+                                <span className="text-[color:var(--color-caution)]">
+                                  {t('noCategory')}
+                                </span>
+                              ))
                             )}
                           </LedgerCell>
                           <LedgerCell align="end">

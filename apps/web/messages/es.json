@@ -1620,7 +1620,8 @@
       "next": "Siguientes",
       "position": "Página {page} de {pages}"
     },
-    "addPayment": "Registrar un pago"
+    "addPayment": "Registrar un pago",
+    "paidDebt": "Pago a {debt}"
   },
   "movement": {
     "title": "Movimiento",
