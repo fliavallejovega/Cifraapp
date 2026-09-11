@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { sendWithBrevo } from '@app/email';
 import { getServerEnv } from '@app/validation/env';
 
 /**
@@ -40,59 +41,22 @@ export interface MailMessage {
   readonly html?: string | undefined;
 }
 
-const ENDPOINT = 'https://api.brevo.com/v3/smtp/email';
-
-/** Cuánto se espera antes de dar por perdida una llamada al proveedor. */
-const TIMEOUT_MS = 10_000;
-
 export async function sendMail(message: MailMessage): Promise<MailOutcome> {
   const env = getServerEnv();
 
   if (!env.BREVO_API_KEY) return { status: 'skipped', reason: 'noMailKey' };
   if (!env.MAIL_FROM_EMAIL) return { status: 'skipped', reason: 'noSender' };
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => {
-    controller.abort();
-  }, TIMEOUT_MS);
-
-  try {
-    const response = await fetch(ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'api-key': env.BREVO_API_KEY,
-        'content-type': 'application/json',
-        accept: 'application/json',
-      },
-      body: JSON.stringify({
-        sender: { email: env.MAIL_FROM_EMAIL, name: env.MAIL_FROM_NAME ?? 'Cifra' },
-        to: [{ email: message.to, ...(message.toName ? { name: message.toName } : {}) }],
-        subject: message.subject,
-        textContent: message.text,
-        ...(message.html ? { htmlContent: message.html } : {}),
-      }),
-      signal: controller.signal,
-    });
-
-    if (!response.ok) {
-      // El cuerpo de Brevo dice por qué —dominio sin verificar, cuota, clave
-      // revocada— y esa frase es lo único que convierte «falló» en algo que
-      // alguien puede arreglar. Acotado: un error de un tercero no debe llenar
-      // una columna de la base.
-      const body = await response.text().catch(() => '');
-      return { status: 'failed', reason: `${String(response.status)} ${body.slice(0, 200)}` };
-    }
-
-    const payload = (await response.json().catch(() => null)) as { messageId?: string } | null;
-    return { status: 'sent', id: payload?.messageId ?? null };
-  } catch (error: unknown) {
-    // Incluye el aborto por tiempo: para quien llama es lo mismo que un fallo
-    // del proveedor, y distinguirlos solo serviría para escribir dos ramas que
-    // hacen lo mismo.
-    return { status: 'failed', reason: String(error).slice(0, 200) };
-  } finally {
-    clearTimeout(timer);
-  }
+  // La llamada vive en `@app/email`, que la consola usa para mandar pruebas:
+  // una sola implementación de cómo se habla con Brevo.
+  return sendWithBrevo(
+    {
+      apiKey: env.BREVO_API_KEY,
+      fromEmail: env.MAIL_FROM_EMAIL,
+      fromName: env.MAIL_FROM_NAME ?? 'Cifraapp',
+    },
+    message,
+  );
 }
 
 /** Si hay con qué mandar un correo. La pantalla lo usa para no ofrecer un canal muerto. */

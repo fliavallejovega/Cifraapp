@@ -84,6 +84,16 @@ export function IconFlags() {
   );
 }
 
+/** What the product writes to people. */
+export function IconEmails() {
+  return (
+    <Frame>
+      <rect x="3" y="5" width="14" height="10.5" rx="1.5" />
+      <path d="m3.5 6 6.5 5 6.5-5" />
+    </Frame>
+  );
+}
+
 /** The way out. */
 export function IconSignOut() {
   return (

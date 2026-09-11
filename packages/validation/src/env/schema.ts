@@ -86,6 +86,17 @@ export const serverEnvSchema = z.object({
   MAIL_FROM_NAME: z.string().min(1).max(80).optional(),
 
   /**
+   * La API de administración de Supabase, para publicar los correos de cuenta.
+   *
+   * Sólo la consola la usa, y sólo para escribir las plantillas de correo de
+   * inicio de sesión. Es un token personal con alcance de cuenta: opcional, y
+   * sin él la consola edita y guarda igual, pero dice que la publicación está
+   * pendiente en vez de fingir que Supabase ya tiene el texto nuevo.
+   */
+  SUPABASE_ACCESS_TOKEN: z.string().min(20).optional(),
+  SUPABASE_PROJECT_REF: z.string().regex(/^[a-z0-9]{20}$/).optional(),
+
+  /**
    * El par VAPID que firma cada notificación push.
    *
    * La pública viaja al navegador y por eso vive también en el bloque público;

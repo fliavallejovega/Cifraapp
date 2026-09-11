@@ -23,6 +23,7 @@
     "@app/database": "workspace:*",
     "@app/debt-engine": "workspace:*",
     "@app/domain": "workspace:*",
+    "@app/email": "workspace:*",
     "@app/investment-engine": "workspace:*",
     "@app/market-data": "workspace:*",
     "@app/reporting": "workspace:*",

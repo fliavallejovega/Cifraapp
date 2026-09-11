@@ -101,6 +101,7 @@ export async function runDailyReminders(): Promise<SweepResult> {
         userId: profiles.id,
         email: profiles.email,
         displayName: profiles.displayName,
+        locale: profiles.locale,
       })
       .from(householdMembers)
       .innerJoin(profiles, eq(profiles.id, householdMembers.userId))
@@ -132,6 +133,7 @@ export async function runDailyReminders(): Promise<SweepResult> {
         householdId: home.id,
         email: person.email,
         displayName: person.displayName,
+        locale: person.locale === 'en' ? 'en' : 'es',
       };
 
       for (const { notice, fallback } of notices) {
@@ -204,6 +206,32 @@ async function noticesFor(
             : `Hoy vencen ${String(dueToday.length)} pagos · ${money(total)}`,
         body: `${lines}\n\nEn total, ${money(total)}. No cobramos nada: esto es un recordatorio.`,
         url: '/commitments',
+        email: {
+          template: 'commitment_due',
+          values: {
+            es: {
+              due:
+                dueToday.length === 1
+                  ? (dueToday[0]?.name ?? 'un pago')
+                  : `${String(dueToday.length)} pagos · ${money(total)}`,
+              total: money(total),
+              count: String(dueToday.length),
+            },
+            en: {
+              due:
+                dueToday.length === 1
+                  ? (dueToday[0]?.name ?? 'a payment')
+                  : `${String(dueToday.length)} payments · ${money(total)}`,
+              total: money(total),
+              count: String(dueToday.length),
+            },
+          },
+          rows: dueToday.map((row) => ({
+            label: row.name,
+            amount: money(Money.fromDecimalString(row.amount, currency)),
+          })),
+          total: money(total),
+        },
       },
       fallback: { channel: 'email', throttleHours: 0 },
     });
@@ -223,6 +251,7 @@ async function noticesFor(
         title: 'Toca subir los estados de cuenta',
         body: 'Con los movimientos al día podemos decirte en qué se fue el dinero de verdad, y no lo que calculamos. Son dos minutos.',
         url: '/imports',
+        email: { template: 'statement_upload', values: { es: {}, en: {} } },
       },
       fallback: { channel: 'email', throttleHours: 24 * 10 },
     });

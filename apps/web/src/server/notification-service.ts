@@ -6,6 +6,9 @@ import { and, eq, gte } from 'drizzle-orm';
 import { getAdminDb } from '@app/database';
 import { getServerEnv } from '@app/validation/env';
 
+import type { EmailLocale } from '@app/email';
+
+import { composeNoticeMail, type NoticeMail } from './email-copy';
 import { mailIsConfigured, sendMail } from './mail';
 import { pushIsConfigured, sendPush } from './push';
 
@@ -41,6 +44,8 @@ export interface Recipient {
   readonly householdId: string;
   readonly email: string;
   readonly displayName: string | null;
+  /** El idioma de su perfil. Decide en qué idioma sale el correo. */
+  readonly locale: EmailLocale;
 }
 
 export interface Notice {
@@ -56,8 +61,16 @@ export interface Notice {
   readonly subjectKey: string;
   readonly title: string;
   readonly body: string;
-  /** A dónde lleva. Relativa: el dominio lo pone quien envía. */
+  /** A dónde lleva. Relativa y sin idioma: el dominio y el idioma los pone quien envía. */
   readonly url: string;
+  /**
+   * El correo, armado desde el catálogo de plantillas.
+   *
+   * El título y el cuerpo de arriba siguen siendo lo que dice el push. El correo
+   * sale con su propio texto —el de la consola, o el de fábrica— porque un
+   * correo tiene asunto, vista previa y botón, y un push tiene dos líneas.
+   */
+  readonly email?: NoticeMail;
 }
 
 export interface DispatchResult {
@@ -139,11 +152,16 @@ export async function dispatch(
       await record('email', 'skipped', 'mailNotConfigured');
       skipped += 1;
     } else {
+      const link = `${appUrl}/${recipient.locale}${notice.url}`;
+      const composed = notice.email
+        ? await composeNoticeMail(db, notice.email, recipient.locale, link, appUrl)
+        : null;
       const outcome = await sendMail({
         to: recipient.email,
         ...(recipient.displayName ? { toName: recipient.displayName } : {}),
-        subject: notice.title,
-        text: `${notice.body}\n\n${appUrl}${notice.url}`,
+        subject: composed?.subject ?? notice.title,
+        text: composed?.text ?? `${notice.body}\n\n${link}`,
+        html: composed?.html,
       });
       await record('email', outcome.status, outcome.status === 'sent' ? null : outcome.reason);
       if (outcome.status === 'sent') sent += 1;

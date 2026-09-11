@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 
 import { signOut } from '@/server/auth-actions';
 import {
+  IconEmails,
   IconFlags,
   IconHouseholds,
   IconOperations,
@@ -34,6 +35,7 @@ const SECTIONS = [
   { key: 'households', href: '/households', label: 'Households', icon: IconHouseholds },
   { key: 'usage', href: '/usage', label: 'Usage', icon: IconUsage },
   { key: 'operations', href: '/operations', label: 'Operations', icon: IconOperations },
+  { key: 'emails', href: '/emails', label: 'Emails', icon: IconEmails },
   { key: 'flags', href: '/flags', label: 'Feature flags', icon: IconFlags },
 ] as const;
 
@@ -119,7 +121,7 @@ export function Console({
       </aside>
 
       {/* On a narrow screen the column becomes a strip across the top rather
-          than a drawer: six destinations fit, and a gesture nobody uses is
+          than a drawer: seven destinations fit, and a gesture nobody uses is
           machinery nobody should maintain. */}
       <nav
         aria-label="Console sections"

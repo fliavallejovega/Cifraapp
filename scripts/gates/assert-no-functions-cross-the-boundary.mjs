@@ -113,7 +113,15 @@ if (client.size === 0) {
   process.exit(1);
 }
 
-for (const file of sourceFiles('apps/web/src')) {
+// La app y la consola: las dos renderizan componentes de @app/ui, y la consola
+// tiene sus propios formularios con `<Field>`.
+const files = [...sourceFiles('apps/web/src'), ...sourceFiles('apps/admin/src')];
+if (!files.some((one) => one.startsWith('apps/admin/'))) {
+  console.error('- no se encontró ningún archivo de la consola; el gate no la está mirando');
+  process.exit(1);
+}
+
+for (const file of files) {
   const source = readFileSync(file, 'utf8');
 
   // Un módulo con la directiva ya es cliente: dentro de él las funciones no
@@ -152,4 +160,4 @@ if (problems.length > 0) {
   process.exit(1);
 }
 
-console.log(`NO FUNCTIONS CROSS OK (${String(client.size)} componentes de cliente vigilados)`);
+console.log(`NO FUNCTIONS CROSS OK (${String(client.size)} componentes de cliente vigilados en ${String(files.length)} archivos de la app y la consola)`);

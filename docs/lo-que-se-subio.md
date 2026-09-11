@@ -265,6 +265,35 @@ una pista muy buena y no es un hecho.
 
 ---
 
+## 11 · Los correos: un lenguaje y un módulo para editarlos
+
+Todo correo que sale de Cifraapp —los avisos por Brevo y los de cuenta por
+Supabase— comparte un diseño: el marfil y la tinta del producto convertidos a
+hex, Archivo para el texto, Chivo Mono para los montos en cifras tabulares, el
+latón sólo en la marca y el botón en tinta. Español primero, inglés al lado,
+modo oscuro, versión en texto y menos de 102 KB para que Gmail no lo recorte.
+
+- **Paquete `@app/email`:** catálogo de 15 correos (2 avisos, 13 de cuenta),
+  renderizador, validación y envío por Brevo. 48 pruebas, incluida la que
+  inyecta HTML en cada campo y en cada variable.
+- **Consola → Emails:** lista de los 15 con su estado por idioma y su estado
+  real en Supabase (leído en vivo). Cada uno se edita en seis campos —asunto,
+  vista previa, título, cuerpo, botón, nota— al lado de la vista previa real,
+  en claro/oscuro y escritorio/teléfono, con variables insertables, prueba a tu
+  propio correo, historial con restaurar, y vuelta al texto de fábrica.
+- **Reglas:** sólo `content_admin` o `super_admin` escribe; todo queda en
+  `audit.admin_actions` con el antes y el después. Un correo de cuenta no se
+  guarda sin su botón (sería dejar a alguien sin poder entrar), y `{{ }}` no se
+  puede escribir: sólo la consola pone expresiones de Supabase.
+- **Los avisos ya salen con el diseño** y en el idioma del perfil de cada
+  persona, con lo editado en la consola ganando sobre lo de fábrica.
+- **Pendiente:** Supabase (plan gratuito) no deja cambiar sus plantillas sin un
+  SMTP propio. Hace falta una clave SMTP de Brevo (`xsmtpsib-…`); con ella,
+  `node scripts/connect-supabase-smtp.mjs` y `node scripts/publish-auth-emails.mjs`.
+  Eso también quita el límite de 2 correos de cuenta por hora.
+
+---
+
 ## Lo que el producto se niega a hacer
 
 Vale la pena que lo sepas explícitamente:

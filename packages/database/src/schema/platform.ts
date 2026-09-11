@@ -256,3 +256,46 @@ export const cardPrograms = platformSchema.table(
   },
   (table) => [index('card_programs_issuer_idx').on(table.issuerKey)],
 );
+
+/**
+ * Lo que alguien editó de un correo desde la consola.
+ *
+ * Espeja `20260911100000_email_templates.sql`. Sólo lo editado: el texto de
+ * fábrica vive en `@app/email` y manda mientras no haya fila. Sembrar aquí una
+ * copia crearía dos fuentes de verdad, y la primera corrección en el código
+ * seguiría saliendo con el texto viejo.
+ */
+export const emailTemplates = platformSchema.table('email_templates', {
+  templateKey: text('template_key').notNull(),
+  locale: text('locale').notNull(),
+  subject: text('subject').notNull(),
+  preheader: text('preheader').notNull().default(''),
+  heading: text('heading').notNull(),
+  body: text('body').notNull(),
+  ctaLabel: text('cta_label').notNull().default(''),
+  footnote: text('footnote').notNull().default(''),
+  version: integer('version').notNull().default(1),
+  updatedBy: uuid('updated_by'),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  publishedAt: timestamp('published_at', { withTimezone: true }),
+  publishedVersion: integer('published_version'),
+});
+
+/** Cada guardado, para poder volver. Un correo enviado no se desenvía. */
+export const emailTemplateVersions = platformSchema.table('email_template_versions', {
+  id: uuid('id')
+    .primaryKey()
+    .default(sql`public.uuid_generate_v7()`),
+  templateKey: text('template_key').notNull(),
+  locale: text('locale').notNull(),
+  version: integer('version').notNull(),
+  subject: text('subject').notNull(),
+  preheader: text('preheader').notNull(),
+  heading: text('heading').notNull(),
+  body: text('body').notNull(),
+  ctaLabel: text('cta_label').notNull(),
+  footnote: text('footnote').notNull(),
+  createdBy: uuid('created_by'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  reason: text('reason').notNull().default('edit'),
+});

@@ -124,6 +124,9 @@ export async function signUp(_previous: ActionResult, formData: FormData): Promi
         terms_version: CURRENT_TERMS_VERSION,
         terms_locale: signUpLocale,
         terms_accepted_at: new Date().toISOString(),
+        // Lo que lee la plantilla de Supabase para elegir el idioma del correo
+        // de confirmación. Sin esto, todo correo de cuenta sale en español.
+        locale: signUpLocale === 'en' ? 'en' : 'es',
       },
       emailRedirectTo: await requestAuthCallbackUrl(`/${signUpLocale}/overview`),
     },

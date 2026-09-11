@@ -16,6 +16,7 @@
     "@app/billing": "workspace:*",
     "@app/database": "workspace:*",
     "@app/domain": "workspace:*",
+    "@app/email": "workspace:*",
     "@app/ledger": "workspace:*",
     "@app/ui": "workspace:*",
     "@app/validation": "workspace:*",
