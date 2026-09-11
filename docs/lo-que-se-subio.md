@@ -287,11 +287,14 @@ modo oscuro, versión en texto y menos de 102 KB para que Gmail no lo recorte.
   puede escribir: sólo la consola pone expresiones de Supabase.
 - **Los avisos ya salen con el diseño** y en el idioma del perfil de cada
   persona, con lo editado en la consola ganando sobre lo de fábrica.
-- **Pendiente:** Supabase (plan gratuito) no deja cambiar sus plantillas sin un
-  SMTP propio. Hace falta una clave SMTP de Brevo (`xsmtpsib-…`); con ella,
-  `node scripts/connect-supabase-smtp.mjs` y `node scripts/publish-auth-emails.mjs`.
-  Eso también quita el límite de 2 correos de cuenta por hora.
-
+- **Correos de cuenta por Brevo:** Supabase (plan gratuito) no dejaba cambiar
+  sus plantillas sin SMTP propio y mandaba sólo 2 correos por hora. Brevo quedó
+  conectado como SMTP (tope subido a 30 por hora) y las 13 plantillas de cuenta
+  están publicadas en español e inglés. Se probó con un correo real de
+  restablecer contraseña: Supabase → Brevo → entregado.
+- **Publicar tras editar desde código:** `node scripts/publish-auth-emails.mjs`.
+  Desde la consola se publica al guardar si el despliegue tiene
+  `SUPABASE_ACCESS_TOKEN`.
 ---
 
 ## Lo que el producto se niega a hacer

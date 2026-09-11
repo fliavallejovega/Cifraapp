@@ -52,10 +52,10 @@ publicar desde la consola sin tocar HTML y sin poder dejar a nadie afuera.
       EXPECT: FULL GATE OK
       EVIDENCE: automatic-evidence=v1; definition-sha256=955fbfb6a060b7e483ed27eeaca9077ab7fb59e5f72f040fdc2380ee1ace1b85; exit=0; EXPECT=matched; output-sha256=f016a4ac8b8ba0145dc1b30a13433e7b5e92e4a8a869ec1766eb57c7d613e513; output-bytes=44731; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar; path=6dc919bb4189/22 entries
 
-- [ ] E10: Las plantillas de cuenta publicadas en Supabase son exactamente las que renderiza el catálogo
+- [x] E10: Las plantillas de cuenta publicadas en Supabase son exactamente las que renderiza el catálogo
       CHECK: node scripts/gates/assert-supabase-templates-published.mjs
       EXPECT: SUPABASE TEMPLATES PUBLISHED OK
-      EVIDENCE: pending
+      EVIDENCE: automatic-evidence=v1; definition-sha256=4a229b213823149095e443af788f5bac3b7386e60971070a611b98c56b9fd9a3; exit=0; EXPECT=matched; output-sha256=25f8c38d1f475083f146b3349c5bdd77274cda1a29900a888a4e3517baeae181; output-bytes=44; shell=/bin/sh; cwd=/Users/javiervallejo/Documents/Websites/Accounting familiar; path=6dc919bb4189/22 entries
 
 - [x] E11: Un correo con el diseño nuevo sale por Brevo y queda entregado
       CHECK: node scripts/gates/assert-brevo-delivered.mjs
