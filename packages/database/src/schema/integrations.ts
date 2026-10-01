@@ -1,13 +1,5 @@
 import { sql } from 'drizzle-orm';
-import {
-  index,
-  integer,
-  primaryKey,
-  smallint,
-  text,
-  timestamp,
-  uuid,
-} from 'drizzle-orm/pg-core';
+import { index, integer, primaryKey, smallint, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
 import { appSchema } from './app.js';
 import { importRows } from './documents.js';
@@ -42,7 +34,10 @@ export const googleConnections = appSchema.table(
     /** Cifrado con la llave del despliegue. Nunca en claro, ni en un registro. */
     refreshToken: text('refresh_token').notNull(),
     /** Lo que Google concedió, que no siempre es lo que se pidió. */
-    scopes: text('scopes').array().notNull().default(sql`'{}'`),
+    scopes: text('scopes')
+      .array()
+      .notNull()
+      .default(sql`'{}'`),
     /** El calendario que el producto creó ahí. Nunca el principal de nadie. */
     calendarId: text('calendar_id'),
     /** El cursor incremental de Gmail. Sin él cada barrido relee el buzón. */

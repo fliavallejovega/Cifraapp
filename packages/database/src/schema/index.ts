@@ -23,3 +23,4 @@ export * from './recurring.js';
 export * from './reporting.js';
 export * from './rules.js';
 export * from './tax.js';
+export * from './trips.js';

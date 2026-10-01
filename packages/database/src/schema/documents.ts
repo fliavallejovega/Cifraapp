@@ -36,6 +36,12 @@ export const documentKind = pgEnum('document_kind', [
   'loan_statement',
   'contract',
   'other',
+  // Viajes (20261001210000).
+  'flight_itinerary',
+  'boarding_pass',
+  'lodging_confirmation',
+  'ticket',
+  'insurance_policy',
 ]);
 
 /** De dónde vinieron las filas. `email` no tiene documento que descargar. */
@@ -73,6 +79,8 @@ export const documents = appSchema.table(
     statementPeriodStart: date('statement_period_start'),
     statementPeriodEnd: date('statement_period_end'),
     taxYear: smallint('tax_year'),
+    /** The trip it belongs to. The foreign key lives in SQL; declared here without it to keep the schema modules acyclic. */
+    tripId: uuid('trip_id'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     deletedAt: timestamp('deleted_at', { withTimezone: true }),
   },

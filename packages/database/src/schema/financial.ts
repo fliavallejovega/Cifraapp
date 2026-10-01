@@ -92,12 +92,7 @@ export const cardTier = pgEnum('card_tier', [
  * dos primeras y las dos últimas es la que permite leer «qué tengo disponible»
  * sin equivocarse con la mitad de la cartera.
  */
-export const holdingIntent = pgEnum('holding_intent', [
-  'long_term',
-  'hold',
-  'exit',
-  'reallocate',
-]);
+export const holdingIntent = pgEnum('holding_intent', ['long_term', 'hold', 'exit', 'reallocate']);
 
 export const financialScope = pgEnum('financial_scope', [
   'personal',
@@ -314,6 +309,27 @@ export const transactions = appSchema.table(
     duplicateGroupId: uuid('duplicate_group_id'),
 
     notes: text('notes'),
+
+    /**
+     * Viajes (20261001210000). All null on a transaction that is not a trip
+     * expense. Foreign keys live in SQL; declared here without them to keep the
+     * schema modules acyclic.
+     */
+    tripId: uuid('trip_id'),
+    tripLegId: uuid('trip_leg_id'),
+    tripCategory: text('trip_category'),
+    tripDay: date('trip_day'),
+    paidByTravelerId: uuid('paid_by_traveler_id'),
+    /** The amount as paid at the destination, same sign as `amount`. */
+    originalAmount: money('original_amount'),
+    originalCurrency: char('original_currency', { length: 3 }),
+    /** Local units per one unit of the base currency. */
+    fxRate: numeric('fx_rate', { precision: 20, scale: 10, mode: 'string' }),
+    fxRateDate: date('fx_rate_date'),
+    fxSource: text('fx_source'),
+    /** Idempotency for offline and double-tapped expenses; unique per household. */
+    clientRef: uuid('client_ref'),
+
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
     deletedAt: timestamp('deleted_at', { withTimezone: true }),

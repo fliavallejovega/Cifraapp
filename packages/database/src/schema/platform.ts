@@ -131,7 +131,9 @@ export const cardBenefitCatalogue = platformSchema.table(
     disputeSourceUrl: text('dispute_source_url'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [index('card_benefit_catalogue_lookup_idx').on(table.issuerKey, table.network, table.tier)],
+  (table) => [
+    index('card_benefit_catalogue_lookup_idx').on(table.issuerKey, table.network, table.tier),
+  ],
 );
 
 /**
@@ -190,11 +192,23 @@ export const cardPromotions = platformSchema.table('card_promotions', {
     .default(sql`public.uuid_generate_v7()`),
   issuerKey: text('issuer_key').notNull(),
   issuerName: text('issuer_name').notNull(),
-  networks: text('networks').array().notNull().default(sql`'{}'`),
-  cardTypes: text('card_types').array().notNull().default(sql`'{}'`),
-  tiers: text('tiers').array().notNull().default(sql`'{}'`),
+  networks: text('networks')
+    .array()
+    .notNull()
+    .default(sql`'{}'`),
+  cardTypes: text('card_types')
+    .array()
+    .notNull()
+    .default(sql`'{}'`),
+  tiers: text('tiers')
+    .array()
+    .notNull()
+    .default(sql`'{}'`),
   /** Vacío es «a todas las del emisor», que es lo que dice una que no lo nombra. */
-  programs: text('programs').array().notNull().default(sql`'{}'`),
+  programs: text('programs')
+    .array()
+    .notNull()
+    .default(sql`'{}'`),
   merchantName: text('merchant_name').notNull(),
   merchantNote: text('merchant_note'),
   category: text('category'),
@@ -203,7 +217,10 @@ export const cardPromotions = platformSchema.table('card_promotions', {
   maxDiscount: numeric('max_discount', { precision: 19, scale: 4, mode: 'string' }),
   maxSpend: numeric('max_spend', { precision: 19, scale: 4, mode: 'string' }),
   /** ISO: 1 es lunes. Vacío es todos los días. */
-  weekdays: smallint('weekdays').array().notNull().default(sql`'{}'`),
+  weekdays: smallint('weekdays')
+    .array()
+    .notNull()
+    .default(sql`'{}'`),
   validFrom: date('valid_from'),
   validUntil: date('valid_until'),
   channel: text('channel'),
@@ -241,8 +258,14 @@ export const cardPrograms = platformSchema.table(
     name: text('name').notNull(),
     kind: text('kind').notNull(),
     /** Vacío es «en todas»: un programa que no distingue red aplica a todas. */
-    networks: text('networks').array().notNull().default(sql`'{}'`),
-    tiers: text('tiers').array().notNull().default(sql`'{}'`),
+    networks: text('networks')
+      .array()
+      .notNull()
+      .default(sql`'{}'`),
+    tiers: text('tiers')
+      .array()
+      .notNull()
+      .default(sql`'{}'`),
     detail: text('detail'),
     sourceName: text('source_name').notNull(),
     sourceUrl: text('source_url').notNull(),

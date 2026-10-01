@@ -40,7 +40,9 @@ describeWithDatabase('database connection', () => {
     const rows = await db.select({ code: currencies.code }).from(currencies);
     const codes = rows.map((row) => row.code.trim()).sort();
 
-    expect(codes).toEqual(CURRENCY_SEED.map((currency) => currency.code).sort());
+    // Containment, not equality: the trips migration adds destination
+    // currencies as reference data, while accounts stay in the seed's two.
+    expect(codes).toEqual(expect.arrayContaining(CURRENCY_SEED.map((currency) => currency.code)));
   });
 
   it('has the full category tree, exactly once', async () => {

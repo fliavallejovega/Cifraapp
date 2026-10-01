@@ -36,6 +36,8 @@ export const aiFeature = pgEnum('ai_feature', [
   'plan_proposal',
   'scenario_narration',
   'question_answer',
+  'trip_document_extract',
+  'trip_quick_create',
 ]);
 
 export const aiOutcome = pgEnum('ai_outcome', [
