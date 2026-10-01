@@ -81,6 +81,14 @@ export const documents = appSchema.table(
     taxYear: smallint('tax_year'),
     /** The trip it belongs to. The foreign key lives in SQL; declared here without it to keep the schema modules acyclic. */
     tripId: uuid('trip_id'),
+    /** Travel-document reading (20261001230000): status, the normalized proposal, its confidence. */
+    tripStatus: text('trip_status'),
+    tripExtraction: jsonb('trip_extraction').$type<Record<string, unknown>>(),
+    tripConfidence: numeric('trip_confidence', { precision: 4, scale: 3, mode: 'string' }),
+    tripFailure: text('trip_failure'),
+    tripReviewedAt: timestamp('trip_reviewed_at', { withTimezone: true }),
+    tripBookingId: uuid('trip_booking_id'),
+    tripTransactionId: uuid('trip_transaction_id'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     deletedAt: timestamp('deleted_at', { withTimezone: true }),
   },

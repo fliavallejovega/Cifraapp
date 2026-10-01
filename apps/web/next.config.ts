@@ -41,7 +41,9 @@ const nextConfig: NextConfig = {
   experimental: {
     // Keeps server-only modules — the database client, service-role keys — out
     // of any client bundle even if an import path is written by mistake.
-    serverActions: { bodySizeLimit: '2mb' },
+    // 4 MB: under Vercel's 4.5 MB request cap. Trip documents go one per request,
+    // photos already shrunk on the device.
+    serverActions: { bodySizeLimit: '4mb' },
   },
 
   headers() {

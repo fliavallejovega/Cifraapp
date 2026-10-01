@@ -1,14 +1,15 @@
 # Viajes — progreso
 
-| Fase                     | Estado             | Entregable                                                                                                  |
-| ------------------------ | ------------------ | ----------------------------------------------------------------------------------------------------------- |
-| 0 · Reconocimiento       | Hecha (2026-10-01) | [00-reconocimiento.md](00-reconocimiento.md)                                                                |
-| 1 · Diseño técnico       | Hecha (2026-10-01) | [01-diseno.md](01-diseno.md)                                                                                |
-| 2 · Base de datos        | Hecha (2026-10-01) | `20261001210000_trips.sql`, aplicada en producción; 10 pruebas de RLS e invariantes                         |
-| 3 · Motor de presupuesto | Hecha (2026-10-01) | `@app/trip-engine`, 27 pruebas (incluye 2.000 viajes aleatorios y < 50 ms)                                  |
-| 4 · Servidor             | Hecha (2026-10-01) | `trip-actions.ts`, `trip-ledger.ts`, `trip-plan.ts`, `repositories/trips.ts`; 14 pruebas (4 contra la base) |
-| 5 · Planificación        | Hecha (2026-10-01) | Lista, asistente de 6 pasos, tablero, escenarios, plan de ahorro; 207 pantallas en 69 perfiles              |
-| 6–11                     | Pendientes         | —                                                                                                           |
+| Fase                     | Estado             | Entregable                                                                                                                                    |
+| ------------------------ | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0 · Reconocimiento       | Hecha (2026-10-01) | [00-reconocimiento.md](00-reconocimiento.md)                                                                                                  |
+| 1 · Diseño técnico       | Hecha (2026-10-01) | [01-diseno.md](01-diseno.md)                                                                                                                  |
+| 2 · Base de datos        | Hecha (2026-10-01) | `20261001210000_trips.sql`, aplicada en producción; 10 pruebas de RLS e invariantes                                                           |
+| 3 · Motor de presupuesto | Hecha (2026-10-01) | `@app/trip-engine`, 27 pruebas (incluye 2.000 viajes aleatorios y < 50 ms)                                                                    |
+| 4 · Servidor             | Hecha (2026-10-01) | `trip-actions.ts`, `trip-ledger.ts`, `trip-plan.ts`, `repositories/trips.ts`; 14 pruebas (4 contra la base)                                   |
+| 5 · Planificación        | Hecha (2026-10-01) | Lista, asistente de 6 pasos, tablero, escenarios, plan de ahorro; 207 pantallas en 69 perfiles                                                |
+| 6 · Documentos de viaje  | Hecha (2026-10-01) | Lector de pasajes, hoteles y recibos sobre el mismo pipeline; revisión y confirmación atómica; probado de punta a punta con el proveedor real |
+| 7–11                     | Pendientes         | —                                                                                                                                             |
 
 Notas de la Fase 2:
 
@@ -18,3 +19,5 @@ Notas de la Fase 2:
 - La semilla de desarrollo con tres viajes llega con el servidor (Fase 4), porque usa sus acciones.
 
 - Fase 5: la revisión en 69 perfiles (WebKit y Chromium) no encontró desbordes, traslapes ni toques chicos en las pantallas de Viajes. El único grave es un error de hidratación de React (#418) que ya existía en toda la app: aparece también en `/goals` con el build anterior a Viajes y, a veces, en producción. Queda propuesto como arreglo aparte.
+
+- Fase 6: arreglados los dos fallos del OCR de estados de cuenta (el trabajo ya recibe el tipo de archivo; el selector acepta fotos). Tasas del BCE vía Frankfurter con cron diario (`/api/cron/fx`), adelantadas de la Fase 8 porque confirmar un recibo en euros las necesita. El límite de las acciones del servidor sube a 4 MB y los documentos viajan uno por petición.

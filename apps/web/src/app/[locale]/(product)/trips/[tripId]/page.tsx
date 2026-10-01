@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { BookingManager } from '@/components/trips/booking-manager';
+import { DocumentList, DocumentUpload } from '@/components/trips/document-upload';
 import {
   ChecklistPanel,
   PerDiemPanel,
@@ -15,7 +16,7 @@ import { TripSetup } from '@/components/trips/trip-setup';
 import { Link } from '@/i18n/navigation';
 import { daysFrom, formatAmount, formatDateRange, formatDay, shareOf } from '@/lib/trip-format';
 import { loadHouseholdContext } from '@/server/household-context';
-import { loadTripDashboard, tripsEnabled } from '@/server/repositories/trips';
+import { loadTripDashboard, loadTripDocuments, tripsEnabled } from '@/server/repositories/trips';
 import { requireHousehold } from '@/server/session';
 
 /**
@@ -75,6 +76,7 @@ export default async function TripPage({
   }
 
   const { trip, budget } = data;
+  const tripDocuments = await loadTripDocuments(session, session.activeHouseholdId, trip.id);
   const currency = trip.baseCurrency.trim();
   const money = (value: string) => formatAmount(value, currency, locale);
   const m = (value: Money) => formatMoney(value, { locale: context.moneyLocale });
@@ -337,6 +339,17 @@ export default async function TripPage({
           locale={locale}
         />
       </Section>
+
+      <section id="documents" className="mt-12 scroll-mt-6">
+        <Section title={t('documents.title')} detail={t('documents.detail')}>
+          <Card>
+            <div className="@container flex flex-col gap-6">
+              <DocumentUpload tripId={trip.id} locale={locale} />
+              <DocumentList documents={tripDocuments} locale={locale} />
+            </div>
+          </Card>
+        </Section>
+      </section>
 
       <Section
         title={t('dashboard.scenarios.title')}

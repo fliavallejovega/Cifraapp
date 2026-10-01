@@ -43,3 +43,17 @@ export {
 } from './reference.js';
 export type * from './types.js';
 export { divide, fromMinor, toMinor, toScaled } from './units.js';
+export {
+  destinationsFromSegments,
+  detectCurrency,
+  MONTH_FIRST_COUNTRIES,
+  normalizeExtraction,
+  parsePrintedAmount,
+  parsePrintedDate,
+  parsePrintedTime,
+  scrubSensitive,
+  type DocumentKind,
+  type FlightSegment,
+  type Proposal,
+  type RawExtraction,
+} from './documents.js';

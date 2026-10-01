@@ -116,7 +116,7 @@ export default async function TripsPage({ params }: { params: Promise<{ locale: 
                   {t('empty.fromBudget')}
                 </Link>
                 <Link
-                  href="/trips/new?from=documents"
+                  href="/trips/scan"
                   className="inline-flex h-12 items-center justify-center rounded-(--radius-md) border border-[color:var(--color-surface-border)] bg-[color:var(--color-surface)] px-6 text-base font-medium shadow-(--shadow-card) hover:bg-[color:var(--color-ground-sunk)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-ink)]"
                 >
                   {t('empty.fromDocuments')}

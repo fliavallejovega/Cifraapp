@@ -183,6 +183,9 @@ export async function stageDocument(
     accountId: request.accountId,
     currency: request.currency,
     fileName: request.fileName,
+    // Sin esto el trabajador no sabía que tenía una foto o un escaneo en las
+    // manos, y `canReadByOcr('')` cerraba el camino del lector visual.
+    mimeType: request.mimeType,
     storageKey,
   });
 

@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 // Importing the service registers the statement-import handler. Without this
 // the runner would claim jobs it has no idea how to execute.
 import '@/server/import-service';
+import '@/server/trip-documents';
 import { runQueuedJobs } from '@/server/jobs';
 
 /**

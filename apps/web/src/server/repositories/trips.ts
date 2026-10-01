@@ -3,6 +3,7 @@ import 'server-only';
 import {
   accounts,
   currencies,
+  documents,
   fxRates,
   goals,
   tripBookings,
@@ -15,11 +16,12 @@ import {
   transactions,
 } from '@app/database/schema';
 import { Money, type CurrencyCode, type PlainDate } from '@app/domain';
-import { computeTripBudget, type TripBudget } from '@app/trip-engine';
+import { computeTripBudget, type Proposal, type TripBudget } from '@app/trip-engine';
 import { and, asc, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import { cache } from 'react';
 
 import { isEnabled } from '../flags';
+import { getDocumentUrl } from '../storage';
 import type { Session } from '../session';
 import { queryAsUser } from '../session';
 import {
@@ -489,4 +491,213 @@ export async function loadLatestRates(
       .orderBy(fxRates.quote, desc(fxRates.rateDate)),
   );
   return Object.fromEntries(rows.map((row) => [row.quote.trim(), row.rate]));
+}
+
+export interface TripDocumentRow {
+  readonly id: string;
+  readonly fileName: string;
+  readonly kind: string;
+  readonly status: string | null;
+  readonly confidence: string | null;
+  readonly failure: string | null;
+  readonly createdAt: Date;
+  readonly summary: {
+    provider: string | null;
+    amount: string | null;
+    currency: string | null;
+  } | null;
+}
+
+/** Documents of one trip, or the household's documents still without a trip. */
+export async function loadTripDocuments(
+  session: Session,
+  householdId: string,
+  tripId: string | null,
+): Promise<readonly TripDocumentRow[]> {
+  const rows = await queryAsUser(session, (tx) =>
+    tx
+      .select({
+        id: documents.id,
+        fileName: documents.fileName,
+        kind: documents.kind,
+        status: documents.tripStatus,
+        confidence: documents.tripConfidence,
+        failure: documents.tripFailure,
+        createdAt: documents.createdAt,
+        extraction: documents.tripExtraction,
+      })
+      .from(documents)
+      .where(
+        and(
+          eq(documents.householdId, householdId),
+          isNull(documents.deletedAt),
+          isNotNull(documents.tripStatus),
+          tripId
+            ? eq(documents.tripId, tripId)
+            : and(isNull(documents.tripId), sql`${documents.tripStatus} <> 'discarded'`),
+        ),
+      )
+      .orderBy(desc(documents.createdAt))
+      .limit(50),
+  );
+  return rows.map(({ extraction, ...row }) => {
+    const p = extraction as {
+      provider?: string | null;
+      amount?: string | null;
+      currency?: string;
+    } | null;
+    return {
+      ...row,
+      summary: p
+        ? { provider: p.provider ?? null, amount: p.amount ?? null, currency: p.currency ?? null }
+        : null,
+    };
+  });
+}
+
+export interface TripDocumentReview {
+  readonly id: string;
+  readonly fileName: string;
+  readonly mimeType: string;
+  readonly status: string | null;
+  readonly failure: string | null;
+  readonly tripId: string | null;
+  readonly url: string | null;
+  readonly proposal: Proposal | null;
+  readonly trips: readonly { id: string; name: string; startDate: string; endDate: string }[];
+  readonly accounts: readonly { id: string; name: string }[];
+  readonly legs: readonly { id: string; city: string; tripId: string; localCurrency: string }[];
+  readonly travelers: readonly { id: string; displayName: string; tripId: string }[];
+  /** Earlier records that look like this document: same reference, or same amount around the same day. */
+  readonly possibleDuplicates: readonly {
+    kind: 'booking' | 'expense';
+    label: string;
+    date: string | null;
+  }[];
+  readonly rates: Readonly<Record<string, string>>;
+}
+
+export async function loadTripDocumentReview(
+  session: Session,
+  householdId: string,
+  documentId: string,
+  currency: CurrencyCode,
+): Promise<TripDocumentReview | null> {
+  const data = await queryAsUser(session, async (tx) => {
+    const [doc] = await tx
+      .select()
+      .from(documents)
+      .where(
+        and(
+          eq(documents.id, documentId),
+          eq(documents.householdId, householdId),
+          isNull(documents.deletedAt),
+        ),
+      )
+      .limit(1);
+    if (!doc) return null;
+    const [tripRows, accountRows, legRows, travelerRows] = await Promise.all([
+      tx
+        .select({
+          id: trips.id,
+          name: trips.name,
+          startDate: trips.startDate,
+          endDate: trips.endDate,
+        })
+        .from(trips)
+        .where(and(eq(trips.householdId, householdId), isNull(trips.archivedAt)))
+        .orderBy(desc(trips.startDate))
+        .limit(20),
+      tx
+        .select({ id: accounts.id, name: accounts.name })
+        .from(accounts)
+        .where(
+          and(
+            eq(accounts.householdId, householdId),
+            isNull(accounts.deletedAt),
+            eq(accounts.status, 'active'),
+            eq(accounts.currency, currency),
+          ),
+        )
+        .orderBy(asc(accounts.name)),
+      tx
+        .select({
+          id: tripLegs.id,
+          city: tripLegs.city,
+          tripId: tripLegs.tripId,
+          localCurrency: tripLegs.localCurrency,
+        })
+        .from(tripLegs)
+        .where(eq(tripLegs.householdId, householdId)),
+      tx
+        .select({
+          id: tripTravelers.id,
+          displayName: tripTravelers.displayName,
+          tripId: tripTravelers.tripId,
+        })
+        .from(tripTravelers)
+        .where(eq(tripTravelers.householdId, householdId)),
+    ]);
+    const proposal = doc.tripExtraction as Proposal | null;
+    const duplicates: { kind: 'booking' | 'expense'; label: string; date: string | null }[] = [];
+    if (proposal?.referenceCode) {
+      const same = await tx
+        .select({ provider: tripBookings.provider, ref: tripBookings.referenceCode })
+        .from(tripBookings)
+        .where(
+          and(
+            eq(tripBookings.householdId, householdId),
+            isNull(tripBookings.deletedAt),
+            eq(tripBookings.referenceCode, proposal.referenceCode),
+          ),
+        )
+        .limit(3);
+      duplicates.push(
+        ...same.map((b) => ({
+          kind: 'booking' as const,
+          label: `${b.provider ?? ''} ${b.ref ?? ''}`.trim(),
+          date: null,
+        })),
+      );
+    }
+    if (proposal?.amount && proposal.day && proposal.currency === currency) {
+      const near = await tx
+        .select({
+          description: transactions.descriptionOriginal,
+          date: transactions.transactionDate,
+        })
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.householdId, householdId),
+            isNull(transactions.deletedAt),
+            sql`abs(${transactions.amount}) = ${proposal.amount}::numeric`,
+            sql`${transactions.transactionDate} between ${proposal.day}::date - 2 and ${proposal.day}::date + 2`,
+          ),
+        )
+        .limit(3);
+      duplicates.push(
+        ...near.map((n) => ({ kind: 'expense' as const, label: n.description, date: n.date })),
+      );
+    }
+    return { doc, tripRows, accountRows, legRows, travelerRows, proposal, duplicates };
+  });
+  if (!data) return null;
+  const url = await getDocumentUrl(data.doc.storageKey).catch(() => null);
+  return {
+    id: data.doc.id,
+    fileName: data.doc.fileName,
+    mimeType: data.doc.mimeType,
+    status: data.doc.tripStatus,
+    failure: data.doc.tripFailure,
+    tripId: data.doc.tripId,
+    url,
+    proposal: data.proposal,
+    trips: data.tripRows,
+    accounts: data.accountRows,
+    legs: data.legRows.map((l) => ({ ...l, localCurrency: l.localCurrency.trim() })),
+    travelers: data.travelerRows,
+    possibleDuplicates: data.duplicates,
+    rates: await loadLatestRates(session, currency),
+  };
 }

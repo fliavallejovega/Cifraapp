@@ -128,7 +128,7 @@ export function ImportForm({ locale, accounts, fixedAccountId, labels }: ImportF
             id={id}
             name="file"
             type="file"
-            accept=".csv,.ofx,.qfx,.pdf,.xlsx,text/csv,application/x-ofx,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            accept=".csv,.ofx,.qfx,.pdf,.xlsx,text/csv,application/x-ofx,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,image/png,image/jpeg,image/webp"
             required
             aria-describedby={describedBy}
             className="file:mr-3 file:border-0 file:bg-transparent file:text-sm"

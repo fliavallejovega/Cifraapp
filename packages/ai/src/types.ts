@@ -49,7 +49,9 @@ export type AIFeature =
   | 'rule_proposal'
   | 'plan_proposal'
   | 'scenario_narration'
-  | 'question_answer';
+  | 'question_answer'
+  | 'trip_document_extract'
+  | 'trip_quick_create';
 
 export interface TokenUsage {
   readonly inputTokens: number;
