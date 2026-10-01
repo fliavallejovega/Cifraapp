@@ -40,6 +40,11 @@ const NO_POLICY_EXPECTED = new Set([
   'platform.feature_flags',
   'platform.feature_flag_overrides',
   'platform.organization_branding',
+  // Console-only: read and written with the service role (20260911110000).
+  'platform.email_templates',
+  'platform.email_template_versions',
+  // Read by the catalogue sweep with the service role; no client grant.
+  'platform.card_programs',
   'audit.admin_actions',
 ]);
 
@@ -164,6 +169,12 @@ describeWithDatabase('security audit', () => {
       'platform.testimonials',
       'platform.redirects',
       'platform.legal_documents',
+      // The card catalogue is public reference: what each card gives and the
+      // source behind each figure (20261001200000).
+      'platform.card_benefit_catalogue',
+      'platform.card_promotions',
+      'platform.catalogue_refresh_runs',
+      'platform.catalogue_sources',
     ]);
 
     const unexpected = rows.filter((row) => !allowed.has(row.table));
