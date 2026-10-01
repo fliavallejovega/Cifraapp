@@ -431,7 +431,7 @@ export function TripWizard({
   const showError = (cond: boolean) => touched && cond;
 
   return (
-    <div className="@container flex flex-col gap-6 pb-24">
+    <div className="@container flex flex-col gap-6">
       {/* Progress: the step, its name, and a bar that is never at zero. */}
       <div className="flex flex-col gap-2">
         <p className="text-sm text-[color:var(--color-ink-secondary)]">
@@ -1254,7 +1254,7 @@ export function TripWizard({
       </form>
 
       {/* The step's one action, always reachable. */}
-      <div className="fixed inset-x-0 bottom-0 z-10 border-t border-[color:var(--color-rule)] bg-[color:var(--color-ground-raised)] px-4 pt-3 pb-[max(12px,env(safe-area-inset-bottom))] lg:static lg:border-0 lg:bg-transparent lg:p-0">
+      <div className="sticky bottom-0 z-10 -mx-5 border-t border-[color:var(--color-rule)] bg-[color:var(--color-ground-raised)] px-5 pt-3 pb-[max(12px,env(safe-area-inset-bottom))] sm:-mx-10 sm:px-10 lg:static lg:mx-0 lg:border-0 lg:bg-transparent lg:p-0">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
           {draft.step > 0 ? (
             <Button

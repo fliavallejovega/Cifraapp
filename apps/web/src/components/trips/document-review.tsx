@@ -291,7 +291,7 @@ export function DocumentReview({
         : t('confirmBooking');
 
   return (
-    <div className="@container grid gap-6 pb-28 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:pb-0">
+    <div className="@container grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:pb-0">
       <Card padding="none" className="overflow-hidden lg:sticky lg:top-6 lg:self-start">
         {data.url ? (
           data.mimeType === 'application/pdf' ? (
@@ -865,7 +865,7 @@ export function DocumentReview({
               </p>
             )}
 
-            <div className="fixed inset-x-0 bottom-0 z-10 border-t border-[color:var(--color-rule)] bg-[color:var(--color-ground-raised)] px-4 pt-3 pb-[max(12px,env(safe-area-inset-bottom))] lg:static lg:border-0 lg:bg-transparent lg:p-0">
+            <div className="sticky bottom-0 z-10 -mx-5 border-t border-[color:var(--color-rule)] bg-[color:var(--color-ground-raised)] px-5 pt-3 pb-[max(12px,env(safe-area-inset-bottom))] sm:-mx-10 sm:px-10 lg:static lg:mx-0 lg:border-0 lg:bg-transparent lg:p-0">
               <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-3">
                 <Button
                   size="lg"
