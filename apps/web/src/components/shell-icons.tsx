@@ -221,6 +221,17 @@ export function IconGoals() {
   );
 }
 
+/** Trips: a suitcase — a plan with a departure date and its own money. */
+export function IconTrips() {
+  return (
+    <Icon>
+      <rect x="3" y="6.5" width="14" height="10" rx="1.5" />
+      <path d="M7.5 6.5V4.75A1.25 1.25 0 0 1 8.75 3.5h2.5a1.25 1.25 0 0 1 1.25 1.25V6.5" />
+      <path d="M7 6.5v10M13 6.5v10" />
+    </Icon>
+  );
+}
+
 /** Budgets: the planned share against the spent one. */
 export function IconBudget() {
   return (

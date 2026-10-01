@@ -61,7 +61,10 @@ export async function refreshCatalogue(): Promise<RefreshResult> {
   const db = getPlatformDb(getServerEnv().DATABASE_URL);
   const today = todayIn('America/Panama');
 
-  const [run] = await db.insert(catalogueRefreshRuns).values({}).returning({ id: catalogueRefreshRuns.id });
+  const [run] = await db
+    .insert(catalogueRefreshRuns)
+    .values({})
+    .returning({ id: catalogueRefreshRuns.id });
 
   const sources = await db.select().from(catalogueSources);
 
@@ -143,7 +146,9 @@ export async function refreshCatalogue(): Promise<RefreshResult> {
       // exactamente lo que `captured_on` promete.
       await db
         .update(cardBenefitCatalogue)
-        .set({ notes: sql`coalesce(${cardBenefitCatalogue.notes} || ' ', '') || '⚠ La página de la fuente cambió desde esta lectura.'` })
+        .set({
+          notes: sql`coalesce(${cardBenefitCatalogue.notes} || ' ', '') || '⚠ La página de la fuente cambió desde esta lectura.'`,
+        })
         .where(eq(cardBenefitCatalogue.sourceId, source.id));
     }
 
@@ -159,7 +164,9 @@ export async function refreshCatalogue(): Promise<RefreshResult> {
   await db
     .update(cardPromotions)
     .set({ status: 'expired', updatedAt: new Date() })
-    .where(sql`${cardPromotions.validUntil} is not null and ${cardPromotions.validUntil} < ${today} and ${cardPromotions.status} in ('verified','unverified')`);
+    .where(
+      sql`${cardPromotions.validUntil} is not null and ${cardPromotions.validUntil} < ${today} and ${cardPromotions.status} in ('verified','unverified')`,
+    );
 
   if (run) {
     await db
@@ -293,7 +300,9 @@ async function askForPromotions(page: string, sourceName: string): Promise<unkno
 
   try {
     const response = await fetch(
-      anthropic ? 'https://api.anthropic.com/v1/messages' : 'https://api.openai.com/v1/chat/completions',
+      anthropic
+        ? 'https://api.anthropic.com/v1/messages'
+        : 'https://api.openai.com/v1/chat/completions',
       {
         method: 'POST',
         headers: anthropic

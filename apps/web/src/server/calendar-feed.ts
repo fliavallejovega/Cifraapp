@@ -128,18 +128,22 @@ export async function calendarFor(token: string): Promise<FeedCalendar | null> {
     .orderBy(obligations.dueDate);
 
   const commitments: CalendarCommitment[] = rows.flatMap((row) =>
-    occurrencesOf(row.due as PlainDate, row.frequency as Frequency | null, row.anchorDays, today, horizon).map(
-      (due, at) => ({
-        id: at === 0 ? row.id : `${row.id}-${due.replace(/-/g, '')}`,
-        label: row.name,
-        due,
-        amount: Money.fromDecimalString(row.amount, currency),
-        isEssential: row.isEssential,
-        // Una revisión que sube cuando la fila cambia, para que el cliente
-        // sepa que el evento se movió en vez de quedarse con el viejo.
-        revision: Math.floor(row.updatedAt.getTime() / 1000) % 2_147_483_647,
-      }),
-    ),
+    occurrencesOf(
+      row.due as PlainDate,
+      row.frequency as Frequency | null,
+      row.anchorDays,
+      today,
+      horizon,
+    ).map((due, at) => ({
+      id: at === 0 ? row.id : `${row.id}-${due.replace(/-/g, '')}`,
+      label: row.name,
+      due,
+      amount: Money.fromDecimalString(row.amount, currency),
+      isEssential: row.isEssential,
+      // Una revisión que sube cuando la fila cambia, para que el cliente
+      // sepa que el evento se movió en vez de quedarse con el viejo.
+      revision: Math.floor(row.updatedAt.getTime() / 1000) % 2_147_483_647,
+    })),
   );
 
   const coverage = computeCoverage({

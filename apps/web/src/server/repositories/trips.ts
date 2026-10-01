@@ -17,6 +17,7 @@ import {
 import { Money, type CurrencyCode, type PlainDate } from '@app/domain';
 import { computeTripBudget, type TripBudget } from '@app/trip-engine';
 import { and, asc, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
+import { cache } from 'react';
 
 import { isEnabled } from '../flags';
 import type { Session } from '../session';
@@ -44,14 +45,19 @@ import { loadBaseline } from './baseline';
 
 export const TRIPS_FLAG = 'trips_module';
 
-/** Whether the module is on for this household. Fails closed. */
-export async function tripsEnabled(session: Session, householdId: string | null): Promise<boolean> {
-  try {
-    return await isEnabled(TRIPS_FLAG, { userId: session.user.id, householdId });
-  } catch {
-    return false;
-  }
-}
+/**
+ * Whether the module is on for this household. Fails closed. Cached per
+ * request, because the layout and the page both ask.
+ */
+export const tripsEnabled = cache(
+  async (session: Session, householdId: string | null): Promise<boolean> => {
+    try {
+      return await isEnabled(TRIPS_FLAG, { userId: session.user.id, householdId });
+    } catch {
+      return false;
+    }
+  },
+);
 
 export type TripRecord = typeof trips.$inferSelect;
 export type TripLegRecord = typeof tripLegs.$inferSelect;
@@ -68,6 +74,8 @@ export interface TripListItem {
   readonly endDate: string;
   readonly coverEmoji: string | null;
   readonly cities: readonly string[];
+  readonly countryCode: string | null;
+  readonly baseCurrency: string;
   readonly totalBudget: string;
   readonly spent: string;
   readonly goal: { readonly current: string; readonly target: string } | null;
@@ -89,7 +97,12 @@ export async function loadTrips(
 
     const [legs, spent, goalRows] = await Promise.all([
       tx
-        .select({ tripId: tripLegs.tripId, city: tripLegs.city, position: tripLegs.position })
+        .select({
+          tripId: tripLegs.tripId,
+          city: tripLegs.city,
+          countryCode: tripLegs.countryCode,
+          position: tripLegs.position,
+        })
         .from(tripLegs)
         .where(inArray(tripLegs.tripId, ids))
         .orderBy(asc(tripLegs.position), asc(tripLegs.arrivalDate)),
@@ -122,6 +135,8 @@ export async function loadTrips(
         endDate: row.endDate,
         coverEmoji: row.coverEmoji,
         cities: legs.filter((leg) => leg.tripId === row.id).map((leg) => leg.city),
+        countryCode: legs.find((leg) => leg.tripId === row.id)?.countryCode ?? null,
+        baseCurrency: row.baseCurrency.trim(),
         totalBudget: row.totalBudget,
         spent: spent.find((s) => s.tripId === row.id)?.spent ?? '0',
         goal: goal ? { current: goal.current, target: goal.target } : null,
@@ -380,7 +395,7 @@ export async function loadTripDashboard(
     );
 
   const active = data.scenarios.find((s) => s.id === data.trip.activeScenarioId) ?? null;
-  const budget = engineFor(active ? (active.params) : null);
+  const budget = engineFor(active ? active.params : null);
   const scenarioBudgets = data.scenarios.map((s) => ({
     id: s.id,
     name: s.name,
@@ -459,4 +474,19 @@ export async function loadTripsInProgress(session: Session, householdId: string,
         ),
       ),
   );
+}
+
+/** Latest reference rate for every currency, as local units per one of `base`. */
+export async function loadLatestRates(
+  session: Session,
+  base: string,
+): Promise<Record<string, string>> {
+  const rows = await queryAsUser(session, (tx) =>
+    tx
+      .selectDistinctOn([fxRates.quote], { quote: fxRates.quote, rate: fxRates.rate })
+      .from(fxRates)
+      .where(eq(fxRates.base, base))
+      .orderBy(fxRates.quote, desc(fxRates.rateDate)),
+  );
+  return Object.fromEntries(rows.map((row) => [row.quote.trim(), row.rate]));
 }

@@ -1,7 +1,11 @@
 import 'server-only';
 
 import { accounts } from '@app/database/schema';
-import { findCoverageGaps, type AccountActivity, type CoverageReport } from '@app/transaction-engine';
+import {
+  findCoverageGaps,
+  type AccountActivity,
+  type CoverageReport,
+} from '@app/transaction-engine';
 import { and, eq, isNull, sql } from 'drizzle-orm';
 
 import { queryAsUser, type Session } from '../session';

@@ -61,10 +61,7 @@ export interface ApplyPaymentInput {
  * código: dos personas mirando la misma pantalla descuentan el mismo pago dos
  * veces, y la deuda queda en la mitad de lo que es.
  */
-export async function applyPaymentToDebt(
-  tx: Tx,
-  input: ApplyPaymentInput,
-): Promise<string | null> {
+export async function applyPaymentToDebt(tx: Tx, input: ApplyPaymentInput): Promise<string | null> {
   if (!input.amount.isPositive()) return null;
 
   const inserted = await tx

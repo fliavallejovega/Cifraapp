@@ -564,9 +564,7 @@ export async function loadSettings(
 export async function loadAccountOptions(
   session: Session,
   householdId: string,
-): Promise<
-  readonly { id: string; name: string; type: string; personName: string | null }[]
-> {
+): Promise<readonly { id: string; name: string; type: string; personName: string | null }[]> {
   return queryAsUser(session, (tx) =>
     tx
       .select({

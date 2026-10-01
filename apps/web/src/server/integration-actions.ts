@@ -53,9 +53,7 @@ export async function createCalendarFeed(
     const live = await tx
       .select({ id: calendarFeeds.id })
       .from(calendarFeeds)
-      .where(
-        and(eq(calendarFeeds.householdId, householdId), isNull(calendarFeeds.revokedAt)),
-      );
+      .where(and(eq(calendarFeeds.householdId, householdId), isNull(calendarFeeds.revokedAt)));
 
     if (live.length >= MAX_FEEDS) return 'tooManyFeeds' as const;
 

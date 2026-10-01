@@ -90,9 +90,7 @@ export async function connectionsFor(
       and(eq(googleConnections.householdId, householdId), eq(googleConnections.status, 'active')),
     );
 
-  return rows
-    .map(toStored)
-    .filter((connection) => connection.capabilities.includes(capability));
+  return rows.map(toStored).filter((connection) => connection.capabilities.includes(capability));
 }
 
 /** Todas las vivas, para el barrido diario. */
@@ -118,8 +116,7 @@ function toStored(row: typeof googleConnections.$inferSelect): StoredConnection 
 }
 
 export type AccessResult<T> =
-  | { readonly ok: true; readonly value: T }
-  | { readonly ok: false; readonly reason: string };
+  { readonly ok: true; readonly value: T } | { readonly ok: false; readonly reason: string };
 
 /**
  * Corre algo con un token de acceso fresco.

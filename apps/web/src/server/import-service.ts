@@ -324,31 +324,34 @@ async function fileImportRows(
    * «Esto ya está registrado» no le sirve a nadie. «Esto ya lo anotó Vale a
    * mano en su cuenta el 7» es lo que deja decidir sin salir de la pantalla.
    */
-  const provenance = new Map<string, { accountId: string; accountName: string | null; source: string }>();
+  const provenance = new Map<
+    string,
+    { accountId: string; accountName: string | null; source: string }
+  >();
 
   const storedRows =
     earliest && latest
       ? await db
-            .select({
-              id: transactions.id,
-              accountId: transactions.accountId,
-              accountName: sql<string | null>`(
+          .select({
+            id: transactions.id,
+            accountId: transactions.accountId,
+            accountName: sql<string | null>`(
                 select a.name from app.accounts a where a.id = ${transactions.accountId}
               )`,
-              source: transactions.source,
-              transactionDate: transactions.transactionDate,
-              postedDate: transactions.postedDate,
-              amount: transactions.amount,
-              descriptionNormalized: transactions.descriptionNormalized,
-              externalReference: transactions.externalReference,
-              fingerprint: transactions.fingerprint,
-              merchantId: transactions.merchantId,
-              sourceDocumentId: transactions.sourceDocumentId,
-            })
-            .from(transactions)
-            .where(
-              and(
-                /*
+            source: transactions.source,
+            transactionDate: transactions.transactionDate,
+            postedDate: transactions.postedDate,
+            amount: transactions.amount,
+            descriptionNormalized: transactions.descriptionNormalized,
+            externalReference: transactions.externalReference,
+            fingerprint: transactions.fingerprint,
+            merchantId: transactions.merchantId,
+            sourceDocumentId: transactions.sourceDocumentId,
+          })
+          .from(transactions)
+          .where(
+            and(
+              /*
                   Todo el hogar, no la cuenta que se está importando.
 
                   Antes esto decía `eq(transactions.accountId, input.accountId)`
@@ -362,12 +365,12 @@ async function fileImportRows(
                   Una casa no lleva sus cuentas por cuenta bancaria. Lleva una
                   sola, y el mismo pago sale de donde salga.
                 */
-                eq(transactions.householdId, input.householdId),
-                isNull(transactions.deletedAt),
-                gte(transactions.transactionDate, shiftDate(earliest, -10)),
-                lte(transactions.transactionDate, shiftDate(latest, 10)),
-              ),
-            )
+              eq(transactions.householdId, input.householdId),
+              isNull(transactions.deletedAt),
+              gte(transactions.transactionDate, shiftDate(earliest, -10)),
+              lte(transactions.transactionDate, shiftDate(latest, 10)),
+            ),
+          )
       : [];
 
   const stored: ExistingTransaction[] = storedRows.map((row) => {

@@ -76,7 +76,9 @@ export async function setRowCategory(
 
   const raw = formData.get('categoryId');
   const categoryId =
-    typeof raw === 'string' && raw !== '' ? z.uuid().safeParse(raw) : { success: true as const, data: null };
+    typeof raw === 'string' && raw !== ''
+      ? z.uuid().safeParse(raw)
+      : { success: true as const, data: null };
   if (!categoryId.success) return { error: 'notFound' };
 
   const householdId = session.activeHouseholdId;
@@ -183,7 +185,9 @@ export async function setRowDebt(
 
   const raw = formData.get('debtId');
   const debtId =
-    typeof raw === 'string' && raw !== '' ? z.uuid().safeParse(raw) : { success: true as const, data: null };
+    typeof raw === 'string' && raw !== ''
+      ? z.uuid().safeParse(raw)
+      : { success: true as const, data: null };
   if (!debtId.success) return { error: 'notFound' };
 
   const householdId = session.activeHouseholdId;

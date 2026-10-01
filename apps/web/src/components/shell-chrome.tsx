@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 import { Link, usePathname } from '@/i18n/navigation';
 import { ThemeSwitch, type ThemeSwitchLabels } from './theme';
@@ -38,6 +38,7 @@ import {
   IconSimulate,
   IconSubscription,
   IconTax,
+  IconTrips,
   Monogram,
 } from './shell-icons';
 
@@ -70,6 +71,7 @@ export type DestinationKey =
   | 'commitments'
   | 'debts'
   | 'goals'
+  | 'trips'
   | 'budgets'
   | 'documents'
   | 'merchants'
@@ -133,6 +135,7 @@ const ICONS: Record<DestinationKey, () => ReactNode> = {
   commitments: IconCommitments,
   debts: IconDebt,
   goals: IconGoals,
+  trips: IconTrips,
   budgets: IconBudget,
   documents: IconImport,
   merchants: IconMerchants,
@@ -176,6 +179,23 @@ export function ShellChrome({
 }: ShellChromeProps) {
   const pathname = usePathname();
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+  const navRef = useRef<HTMLElement>(null);
+
+  // The active destination is always in view inside the column, which scrolls
+  // on its own: on a short landscape screen the column is taller than the
+  // window, and an active item below its fold read as no item being active.
+  // Only the column moves — never the page.
+  useEffect(() => {
+    const nav = navRef.current;
+    const active = nav?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (!nav || !active) return;
+    const top =
+      active.getBoundingClientRect().top - nav.getBoundingClientRect().top + nav.scrollTop;
+    const bottom = top + active.offsetHeight;
+    if (top < nav.scrollTop || bottom > nav.scrollTop + nav.clientHeight) {
+      nav.scrollTop = Math.max(0, top - nav.clientHeight / 2 + active.offsetHeight / 2);
+    }
+  }, [pathname]);
 
   const footer = (
     <div className="flex flex-col gap-4">
@@ -196,7 +216,7 @@ export function ShellChrome({
           every figure on screen belongs to, and the name is where they look. */}
         <Link
           href="/households"
-          className="min-w-0 rounded-(--radius-sm) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-brand)]"
+          className="flex min-h-11 min-w-0 flex-col justify-center rounded-(--radius-sm) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-brand)]"
         >
           <span className="block truncate text-sm font-medium text-[color:var(--color-panel-ink)]">
             {householdName}
@@ -250,7 +270,7 @@ export function ShellChrome({
             </span>
           </div>
 
-          <nav aria-label={labels.menu} className="flex-1 overflow-y-auto px-3 pb-4">
+          <nav ref={navRef} aria-label={labels.menu} className="flex-1 overflow-y-auto px-3 pb-4">
             {groupsOf(destinations).map((group) => (
               <NavGroup
                 key={group.name}
@@ -350,7 +370,7 @@ function NavGroup({
           aria-expanded={open}
           aria-controls={panelId}
           title={open ? labels.collapse : labels.expand}
-          className="flex min-h-8 w-full items-center gap-1.5 rounded-(--radius-sm) px-3.5 text-left font-(family-name:--font-mono) text-[0.6875rem] font-medium tracking-[0.14em] text-[color:var(--color-panel-ink-secondary)] uppercase opacity-70 transition-colors duration-(--duration-quick) hover:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[color:var(--color-brand)]"
+          className="flex min-h-11 w-full items-center gap-1.5 rounded-(--radius-sm) px-3.5 text-left font-(family-name:--font-mono) text-[0.6875rem] font-medium tracking-[0.14em] text-[color:var(--color-panel-ink-secondary)] uppercase opacity-70 transition-colors duration-(--duration-quick) hover:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[color:var(--color-brand)]"
         >
           <span
             aria-hidden

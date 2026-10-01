@@ -105,7 +105,7 @@ export async function loadCatalogueFor(
    * que no es nula.
    */
   const matches = (column: AnyColumn, value: string | null): SQL =>
-    value === null ? isNull(column) : or(isNull(column), eq(column, value)) ?? isNull(column);
+    value === null ? isNull(column) : (or(isNull(column), eq(column, value)) ?? isNull(column));
 
   const rows = await db
     .select()

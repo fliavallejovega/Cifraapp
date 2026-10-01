@@ -27,6 +27,7 @@ export const PROTECTED_SEGMENTS = [
   '/commitments',
   '/debts',
   '/goals',
+  '/trips',
   '/income',
   '/budgets',
 

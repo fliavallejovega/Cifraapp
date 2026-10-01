@@ -1,13 +1,7 @@
 import 'server-only';
 
 import { getAdminDb } from '@app/database';
-import {
-  accounts,
-  googleMessages,
-  households,
-  importRows,
-  imports,
-} from '@app/database/schema';
+import { accounts, googleMessages, households, importRows, imports } from '@app/database/schema';
 import { alertToCandidate, parseBankAlert } from '@app/transaction-engine';
 import { type CurrencyCode } from '@app/domain';
 import { getServerEnv } from '@app/validation/env';
@@ -186,7 +180,10 @@ async function sweepOne(connection: StoredConnection): Promise<OneResult> {
       // Sin cuenta resuelta la huella se calcula igual, sobre una etiqueta
       // estable, para que dos lecturas del mismo aviso sigan coincidiendo. La
       // cola de revisión pide la cuenta y la fila se recalcula al confirmarla.
-      const candidate = alertToCandidate(parsed, accountId ?? `unassigned:${connection.householdId}`);
+      const candidate = alertToCandidate(
+        parsed,
+        accountId ?? `unassigned:${connection.householdId}`,
+      );
 
       const [row] = await db
         .insert(importRows)

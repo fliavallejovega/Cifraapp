@@ -41,7 +41,11 @@ describe('qué hace el barrido cuando una fuente se mueve', () => {
   });
 
   it('una página de condiciones que cambió pide revisión humana', () => {
-    const decision = decideRefresh('condiciones nuevas', fingerprint('condiciones viejas'), 'issuer');
+    const decision = decideRefresh(
+      'condiciones nuevas',
+      fingerprint('condiciones viejas'),
+      'issuer',
+    );
 
     expect(decision.moved).toBe(true);
     expect(decision.needsReview).toBe(true);
@@ -51,7 +55,11 @@ describe('qué hace el barrido cuando una fuente se mueve', () => {
   it('una de promociones que cambió NO la pide', () => {
     // Cambian cada mes por diseño y el barrido las vuelve a extraer solo:
     // pedir revisión por cada una sería pedirla doce veces al año para nada.
-    const decision = decideRefresh('promos de octubre', fingerprint('promos de septiembre'), 'promotions');
+    const decision = decideRefresh(
+      'promos de octubre',
+      fingerprint('promos de septiembre'),
+      'promotions',
+    );
 
     expect(decision.moved).toBe(true);
     expect(decision.needsReview).toBe(false);

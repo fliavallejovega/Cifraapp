@@ -149,10 +149,7 @@ export async function loadCards(
 ): Promise<CardsView> {
   // El catálogo de programas vive en `platform`, fuera del alcance de RLS, así
   // que se lee antes de entrar en la consulta del hogar.
-  const [programNames, programKinds] = await Promise.all([
-    loadProgramNames(),
-    loadProgramKinds(),
-  ]);
+  const [programNames, programKinds] = await Promise.all([loadProgramNames(), loadProgramKinds()]);
 
   return queryAsUser(session, async (tx) => {
     const [household] = await tx

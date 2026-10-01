@@ -108,12 +108,7 @@ export type OcrOutcome =
   | { readonly ok: false; readonly reason: OcrFailure; readonly detail?: string };
 
 export type OcrFailure =
-  | 'not_configured'
-  | 'unsupported_type'
-  | 'too_large'
-  | 'transport'
-  | 'malformed'
-  | 'no_rows';
+  'not_configured' | 'unsupported_type' | 'too_large' | 'transport' | 'malformed' | 'no_rows';
 
 /**
  * El tope de tamaño de lo que se manda a leer.

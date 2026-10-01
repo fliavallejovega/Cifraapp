@@ -37,6 +37,7 @@ const DESTINATIONS = [
   { href: '/commitments', key: 'commitments', group: 'claims' },
   { href: '/debts', key: 'debts', group: 'claims' },
   { href: '/goals', key: 'goals', group: 'claims' },
+  { href: '/trips', key: 'trips', group: 'claims' },
   { href: '/income', key: 'income', group: 'claims' },
   { href: '/budgets', key: 'budgets', group: 'claims' },
 
@@ -71,18 +72,23 @@ export async function AppShell({
   locale,
   householdName,
   consoleUrl,
+  showTrips = false,
   children,
 }: {
   readonly locale: string;
   readonly householdName: string;
   /** The administrative console, for the few people who hold a seat there. */
   readonly consoleUrl: string | null;
+  /** Viajes, behind the `trips_module` flag: absent from the column while it is off. */
+  readonly showTrips?: boolean;
   readonly children: ReactNode;
 }) {
   const t = await getTranslations('nav');
   const common = await getTranslations('common');
 
-  const destinations: ShellDestination[] = DESTINATIONS.map((destination) => ({
+  const destinations: ShellDestination[] = DESTINATIONS.filter(
+    (destination) => destination.key !== 'trips' || showTrips,
+  ).map((destination) => ({
     href: destination.href,
     key: destination.key,
     label: t(destination.key),

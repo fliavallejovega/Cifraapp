@@ -891,6 +891,7 @@
     "commitments": "Commitments",
     "debts": "Debts",
     "goals": "Goals",
+    "trips": "Trips",
     "budgets": "Budgets",
     "merchants": "Merchants",
     "review": "To review",
@@ -3827,5 +3828,434 @@
       "body": "The sweep reads the banks’ promotion pages on the first of each month. It can also be triggered by hand from the panel."
     },
     "daysUnknown": "days not confirmed"
+  },
+  "trips": {
+    "title": "Trips",
+    "detail": "What the trip costs, what you can spend each day, and how to save for it.",
+    "backToList": "Back to your trips",
+    "notFound": {
+      "title": "This trip is not here",
+      "body": "It may have been archived, or the link belongs to another household."
+    },
+    "empty": {
+      "title": "Plan your next trip",
+      "body": "Tell us where you are going, for how many days and how much you have, and we will build each day's budget. If you already bought flights or a hotel, start there.",
+      "fromBudget": "I have a budget",
+      "fromDocuments": "I already bought flights or a hotel"
+    },
+    "list": {
+      "plan": "Plan a trip",
+      "groups": {
+        "current": "Under way",
+        "upcoming": "Upcoming",
+        "idea": "Ideas",
+        "past": "Past"
+      },
+      "moment": {
+        "current": "Under way",
+        "upcoming": "Upcoming",
+        "idea": "Idea",
+        "past": "Finished"
+      },
+      "startsIn": "{days, plural, one {Leaves tomorrow} other {# days to go}}",
+      "saved": "Saved {saved} of {target}",
+      "spentOf": "Spent {spent} of {total}",
+      "action": {
+        "current": "Record an expense",
+        "upcoming": "See the plan",
+        "idea": "Keep planning",
+        "past": "See the summary"
+      },
+      "noCities": "No destination yet"
+    },
+    "common": {
+      "costLevel": {
+        "low": "Low cost",
+        "medium": "Medium",
+        "high": "Expensive",
+        "very_high": "Very expensive"
+      },
+      "travelerType": {
+        "adult": "Adult",
+        "child": "Child",
+        "infant": "Infant"
+      },
+      "lodgingMode": {
+        "undecided": "We don't know where we'll sleep yet",
+        "prepaid": "Lodging already paid",
+        "pay_on_site": "Paid on arrival",
+        "none": "No lodging to pay"
+      },
+      "bookingType": {
+        "flight": "Flight",
+        "lodging": "Lodging",
+        "insurance": "Travel insurance",
+        "tour": "Tour or ticket",
+        "transport": "Train, bus or car",
+        "visa": "Visa or paperwork",
+        "other": "Other"
+      },
+      "paymentStatus": {
+        "paid": "Paid",
+        "deposit_paid": "Deposit paid",
+        "pay_later": "To pay",
+        "pay_on_site": "Paid there"
+      },
+      "profile": {
+        "economy": "Economy",
+        "balanced": "Balanced",
+        "comfort": "Comfort",
+        "custom": "Custom"
+      },
+      "category": {
+        "lodging": "Lodging",
+        "food": "Food",
+        "local_transport": "Local transport",
+        "activities": "Activities and tickets",
+        "shopping": "Shopping and souvenirs",
+        "other": "Other",
+        "flights": "Flights",
+        "insurance": "Insurance",
+        "visas": "Visas and documents",
+        "long_transport": "Trains, buses and car"
+      },
+      "status": {
+        "healthy": "Enough",
+        "tight": "Tight",
+        "deficit": "Not enough"
+      }
+    },
+    "errors": {
+      "amount": "Enter an amount, for example 125.50.",
+      "saveFailed": "It could not be saved. Check the details and try again.",
+      "invalid": "Something is missing or we didn't understand a value.",
+      "notFound": "It no longer exists. Reload the page.",
+      "moduleOff": "Trips is not active for your household.",
+      "signInRequired": "Your session ended. Sign in again.",
+      "datesInvalid": "The return date must be on or after the departure date.",
+      "legsOutsideTrip": "Every destination has to fall within the trip's dates.",
+      "legsOverlap": "Two destinations can only share the day you move from one to the other.",
+      "paidExceedsAmount": "What was paid cannot be more than the total.",
+      "rateRequired": "The exchange rate for that currency is missing. Enter it or choose your currency.",
+      "accountNotFound": "That account no longer exists. Choose another.",
+      "lastLeg": "A trip needs at least one destination.",
+      "scenarioLimit": "You can compare up to three scenarios.",
+      "createFailed": "It could not be created. Try again.",
+      "amountInvalid": "The amount must be more than zero.",
+      "network": "No connection. Try again when the signal is back."
+    },
+    "diagnostics": {
+      "healthy": "The money covers the plan.",
+      "tight": "It covers it, just, for the cost level you chose.",
+      "deficit": "{amount} short of covering what is committed and the reserve.",
+      "suggestionsTitle": "What you can do",
+      "addMoney": "Add {amount} to the trip fund.",
+      "addMoneyMonths": "Add {amount}: with what you can save today that is {months, plural, one {# more month} other {# more months}}.",
+      "lowerReserve": "Lowering the contingency reserve to {percent}% frees {amount}.",
+      "fewerDays": "With this money, a comfortable trip is {days, plural, one {# day} other {# days}}.",
+      "economy": "With the Economy profile the trip costs about {amount} less (estimate).",
+      "useReserve": "Use {amount} from the contingency reserve.",
+      "belowReference": "In {city} you would have {amount} per person a day without lodging; for that cost level we estimate about {reference}.",
+      "engine": "Engine calculation {version}. Cost references are estimates.",
+      "warnings": {
+        "bookingOutside": "A booking has dates outside the trip.",
+        "lodging": "{city} still needs somewhere to sleep: {nights, plural, one {# night} other {# nights}}.",
+        "missingFx": "There is no exchange rate for {currency} in {city}; the per diem shows in your currency only.",
+        "daysWithoutLeg": "{days, plural, one {One day has} other {# days have}} no destination.",
+        "noLegs": "Add at least one destination.",
+        "overrides": "The manual adjustments ask for {amount} more than the days have.",
+        "noTravelers": "Add who is travelling to split per person."
+      }
+    },
+    "checklist": {
+      "pay_balance": "Pay the remaining balance {provider}",
+      "notify_bank": "Tell the bank you are travelling",
+      "buy_insurance": "Buy travel insurance",
+      "get_cash": "Get local cash",
+      "custom": "To do"
+    },
+    "wizard": {
+      "title": "New trip",
+      "progress": "Step {step} of {total}",
+      "progressLabel": "Wizard steps",
+      "back": "Back",
+      "steps": {
+        "where": {
+          "short": "Destinations",
+          "title": "Where are you going?",
+          "body": "One or more destinations, with their dates. Currency and cost level fill in on their own and you can change them."
+        },
+        "who": {
+          "short": "Travellers",
+          "title": "Who is travelling?",
+          "body": "Your household is already ticked. Children and infants count less in daily spending."
+        },
+        "have": {
+          "short": "Bought",
+          "title": "What do you already have?",
+          "body": "Flights, hotel or insurance already bought come off before the money is split by day."
+        },
+        "money": {
+          "short": "Money",
+          "title": "How much money do you have for the trip?",
+          "body": "Everything you will put into the trip, including what you already paid."
+        },
+        "style": {
+          "short": "Style",
+          "title": "What style of trip?",
+          "body": "Changes how each day is split between lodging, food, transport and activities."
+        },
+        "plan": {
+          "short": "Your plan",
+          "title": "Your plan",
+          "body": "This is what you can spend each day. Everything can be adjusted later."
+        }
+      },
+      "next": {
+        "who": "Continue: travellers",
+        "have": "Continue: what you bought",
+        "money": "Continue: the money",
+        "style": "Continue: the style",
+        "plan": "See my plan"
+      },
+      "where": {
+        "legTitle": "Destination {n}",
+        "remove": "Remove",
+        "city": "City",
+        "cityPlaceholder": "Madrid",
+        "country": "Country",
+        "countryAny": "Choose a country",
+        "arrival": "Arrival",
+        "departure": "Departure",
+        "costLevel": "Cost level",
+        "costHint": "A day in an expensive destination gets more money than one in a cheap one.",
+        "currency": "Local currency",
+        "noRate": "We don't have a rate for this currency yet; amounts will show in your currency.",
+        "addLeg": "Add another destination"
+      },
+      "who": {
+        "name": "Name",
+        "namePlaceholder": "Traveller's name",
+        "type": "Traveller type",
+        "add": "Add someone else",
+        "weights": "A child counts as 0.6 of an adult and an infant as 0.2 when spending is split per person."
+      },
+      "have": {
+        "lodgingTitle": "Where will you sleep?",
+        "nothingYet": "We haven't bought anything yet",
+        "type": "What it is",
+        "provider": "Airline, hotel or company",
+        "providerPlaceholder": "Copa Airlines",
+        "amount": "Total amount",
+        "currency": "Currency",
+        "paid": "Already paid",
+        "remove": "Remove",
+        "add": "Add another purchase",
+        "scanLater": "Soon you will be able to scan the ticket or hotel confirmation and Cifra will fill this in."
+      },
+      "money": {
+        "total": "Total trip fund ({currency})",
+        "totalHint": "Includes what you already paid.",
+        "suggestion": "For {days, plural, one {# day} other {# days}} in those destinations we suggest between {low} and {high}.",
+        "estimate": "An estimate from the cost level you chose, not a quote.",
+        "useSuggestion": "Use {amount}",
+        "saved": "How much have you saved already?",
+        "savedHint": "It counts as progress toward the trip goal."
+      },
+      "style": {
+        "profile": "Distribution profile",
+        "economy": "More for food and transport; simple lodging.",
+        "balanced": "An even split across everything.",
+        "comfort": "Better lodging and more activities.",
+        "perDay": "{amount} a day",
+        "reserve": "Contingency reserve: {percent}%",
+        "reserveHint": "Set aside and not split across the days. You can use it if something happens.",
+        "partialDays": "Count the arrival and departure days as half days",
+        "split": "Food {food} · Activities {activities}",
+        "lodging": "Lodging up to {amount} a night"
+      },
+      "plan": {
+        "perDayLabel": "You can spend per day",
+        "travelers": "{count, plural, one {# traveller} other {# travellers}}",
+        "committed": "Already paid",
+        "pending": "To pay",
+        "reserve": "Contingency reserve",
+        "forDays": "To spend there",
+        "byCategory": "A full day, by category",
+        "incomplete": "The amount or a date is missing to compute the plan.",
+        "name": "Trip name",
+        "defaultName": "{city} {year}",
+        "createGoal": "Save for this trip",
+        "createGoalHint": "Creates a savings goal due a week before departure.",
+        "create": "Create the trip"
+      },
+      "errors": {
+        "city": "Enter the city.",
+        "dates": "Departure must be on or after arrival.",
+        "overlap": "This destination starts before the previous one ends.",
+        "travelers": "Tick at least one traveller.",
+        "amount": "Enter an amount, for example 2500.",
+        "server": {
+          "saveFailed": "The trip could not be created. Try again.",
+          "invalid": "Something is missing or we didn't understand a value.",
+          "moduleOff": "Trips is not active for your household.",
+          "datesInvalid": "Check the destinations' dates.",
+          "legsOutsideTrip": "Check the destinations' dates.",
+          "legsOverlap": "Two destinations overlap. Check the dates.",
+          "signInRequired": "Your session ended. Sign in again."
+        }
+      }
+    },
+    "dashboard": {
+      "travelers": "{count, plural, =0 {no travellers} one {# traveller} other {# travellers}}",
+      "openToday": "What you can spend today",
+      "openReport": "See the summary",
+      "hero": {
+        "perDayLabel": "You can spend per day",
+        "countdown": "{days, plural, one {Leaves tomorrow} other {# days to go}}",
+        "startsToday": "The trip starts today",
+        "firstLeg": "in {city}",
+        "todayLabel": "You can spend today",
+        "todayDetail": "{spent} of {allowed} spent today.",
+        "afterLabel": "Spent at the destination",
+        "afterDetail": "Of {planned} planned for the days."
+      },
+      "savings": {
+        "title": "Savings",
+        "progress": "{saved} of {target}",
+        "monthly": "{amount} a month for {months, plural, one {# month} other {# months}}",
+        "green": "It fits in what you have left each month without touching other goals.",
+        "yellow": "It fits if other goals give up {amount} a month.",
+        "red": "It doesn't fit: today you have {free} a month left after your other goals.",
+        "moreMonths": "Move the date {months, plural, one {# month} other {# months}} later.",
+        "lowerFund": "Lower the fund to {amount}.",
+        "economy": "Switch to the Economy profile or shorten the trip.",
+        "openGoal": "See the goal",
+        "none": "Create a goal and we'll tell you how much to set aside each month with today's income.",
+        "create": "Save for this trip",
+        "error": "The goal could not be created. Try again.",
+        "notApplicable": "The trip has started: what is left is followed in trip mode."
+      },
+      "cost": {
+        "title": "Total cost",
+        "prepaid": "Already paid",
+        "pending": "To pay",
+        "reserve": "Contingency reserve",
+        "days": "For the days"
+      },
+      "perDiem": {
+        "title": "Your per diem",
+        "detail": "What each day has, by category and per person.",
+        "legs": "Destinations",
+        "currency": "Currency",
+        "fullDay": "Full day",
+        "partialDay": "Arrival or departure day",
+        "lodgingToBook": "Lodging to book: up to {amount} a night ({nights, plural, one {# night} other {# nights}}).",
+        "perTraveler": "Per person on a full day"
+      },
+      "bookings": {
+        "title": "Bookings",
+        "detail": "What is bought and what is still owed. Every payment becomes a real movement.",
+        "empty": "No bookings yet. Add flights, hotel or insurance and the per diem recalculates.",
+        "due": "due {date}",
+        "remove": "Remove",
+        "removeConfirm": "Remove this booking? The per diem recalculates.",
+        "removeConfirmMovement": "Remove this booking? Its payment movement is also deleted and taken off the goal.",
+        "type": "What it is",
+        "provider": "Airline, hotel or company",
+        "providerPlaceholder": "Iberia",
+        "amount": "Total amount",
+        "currency": "Currency",
+        "status": "Payment status",
+        "paid": "Already paid on account",
+        "dueDate": "Date to pay the balance",
+        "dueHint": "We'll remind you in To do.",
+        "leg": "Destination",
+        "wholeTrip": "The whole trip",
+        "reference": "Booking code",
+        "recordPayment": "Record the payment as a movement",
+        "account": "Account it came from",
+        "save": "Save the booking",
+        "cancel": "Cancel",
+        "add": "Add a booking"
+      },
+      "scenarios": {
+        "title": "Scenarios",
+        "detail": "Compare the plan with another fund, another style or a different exchange rate.",
+        "plan": "What we planned",
+        "fund": "Fund {amount}",
+        "perDay": "{amount} a day",
+        "active": "This is the active plan",
+        "activate": "Use this one",
+        "remove": "Remove",
+        "name": "Name",
+        "namePlaceholder": "If the euro goes up",
+        "total": "Another total fund",
+        "totalHint": "Leave empty to keep the same.",
+        "profile": "Profile",
+        "fxShift": "Does the local currency go up? (%)",
+        "fxShiftHint": "10 means the destination's currency costs 10% more.",
+        "error": "The scenario could not be saved.",
+        "save": "Compare",
+        "cancel": "Cancel",
+        "add": "Add a scenario"
+      },
+      "checklist": {
+        "title": "To do",
+        "dueOn": "By {date}",
+        "empty": "Nothing to do. Balances owed show up here on their own.",
+        "new": "New item",
+        "newPlaceholder": "Tell the bank we're travelling",
+        "due": "By when",
+        "add": "Add",
+        "error": "The item could not be saved."
+      },
+      "setup": {
+        "title": "Adjust the trip",
+        "money": "Money and style",
+        "name": "Name",
+        "start": "Departure",
+        "end": "Return",
+        "total": "Total fund ({currency})",
+        "reservePercent": "Contingency reserve (%)",
+        "reserveFixed": "Contingency reserve ({currency})",
+        "reserveKind": "In",
+        "profile": "Profile",
+        "rolling": "During the trip",
+        "rollingHint": {
+          "rolling": "What is left over or short one day is spread over the days that remain.",
+          "fixed": "The per diem doesn't change; the difference shows separately."
+        },
+        "rollingOptions": {
+          "rolling": "Recalculate every day",
+          "fixed": "Keep the per diem"
+        },
+        "custom": "Custom split (always adds up to 100%)",
+        "lock": "Lock",
+        "partial": "Count the arrival and departure days as half days",
+        "saveMoney": "Save and recalculate",
+        "legs": "Destinations",
+        "edit": "Edit",
+        "remove": "Remove",
+        "removeLegConfirm": "Remove this destination? Its days are left without a destination.",
+        "city": "City",
+        "country": "Country",
+        "arrival": "Arrival",
+        "departure": "Departure",
+        "costLevel": "Cost level",
+        "lodging": "Lodging",
+        "saveLeg": "Save the destination",
+        "addLeg": "Add a destination",
+        "cancel": "Cancel",
+        "travelers": "Travellers",
+        "noTravelers": "Nobody yet. The per-person split appears when you add travellers.",
+        "travelerName": "Name",
+        "travelerType": "Type",
+        "addTraveler": "Add traveller",
+        "error": "It could not be saved.",
+        "archive": "Archive the trip",
+        "archiveConfirm": "Archive this trip? Its movements stay in your finances."
+      }
+    }
   }
 }

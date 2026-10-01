@@ -891,6 +891,7 @@
     "commitments": "Compromisos",
     "debts": "Deudas",
     "goals": "Metas",
+    "trips": "Viajes",
     "budgets": "Presupuestos",
     "merchants": "Comercios",
     "review": "Por revisar",
@@ -3827,5 +3828,434 @@
       "body": "El barrido lee las páginas de promociones de los bancos el primer día de cada mes. También se puede disparar a mano desde el panel."
     },
     "daysUnknown": "días sin confirmar"
+  },
+  "trips": {
+    "title": "Viajes",
+    "detail": "Cuánto cuesta el viaje, cuánto pueden gastar cada día y cómo ahorrar para llegar.",
+    "backToList": "Volver a tus viajes",
+    "notFound": {
+      "title": "Este viaje no está",
+      "body": "Puede que se haya archivado o que el enlace sea de otro hogar."
+    },
+    "empty": {
+      "title": "Planea tu próximo viaje",
+      "body": "Dinos a dónde van, cuántos días y cuánto tienen, y te armamos el presupuesto de cada día. Si ya compraron pasajes u hotel, empieza por ahí.",
+      "fromBudget": "Tengo un presupuesto",
+      "fromDocuments": "Ya compré pasajes u hotel"
+    },
+    "list": {
+      "plan": "Planear un viaje",
+      "groups": {
+        "current": "En curso",
+        "upcoming": "Próximos",
+        "idea": "Ideas",
+        "past": "Pasados"
+      },
+      "moment": {
+        "current": "En curso",
+        "upcoming": "Próximo",
+        "idea": "Idea",
+        "past": "Terminado"
+      },
+      "startsIn": "{days, plural, one {Sale mañana} other {Faltan # días}}",
+      "saved": "Ahorrado {saved} de {target}",
+      "spentOf": "Gastado {spent} de {total}",
+      "action": {
+        "current": "Registrar un gasto",
+        "upcoming": "Ver el plan",
+        "idea": "Seguir planeando",
+        "past": "Ver el resumen"
+      },
+      "noCities": "Sin destino todavía"
+    },
+    "common": {
+      "costLevel": {
+        "low": "Económico",
+        "medium": "Medio",
+        "high": "Caro",
+        "very_high": "Muy caro"
+      },
+      "travelerType": {
+        "adult": "Adulto",
+        "child": "Niño",
+        "infant": "Bebé"
+      },
+      "lodgingMode": {
+        "undecided": "Todavía no sabemos dónde dormir",
+        "prepaid": "Hospedaje ya pagado",
+        "pay_on_site": "Se paga al llegar",
+        "none": "No pagamos hospedaje"
+      },
+      "bookingType": {
+        "flight": "Vuelo",
+        "lodging": "Hospedaje",
+        "insurance": "Seguro de viaje",
+        "tour": "Tour o entrada",
+        "transport": "Tren, bus o auto",
+        "visa": "Visa o trámite",
+        "other": "Otro"
+      },
+      "paymentStatus": {
+        "paid": "Pagado",
+        "deposit_paid": "Con abono",
+        "pay_later": "Por pagar",
+        "pay_on_site": "Se paga allá"
+      },
+      "profile": {
+        "economy": "Económico",
+        "balanced": "Balanceado",
+        "comfort": "Confort",
+        "custom": "Personalizado"
+      },
+      "category": {
+        "lodging": "Hospedaje",
+        "food": "Comida",
+        "local_transport": "Transporte local",
+        "activities": "Actividades y entradas",
+        "shopping": "Compras y recuerdos",
+        "other": "Otros",
+        "flights": "Vuelos",
+        "insurance": "Seguro",
+        "visas": "Visas y documentos",
+        "long_transport": "Trenes, buses y auto"
+      },
+      "status": {
+        "healthy": "Alcanza",
+        "tight": "Ajustado",
+        "deficit": "No alcanza"
+      }
+    },
+    "errors": {
+      "amount": "Escribe un monto, por ejemplo 125.50.",
+      "saveFailed": "No se pudo guardar. Revisa los datos e intenta de nuevo.",
+      "invalid": "Falta algo o hay un dato que no entendimos.",
+      "notFound": "Ya no existe. Recarga la página.",
+      "moduleOff": "Viajes no está activo para tu hogar.",
+      "signInRequired": "Tu sesión terminó. Vuelve a entrar.",
+      "datesInvalid": "La fecha de regreso tiene que ser igual o posterior a la de salida.",
+      "legsOutsideTrip": "Cada destino tiene que caer dentro de las fechas del viaje.",
+      "legsOverlap": "Dos destinos solo pueden compartir el día en que se pasa de uno a otro.",
+      "paidExceedsAmount": "Lo pagado no puede ser más que el total.",
+      "rateRequired": "Falta la tasa de cambio para esa moneda. Escríbela o elige tu moneda.",
+      "accountNotFound": "Esa cuenta ya no existe. Elige otra.",
+      "lastLeg": "Un viaje necesita al menos un destino.",
+      "scenarioLimit": "Puedes comparar hasta tres escenarios.",
+      "createFailed": "No se pudo crear. Intenta de nuevo.",
+      "amountInvalid": "El monto tiene que ser mayor que cero.",
+      "network": "Sin conexión. Intenta de nuevo cuando vuelva la señal."
+    },
+    "diagnostics": {
+      "healthy": "El dinero alcanza para el plan.",
+      "tight": "Alcanza, pero justo para el nivel de costo que marcaste.",
+      "deficit": "Faltan {amount} para cubrir lo comprometido y la reserva.",
+      "suggestionsTitle": "Lo que puedes hacer",
+      "addMoney": "Sumar {amount} al fondo del viaje.",
+      "addMoneyMonths": "Sumar {amount}: con lo que puedes ahorrar hoy son {months, plural, one {# mes más} other {# meses más}}.",
+      "lowerReserve": "Bajar la reserva de imprevistos al {percent} % libera {amount}.",
+      "fewerDays": "Con este dinero, el viaje cómodo es de {days, plural, one {# día} other {# días}}.",
+      "economy": "Con el perfil Económico el viaje cuesta unos {amount} menos (estimado).",
+      "useReserve": "Usar {amount} de la reserva de imprevistos.",
+      "belowReference": "En {city} tendrían {amount} por persona al día sin hospedaje; para ese nivel de costo calculamos unos {reference} (estimado).",
+      "engine": "Cálculo del motor {version}. Las referencias de costo son estimadas.",
+      "warnings": {
+        "bookingOutside": "Hay una reserva con fechas fuera del viaje.",
+        "lodging": "En {city} falta reservar dónde dormir: {nights, plural, one {# noche} other {# noches}}.",
+        "missingFx": "No hay tasa de cambio para {currency} en {city}; el per diem se muestra solo en tu moneda.",
+        "daysWithoutLeg": "{days, plural, one {Un día no tiene} other {# días no tienen}} destino asignado.",
+        "noLegs": "Agrega al menos un destino.",
+        "overrides": "Los ajustes manuales piden {amount} más de lo que hay para los días.",
+        "noTravelers": "Agrega quiénes viajan para repartir por persona."
+      }
+    },
+    "checklist": {
+      "pay_balance": "Pagar el saldo pendiente {provider}",
+      "notify_bank": "Avisar al banco que van a viajar",
+      "buy_insurance": "Comprar el seguro de viaje",
+      "get_cash": "Sacar efectivo en moneda local",
+      "custom": "Pendiente"
+    },
+    "wizard": {
+      "title": "Nuevo viaje",
+      "progress": "Paso {step} de {total}",
+      "progressLabel": "Pasos del asistente",
+      "back": "Atrás",
+      "steps": {
+        "where": {
+          "short": "Destinos",
+          "title": "¿A dónde van?",
+          "body": "Uno o varios destinos, con sus fechas. La moneda y el nivel de costo se completan solos y los puedes cambiar."
+        },
+        "who": {
+          "short": "Viajeros",
+          "title": "¿Quiénes viajan?",
+          "body": "Tu hogar ya está marcado. Los niños y bebés cuentan menos en el gasto diario."
+        },
+        "have": {
+          "short": "Lo comprado",
+          "title": "¿Qué ya tienen?",
+          "body": "Pasajes, hotel o seguro ya comprados se descuentan antes de repartir el dinero por día."
+        },
+        "money": {
+          "short": "Dinero",
+          "title": "¿Cuánto dinero tienen para el viaje?",
+          "body": "Todo lo que van a destinar al viaje, incluido lo que ya pagaron."
+        },
+        "style": {
+          "short": "Estilo",
+          "title": "¿Qué estilo de viaje?",
+          "body": "Cambia cómo se reparte cada día entre hospedaje, comida, transporte y actividades."
+        },
+        "plan": {
+          "short": "Tu plan",
+          "title": "Tu plan",
+          "body": "Esto pueden gastar cada día. Todo se puede ajustar después."
+        }
+      },
+      "next": {
+        "who": "Continuar: viajeros",
+        "have": "Continuar: lo comprado",
+        "money": "Continuar: el dinero",
+        "style": "Continuar: el estilo",
+        "plan": "Ver mi plan"
+      },
+      "where": {
+        "legTitle": "Destino {n}",
+        "remove": "Quitar",
+        "city": "Ciudad",
+        "cityPlaceholder": "Madrid",
+        "country": "País",
+        "countryAny": "Elegir país",
+        "arrival": "Llegada",
+        "departure": "Salida",
+        "costLevel": "Nivel de costo",
+        "costHint": "Un día en un destino caro recibe más dinero que en uno económico.",
+        "currency": "Moneda local",
+        "noRate": "Todavía no tenemos tasa para esta moneda; verás los montos en tu moneda.",
+        "addLeg": "Agregar otro destino"
+      },
+      "who": {
+        "name": "Nombre",
+        "namePlaceholder": "Nombre de quien viaja",
+        "type": "Tipo de viajero",
+        "add": "Agregar a alguien más",
+        "weights": "Un niño cuenta como 0,6 de un adulto y un bebé como 0,2 al repartir el gasto por persona."
+      },
+      "have": {
+        "lodgingTitle": "¿Dónde van a dormir?",
+        "nothingYet": "Todavía no hemos comprado nada",
+        "type": "Qué es",
+        "provider": "Aerolínea, hotel o empresa",
+        "providerPlaceholder": "Copa Airlines",
+        "amount": "Monto total",
+        "currency": "Moneda",
+        "paid": "Ya está pagado",
+        "remove": "Quitar",
+        "add": "Agregar otra compra",
+        "scanLater": "Pronto podrás escanear el pasaje o la confirmación del hotel y Cifra completará estos datos."
+      },
+      "money": {
+        "total": "Fondo total del viaje ({currency})",
+        "totalHint": "Incluye lo que ya pagaron.",
+        "suggestion": "Para {days, plural, one {# día} other {# días}} en esos destinos sugerimos entre {low} y {high}.",
+        "estimate": "Estimado según el nivel de costo que elegiste; no es una cotización.",
+        "useSuggestion": "Usar {amount}",
+        "saved": "¿Cuánto tienen ahorrado ya?",
+        "savedHint": "Cuenta como avance de la meta del viaje."
+      },
+      "style": {
+        "profile": "Perfil de distribución",
+        "economy": "Más para comida y transporte; hospedaje sencillo.",
+        "balanced": "Un reparto parejo entre todo.",
+        "comfort": "Mejor hospedaje y más actividades.",
+        "perDay": "{amount} por día",
+        "reserve": "Reserva de imprevistos: {percent} %",
+        "reserveHint": "Se aparta y no se reparte entre los días. La pueden usar si algo pasa.",
+        "partialDays": "Contar el día de llegada y el de salida como medio día",
+        "split": "Comida {food} · Actividades {activities}",
+        "lodging": "Hospedaje hasta {amount} por noche"
+      },
+      "plan": {
+        "perDayLabel": "Pueden gastar por día",
+        "travelers": "{count, plural, one {# viajero} other {# viajeros}}",
+        "committed": "Ya pagado",
+        "pending": "Por pagar",
+        "reserve": "Reserva de imprevistos",
+        "forDays": "Para gastar allá",
+        "byCategory": "Un día completo, por categoría",
+        "incomplete": "Falta el monto o una fecha para calcular el plan.",
+        "name": "Nombre del viaje",
+        "defaultName": "{city} {year}",
+        "createGoal": "Ahorrar para este viaje",
+        "createGoalHint": "Crea una meta de ahorro que vence una semana antes de salir.",
+        "create": "Crear el viaje"
+      },
+      "errors": {
+        "city": "Escribe la ciudad.",
+        "dates": "La salida tiene que ser igual o posterior a la llegada.",
+        "overlap": "Este destino empieza antes de que termine el anterior.",
+        "travelers": "Marca al menos un viajero.",
+        "amount": "Escribe un monto, por ejemplo 2500.",
+        "server": {
+          "saveFailed": "No se pudo crear el viaje. Intenta de nuevo.",
+          "invalid": "Falta algo o hay un dato que no entendimos.",
+          "moduleOff": "Viajes no está activo para tu hogar.",
+          "datesInvalid": "Revisa las fechas de los destinos.",
+          "legsOutsideTrip": "Revisa las fechas de los destinos.",
+          "legsOverlap": "Dos destinos se pisan. Revisa las fechas.",
+          "signInRequired": "Tu sesión terminó. Vuelve a entrar."
+        }
+      }
+    },
+    "dashboard": {
+      "travelers": "{count, plural, =0 {sin viajeros} one {# viajero} other {# viajeros}}",
+      "openToday": "Hoy puedes gastar",
+      "openReport": "Ver el resumen",
+      "hero": {
+        "perDayLabel": "Por día pueden gastar",
+        "countdown": "{days, plural, one {Sale mañana} other {Faltan # días}}",
+        "startsToday": "El viaje empieza hoy",
+        "firstLeg": "en {city}",
+        "todayLabel": "Hoy pueden gastar",
+        "todayDetail": "Van {spent} de {allowed} para hoy.",
+        "afterLabel": "Gastaron en destino",
+        "afterDetail": "De {planned} planificados para los días."
+      },
+      "savings": {
+        "title": "Ahorro",
+        "progress": "{saved} de {target}",
+        "monthly": "{amount} al mes durante {months, plural, one {# mes} other {# meses}}",
+        "green": "Cabe en lo que te queda cada mes sin tocar otras metas.",
+        "yellow": "Cabe si otras metas ceden {amount} al mes.",
+        "red": "No cabe: hoy te quedan {free} al mes después de tus otras metas.",
+        "moreMonths": "Mover la fecha {months, plural, one {# mes} other {# meses}} más tarde.",
+        "lowerFund": "Bajar el fondo a {amount}.",
+        "economy": "Cambiar a perfil Económico o acortar el viaje.",
+        "openGoal": "Ver la meta",
+        "none": "Crea una meta y te decimos cuánto apartar cada mes con tus ingresos de hoy.",
+        "create": "Ahorrar para este viaje",
+        "error": "No se pudo crear la meta. Intenta de nuevo.",
+        "notApplicable": "El viaje ya empezó: lo que queda se sigue en el modo En viaje."
+      },
+      "cost": {
+        "title": "Costo total",
+        "prepaid": "Ya pagado",
+        "pending": "Por pagar",
+        "reserve": "Reserva de imprevistos",
+        "days": "Para los días"
+      },
+      "perDiem": {
+        "title": "Tu per diem",
+        "detail": "Lo que tiene cada día, por categoría y por persona.",
+        "legs": "Destinos",
+        "currency": "Moneda",
+        "fullDay": "Día completo",
+        "partialDay": "Día de llegada o salida",
+        "lodgingToBook": "Hospedaje por reservar: hasta {amount} por noche ({nights, plural, one {# noche} other {# noches}}).",
+        "perTraveler": "Por persona en un día completo"
+      },
+      "bookings": {
+        "title": "Reservas",
+        "detail": "Lo comprado y lo que falta pagar. Cada pago queda como un movimiento real.",
+        "empty": "Todavía no hay reservas. Agrega pasajes, hotel o seguro y el per diem se recalcula.",
+        "due": "vence {date}",
+        "remove": "Quitar",
+        "removeConfirm": "¿Quitar esta reserva? El per diem se recalcula.",
+        "removeConfirmMovement": "¿Quitar esta reserva? También se borra el movimiento de su pago y se descuenta de la meta.",
+        "type": "Qué es",
+        "provider": "Aerolínea, hotel o empresa",
+        "providerPlaceholder": "Iberia",
+        "amount": "Monto total",
+        "currency": "Moneda",
+        "status": "Estado del pago",
+        "paid": "Ya abonado",
+        "dueDate": "Fecha para pagar el saldo",
+        "dueHint": "Te lo recordamos en Pendientes.",
+        "leg": "Destino",
+        "wholeTrip": "Todo el viaje",
+        "reference": "Código de reserva",
+        "recordPayment": "Registrar el pago como movimiento",
+        "account": "Cuenta de la que salió",
+        "save": "Guardar la reserva",
+        "cancel": "Cancelar",
+        "add": "Agregar una reserva"
+      },
+      "scenarios": {
+        "title": "Escenarios",
+        "detail": "Compara el plan con otro fondo, otro estilo o un tipo de cambio distinto.",
+        "plan": "Lo que planeamos",
+        "fund": "Fondo {amount}",
+        "perDay": "{amount} por día",
+        "active": "Es el plan activo",
+        "activate": "Usar este",
+        "remove": "Quitar",
+        "name": "Nombre",
+        "namePlaceholder": "Si sube el euro",
+        "total": "Otro fondo total",
+        "totalHint": "Vacío deja el mismo.",
+        "profile": "Perfil",
+        "fxShift": "¿La moneda local sube? (%)",
+        "fxShiftHint": "10 significa que la moneda del destino cuesta 10 % más.",
+        "error": "No se pudo guardar el escenario.",
+        "save": "Comparar",
+        "cancel": "Cancelar",
+        "add": "Agregar un escenario"
+      },
+      "checklist": {
+        "title": "Pendientes",
+        "dueOn": "Para el {date}",
+        "empty": "Nada pendiente. Los saldos por pagar aparecen aquí solos.",
+        "new": "Nuevo pendiente",
+        "newPlaceholder": "Avisar al banco que viajamos",
+        "due": "Para cuándo",
+        "add": "Agregar",
+        "error": "No se pudo guardar el pendiente."
+      },
+      "setup": {
+        "title": "Ajustar el viaje",
+        "money": "Dinero y estilo",
+        "name": "Nombre",
+        "start": "Salida",
+        "end": "Regreso",
+        "total": "Fondo total ({currency})",
+        "reservePercent": "Reserva de imprevistos (%)",
+        "reserveFixed": "Reserva de imprevistos ({currency})",
+        "reserveKind": "En",
+        "profile": "Perfil",
+        "rolling": "Durante el viaje",
+        "rollingHint": {
+          "rolling": "Lo que sobra o falta un día se reparte en los que quedan.",
+          "fixed": "El per diem no cambia; el desvío se muestra aparte."
+        },
+        "rollingOptions": {
+          "rolling": "Recalcular cada día",
+          "fixed": "Mantener el per diem"
+        },
+        "custom": "Reparto personalizado (siempre suma 100 %)",
+        "lock": "Fijar",
+        "partial": "Contar el día de llegada y el de salida como medio día",
+        "saveMoney": "Guardar y recalcular",
+        "legs": "Destinos",
+        "edit": "Editar",
+        "remove": "Quitar",
+        "removeLegConfirm": "¿Quitar este destino? Sus días se quedan sin destino asignado.",
+        "city": "Ciudad",
+        "country": "País",
+        "arrival": "Llegada",
+        "departure": "Salida",
+        "costLevel": "Nivel de costo",
+        "lodging": "Hospedaje",
+        "saveLeg": "Guardar el destino",
+        "addLeg": "Agregar un destino",
+        "cancel": "Cancelar",
+        "travelers": "Viajeros",
+        "noTravelers": "Nadie todavía. El reparto por persona aparece al agregar viajeros.",
+        "travelerName": "Nombre",
+        "travelerType": "Tipo",
+        "addTraveler": "Agregar viajero",
+        "error": "No se pudo guardar.",
+        "archive": "Archivar el viaje",
+        "archiveConfirm": "¿Archivar este viaje? Sus movimientos se quedan en tus finanzas."
+      }
+    }
   }
 }

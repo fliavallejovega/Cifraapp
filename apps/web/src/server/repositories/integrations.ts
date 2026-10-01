@@ -79,9 +79,7 @@ export async function loadIntegrations(
           createdAt: calendarFeeds.createdAt,
         })
         .from(calendarFeeds)
-        .where(
-          and(eq(calendarFeeds.householdId, householdId), isNull(calendarFeeds.revokedAt)),
-        )
+        .where(and(eq(calendarFeeds.householdId, householdId), isNull(calendarFeeds.revokedAt)))
         .orderBy(desc(calendarFeeds.createdAt)),
     ]);
 
