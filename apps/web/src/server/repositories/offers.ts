@@ -241,9 +241,7 @@ export async function loadOffers(
     issuers: [...new Map(offers.map((one) => [one.issuerKey, one.issuerName])).entries()]
       .map(([key, name]) => ({ key, name }))
       .sort((a, b) => a.name.localeCompare(b.name)),
-    categories: [
-      ...new Set(offers.map((one) => one.category).filter((one): one is string => one !== null)),
-    ].sort(),
+    categories: [...new Set(offers.map((one) => one.category).filter((one): one is string => one !== null))].sort(),
     lastRefresh: lastRun?.finishedAt ?? null,
     isEmpty: offers.length === 0,
   };

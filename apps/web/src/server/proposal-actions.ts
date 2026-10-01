@@ -1,6 +1,11 @@
 'use server';
 
-import { PLAN_PROPOSAL_V1, readProposals, type PlanProposal, type PromptLocale } from '@app/ai';
+import {
+  PLAN_PROPOSAL_V1,
+  readProposals,
+  type PlanProposal,
+  type PromptLocale,
+} from '@app/ai';
 import {
   chatMessages,
   goals,
@@ -98,10 +103,7 @@ export async function proposePlanChange(
     'cushion.target': money(plan.cushion.target),
     'cushion.held': money(plan.cushion.held),
     'cushion.months': String(plan.cushion.monthsTarget),
-    'buffer.minimum': money(
-      plan.safeToSpend.deductions.find((one) => one.kind === 'buffer')?.claimed ??
-        Money.zero(context.currency),
-    ),
+    'buffer.minimum': money(plan.safeToSpend.deductions.find((one) => one.kind === 'buffer')?.claimed ?? Money.zero(context.currency)),
     receivables:
       expected.length === 0
         ? 'none'
@@ -420,7 +422,9 @@ async function write(
       const [before] = await tx
         .select({ confidence: receivables.confidence })
         .from(receivables)
-        .where(and(eq(receivables.id, proposal.targetId), eq(receivables.householdId, householdId)))
+        .where(
+          and(eq(receivables.id, proposal.targetId), eq(receivables.householdId, householdId)),
+        )
         .limit(1);
 
       if (!before) return FAILED;

@@ -2,12 +2,7 @@ import 'server-only';
 
 import { getPlatformDb } from '@app/database';
 import { cardPromotions } from '@app/database/schema';
-import {
-  compareCards,
-  type CardOffer,
-  type ComparisonResult,
-  type SpendCategory,
-} from '@app/budget-engine';
+import { compareCards, type CardOffer, type ComparisonResult, type SpendCategory } from '@app/budget-engine';
 import { type PlainDate } from '@app/domain';
 import { getServerEnv } from '@app/validation/env';
 import { sql } from 'drizzle-orm';
@@ -125,11 +120,7 @@ export function categoryOf(text: string): SpendCategory {
   if (/restaurant|comida|gastron|fonda|cafeter/.test(lower)) return 'restaurantes';
   if (/gasolin|combustib|estación de servicio/.test(lower)) return 'combustible';
   if (/farmac|botica/.test(lower)) return 'farmacias';
-  if (
-    /viaje|milla|aéreo|aereo|hotel|equipaje|sala vip|lounge|alquiler de veh|alquiler de auto/.test(
-      lower,
-    )
-  )
+  if (/viaje|milla|aéreo|aereo|hotel|equipaje|sala vip|lounge|alquiler de veh|alquiler de auto/.test(lower))
     return 'viajes';
   if (/cine|entreten|concierto|streaming/.test(lower)) return 'entretenimiento';
   if (/tecnolog|electrónic|electronic|billetera digital|app\b/.test(lower)) return 'tecnologia';

@@ -79,20 +79,16 @@ export async function publishCalendars(): Promise<PublishResult> {
     const live = rows.filter((row) => !row.deletedAt && !row.settledTransactionId);
 
     const entries: CalendarEntry[] = live.flatMap((row) =>
-      occurrencesOf(
-        row.due as PlainDate,
-        row.frequency as Frequency | null,
-        row.anchorDays,
-        today,
-        horizon,
-      ).map((due, at) => ({
-        id: at === 0 ? row.id : `${row.id}-${due.replace(/-/g, '')}`,
-        label: row.name,
-        due,
-        amount: Money.fromDecimalString(row.amount, currency),
-        coverage: null,
-        note: null,
-      })),
+      occurrencesOf(row.due as PlainDate, row.frequency as Frequency | null, row.anchorDays, today, horizon).map(
+        (due, at) => ({
+          id: at === 0 ? row.id : `${row.id}-${due.replace(/-/g, '')}`,
+          label: row.name,
+          due,
+          amount: Money.fromDecimalString(row.amount, currency),
+          coverage: null,
+          note: null,
+        }),
+      ),
     );
 
     // La cobertura sin efectivo: aquí no se conoce el saldo del hogar sin

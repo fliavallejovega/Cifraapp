@@ -463,11 +463,7 @@ export async function loadPlan(session: Session, householdId: string): Promise<P
       incomes: incomeRows.map((row) => ({
         id: row.id,
         label: row.name,
-        amount: netOf(
-          row.statedBasis,
-          Money.fromDecimalString(row.amount, currency),
-          deductedFrom.get(row.id),
-        ),
+        amount: netOf(row.statedBasis, Money.fromDecimalString(row.amount, currency), deductedFrom.get(row.id)),
         frequency: row.frequency,
         anchorDays: row.anchorDays ?? undefined,
         // Lo que trae cada quincena cuando no traen lo mismo. La base ya

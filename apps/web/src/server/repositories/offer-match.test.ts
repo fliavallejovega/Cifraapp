@@ -60,10 +60,7 @@ describe('matches', () => {
 
   it('acepta cuando el programa declarado es uno de los pedidos', () => {
     expect(
-      matches(
-        { ...visaBG, program: 'connectmiles' },
-        { ...cualquiera, programs: ['connectmiles'] },
-      ),
+      matches({ ...visaBG, program: 'connectmiles' }, { ...cualquiera, programs: ['connectmiles'] }),
     ).toBe('yes');
   });
 
