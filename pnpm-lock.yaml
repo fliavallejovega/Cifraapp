@@ -150,6 +150,9 @@ importers:
       '@app/transaction-engine':
         specifier: workspace:*
         version: link:../../packages/transaction-engine
+      '@app/trip-engine':
+        specifier: workspace:*
+        version: link:../../packages/trip-engine
       '@app/ui':
         specifier: workspace:*
         version: link:../../packages/ui

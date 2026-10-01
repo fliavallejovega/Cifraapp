@@ -109,6 +109,8 @@ async function spendingFor(
           // makes every budget line wrong at once.
           sql`${transactions.status} in ('posted', 'pending', 'reconciled')`,
           isNull(transactions.deletedAt),
+          // A trip saved for with its own goal is paid from that fund, not the month.
+          sql`(${transactions.tripId} is null or not exists (select 1 from app.trips t where t.id = ${transactions.tripId} and t.goal_id is not null))`,
           gte(transactions.transactionDate, window.start),
           lte(transactions.transactionDate, window.end),
         ),
@@ -150,6 +152,8 @@ async function spendingFor(
           eq(transactions.direction, 'outflow'),
           sql`${transactions.status} in ('posted', 'pending', 'reconciled')`,
           isNull(transactions.deletedAt),
+          // A trip saved for with its own goal is paid from that fund, not the month.
+          sql`(${transactions.tripId} is null or not exists (select 1 from app.trips t where t.id = ${transactions.tripId} and t.goal_id is not null))`,
           gte(transactions.transactionDate, window.start),
           lte(transactions.transactionDate, window.end),
         ),
@@ -398,6 +402,8 @@ export async function loadBudgetSuggestions(
           eq(transactions.direction, 'outflow'),
           sql`${transactions.status} in ('posted', 'pending', 'reconciled')`,
           isNull(transactions.deletedAt),
+          // A trip saved for with its own goal is paid from that fund, not the month.
+          sql`(${transactions.tripId} is null or not exists (select 1 from app.trips t where t.id = ${transactions.tripId} and t.goal_id is not null))`,
           gte(transactions.transactionDate, lookback.toISOString().slice(0, 10)),
         ),
       )

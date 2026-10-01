@@ -1,12 +1,13 @@
 # Viajes — progreso
 
-| Fase                     | Estado             | Entregable                                                                          |
-| ------------------------ | ------------------ | ----------------------------------------------------------------------------------- |
-| 0 · Reconocimiento       | Hecha (2026-10-01) | [00-reconocimiento.md](00-reconocimiento.md)                                        |
-| 1 · Diseño técnico       | Hecha (2026-10-01) | [01-diseno.md](01-diseno.md)                                                        |
-| 2 · Base de datos        | Hecha (2026-10-01) | `20261001210000_trips.sql`, aplicada en producción; 10 pruebas de RLS e invariantes |
-| 3 · Motor de presupuesto | Hecha (2026-10-01) | `@app/trip-engine`, 27 pruebas (incluye 2.000 viajes aleatorios y < 50 ms)          |
-| 4–11                     | Pendientes         | —                                                                                   |
+| Fase                     | Estado             | Entregable                                                                                                  |
+| ------------------------ | ------------------ | ----------------------------------------------------------------------------------------------------------- |
+| 0 · Reconocimiento       | Hecha (2026-10-01) | [00-reconocimiento.md](00-reconocimiento.md)                                                                |
+| 1 · Diseño técnico       | Hecha (2026-10-01) | [01-diseno.md](01-diseno.md)                                                                                |
+| 2 · Base de datos        | Hecha (2026-10-01) | `20261001210000_trips.sql`, aplicada en producción; 10 pruebas de RLS e invariantes                         |
+| 3 · Motor de presupuesto | Hecha (2026-10-01) | `@app/trip-engine`, 27 pruebas (incluye 2.000 viajes aleatorios y < 50 ms)                                  |
+| 4 · Servidor             | Hecha (2026-10-01) | `trip-actions.ts`, `trip-ledger.ts`, `trip-plan.ts`, `repositories/trips.ts`; 14 pruebas (4 contra la base) |
+| 5–11                     | Pendientes         | —                                                                                                           |
 
 Notas de la Fase 2:
 

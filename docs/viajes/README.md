@@ -40,11 +40,10 @@ local, el reparto por viajero, «hoy puedes gastar» y el diagnóstico.
    días que faltan. Con la política `fixed` el plan no cambia y el desvío se
    informa en `drift`. Nunca hay un «te queda» negativo: el exceso va aparte.
 
-**Invariante.** Antes de devolver, el motor comprueba que prepagado + pendiente
-
-- reserva disponible + días (+ lo ya gastado, en modo rodante) = fondo, al
-  centavo. Si no, lanza un error: un presupuesto que pierde un centavo es un bug.
-  La suite lo prueba con 2.000 viajes aleatorios.
+**Invariante.** Antes de devolver, el motor comprueba que la suma de prepagado,
+pendiente, reserva disponible, días y, en modo rodante, lo ya gastado, es igual
+al fondo, al centavo. Si no, lanza un error: un presupuesto que pierde un
+centavo es un bug. La suite lo prueba con 2.000 viajes aleatorios.
 
 ### Unidades
 

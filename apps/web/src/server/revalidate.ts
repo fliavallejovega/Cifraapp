@@ -46,6 +46,7 @@ const FINANCIAL_SCREENS = [
   'people',
   'settings',
   'tax',
+  'trips',
 ] as const;
 
 export function localeOf(formData: FormData): 'en' | 'es' {
@@ -65,5 +66,20 @@ export function revalidateScreen(formData: FormData, ...screens: readonly string
   const locale = localeOf(formData);
   for (const screen of screens) {
     revalidatePath(`/${locale}/${screen}`);
+  }
+}
+
+/**
+ * Redraws a trip and every screen its money reaches. A trip expense is a
+ * household movement, so the financial screens change with it.
+ */
+export function revalidateTrip(locale: 'en' | 'es', tripId?: string | null): void {
+  for (const screen of FINANCIAL_SCREENS) {
+    revalidatePath(`/${locale}/${screen}`);
+  }
+  if (tripId) {
+    revalidatePath(`/${locale}/trips/${tripId}`);
+    revalidatePath(`/${locale}/trips/${tripId}/today`);
+    revalidatePath(`/${locale}/trips/${tripId}/report`);
   }
 }
