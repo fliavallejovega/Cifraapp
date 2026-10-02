@@ -165,6 +165,7 @@ export function RumboSetup({
             </p>
             <div className="flex flex-wrap gap-4">
               <Button
+                className="min-h-11"
                 variant="destructive"
                 loading={pending}
                 onClick={() => {
@@ -174,6 +175,7 @@ export function RumboSetup({
                 {t('setup.replaceLegs.confirm')}
               </Button>
               <Button
+                className="min-h-11"
                 variant="ghost"
                 onClick={() => {
                   setConfirmReplace(false);
@@ -194,6 +196,7 @@ export function RumboSetup({
 
       <div className="sticky bottom-0 -mx-4 flex flex-wrap items-center justify-between gap-4 border-t border-[color:var(--color-rule)] bg-[color:var(--color-ground)] px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
         <Button
+          className="min-h-11"
           variant="ghost"
           disabled={index === 0}
           onClick={() => {
@@ -205,6 +208,7 @@ export function RumboSetup({
         </Button>
         {index < STEPS.length - 1 ? (
           <Button
+            className="min-h-11"
             variant="secondary"
             onClick={() => {
               const next = STEPS[index + 1];
@@ -215,6 +219,7 @@ export function RumboSetup({
           </Button>
         ) : (
           <Button
+            className="min-h-11"
             size="lg"
             loading={pending}
             onClick={() => {
@@ -294,6 +299,7 @@ function TravelersStep({ data }: { readonly data: SetupData }) {
             <Field label={t('setup.travelers.name')} required>
               {({ id }) => (
                 <Input
+                  className="min-h-11"
                   id={id}
                   required
                   value={name}
@@ -306,6 +312,7 @@ function TravelersStep({ data }: { readonly data: SetupData }) {
             <Field label={t('setup.travelers.nationalities')}>
               {({ id }) => (
                 <Select
+                  className="min-h-11"
                   id={id}
                   value={nat}
                   onChange={(e) => {
@@ -323,6 +330,7 @@ function TravelersStep({ data }: { readonly data: SetupData }) {
             <Field label={t('setup.travelers.residence')}>
               {({ id }) => (
                 <Select
+                  className="min-h-11"
                   id={id}
                   value={residence}
                   onChange={(e) => {
@@ -341,6 +349,7 @@ function TravelersStep({ data }: { readonly data: SetupData }) {
           <ErrorLine error={error} />
           <div>
             <Button
+              className="min-h-11"
               type="submit"
               variant="secondary"
               loading={pending}
@@ -397,6 +406,7 @@ function TravelerCard({
             >
               {({ id }) => (
                 <Select
+                  className="min-h-11"
                   id={id}
                   value={n}
                   onChange={(e) => {
@@ -418,6 +428,7 @@ function TravelerCard({
           <Field label={t('setup.travelers.residence')}>
             {({ id }) => (
               <Select
+                className="min-h-11"
                 id={id}
                 value={residence}
                 onChange={(e) => {
@@ -437,6 +448,7 @@ function TravelerCard({
         <ErrorLine error={error} />
         <div className="flex flex-wrap items-center gap-4">
           <Button
+            className="min-h-11"
             type="submit"
             variant="secondary"
             loading={pending}
@@ -446,6 +458,7 @@ function TravelerCard({
           </Button>
           {nats.length < 3 && (
             <Button
+              className="min-h-11"
               type="button"
               variant="ghost"
               onClick={() => {
@@ -496,6 +509,7 @@ function PlacePicker({
       {({ id, describedBy }) => (
         <div className="relative flex flex-col gap-2">
           <Input
+            className="min-h-11"
             id={id}
             aria-describedby={describedBy}
             autoComplete="off"
@@ -595,6 +609,7 @@ function AnchorsStep({ data }: { readonly data: SetupData }) {
                   </span>
                 </span>
                 <Button
+                  className="min-h-11"
                   size="sm"
                   variant="ghost"
                   onClick={() => {
@@ -645,6 +660,7 @@ function AnchorsStep({ data }: { readonly data: SetupData }) {
           <Field label={t('setup.anchors.kind')}>
             {({ id }) => (
               <Select
+                className="min-h-11"
                 id={id}
                 value={kind}
                 onChange={(e) => {
@@ -664,6 +680,7 @@ function AnchorsStep({ data }: { readonly data: SetupData }) {
             <Field label={oneDay ? t('setup.anchors.date') : t('setup.anchors.firstNight')}>
               {({ id }) => (
                 <Input
+                  className="min-h-11"
                   id={id}
                   type="date"
                   min={data.start}
@@ -680,6 +697,7 @@ function AnchorsStep({ data }: { readonly data: SetupData }) {
               <Field label={t('setup.anchors.lastNight')}>
                 {({ id }) => (
                   <Input
+                    className="min-h-11"
                     id={id}
                     type="date"
                     min={from}
@@ -696,6 +714,7 @@ function AnchorsStep({ data }: { readonly data: SetupData }) {
               <Field label={t('setup.anchors.maxNights')}>
                 {({ id }) => (
                   <Input
+                    className="min-h-11"
                     id={id}
                     inputMode="numeric"
                     value={maxNights}
@@ -709,7 +728,13 @@ function AnchorsStep({ data }: { readonly data: SetupData }) {
           </div>
           <ErrorLine error={error} />
           <div>
-            <Button type="submit" variant="secondary" loading={pending} disabled={!place}>
+            <Button
+              className="min-h-11"
+              type="submit"
+              variant="secondary"
+              loading={pending}
+              disabled={!place}
+            >
               {t('setup.anchors.add')}
             </Button>
           </div>
@@ -762,6 +787,7 @@ function FlightsStep({
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="font-medium">{f.route}</span>
                   <Button
+                    className="min-h-11"
                     size="sm"
                     variant="ghost"
                     onClick={() => {
@@ -832,6 +858,7 @@ function FlightsStep({
             <Field label={t('setup.flights.from')}>
               {({ id }) => (
                 <Input
+                  className="min-h-11"
                   id={id}
                   maxLength={3}
                   autoCapitalize="characters"
@@ -845,6 +872,7 @@ function FlightsStep({
             <Field label={t('setup.flights.to')}>
               {({ id }) => (
                 <Input
+                  className="min-h-11"
                   id={id}
                   maxLength={3}
                   autoCapitalize="characters"
@@ -859,6 +887,7 @@ function FlightsStep({
               {({ id }) => (
                 <div className="flex gap-2">
                   <Input
+                    className="min-h-11"
                     id={id}
                     type="date"
                     value={dDate}
@@ -867,6 +896,7 @@ function FlightsStep({
                     }}
                   />
                   <Input
+                    className="min-h-11"
                     type="time"
                     aria-label={t('setup.flights.departs')}
                     value={dTime}
@@ -881,6 +911,7 @@ function FlightsStep({
               {({ id }) => (
                 <div className="flex gap-2">
                   <Input
+                    className="min-h-11"
                     id={id}
                     type="date"
                     value={aDate}
@@ -889,6 +920,7 @@ function FlightsStep({
                     }}
                   />
                   <Input
+                    className="min-h-11"
                     type="time"
                     aria-label={t('setup.flights.arrives')}
                     value={aTime}
@@ -914,6 +946,7 @@ function FlightsStep({
           <ErrorLine error={error} />
           <div>
             <Button
+              className="min-h-11"
               type="submit"
               variant="secondary"
               loading={pending}
@@ -963,6 +996,7 @@ function PasteTicket({ tripId }: { readonly tripId: string }) {
         <ErrorLine error={error} />
         <div>
           <Button
+            className="min-h-11"
             type="submit"
             variant="secondary"
             loading={pending}
@@ -1028,7 +1062,7 @@ function FlightTime({
             onChange={(e) => {
               setD(e.target.value);
             }}
-            className="w-40"
+            className="min-h-11 w-40"
           />
           <Input
             type="time"
@@ -1037,9 +1071,15 @@ function FlightTime({
             onChange={(e) => {
               setH(e.target.value);
             }}
-            className="w-28"
+            className="min-h-11 w-28"
           />
-          <Button type="submit" size="sm" variant="secondary" loading={pending}>
+          <Button
+            className="min-h-11"
+            type="submit"
+            size="sm"
+            variant="secondary"
+            loading={pending}
+          >
             {t('setup.flights.confirm')}
           </Button>
           <ErrorLine error={error} />
@@ -1079,6 +1119,7 @@ function WishesStep({ data }: { readonly data: SetupData }) {
                   </span>
                 </span>
                 <Button
+                  className="min-h-11"
                   size="sm"
                   variant="ghost"
                   onClick={() => {
@@ -1108,6 +1149,7 @@ function WishesStep({ data }: { readonly data: SetupData }) {
           <Field label={t('setup.wishes.title')}>
             {({ id }) => (
               <Input
+                className="min-h-11"
                 id={id}
                 placeholder={t('setup.wishes.placeholder')}
                 value={text}
@@ -1120,6 +1162,7 @@ function WishesStep({ data }: { readonly data: SetupData }) {
           <ErrorLine error={error} />
           <div>
             <Button
+              className="min-h-11"
               type="submit"
               variant="secondary"
               loading={pending}
@@ -1173,6 +1216,7 @@ function SettingsStep({ data }: { readonly data: SetupData }) {
             <Field label={t('setup.settings.budget')}>
               {({ id }) => (
                 <Select
+                  className="min-h-11"
                   id={id}
                   value={hours}
                   onChange={(e) => {
@@ -1190,6 +1234,7 @@ function SettingsStep({ data }: { readonly data: SetupData }) {
             <Field label={t('setup.settings.departure')}>
               {({ id }) => (
                 <Input
+                  className="min-h-11"
                   id={id}
                   type="time"
                   value={departure}
@@ -1205,6 +1250,7 @@ function SettingsStep({ data }: { readonly data: SetupData }) {
             >
               {({ id, describedBy }) => (
                 <Input
+                  className="min-h-11"
                   id={id}
                   aria-describedby={describedBy}
                   numeric
@@ -1243,7 +1289,7 @@ function SettingsStep({ data }: { readonly data: SetupData }) {
           </div>
           <ErrorLine error={error} />
           <div>
-            <Button type="submit" variant="secondary" loading={pending}>
+            <Button className="min-h-11" type="submit" variant="secondary" loading={pending}>
               {t('setup.settings.save')}
             </Button>
           </div>

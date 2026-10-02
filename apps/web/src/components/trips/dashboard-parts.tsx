@@ -70,7 +70,11 @@ export function PerDiemPanel({
       <div className="@container flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           {legs.length > 1 ? (
-            <div role="tablist" aria-label={tp('legs')} className="flex flex-wrap gap-2">
+            <div
+              role="tablist"
+              aria-label={tp('legs')}
+              className="-mx-1 flex max-w-full gap-2 overflow-x-auto px-1 pb-1"
+            >
               {legs.map((l) => (
                 <button
                   key={l.id}
@@ -80,7 +84,7 @@ export function PerDiemPanel({
                   onClick={() => {
                     setLegId(l.id);
                   }}
-                  className={`h-11 rounded-(--radius-md) border px-4 text-sm ${l.id === legId ? 'border-[color:var(--color-ink)] bg-[color:var(--color-brand-sunk)] font-medium' : 'border-[color:var(--color-rule)] text-[color:var(--color-ink-secondary)]'}`}
+                  className={`h-11 shrink-0 rounded-(--radius-md) border px-4 text-sm whitespace-nowrap ${l.id === legId ? 'border-[color:var(--color-ink)] bg-[color:var(--color-brand-sunk)] font-medium' : 'border-[color:var(--color-rule)] text-[color:var(--color-ink-secondary)]'}`}
                 >
                   {l.city}
                 </button>

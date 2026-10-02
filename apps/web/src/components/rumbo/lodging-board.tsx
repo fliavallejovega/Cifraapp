@@ -298,7 +298,7 @@ function StopCard({
                     numeric
                     inputMode="decimal"
                     value={price}
-                    className="w-40"
+                    className="min-h-11 w-40"
                     onChange={(e) => {
                       const v = e.target.value.replace(',', '.').trim();
                       onPrice(v);
@@ -438,6 +438,7 @@ function OptionList({
               <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
                 {total && (
                   <Button
+                    className="min-h-11"
                     size="sm"
                     variant="secondary"
                     loading={pending}
@@ -496,6 +497,7 @@ function AddOption({ tripId, legId }: { readonly tripId: string; readonly legId:
     return (
       <div>
         <Button
+          className="min-h-11"
           variant="ghost"
           size="sm"
           onClick={() => {
@@ -555,6 +557,7 @@ function AddOption({ tripId, legId }: { readonly tripId: string; readonly legId:
       <Field label={t('lodging.add.url')}>
         {({ id }) => (
           <Input
+            className="min-h-11"
             id={id}
             type="url"
             inputMode="url"
@@ -569,6 +572,7 @@ function AddOption({ tripId, legId }: { readonly tripId: string; readonly legId:
         <Field label={t('lodging.add.provider')}>
           {({ id }) => (
             <Select
+              className="min-h-11"
               id={id}
               value={provider}
               onChange={(e) => {
@@ -584,6 +588,7 @@ function AddOption({ tripId, legId }: { readonly tripId: string; readonly legId:
         <Field label={t('lodging.add.name')} required>
           {({ id }) => (
             <Input
+              className="min-h-11"
               id={id}
               required
               value={name}
@@ -596,6 +601,7 @@ function AddOption({ tripId, legId }: { readonly tripId: string; readonly legId:
         <Field label={t('lodging.add.total')}>
           {({ id }) => (
             <Input
+              className="min-h-11"
               id={id}
               numeric
               inputMode="decimal"
@@ -609,6 +615,7 @@ function AddOption({ tripId, legId }: { readonly tripId: string; readonly legId:
         <Field label={t('lodging.add.kind')}>
           {({ id }) => (
             <Input
+              className="min-h-11"
               id={id}
               value={kind}
               onChange={(e) => {
@@ -620,6 +627,7 @@ function AddOption({ tripId, legId }: { readonly tripId: string; readonly legId:
         <Field label={t('lodging.add.rating')}>
           {({ id }) => (
             <Input
+              className="min-h-11"
               id={id}
               inputMode="decimal"
               value={rating}
@@ -632,6 +640,7 @@ function AddOption({ tripId, legId }: { readonly tripId: string; readonly legId:
         <Field label={t('lodging.add.reviews')}>
           {({ id }) => (
             <Input
+              className="min-h-11"
               id={id}
               inputMode="numeric"
               value={reviews}
@@ -645,6 +654,7 @@ function AddOption({ tripId, legId }: { readonly tripId: string; readonly legId:
           <Field label={t('lodging.add.listingId')} hint={t('lodging.add.listingHint')}>
             {({ id, describedBy }) => (
               <Input
+                className="min-h-11"
                 id={id}
                 aria-describedby={describedBy}
                 inputMode="numeric"
@@ -670,10 +680,11 @@ function AddOption({ tripId, legId }: { readonly tripId: string; readonly legId:
       </label>
       {error && <p className="text-sm text-[color:var(--color-negative)]">{te(error)}</p>}
       <div className="flex flex-wrap gap-4">
-        <Button type="submit" loading={pending} disabled={name.trim() === ''}>
+        <Button className="min-h-11" type="submit" loading={pending} disabled={name.trim() === ''}>
           {t('lodging.add.save')}
         </Button>
         <Button
+          className="min-h-11"
           type="button"
           variant="ghost"
           onClick={() => {

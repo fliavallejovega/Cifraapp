@@ -6,6 +6,7 @@ import { getAdminDb } from '@app/database';
 import {
   borderSystems,
   entryRules,
+  fxRates,
   transactions,
   tripAnchors,
   tripBookings,
@@ -60,7 +61,7 @@ import {
 } from '@app/itinerary';
 import { convertToBase } from '@app/trip-engine';
 import { getServerEnv } from '@app/validation/env';
-import { and, asc, eq, inArray, isNotNull, isNull, or } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNotNull, isNull, or } from 'drizzle-orm';
 
 import { registerJobHandler } from './jobs';
 import { ORS_SOURCE, routeDrive, routingConfigured } from './routing/openrouteservice';
@@ -922,6 +923,36 @@ export async function composeAndStore(
         stayOrigin: s.origin,
         hosted: s.hosted,
       });
+    }
+  }
+
+  // Planning rates for the new local currencies, as the Viajes wizard fixes them.
+  const base = rows.trip.baseCurrency.trim();
+  const wantedFx = [
+    ...new Set(stays.map((s) => CURRENCY_BY_COUNTRY[place(s.placeId).country] ?? base)),
+  ].filter((c) => c !== base && !(c in rows.trip.planningFx));
+  if (wantedFx.length > 0) {
+    const latest = await tx
+      .selectDistinctOn([fxRates.quote], {
+        quote: fxRates.quote,
+        rate: fxRates.rate,
+        date: fxRates.rateDate,
+      })
+      .from(fxRates)
+      .where(and(eq(fxRates.base, base), inArray(fxRates.quote, wantedFx)))
+      .orderBy(fxRates.quote, desc(fxRates.rateDate));
+    if (latest.length > 0) {
+      await tx
+        .update(trips)
+        .set({
+          planningFx: {
+            ...rows.trip.planningFx,
+            ...Object.fromEntries(
+              latest.map((r) => [r.quote.trim(), { rate: r.rate, date: r.date }]),
+            ),
+          },
+        })
+        .where(eq(trips.id, tripId));
     }
   }
 

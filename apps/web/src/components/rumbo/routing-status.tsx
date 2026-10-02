@@ -59,6 +59,7 @@ export function RoutingStatus({
         <div className="flex flex-wrap items-center gap-4">
           <p className="text-sm">{t('failed', { count: routing.failed })}</p>
           <Button
+            className="min-h-11"
             size="sm"
             variant="secondary"
             loading={pending}
@@ -73,6 +74,7 @@ export function RoutingStatus({
       {waiting && (
         <div>
           <Button
+            className="min-h-11"
             size="sm"
             variant="ghost"
             onClick={() => {

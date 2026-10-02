@@ -55,6 +55,7 @@ export function TakeItAlong({
               <p className="text-sm break-all tabular-nums select-all">{link}</p>
               <div>
                 <Button
+                  className="min-h-11"
                   size="sm"
                   variant="secondary"
                   onClick={() => {
@@ -81,6 +82,7 @@ export function TakeItAlong({
                     {t('share.active', { hint: s.hint, date: s.createdAt })}
                   </span>
                   <Button
+                    className="min-h-11"
                     size="sm"
                     variant="ghost"
                     loading={pending}
@@ -96,6 +98,7 @@ export function TakeItAlong({
           )}
           <div>
             <Button
+              className="min-h-11"
               variant="secondary"
               loading={pending}
               onClick={() => {

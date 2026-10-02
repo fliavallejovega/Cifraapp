@@ -313,7 +313,7 @@ function EntrySection({ p, view }: { readonly p: Presenter; readonly view: Rumbo
             href={s.url}
             target="_blank"
             rel="noreferrer"
-            className="underline decoration-[color:var(--color-rule-strong)] underline-offset-4"
+            className="inline-flex min-h-11 items-center self-start underline decoration-[color:var(--color-rule-strong)] underline-offset-4"
           >
             {t('entry.source', { name: s.name, date: s.date })}
           </a>

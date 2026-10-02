@@ -93,7 +93,7 @@ function TodoRow({ tripId, todo }: { readonly tripId: string; readonly todo: Cli
               href={todo.source.url}
               target="_blank"
               rel="noreferrer"
-              className="text-xs text-[color:var(--color-ink-secondary)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4"
+              className="inline-flex min-h-11 items-center self-start text-xs text-[color:var(--color-ink-secondary)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4"
             >
               {todo.source.name} · {todo.source.checked}
             </a>
@@ -115,6 +115,7 @@ function TodoRow({ tripId, todo }: { readonly tripId: string; readonly todo: Cli
           )}
           {bought ? (
             <Button
+              className="min-h-11"
               variant="ghost"
               size="sm"
               loading={pending}
@@ -127,6 +128,7 @@ function TodoRow({ tripId, todo }: { readonly tripId: string; readonly todo: Cli
           ) : (
             !marking && (
               <Button
+                className="min-h-11"
                 variant="secondary"
                 size="sm"
                 onClick={() => {
@@ -166,6 +168,7 @@ function TodoRow({ tripId, todo }: { readonly tripId: string; readonly todo: Cli
           >
             {({ id, describedBy, invalid }) => (
               <Input
+                className="min-h-11"
                 id={id}
                 aria-describedby={describedBy}
                 invalid={invalid}
@@ -178,7 +181,7 @@ function TodoRow({ tripId, todo }: { readonly tripId: string; readonly todo: Cli
               />
             )}
           </Field>
-          <Button type="submit" loading={pending}>
+          <Button className="min-h-11" type="submit" loading={pending}>
             {t('saveBought')}
           </Button>
         </form>

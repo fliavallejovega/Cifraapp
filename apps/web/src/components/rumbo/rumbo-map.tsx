@@ -423,7 +423,12 @@ export function RumboMap({ places, geometry, days, selected }: RumboMapProps) {
             vec.copy(p).project(camera);
             const visible = vec.z < 1 && Math.abs(vec.x) < 1.05 && Math.abs(vec.y) < 1.05;
             el.style.display = visible ? 'block' : 'none';
-            el.style.transform = `translate(${String(Math.round(((vec.x + 1) / 2) * w))}px, ${String(Math.round(((1 - vec.y) / 2) * h))}px) translate(-50%, -130%)`;
+            if (!visible) continue;
+            // Keep the whole label inside the map: a name cut by the edge reads as a bug.
+            const half = el.offsetWidth / 2;
+            const x = Math.min(Math.max(((vec.x + 1) / 2) * w, half + 4), w - half - 4);
+            const y = Math.max(((1 - vec.y) / 2) * h, el.offsetHeight * 1.3 + 4);
+            el.style.transform = `translate(${String(Math.round(x))}px, ${String(Math.round(y))}px) translate(-50%, -130%)`;
           }
         };
         const origSelect = select;

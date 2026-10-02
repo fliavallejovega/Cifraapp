@@ -417,7 +417,7 @@ function ManualDrive({ tripId, day }: { readonly tripId: string; readonly day: C
       </div>
       {error && <p className="text-sm text-[color:var(--color-negative)]">{te(error)}</p>}
       <div>
-        <Button type="submit" variant="secondary" loading={pending}>
+        <Button className="min-h-11" type="submit" variant="secondary" loading={pending}>
           {t('day.manual.save')}
         </Button>
       </div>
