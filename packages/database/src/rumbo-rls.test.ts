@@ -9,8 +9,8 @@ import postgres from 'postgres';
 const connectionUrl = process.env['TEST_DATABASE_URL'];
 const describeWithDatabase = connectionUrl ? describe : describe.skip;
 
-const ALBA = '77777777-7777-4777-8777-777777777777';
-const BRUNO = '88888888-8888-4888-8888-888888888888';
+const ALBA = 'abababab-abab-4bab-8bab-abababababab';
+const BRUNO = 'cdcdcdcd-cdcd-4dcd-8dcd-cdcdcdcdcdcd';
 
 const RUMBO_TABLES = [
   'trip_places',
@@ -20,6 +20,7 @@ const RUMBO_TABLES = [
   'trip_drives',
   'trip_lodging_options',
   'trip_todos',
+  'trip_shares',
 ] as const;
 
 describeWithDatabase('rumbo: row-level security and invariants', () => {
@@ -55,7 +56,7 @@ describeWithDatabase('rumbo: row-level security and invariants', () => {
   }
 
   beforeAll(async () => {
-    await sql`delete from auth.users where id in (${ALBA}, ${BRUNO})`;
+    await sql`delete from auth.users where id in (${ALBA}, ${BRUNO}) or email in ('alba@example.test', 'bruno@example.test')`;
     await sql`insert into auth.users (id, email) values (${ALBA}, 'alba@example.test'), (${BRUNO}, 'bruno@example.test')`;
     await sql`
       insert into app.profiles (id, email, display_name) values
@@ -110,6 +111,10 @@ describeWithDatabase('rumbo: row-level security and invariants', () => {
       await tx`
         insert into app.trip_todos (household_id, trip_id, todo_key, kind, country_code)
         values (${albaHousehold}, ${trip}, 'charge:ch-vignette-year', 'vignette', 'CH')
+      `;
+      await tx`
+        insert into app.trip_shares (household_id, trip_id, token_hash, hint)
+        values (${albaHousehold}, ${trip}, ${'b'.repeat(64)}, 'abcd')
       `;
     });
   });

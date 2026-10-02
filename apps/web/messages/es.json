@@ -4597,5 +4597,499 @@
       "afterTitle": "{trip} terminó",
       "afterBody": "Vean el informe y decidan qué hacer con lo que sobró."
     }
+  },
+  "rumbo": {
+    "title": "Rumbo",
+    "backToTrip": "Volver al viaje",
+    "tabs": {
+      "route": "Ruta en 3D",
+      "stay": "Dónde dormir",
+      "entry": "Visas y reservas",
+      "label": "Secciones de Rumbo"
+    },
+    "tripLink": {
+      "title": "Arma el viaje de punta a punta",
+      "body": "Rutas, horarios, hospedaje, visas y compras alrededor de lo que ya tienen pagado.",
+      "cta": "Abrir Rumbo"
+    },
+    "summary": "{days} días · {nights} noches con hospedaje · {km} km · {hours} al volante en {drivingDays} días",
+    "notComposed": {
+      "title": "Todavía no hay ruta",
+      "body": "Cuéntale a Rumbo quiénes viajan, qué ya está pagado y qué quieren ver. Con eso arma los días, los tramos y lo que hay que reservar.",
+      "cta": "Armar el viaje"
+    },
+    "editSetup": "Editar paradas y deseos",
+    "routing": {
+      "pending": "Calculando {count, plural, one {# tramo} other {# tramos}} con openrouteservice. Los días se completan solos al terminar.",
+      "failed": "{count, plural, one {# tramo no se pudo} other {# tramos no se pudieron}} calcular. Puedes reintentar o escribir los kilómetros y minutos a mano.",
+      "retry": "Reintentar las rutas",
+      "refresh": "Ver si ya terminó",
+      "notConfigured": "No hay servicio de rutas conectado: los tramos quedan por calcular."
+    },
+    "sacrifices": {
+      "sentence": "Para «{wish}» se quitaron {list}.",
+      "nights": "{count, plural, one {# noche} other {# noches}} de {place}",
+      "yourWishes": "sus deseos",
+      "costMore": "Suma {duration} al volante en total.",
+      "costLess": "Ahorra {duration} al volante en total."
+    },
+    "certainty": {
+      "ticket": "En su boleto",
+      "confirmed": "Confirmado",
+      "estimated": "Estimado",
+      "unverified": "Por verificar",
+      "approx": "~"
+    },
+    "days": {
+      "strip": "Días del viaje",
+      "wheel": "{duration} al volante",
+      "noDrive": "Sin manejo",
+      "flight": "Vuelo",
+      "offMap": "Fuera del mapa · a ~{km} km"
+    },
+    "day": {
+      "titleFlight": "Vuelo {route}",
+      "titleDrive": "{from} → {to}",
+      "titleDayTrip": "Ida y vuelta a {place}",
+      "titleRest": "Día en {place}",
+      "titleHome": "Llegada a casa",
+      "stats": {
+        "km": "Kilómetros",
+        "wheel": "Al volante",
+        "departure": "Salida",
+        "arrival": "Llegada estimada",
+        "sunset": "Atardecer"
+      },
+      "timeline": "Línea de tiempo",
+      "legs": "Tramos",
+      "wholeDay": "Todo el día en Google Maps",
+      "waze": "Waze",
+      "maps": "Google Maps",
+      "todo": "Qué hacer",
+      "noActivities": "Rumbo no tiene sugerencias para este lugar. Busca en el mapa lo que quieran ver.",
+      "searchMap": "Buscar en el mapa",
+      "watch": "Ojo",
+      "sleep": "Dónde duermen",
+      "sleepHosted": "Con amigos · sin costo",
+      "sleepPaid": "Pagado",
+      "sleepOpen": "Por reservar",
+      "plane": "Noche en el avión.",
+      "home": "Llegan a casa.",
+      "routerNote": "El enrutador calcula {router} sin nieve; el plan cuenta {planned} con el invierno.",
+      "closed": "Cerrado este día",
+      "needsBooking": "Con reserva",
+      "officialSite": "Sitio oficial",
+      "ferry": "Ferry",
+      "mountain": "Montaña",
+      "pending": "Por calcular",
+      "manual": {
+        "title": "Escribir a mano",
+        "km": "Kilómetros",
+        "minutes": "Minutos",
+        "save": "Guardar este tramo"
+      }
+    },
+    "timeline": {
+      "leave_lodging": "Salir hacia el aeropuerto",
+      "at_airport": "En el aeropuerto (3 h antes)",
+      "departs": "Sale el vuelo",
+      "arrives": "Llega el vuelo",
+      "exit_airport": "Migración y equipaje",
+      "at_lodging": "Llegada al hospedaje",
+      "zone": "{sign}{hours} h respecto a la salida",
+      "transfer": "{mode} · {duration}",
+      "modes": {
+        "taxi": "Taxi",
+        "metro": "Metro",
+        "bus": "Bus",
+        "boat": "Lancha",
+        "private": "Transfer privado"
+      }
+    },
+    "alternatives": {
+      "via_pusteria": "por el valle: Dobbiaco y Brunico (Val Pusteria)",
+      "via_fassa_bolzano": "por el valle de Fassa hasta Bolzano",
+      "via_albula_tunnel": "por el túnel del Albula en tren con el carro",
+      "ask": "consulta el estado del paso antes de salir"
+    },
+    "notices": {
+      "unknown": "Hay algo que revisar en este día.",
+      "anchors_overlap": "{from} y {to} se pisan: dos fechas fijas no caben a la vez. Revisa las paradas fijas.",
+      "nights_unassigned": "Quedan {nights, plural, one {# noche} other {# noches}} sin lugar antes de {before}.",
+      "wish_unmatched": "«{wish}» todavía no está en el catálogo de Rumbo; agrégalo como parada fija si tiene fecha.",
+      "route_pending": "Parte del manejo de este día está por calcular.",
+      "mountain_after_dark": "Llegarían a las {arrival} y el sol se pone a las {sunset}. Para manejar la montaña con luz, salgan antes de las {leaveBy}.",
+      "mountain_after_dark_no_daylight": "Llegarían a las {arrival} y el sol se pone a las {sunset}: con estas paradas no cabe con luz. Quiten paradas o partan el día.",
+      "arrives_after_dark": "Llegan de noche ({arrival}; el sol se pone a las {sunset}).",
+      "over_driving_budget": "{driving} al volante, más que su tope de {budget}. Los cambios de país y la montaña lo hacen más pesado.",
+      "border_day": "Día de fronteras: {countries}.",
+      "pass_may_close": "{pass} puede cerrar con nieve. Si cierra: {alternative}.",
+      "pass_closed": "{pass} está cerrado en invierno: {alternative}.",
+      "winter_chains_or_winter_tyres": "En {country} se exigen cadenas a bordo o llantas de invierno en temporada.",
+      "winter_winter_tyres_in_conditions": "En {country} se exigen llantas de invierno con nieve o hielo.",
+      "ferry_book": "Ferry: {duration} con el embarque. Resérvenlo antes.",
+      "transfer_not_running": "A esa hora el {mode} no opera en {airport}: va en taxi.",
+      "transfer_rush_hour": "Hora pico en {airport}: el traslado tarda unos {minutes} min más.",
+      "layover_visa_check": "Escala larga en {airport}: confirmen si pueden salir del aeropuerto con su pasaporte.",
+      "stopover_request_72h": "El programa Stopover de la aerolínea se pide al menos {hours} h antes.",
+      "car_return_on_holiday": "Devuelven el carro el {date}, día festivo: confirmen que la oficina abre.",
+      "night_without_lodging": "La noche del {date} no tiene dónde dormir.",
+      "stay_exceeds_limit": "En {zone} usarían {days} días; el máximo es {max}.",
+      "present_passport": "En {zone}, presenten el pasaporte de {passport}.",
+      "passport_valid_months": "En {zone}, el pasaporte debe valer al menos {months} meses después de salir el {exit}.",
+      "passport_valid_months_from_arrival": "Para {zone} se recomienda pasaporte vigente {months} meses desde la llegada ({arrival}).",
+      "passport_valid_days": "Para {zone}, el pasaporte debe valer hasta el {until} como mínimo.",
+      "passport_issued_within": "En {zone}, el pasaporte debe haberse emitido hace menos de {years} años.",
+      "border_may_ask": "En la frontera de {zone} pueden pedir: {items}.",
+      "ees_not_started": "El registro biométrico de entrada (EES) aún no opera en {zone}.",
+      "etias_not_started": "ETIAS todavía no está en operación ni tiene fecha confirmada. Rumbo avisa si cambia.",
+      "lodging_over_cap": "En {place} no hay opciones bajo {cap} por noche. Más baratos cerca: {nearby}.",
+      "lodging_scarce_area": "En {place} casi no hay hospedaje bajo {cap} por noche en estas fechas: así fue al planear este viaje a mano. Más baratos cerca: {nearby}."
+    },
+    "map": {
+      "label": "Mapa de la ruta en 3D",
+      "loading": "Cargando el relieve…",
+      "flat": "Tu navegador no muestra 3D: ves el mapa plano.",
+      "error": "No se pudo cargar el mapa. La ruta sigue abajo, día por día.",
+      "hint": "Arrastra para girar · rueda o pellizco para acercar",
+      "legendRoute": "Ruta del día",
+      "legendOther": "Resto del viaje",
+      "legendFerry": "Ferry"
+    },
+    "lodging": {
+      "title": "Dónde dormir",
+      "detail": "Una lista por parada: Airbnb de menor a mayor precio y hoteles como referencia. Escriban su precio y los totales cambian al instante.",
+      "totals": {
+        "myPlan": "Mi plan",
+        "recommended": "Plan recomendado",
+        "cheapest": "Versión más barata",
+        "nights": "Noches con hospedaje",
+        "average": "Promedio por noche",
+        "progress": "{done} de {total} paradas con su precio"
+      },
+      "disclaimer": "Los totales no incluyen impuestos turísticos, estacionamiento ni desayuno cuando no viene incluido.",
+      "myPrice": "Mi precio (total de la estadía)",
+      "myPriceHint": "En {currency}. Se guarda solo.",
+      "clear": "Quitar mi precio",
+      "saved": "Guardado",
+      "saving": "Guardando…",
+      "nights": "{count, plural, one {# noche} other {# noches}}",
+      "hosted": "Con amigos: sin costo",
+      "paid": "Ya pagado",
+      "airbnb": "Airbnb",
+      "hotels": "Hoteles",
+      "recommended": "Recomendado",
+      "cheapest": "Más barato",
+      "from": "desde",
+      "perNight": "{amount} por noche",
+      "rating": "{rating} · {count, plural, one {# reseña} other {# reseñas}}",
+      "use": "Usar este precio",
+      "book": "Reservar",
+      "photos": "Ver fotos",
+      "remove": "Quitar",
+      "searchAirbnb": "Buscar en Airbnb con estas fechas",
+      "searchBooking": "Buscar hoteles en Booking",
+      "noOptions": "Todavía no hay opciones. Abran la búsqueda con las fechas puestas y peguen aquí las que les gusten.",
+      "unconverted": "{count, plural, one {# opción está} other {# opciones están}} en otra moneda sin tasa del viaje.",
+      "add": {
+        "open": "Agregar una opción",
+        "provider": "Sitio",
+        "name": "Nombre",
+        "kind": "Tipo",
+        "listingId": "Número del anuncio",
+        "listingHint": "Está en el link: airbnb.com/rooms/<número>",
+        "rating": "Valoración",
+        "reviews": "Reseñas",
+        "total": "Precio total de la estadía",
+        "url": "Link del anuncio",
+        "recommended": "Marcar como recomendado",
+        "save": "Agregar opción",
+        "cancel": "Cancelar",
+        "providers": {
+          "airbnb": "Airbnb",
+          "booking": "Booking.com",
+          "other": "Otro sitio"
+        }
+      },
+      "summaryTable": {
+        "title": "Resumen por parada",
+        "stop": "Parada",
+        "recommended": "Recomendado",
+        "cheapest": "Más barato",
+        "mine": "Mi precio",
+        "total": "Total"
+      },
+      "empty": "Rumbo todavía no tiene paradas con hospedaje. Arma el viaje primero."
+    },
+    "entry": {
+      "title": "Visas y requisitos de entrada",
+      "summaryAllFree": "Nadie necesita visa para este viaje.",
+      "summaryNeeds": "{count, plural, one {# viajero necesita} other {# viajeros necesitan}} trámite antes de viajar.",
+      "summaryUnknown": "Hay destinos sin regla verificada: revísenlos en la fuente oficial.",
+      "destination": "Destino",
+      "schengen": "Espacio Schengen",
+      "status": {
+        "visa_free": "Sin visa",
+        "evisa": "Visa electrónica",
+        "eta": "Autorización electrónica",
+        "visa_required": "Necesita visa",
+        "unknown": "Por verificar"
+      },
+      "days": "{used} de {max} días",
+      "daysWindow": "{used} de {max} días en {window}",
+      "source": "Fuente: {name}, consultada el {date}",
+      "systems": {
+        "ees": "Registro biométrico EES al entrar"
+      },
+      "noTravelers": "Agreguen los viajeros y sus nacionalidades para ver los requisitos.",
+      "noPassports": "{name} todavía no tiene nacionalidad cargada.",
+      "disclaimer": "Las reglas cambian. Rumbo no es asesoría legal: confirmen en la fuente oficial o en el consulado antes de viajar.",
+      "mayAsk": {
+        "onward_ticket": "boleto de salida",
+        "lodging_proof": "prueba de alojamiento",
+        "funds": "fondos",
+        "insurance": "seguro de viaje"
+      }
+    },
+    "todos": {
+      "title": "Reservas y compras",
+      "detail": "Todo lo que se compra o reserva en línea, con su fecha límite y el link oficial. Rumbo no compra ni paga por ustedes.",
+      "empty": "Cuando el viaje esté armado, aquí aparece lo que hay que reservar.",
+      "general": "Del viaje",
+      "due": "Antes del {date}",
+      "overdue": "Vencido el {date}",
+      "saleOpens": "La venta abre el {date}",
+      "open": "Abrir",
+      "markBought": "Ya lo compré",
+      "bought": "Comprado",
+      "undo": "Marcar pendiente",
+      "code": "Número de reserva",
+      "codeHint": "Solo el código de la reserva, nunca datos de tarjeta.",
+      "saveBought": "Guardar como comprado",
+      "orphaned": "Ya no lo pide el plan; se conserva porque estaba comprado.",
+      "priceUnknown": "precio por verificar",
+      "kinds": {
+        "flight_manage": {
+          "title": "Revisar la reserva de vuelos",
+          "reason": "Confirmen nombres, horarios y equipaje en el sitio de la aerolínea."
+        },
+        "flight_seats": {
+          "title": "Elegir asientos",
+          "reason": "Juntos en los vuelos largos."
+        },
+        "flight_checkin": {
+          "title": "Check-in del vuelo desde {airport}",
+          "reason": "Abre 24 h antes de la salida ({date}, {time})."
+        },
+        "car_rental_one_way": {
+          "title": "Alquiler del carro {from} → {to}",
+          "reason": "Devolver en otro país cobra un cargo aparte; pidan el total con fechas {pickup} – {dropoff}."
+        },
+        "car_winter_kit": {
+          "title": "Llantas de invierno y cadenas",
+          "reason": "Las piden en {countries}. Confírmenlo al alquilar."
+        },
+        "event_tickets": {
+          "title": "Boletos: {name}",
+          "reason": "Solo en la web oficial, con hora. Se agotan rápido: la venta abre a las {opensAt}. No compren en reventa."
+        },
+        "timed_entry": {
+          "title": "Entrada con hora: {name}",
+          "reason": "Para el {date}."
+        },
+        "local_transport": {
+          "title": "Pase de {name}",
+          "reason": "Conviene comprarlo antes de llegar."
+        },
+        "private_transfer": {
+          "title": "Transfer de madrugada en {airport}",
+          "reason": "Salen a las {time} del {date}: a esa hora no hay transporte público."
+        },
+        "holiday_dinner": {
+          "title": "Reservar la cena del {date} en {place}",
+          "reason": "En fechas festivas los restaurantes se llenan."
+        }
+      },
+      "charges": {
+        "atVignette": {
+          "title": "Viñeta digital de Austria (10 días)",
+          "reason": "Obligatoria en autopistas; se compra antes de entrar. {priceText}."
+        },
+        "chVignette": {
+          "title": "E-vignette de Suiza",
+          "reason": "Anual, se compra antes de entrar al país. {priceText}."
+        },
+        "arlberg": {
+          "title": "Peaje del túnel del Arlberg",
+          "reason": "Aparte de la viñeta; se paga al pasar o en línea. {priceText}."
+        },
+        "scandlines": {
+          "title": "Ferry Puttgarden–Rødby",
+          "reason": "Reserven el horario del cruce con el carro."
+        }
+      },
+      "opens": "Abre el {date}"
+    },
+    "setup": {
+      "title": "Armar el viaje",
+      "detail": "Cada paso se guarda solo. Pueden volver cuando quieran.",
+      "progress": "Paso {step} de {total}",
+      "back": "Atrás",
+      "next": "Siguiente",
+      "steps": {
+        "travelers": "Viajeros",
+        "anchors": "Lo fijo",
+        "flights": "Boletos",
+        "wishes": "Deseos",
+        "settings": "Manejo y hospedaje"
+      },
+      "travelers": {
+        "title": "¿Quiénes viajan?",
+        "detail": "Las nacionalidades deciden las visas. Si alguien tiene dos pasaportes, agreguen los dos.",
+        "nationalities": "Nacionalidades",
+        "residence": "País donde vive",
+        "add": "Agregar viajero",
+        "name": "Nombre",
+        "save": "Guardar",
+        "empty": "Este viaje todavía no tiene viajeros.",
+        "addNationality": "Agregar otra nacionalidad"
+      },
+      "anchors": {
+        "title": "Lo que no se mueve",
+        "detail": "El carro, las noches pagadas, los amigos y los eventos con fecha. Rumbo arma todo lo demás alrededor.",
+        "kind": "Qué es",
+        "kinds": {
+          "car_pickup": "Recoger el carro",
+          "car_return": "Devolver el carro",
+          "friends": "Visita a amigos",
+          "event": "Evento con fecha",
+          "stay": "Noches ya pagadas"
+        },
+        "place": "Dónde",
+        "placeHint": "Escriban el nombre del lugar.",
+        "from": "Desde",
+        "to": "Hasta",
+        "date": "Día",
+        "firstNight": "Primera noche",
+        "lastNight": "Última noche",
+        "maxNights": "Pueden alojarnos hasta",
+        "add": "Agregar",
+        "remove": "Quitar",
+        "searching": "Buscando…",
+        "noResults": "No encontramos ese lugar. Prueben con la ciudad más cercana.",
+        "needsCar": "Para armar la ruta en carro hacen falta dónde se recoge y dónde se devuelve.",
+        "empty": "Todavía no hay nada fijo."
+      },
+      "flights": {
+        "title": "Los boletos",
+        "detail": "Suban el PDF o una foto de cada pasaje, estadía o reserva: el lector de Cifra los lee y, al confirmarlos, quedan como paradas fijas y pagadas.",
+        "orManual": "O escriban un vuelo a mano",
+        "from": "Sale de (código)",
+        "to": "Llega a (código)",
+        "departs": "Sale",
+        "arrives": "Llega",
+        "fromTicket": "Las horas están en el boleto",
+        "add": "Agregar vuelo",
+        "list": "Vuelos del viaje",
+        "empty": "Todavía no hay vuelos.",
+        "estimated": "Hora estimada: búsquenla en «Itinerary details» del boleto y escríbanla aquí.",
+        "confirm": "Guardar la hora exacta",
+        "remove": "Quitar",
+        "paste": "O peguen el texto de la reserva",
+        "pasteHint": "El correo o la página de la aerolínea, tal cual. Rumbo lee los aeropuertos, fechas y horas; si falta la escala, la estima y lo dice.",
+        "pasteRead": "Leer los vuelos"
+      },
+      "wishes": {
+        "title": "¿Qué quieren ver?",
+        "detail": "En sus palabras. Rumbo lo convierte en paradas y les dice qué se sacrifica para meterlo.",
+        "placeholder": "Mi esposa quiere ir a las Dolomitas",
+        "add": "Agregar deseo",
+        "remove": "Quitar",
+        "matched": "Rumbo lo entiende como: {tags}",
+        "unmatched": "Rumbo todavía no reconoce este deseo.",
+        "empty": "Sin deseos: Rumbo usa la ruta más directa entre los puntos fijos."
+      },
+      "settings": {
+        "title": "Manejo y hospedaje",
+        "budget": "Máximo al volante por día",
+        "budgetHours": "{hours} h",
+        "departure": "Hora de salida en días de manejo",
+        "cap": "Tope por noche de hospedaje",
+        "capHint": "En {currency}. Vacío: sin tope.",
+        "breakfast": "Desayuno incluido",
+        "parking": "Estacionamiento",
+        "save": "Guardar"
+      },
+      "compose": "Armar el viaje",
+      "recompose": "Volver a armar el viaje",
+      "composing": "Armando…",
+      "composed": "Listo. El viaje está armado.",
+      "replaceLegs": {
+        "title": "Este viaje ya tiene tramos escritos a mano en Viajes",
+        "body": "Rumbo los reemplaza por las paradas que arma. Los movimientos y reservas no se tocan; un tramo con gastos no se borra.",
+        "confirm": "Reemplazar los tramos",
+        "cancel": "Dejarlo así"
+      }
+    },
+    "errors": {
+      "invalid": "Revisen los datos de este paso.",
+      "notFound": "No encontramos eso en este viaje.",
+      "signInRequired": "Inicien sesión de nuevo.",
+      "moduleOff": "Viajes no está activo en este hogar.",
+      "outsideTrip": "Esas fechas quedan fuera del viaje.",
+      "placeUnknown": "Ese lugar no se pudo guardar.",
+      "airportUnknown": "Rumbo todavía no conoce ese aeropuerto.",
+      "needsCarAnchors": "Falta dónde recoger y dónde devolver el carro.",
+      "manualLegsExist": "Hay tramos escritos a mano en Viajes.",
+      "legHasMoney": "Un tramo tiene gastos o reservas: Rumbo no lo borra. Muévanlos a otro tramo primero.",
+      "staysOutsideTrip": "Los vuelos o paradas quedan fuera de las fechas del viaje.",
+      "tripNotFound": "No encontramos el viaje.",
+      "cardNumber": "Eso parece un número de tarjeta: no se guarda.",
+      "saveFailed": "No se pudo guardar. Intenten de nuevo.",
+      "network": "Sin conexión. Intenten de nuevo.",
+      "ticketUnreadable": "Rumbo no encontró aeropuertos con fecha y hora en ese texto. Prueben subiendo el PDF."
+    },
+    "severity": {
+      "info": "Para saber",
+      "warning": "Atención",
+      "critical": "Importante"
+    },
+    "notify": {
+      "saleToday": {
+        "title": "Hoy abre la venta: {name}",
+        "body": "A las {time}. Se agota en horas; cómprenlo solo en la web oficial ({trip})."
+      },
+      "saleTomorrow": {
+        "title": "Mañana abre la venta: {name}",
+        "body": "A las {time}. Tengan la cuenta lista; se agota en horas ({trip})."
+      },
+      "dueSoon": {
+        "title": "{trip}: una compra vence pronto ({days, plural, one {# día} other {# días}})",
+        "body": "Ábranla en Visas y reservas con el link oficial."
+      },
+      "entryChanged": {
+        "title": "{trip}: cambió una regla de entrada",
+        "body": "Revisen Visas y reservas: una regla de su viaje se actualizó esta semana."
+      }
+    },
+    "export": {
+      "title": "Llevarlo afuera",
+      "html": "Descargar el viaje (HTML, se imprime a PDF)",
+      "ics": "Agregar al calendario (.ics)",
+      "printHint": "Para guardarlo en PDF: Imprimir → Guardar como PDF.",
+      "due": "antes del",
+      "generated": "Generado por Cifra · Rumbo el {date}.",
+      "share": {
+        "title": "Compartir con otros viajeros",
+        "detail": "Un enlace de solo lectura con la ruta, los días, los requisitos y las compras. Sin montos. Para editar, inviten a la persona al hogar.",
+        "create": "Crear enlace",
+        "copy": "Copiar enlace",
+        "copied": "Copiado",
+        "once": "Cópienlo ahora: por seguridad no se vuelve a mostrar.",
+        "active": "Enlace que empieza con {hint}, creado el {date}",
+        "revoke": "Revocar",
+        "none": "No hay enlaces activos."
+      }
+    }
   }
 }

@@ -254,3 +254,15 @@ export const borderSystems = platformSchema.table('border_systems', {
   checkedOn: date('checked_on').notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const tripShares = appSchema.table('trip_shares', {
+  id: id(),
+  householdId: uuid('household_id').notNull(),
+  tripId: tripRef(),
+  tokenHash: text('token_hash').notNull(),
+  hint: text('hint').notNull(),
+  permission: text('permission').$type<'read'>().notNull().default('read'),
+  createdBy: uuid('created_by'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  revokedAt: timestamp('revoked_at', { withTimezone: true }),
+});

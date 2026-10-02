@@ -140,6 +140,18 @@ describe('lodging', () => {
     expect(t2.stopsWithMyPrice).toBe(1);
   });
 
+  it('warns about the Dolomites before any listing is in, from what planning by hand taught', () => {
+    const notices = lodgingNotices([summarizeStop(stop({ options: [] }))], usd('100'));
+    expect(notices[0]?.code).toBe('lodging_scarce_area');
+    expect(lodgingNotices([summarizeStop(stop({ options: [] }))], usd('250'))).toEqual([]);
+    expect(
+      lodgingNotices(
+        [summarizeStop(stop({ options: [], hosted: true, placeId: 'arosa' }))],
+        usd('100'),
+      ),
+    ).toEqual([]);
+  });
+
   it('says when nothing fits under $100 a night, with the nearby towns', () => {
     const notices = lodgingNotices([summarizeStop(stop({}))], usd('100'));
     expect(notices[0]?.code).toBe('lodging_over_cap');

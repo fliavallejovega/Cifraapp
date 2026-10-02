@@ -88,6 +88,19 @@ export const NEARBY_CHEAPER: Readonly<Record<string, readonly NearbyTown[]>> = {
   ],
 };
 
+/**
+ * Places where, when this trip was planned by hand in October 2026, almost
+ * nothing listed came under 100 USD a night in December. A lesson, not a
+ * price list: it only speaks when the person's own cap is at or below that.
+ */
+export const SCARCE_UNDER: Readonly<
+  Record<string, { readonly amount: string; readonly currency: 'USD' }>
+> = {
+  cortina: { amount: '100', currency: 'USD' },
+  canazei: { amount: '100', currency: 'USD' },
+  arosa: { amount: '100', currency: 'USD' },
+};
+
 function cheapestOf(options: readonly LodgingOption[]): LodgingOption | null {
   let best: LodgingOption | null = null;
   for (const o of options) {
@@ -183,6 +196,24 @@ export function lodgingNotices(
     if (s.stop.hosted || s.stop.paid) continue;
     const cap = capPerNight.multiply(s.stop.nights);
     const fits = s.stop.options.some((o) => o.total?.lessThanOrEqual(cap));
+    const scarce = SCARCE_UNDER[s.stop.placeId];
+    if (
+      s.stop.options.length === 0 &&
+      scarce?.currency === capPerNight.currency &&
+      capPerNight.lessThanOrEqual(Money.fromDecimalString(scarce.amount, scarce.currency))
+    ) {
+      const nearby = NEARBY_CHEAPER[s.stop.placeId] ?? [];
+      notices.push({
+        code: 'lodging_scarce_area',
+        severity: 'warning',
+        params: {
+          place: s.stop.placeName,
+          cap: capPerNight.toDecimalString(),
+          nearby: nearby.map((n) => `${n.name} (+${String(n.detourMinutes)} min)`).join(', '),
+        },
+      });
+      continue;
+    }
     if (s.stop.options.length > 0 && !fits) {
       const nearby = NEARBY_CHEAPER[s.stop.placeId] ?? [];
       notices.push({

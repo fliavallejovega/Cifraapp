@@ -5,6 +5,7 @@ import { refreshCatalogue } from '@/server/catalogue/refresh';
 import { publishCalendars } from '@/server/google/publish';
 import { sweepMailboxes } from '@/server/google/sweep';
 import { runDailyReminders } from '@/server/reminders';
+import { runRumboReminders } from '@/server/rumbo-reminders';
 import { runTripReminders } from '@/server/trip-reminders';
 
 /**
@@ -68,6 +69,12 @@ export async function GET(request: Request): Promise<NextResponse> {
     return null;
   });
 
+  // Rumbo: ventas que abren, compras que vencen y reglas de entrada que cambiaron.
+  const rumbo = await runRumboReminders().catch((error: unknown) => {
+    console.error('[rumbo] reminder sweep failed', error);
+    return null;
+  });
+
   const mail = await sweepMailboxes().catch((error: unknown) => {
     console.error('[google] mailbox sweep failed', error);
     return null;
@@ -99,7 +106,7 @@ export async function GET(request: Request): Promise<NextResponse> {
   // conexión, que es donde se mira.
   const status = reminders ? 'ok' : 'error';
   return NextResponse.json(
-    { status, reminders, trips, mail, calendar, catalogue },
+    { status, reminders, trips, rumbo, mail, calendar, catalogue },
     { status: reminders ? 200 : 503 },
   );
 }

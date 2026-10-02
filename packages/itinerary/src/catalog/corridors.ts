@@ -116,10 +116,7 @@ const WISH_STEMS: readonly (readonly [RegExp, string])[] = [
 ];
 
 export function tagsFromText(text: string): string[] {
-  const plain = text
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase();
+  const plain = text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
   const tags = new Set<string>();
   for (const [stem, tag] of WISH_STEMS) if (stem.test(plain)) tags.add(tag);
   return [...tags];

@@ -4597,5 +4597,499 @@
       "afterTitle": "{trip} is over",
       "afterBody": "See the report and decide what to do with what was left."
     }
+  },
+  "rumbo": {
+    "title": "Rumbo",
+    "backToTrip": "Back to the trip",
+    "tabs": {
+      "route": "3D route",
+      "stay": "Where to sleep",
+      "entry": "Visas and bookings",
+      "label": "Rumbo sections"
+    },
+    "tripLink": {
+      "title": "Plan the trip end to end",
+      "body": "Routes, times, lodging, visas and purchases around what you have already paid for.",
+      "cta": "Open Rumbo"
+    },
+    "summary": "{days} days · {nights} nights with lodging · {km} km · {hours} at the wheel over {drivingDays} days",
+    "notComposed": {
+      "title": "No route yet",
+      "body": "Tell Rumbo who is travelling, what is already paid for and what you want to see. It builds the days, the drives and what to book.",
+      "cta": "Plan the trip"
+    },
+    "editSetup": "Edit stops and wishes",
+    "routing": {
+      "pending": "Routing {count, plural, one {# stretch} other {# stretches}} with openrouteservice. The days fill in on their own when it finishes.",
+      "failed": "{count, plural, one {# stretch could not} other {# stretches could not}} be routed. Retry, or type the distance and minutes by hand.",
+      "retry": "Retry the routes",
+      "refresh": "Check if it finished",
+      "notConfigured": "No routing service is connected: the stretches stay to be calculated."
+    },
+    "sacrifices": {
+      "sentence": "For «{wish}», {list} were dropped.",
+      "nights": "{count, plural, one {# night} other {# nights}} in {place}",
+      "yourWishes": "your wishes",
+      "costMore": "It adds {duration} at the wheel overall.",
+      "costLess": "It saves {duration} at the wheel overall."
+    },
+    "certainty": {
+      "ticket": "On your ticket",
+      "confirmed": "Confirmed",
+      "estimated": "Estimated",
+      "unverified": "To be checked",
+      "approx": "~"
+    },
+    "days": {
+      "strip": "Days of the trip",
+      "wheel": "{duration} at the wheel",
+      "noDrive": "No driving",
+      "flight": "Flight",
+      "offMap": "Off the map · ~{km} km away"
+    },
+    "day": {
+      "titleFlight": "Flight {route}",
+      "titleDrive": "{from} → {to}",
+      "titleDayTrip": "Round trip to {place}",
+      "titleRest": "A day in {place}",
+      "titleHome": "Home again",
+      "stats": {
+        "km": "Kilometres",
+        "wheel": "At the wheel",
+        "departure": "Departure",
+        "arrival": "Estimated arrival",
+        "sunset": "Sunset"
+      },
+      "timeline": "Timeline",
+      "legs": "Stretches",
+      "wholeDay": "The whole day in Google Maps",
+      "waze": "Waze",
+      "maps": "Google Maps",
+      "todo": "What to do",
+      "noActivities": "Rumbo has no suggestions for this place. Search the map for what you want to see.",
+      "searchMap": "Search the map",
+      "watch": "Watch out",
+      "sleep": "Where you sleep",
+      "sleepHosted": "With friends · no cost",
+      "sleepPaid": "Paid",
+      "sleepOpen": "To book",
+      "plane": "A night on the plane.",
+      "home": "You arrive home.",
+      "routerNote": "The router says {router} without snow; the plan counts {planned} for winter.",
+      "closed": "Closed this day",
+      "needsBooking": "Booking needed",
+      "officialSite": "Official site",
+      "ferry": "Ferry",
+      "mountain": "Mountain",
+      "pending": "To be calculated",
+      "manual": {
+        "title": "Type it by hand",
+        "km": "Kilometres",
+        "minutes": "Minutes",
+        "save": "Save this stretch"
+      }
+    },
+    "timeline": {
+      "leave_lodging": "Leave for the airport",
+      "at_airport": "At the airport (3 h early)",
+      "departs": "Flight departs",
+      "arrives": "Flight arrives",
+      "exit_airport": "Immigration and bags",
+      "at_lodging": "At the lodging",
+      "zone": "{sign}{hours} h from departure",
+      "transfer": "{mode} · {duration}",
+      "modes": {
+        "taxi": "Taxi",
+        "metro": "Metro",
+        "bus": "Bus",
+        "boat": "Boat",
+        "private": "Private transfer"
+      }
+    },
+    "alternatives": {
+      "via_pusteria": "through the valley: Dobbiaco and Brunico (Val Pusteria)",
+      "via_fassa_bolzano": "through the Fassa valley to Bolzano",
+      "via_albula_tunnel": "through the Albula tunnel by car train",
+      "ask": "check the pass status before leaving"
+    },
+    "notices": {
+      "unknown": "Something on this day needs a look.",
+      "anchors_overlap": "{from} and {to} overlap: two fixed dates cannot both fit. Check the fixed stops.",
+      "nights_unassigned": "{nights, plural, one {# night has} other {# nights have}} no place before {before}.",
+      "wish_unmatched": "«{wish}» is not in Rumbo's catalogue yet; add it as a fixed stop if it has a date.",
+      "route_pending": "Part of this day's driving is still to be calculated.",
+      "mountain_after_dark": "You would arrive at {arrival} and the sun sets at {sunset}. To drive the mountains in daylight, leave before {leaveBy}.",
+      "mountain_after_dark_no_daylight": "You would arrive at {arrival} and the sun sets at {sunset}: with these stops it does not fit in daylight. Drop stops or split the day.",
+      "arrives_after_dark": "You arrive after dark ({arrival}; sunset at {sunset}).",
+      "over_driving_budget": "{driving} at the wheel, more than your limit of {budget}. Borders and mountains make it heavier.",
+      "border_day": "Border day: {countries}.",
+      "pass_may_close": "{pass} may close with snow. If it does: {alternative}.",
+      "pass_closed": "{pass} is closed in winter: {alternative}.",
+      "winter_chains_or_winter_tyres": "{country} requires chains on board or winter tyres in season.",
+      "winter_winter_tyres_in_conditions": "{country} requires winter tyres in snow or ice.",
+      "ferry_book": "Ferry: {duration} including boarding. Book it ahead.",
+      "transfer_not_running": "At that hour the {mode} does not run at {airport}: take a taxi.",
+      "transfer_rush_hour": "Rush hour at {airport}: the ride takes about {minutes} min longer.",
+      "layover_visa_check": "Long connection in {airport}: check whether your passport lets you leave the airport.",
+      "stopover_request_72h": "The airline's Stopover programme must be requested at least {hours} h ahead.",
+      "car_return_on_holiday": "You return the car on {date}, a holiday: check that the office is open.",
+      "night_without_lodging": "The night of {date} has nowhere to sleep.",
+      "stay_exceeds_limit": "You would use {days} days in {zone}; the maximum is {max}.",
+      "present_passport": "In {zone}, show the {passport} passport.",
+      "passport_valid_months": "In {zone}, the passport must be valid at least {months} months after leaving on {exit}.",
+      "passport_valid_months_from_arrival": "For {zone}, a passport valid {months} months from arrival ({arrival}) is advised.",
+      "passport_valid_days": "For {zone}, the passport must be valid until at least {until}.",
+      "passport_issued_within": "In {zone}, the passport must have been issued less than {years} years ago.",
+      "border_may_ask": "At the {zone} border they may ask for: {items}.",
+      "ees_not_started": "The biometric Entry/Exit System is not yet running in {zone}.",
+      "etias_not_started": "ETIAS is not in operation and has no confirmed date. Rumbo tells you if that changes.",
+      "lodging_over_cap": "Nothing in {place} is under {cap} a night. Cheaper nearby: {nearby}.",
+      "lodging_scarce_area": "In {place} there is almost nothing under {cap} a night on these dates — that is what planning this trip by hand found. Cheaper nearby: {nearby}."
+    },
+    "map": {
+      "label": "3D map of the route",
+      "loading": "Loading the relief…",
+      "flat": "Your browser does not show 3D: this is the flat map.",
+      "error": "The map could not load. The route is below, day by day.",
+      "hint": "Drag to turn · wheel or pinch to zoom",
+      "legendRoute": "The day's route",
+      "legendOther": "The rest of the trip",
+      "legendFerry": "Ferry"
+    },
+    "lodging": {
+      "title": "Where to sleep",
+      "detail": "One list per stop: Airbnb from cheapest up, and hotels for reference. Type your price and the totals change at once.",
+      "totals": {
+        "myPlan": "My plan",
+        "recommended": "Recommended plan",
+        "cheapest": "Cheapest version",
+        "nights": "Nights with lodging",
+        "average": "Average per night",
+        "progress": "{done} of {total} stops with your price"
+      },
+      "disclaimer": "Totals exclude tourist taxes, parking, and breakfast when it is not included.",
+      "myPrice": "My price (whole stay)",
+      "myPriceHint": "In {currency}. Saved automatically.",
+      "clear": "Clear my price",
+      "saved": "Saved",
+      "saving": "Saving…",
+      "nights": "{count, plural, one {# night} other {# nights}}",
+      "hosted": "With friends: no cost",
+      "paid": "Already paid",
+      "airbnb": "Airbnb",
+      "hotels": "Hotels",
+      "recommended": "Recommended",
+      "cheapest": "Cheapest",
+      "from": "from",
+      "perNight": "{amount} a night",
+      "rating": "{rating} · {count, plural, one {# review} other {# reviews}}",
+      "use": "Use this price",
+      "book": "Book",
+      "photos": "See photos",
+      "remove": "Remove",
+      "searchAirbnb": "Search Airbnb for these dates",
+      "searchBooking": "Search hotels on Booking",
+      "noOptions": "No options yet. Open the search with the dates filled in and paste the ones you like here.",
+      "unconverted": "{count, plural, one {# option is} other {# options are}} in another currency without a trip rate.",
+      "add": {
+        "open": "Add an option",
+        "provider": "Site",
+        "name": "Name",
+        "kind": "Type",
+        "listingId": "Listing number",
+        "listingHint": "It is in the link: airbnb.com/rooms/<number>",
+        "rating": "Rating",
+        "reviews": "Reviews",
+        "total": "Total price for the stay",
+        "url": "Listing link",
+        "recommended": "Mark as recommended",
+        "save": "Add option",
+        "cancel": "Cancel",
+        "providers": {
+          "airbnb": "Airbnb",
+          "booking": "Booking.com",
+          "other": "Another site"
+        }
+      },
+      "summaryTable": {
+        "title": "Summary by stop",
+        "stop": "Stop",
+        "recommended": "Recommended",
+        "cheapest": "Cheapest",
+        "mine": "My price",
+        "total": "Total"
+      },
+      "empty": "Rumbo has no stops with lodging yet. Plan the trip first."
+    },
+    "entry": {
+      "title": "Visas and entry requirements",
+      "summaryAllFree": "Nobody needs a visa for this trip.",
+      "summaryNeeds": "{count, plural, one {# traveller needs} other {# travellers need}} paperwork before travelling.",
+      "summaryUnknown": "Some destinations have no verified rule: check the official source.",
+      "destination": "Destination",
+      "schengen": "Schengen area",
+      "status": {
+        "visa_free": "No visa",
+        "evisa": "e-Visa",
+        "eta": "Electronic authorisation",
+        "visa_required": "Visa needed",
+        "unknown": "To be checked"
+      },
+      "days": "{used} of {max} days",
+      "daysWindow": "{used} of {max} days in {window}",
+      "source": "Source: {name}, checked on {date}",
+      "systems": {
+        "ees": "EES biometric registration on entry"
+      },
+      "noTravelers": "Add the travellers and their nationalities to see the requirements.",
+      "noPassports": "{name} has no nationality yet.",
+      "disclaimer": "Rules change. Rumbo is not legal advice: confirm with the official source or the consulate before travelling.",
+      "mayAsk": {
+        "onward_ticket": "onward ticket",
+        "lodging_proof": "proof of lodging",
+        "funds": "funds",
+        "insurance": "travel insurance"
+      }
+    },
+    "todos": {
+      "title": "Bookings and purchases",
+      "detail": "Everything bought or booked online, with its deadline and the official link. Rumbo never buys or pays for you.",
+      "empty": "Once the trip is planned, what to book shows up here.",
+      "general": "Whole trip",
+      "due": "Before {date}",
+      "overdue": "Overdue since {date}",
+      "saleOpens": "Sale opens on {date}",
+      "open": "Open",
+      "markBought": "I bought it",
+      "bought": "Bought",
+      "undo": "Mark as pending",
+      "code": "Booking number",
+      "codeHint": "Only the booking code, never card details.",
+      "saveBought": "Save as bought",
+      "orphaned": "The plan no longer asks for it; kept because it was bought.",
+      "priceUnknown": "price to be checked",
+      "kinds": {
+        "flight_manage": {
+          "title": "Review the flight booking",
+          "reason": "Check names, times and baggage on the airline's site."
+        },
+        "flight_seats": {
+          "title": "Choose seats",
+          "reason": "Together on the long flights."
+        },
+        "flight_checkin": {
+          "title": "Check in for the flight from {airport}",
+          "reason": "Opens 24 h before departure ({date}, {time})."
+        },
+        "car_rental_one_way": {
+          "title": "Car rental {from} → {to}",
+          "reason": "Returning in another country costs extra; ask for the total for {pickup} – {dropoff}."
+        },
+        "car_winter_kit": {
+          "title": "Winter tyres and chains",
+          "reason": "Required in {countries}. Confirm when renting."
+        },
+        "event_tickets": {
+          "title": "Tickets: {name}",
+          "reason": "Only on the official site, with a time slot. They sell out fast: sale opens at {opensAt}. Do not buy resale."
+        },
+        "timed_entry": {
+          "title": "Timed entry: {name}",
+          "reason": "For {date}."
+        },
+        "local_transport": {
+          "title": "{name} pass",
+          "reason": "Worth buying before you arrive."
+        },
+        "private_transfer": {
+          "title": "Early-morning transfer at {airport}",
+          "reason": "You leave at {time} on {date}: no public transport at that hour."
+        },
+        "holiday_dinner": {
+          "title": "Book dinner on {date} in {place}",
+          "reason": "Restaurants fill up on holidays."
+        }
+      },
+      "charges": {
+        "atVignette": {
+          "title": "Austrian digital vignette (10 days)",
+          "reason": "Required on motorways; buy it before entering. {priceText}."
+        },
+        "chVignette": {
+          "title": "Swiss e-vignette",
+          "reason": "Yearly, bought before entering the country. {priceText}."
+        },
+        "arlberg": {
+          "title": "Arlberg tunnel toll",
+          "reason": "Separate from the vignette; paid on crossing or online. {priceText}."
+        },
+        "scandlines": {
+          "title": "Puttgarden–Rødby ferry",
+          "reason": "Book the crossing time with the car."
+        }
+      },
+      "opens": "Opens on {date}"
+    },
+    "setup": {
+      "title": "Plan the trip",
+      "detail": "Each step saves itself. Come back whenever you like.",
+      "progress": "Step {step} of {total}",
+      "back": "Back",
+      "next": "Next",
+      "steps": {
+        "travelers": "Travellers",
+        "anchors": "Fixed points",
+        "flights": "Tickets",
+        "wishes": "Wishes",
+        "settings": "Driving and lodging"
+      },
+      "travelers": {
+        "title": "Who is travelling?",
+        "detail": "Nationalities decide the visas. If someone has two passports, add both.",
+        "nationalities": "Nationalities",
+        "residence": "Country of residence",
+        "add": "Add traveller",
+        "name": "Name",
+        "save": "Save",
+        "empty": "This trip has no travellers yet.",
+        "addNationality": "Add another nationality"
+      },
+      "anchors": {
+        "title": "What does not move",
+        "detail": "The car, nights already paid, friends and events with a date. Rumbo builds everything else around them.",
+        "kind": "What it is",
+        "kinds": {
+          "car_pickup": "Pick up the car",
+          "car_return": "Return the car",
+          "friends": "Visit friends",
+          "event": "Event on a date",
+          "stay": "Nights already paid"
+        },
+        "place": "Where",
+        "placeHint": "Type the name of the place.",
+        "from": "From",
+        "to": "To",
+        "date": "Day",
+        "firstNight": "First night",
+        "lastNight": "Last night",
+        "maxNights": "They can host us up to",
+        "add": "Add",
+        "remove": "Remove",
+        "searching": "Searching…",
+        "noResults": "We could not find that place. Try the nearest town.",
+        "needsCar": "A driving route needs where the car is picked up and where it is returned.",
+        "empty": "Nothing fixed yet."
+      },
+      "flights": {
+        "title": "The tickets",
+        "detail": "Upload the PDF or a photo of each ticket, stay or booking: Cifra's reader reads it and, once you confirm it, it becomes a fixed, paid stop.",
+        "orManual": "Or type a flight by hand",
+        "from": "From (code)",
+        "to": "To (code)",
+        "departs": "Departs",
+        "arrives": "Arrives",
+        "fromTicket": "The times are on the ticket",
+        "add": "Add flight",
+        "list": "Flights of the trip",
+        "empty": "No flights yet.",
+        "estimated": "Estimated time: find it in the ticket's «Itinerary details» and type it here.",
+        "confirm": "Save the exact time",
+        "remove": "Remove",
+        "paste": "Or paste the booking text",
+        "pasteHint": "The airline's email or page, as it is. Rumbo reads airports, dates and times; if the connection is missing it estimates it and says so.",
+        "pasteRead": "Read the flights"
+      },
+      "wishes": {
+        "title": "What do you want to see?",
+        "detail": "In your own words. Rumbo turns it into stops and tells you what it costs to fit it in.",
+        "placeholder": "My wife wants to see the Dolomites",
+        "add": "Add wish",
+        "remove": "Remove",
+        "matched": "Rumbo reads it as: {tags}",
+        "unmatched": "Rumbo does not recognise this wish yet.",
+        "empty": "No wishes: Rumbo takes the most direct route between the fixed points."
+      },
+      "settings": {
+        "title": "Driving and lodging",
+        "budget": "Most time at the wheel per day",
+        "budgetHours": "{hours} h",
+        "departure": "Departure time on driving days",
+        "cap": "Most per night for lodging",
+        "capHint": "In {currency}. Empty: no limit.",
+        "breakfast": "Breakfast included",
+        "parking": "Parking",
+        "save": "Save"
+      },
+      "compose": "Plan the trip",
+      "recompose": "Plan the trip again",
+      "composing": "Planning…",
+      "composed": "Done. The trip is planned.",
+      "replaceLegs": {
+        "title": "This trip already has legs typed by hand in Trips",
+        "body": "Rumbo replaces them with the stops it builds. Movements and bookings are not touched; a leg with spending is never deleted.",
+        "confirm": "Replace the legs",
+        "cancel": "Leave it as it is"
+      }
+    },
+    "errors": {
+      "invalid": "Check the details in this step.",
+      "notFound": "We could not find that in this trip.",
+      "signInRequired": "Sign in again.",
+      "moduleOff": "Trips is not on for this household.",
+      "outsideTrip": "Those dates fall outside the trip.",
+      "placeUnknown": "That place could not be saved.",
+      "airportUnknown": "Rumbo does not know that airport yet.",
+      "needsCarAnchors": "Missing where to pick up and return the car.",
+      "manualLegsExist": "There are legs typed by hand in Trips.",
+      "legHasMoney": "A leg has spending or bookings: Rumbo will not delete it. Move them to another leg first.",
+      "staysOutsideTrip": "The flights or stops fall outside the trip's dates.",
+      "tripNotFound": "We could not find the trip.",
+      "cardNumber": "That looks like a card number: it is not saved.",
+      "saveFailed": "It could not be saved. Try again.",
+      "network": "No connection. Try again.",
+      "ticketUnreadable": "Rumbo found no airports with a date and time in that text. Try uploading the PDF."
+    },
+    "severity": {
+      "info": "Good to know",
+      "warning": "Heads up",
+      "critical": "Important"
+    },
+    "notify": {
+      "saleToday": {
+        "title": "Sale opens today: {name}",
+        "body": "At {time}. It sells out in hours; buy only on the official site ({trip})."
+      },
+      "saleTomorrow": {
+        "title": "Sale opens tomorrow: {name}",
+        "body": "At {time}. Have your account ready; it sells out in hours ({trip})."
+      },
+      "dueSoon": {
+        "title": "{trip}: a purchase is due soon ({days, plural, one {# day} other {# days}})",
+        "body": "Open it in Visas and bookings with the official link."
+      },
+      "entryChanged": {
+        "title": "{trip}: an entry rule changed",
+        "body": "Check Visas and bookings: a rule for your trip was updated this week."
+      }
+    },
+    "export": {
+      "title": "Take it with you",
+      "html": "Download the trip (HTML, prints to PDF)",
+      "ics": "Add to calendar (.ics)",
+      "printHint": "To save as PDF: Print → Save as PDF.",
+      "due": "before",
+      "generated": "Generated by Cifra · Rumbo on {date}.",
+      "share": {
+        "title": "Share with other travellers",
+        "detail": "A read-only link with the route, the days, the requirements and the purchases. No amounts. To edit, invite the person to the household.",
+        "create": "Create link",
+        "copy": "Copy link",
+        "copied": "Copied",
+        "once": "Copy it now: for safety it is not shown again.",
+        "active": "Link starting with {hint}, created on {date}",
+        "revoke": "Revoke",
+        "none": "No active links."
+      }
+    }
   }
 }

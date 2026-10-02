@@ -43,6 +43,7 @@ export default async function TripPage({
   if (!(await tripsEnabled(session, session.activeHouseholdId))) notFound();
   const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
   const t = await getTranslations('trips');
+  const tr = await getTranslations('rumbo');
 
   const data = /^[0-9a-f-]{36}$/.test(tripId)
     ? await loadTripDashboard(
@@ -183,6 +184,23 @@ export default async function TripPage({
         t={t}
         legs={data.legs.map((l) => ({ id: l.id, city: l.city }))}
       />
+
+      <Card className="mt-8">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex min-w-0 flex-col gap-1">
+            <p className="font-medium">{tr('tripLink.title')}</p>
+            <p className="max-w-[60ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]">
+              {tr('tripLink.body')}
+            </p>
+          </div>
+          <Link
+            href={`/trips/${trip.id}/route`}
+            className="inline-flex min-h-11 items-center justify-center rounded-(--radius-md) border border-[color:var(--color-rule-strong)] px-4 text-sm font-medium hover:border-[color:var(--color-ink)]"
+          >
+            {tr('tripLink.cta')}
+          </Link>
+        </div>
+      </Card>
 
       <div className="mt-8 grid gap-4 lg:grid-cols-2">
         <Card>

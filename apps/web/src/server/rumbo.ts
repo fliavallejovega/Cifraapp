@@ -451,6 +451,18 @@ export interface RumboView {
     readonly currency: string;
     readonly adults: number;
   };
+  /** Listing ids and links, which the engine does not need but the screen does. */
+  readonly lodgingRows: readonly {
+    readonly id: string;
+    readonly listingId: string | null;
+    readonly url: string | null;
+  }[];
+  /** Stored routing requests by `mode|a>b>c`, for the manual mode. */
+  readonly driveRows: readonly {
+    readonly id: string;
+    readonly key: string;
+    readonly status: string;
+  }[];
   readonly today: PlainDate;
 }
 
@@ -696,6 +708,12 @@ export function buildView(rows: RumboRows, today: PlainDate): RumboView {
       currency: base,
       adults,
     },
+    lodgingRows: rows.options.map((o) => ({ id: o.id, listingId: o.listingId, url: o.url })),
+    driveRows: rows.drives.map((d) => ({
+      id: d.id,
+      key: `${d.mode}|${d.points.join('>')}`,
+      status: d.status,
+    })),
     today,
   };
 }

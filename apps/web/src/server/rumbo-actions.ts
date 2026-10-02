@@ -8,6 +8,7 @@ import {
   tripLodgingOptions,
   tripPlaces,
   trips,
+  tripShares,
   tripTodos,
   tripTravelers,
   tripWishes,
@@ -24,6 +25,8 @@ import { plainDateString } from './record-input';
 import { tripsEnabled } from './repositories/trips';
 import { revalidateTrip } from './revalidate';
 import { composeAndStore, loadRumbo, RUMBO_ROUTE_JOB } from './rumbo';
+import { newShareToken } from './rumbo-share';
+import { parseTicketText } from './rumbo-ticket';
 import { geocodePlace, routingConfigured, type GeocodedPlace } from './routing/openrouteservice';
 import { loadSession, queryAsUser, type Session } from './session';
 import type { RecordActionResult } from '@/components/records/spec';
@@ -746,7 +749,7 @@ export async function setMyLodgingPrice(
 const useOptionInput = z.object({ tripId, optionId: z.uuid() });
 
 /** «Usar este precio»: the option's total becomes the person's price for that stop. */
-export async function useLodgingOption(
+export async function applyLodgingOption(
   raw: z.input<typeof useOptionInput>,
   locale: Locale = 'es',
 ): Promise<RecordActionResult> {
@@ -952,4 +955,104 @@ export async function setTodoStatus(
   );
   revalidateRumbo(locale, input.tripId);
   return { ok: true };
+}
+
+// ---------------------------------------------------------------------------
+// Sharing
+// ---------------------------------------------------------------------------
+
+/** A read-only link to the itinerary. The token is shown once; only its hash is kept. */
+export async function createTripShare(
+  trip: string,
+  locale: Locale = 'es',
+): Promise<RecordActionResult> {
+  const ctx = await context();
+  if ('error' in ctx) return { error: ctx.error };
+  if (!tripId.safeParse(trip).success) return { error: 'invalid' };
+  if (!(await ownsTrip(ctx, trip))) return { error: 'notFound' };
+  const { token, hash, hint } = newShareToken();
+  await queryAsUser(ctx.session, (tx) =>
+    tx.insert(tripShares).values({
+      householdId: ctx.householdId,
+      tripId: trip,
+      tokenHash: hash,
+      hint,
+      createdBy: ctx.session.user.id,
+    }),
+  );
+  revalidateRumbo(locale, trip);
+  return { ok: true, secret: token };
+}
+
+export async function revokeTripShare(
+  trip: string,
+  shareId: string,
+  locale: Locale = 'es',
+): Promise<RecordActionResult> {
+  const ctx = await context();
+  if ('error' in ctx) return { error: ctx.error };
+  if (!tripId.safeParse(trip).success || !z.uuid().safeParse(shareId).success)
+    return { error: 'invalid' };
+  const revoked = await queryAsUser(ctx.session, (tx) =>
+    tx
+      .update(tripShares)
+      .set({ revokedAt: new Date() })
+      .where(
+        and(
+          eq(tripShares.id, shareId),
+          eq(tripShares.tripId, trip),
+          eq(tripShares.householdId, ctx.householdId),
+        ),
+      )
+      .returning({ id: tripShares.id }),
+  );
+  if (revoked.length === 0) return { error: 'notFound' };
+  revalidateRumbo(locale, trip);
+  return { ok: true };
+}
+
+const ticketTextInput = z.object({ tripId, text: z.string().min(10).max(20_000) });
+
+/** A booking pasted as text: the flights it prints, with any connection estimated. */
+export async function importTicketText(
+  raw: z.input<typeof ticketTextInput>,
+  locale: Locale = 'es',
+): Promise<RecordActionResult & { readonly count?: number }> {
+  const ctx = await context();
+  if ('error' in ctx) return { error: ctx.error };
+  const parsed = ticketTextInput.safeParse(raw);
+  if (!parsed.success) return { error: 'invalid' };
+  const input = parsed.data;
+  if (!(await ownsTrip(ctx, input.tripId))) return { error: 'notFound' };
+  const { segments } = parseTicketText(input.text, todayIn('UTC'));
+  if (segments.length === 0) return { error: 'ticketUnreadable' };
+  const inserted = await queryAsUser(ctx.session, async (tx) => {
+    const existing = await tx
+      .select({ from: tripFlightSegments.fromIata, departs: tripFlightSegments.departsLocal })
+      .from(tripFlightSegments)
+      .where(eq(tripFlightSegments.tripId, input.tripId));
+    const seen = new Set(existing.map((e) => `${e.from}@${e.departs.slice(0, 16)}`));
+    let n = 0;
+    for (const [position, s] of segments.entries()) {
+      const departs = `${s.departs.date} ${s.departs.time}:00`;
+      if (seen.has(`${s.from}@${departs.slice(0, 16)}`)) continue;
+      await tx.insert(tripFlightSegments).values({
+        householdId: ctx.householdId,
+        tripId: input.tripId,
+        position,
+        fromIata: s.from,
+        toIata: s.to,
+        departsLocal: departs,
+        departsTz: s.departs.timeZone,
+        departsCertainty: s.departsCertainty,
+        arrivesLocal: `${s.arrives.date} ${s.arrives.time}:00`,
+        arrivesTz: s.arrives.timeZone,
+        arrivesCertainty: s.arrivesCertainty,
+      });
+      n += 1;
+    }
+    return n;
+  });
+  revalidateRumbo(locale, input.tripId);
+  return { ok: true, count: inserted };
 }
