@@ -84,13 +84,15 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale} className={`${archivo.variable} ${chivoMono.variable}`}>
-      <head>
+      <body className="min-h-dvh antialiased">
         {/* Applies the stored theme before the first paint. Without it a person
             who chose dark gets a white flash on every navigation — at night, on
-            a financial screen, which is exactly when they chose it. */}
+            a financial screen, which is exactly when they chose it. It opens
+            the body rather than sitting in a hand-written <head>: there, after
+            minification, React no longer matched it against the head Next
+            assembles, failed hydration on every page and rebuilt the whole
+            document on the client. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />
-      </head>
-      <body className="min-h-dvh antialiased">
         <NextIntlClientProvider>
           <PwaRegister />
           {/* A recovery link can land on any page. This makes every one of them
