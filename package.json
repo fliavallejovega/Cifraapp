@@ -31,7 +31,8 @@
     "db:reset": "pnpm --filter @app/database db:reset",
     "db:types": "pnpm --filter @app/database db:types",
     "db:generate": "pnpm --filter @app/database db:generate",
-    "clean": "turbo run clean && rm -rf node_modules .turbo"
+    "clean": "turbo run clean && rm -rf node_modules .turbo",
+    "db:seed:trips": "pnpm --filter @app/database db:seed:trips"
   },
   "devDependencies": {
     "@app/config": "workspace:*",
