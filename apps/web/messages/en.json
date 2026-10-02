@@ -4395,8 +4395,8 @@
       "overBody": "See how it went: planned against actual, by category and by day.",
       "toPlan": "See the plan",
       "toReport": "See the summary",
-      "rollingUp": "Yesterday you spent {amount} less than planned: today {days, plural, =0 {gets} other {and the days left get}} {perDay}{days, plural, =0 {} other { each}}.",
-      "rollingDown": "Yesterday you spent {amount} more than planned: today {days, plural, =0 {drops} other {and the days left drop}} to {perDay}{days, plural, =0 {} other { each}}.",
+      "rollingUp": "Yesterday you spent {amount} less than planned: today and the days left get {perDay} each.",
+      "rollingDown": "Yesterday you spent {amount} more than planned: today and the days left drop to {perDay} each.",
       "overCategory": "Today you are {amount} over in {category}.",
       "dayOf": "Day {day} of {total}",
       "remainingLabel": "You can spend today",
@@ -4450,7 +4450,9 @@
         "invalid": "Check the amount.",
         "notFound": "The trip no longer exists.",
         "moduleOff": "Trips is not active for your household."
-      }
+      },
+      "rollingUpLast": "Yesterday you spent {amount} less than planned: today gets {perDay}.",
+      "rollingDownLast": "Yesterday you spent {amount} more than planned: today drops to {perDay}."
     }
   }
 }

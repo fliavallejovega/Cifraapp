@@ -4395,8 +4395,8 @@
       "overBody": "Mira cómo les fue: planificado contra real, por categoría y por día.",
       "toPlan": "Ver el plan",
       "toReport": "Ver el resumen",
-      "rollingUp": "Ayer gastaron {amount} menos de lo previsto: hoy {days, plural, =0 {tiene} other {y los días que quedan tienen}} {perDay}{days, plural, =0 {} other { cada uno}}.",
-      "rollingDown": "Ayer gastaron {amount} más de lo previsto: hoy {days, plural, =0 {baja} other {y los días que quedan bajan}} a {perDay}{days, plural, =0 {} other { cada uno}}.",
+      "rollingUp": "Ayer gastaron {amount} menos de lo previsto: hoy y los días que quedan tienen {perDay} cada uno.",
+      "rollingDown": "Ayer gastaron {amount} más de lo previsto: hoy y los días que quedan bajan a {perDay} cada uno.",
       "overCategory": "Hoy van {amount} por encima en {category}.",
       "dayOf": "Día {day} de {total}",
       "remainingLabel": "Hoy puedes gastar",
@@ -4450,7 +4450,9 @@
         "invalid": "Revisa el monto.",
         "notFound": "El viaje ya no existe.",
         "moduleOff": "Viajes no está activo para tu hogar."
-      }
+      },
+      "rollingUpLast": "Ayer gastaron {amount} menos de lo previsto: hoy tienen {perDay}.",
+      "rollingDownLast": "Ayer gastaron {amount} más de lo previsto: hoy baja a {perDay}."
     }
   }
 }

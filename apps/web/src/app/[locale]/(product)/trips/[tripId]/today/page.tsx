@@ -110,9 +110,8 @@ export default async function TripTodayPage({
       const amount = money(fromMinor(diff < 0n ? -diff : diff, 2));
       rollingNote = {
         tone: diff > 0n ? 'positive' : 'caution',
-        text: t(diff > 0n ? 'today.rollingUp' : 'today.rollingDown', {
+        text: t(`today.${diff > 0n ? 'rollingUp' : 'rollingDown'}${ahead > 1 ? '' : 'Last'}`, {
           amount,
-          days: ahead,
           perDay: money(today.allowed),
         }),
       };
