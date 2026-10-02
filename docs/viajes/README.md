@@ -61,3 +61,27 @@ locales por una de la base» a diez decimales. No hay `number` para dinero.
   hoy la familia elige el nivel y `reference.ts` lo traduce a un estimado.
 - **Tasas.** `platform.fx_rates` guarda la tasa diaria del BCE; el motor solo
   recibe la tasa del tramo.
+
+## El módulo, de punta a punta
+
+| Momento | Pantalla                   | Qué hace                                                                                    |
+| ------- | -------------------------- | ------------------------------------------------------------------------------------------- |
+| Planear | `/trips/new`               | Asistente de 6 pasos, o una frase («Madrid y Lisboa del 10 al 20…») que llena los pasos     |
+| Antes   | `/trips/[id]`              | Por día pueden gastar, plan de ahorro, reservas, escenarios, documentos, pendientes         |
+| Durante | `/trips/[id]/today`        | «Hoy pueden gastar», gasto en tres toques, sin conexión, presupuesto rodante                |
+| Después | `/trips/[id]/report`       | Planificado contra real, cierre con destino del sobrante, plantilla y CSV                   |
+| Avisos  | cron `/api/cron/reminders` | Pendientes que vencen, «día N de M», «terminó»: uno al día por viaje, canal de cada persona |
+
+Todo detrás del flag `trips_module`. La IA sólo lee documentos y transcribe la frase del
+asistente; cada cifra la calcula el motor o el código del servidor.
+
+## Operación
+
+- **Tasas:** `/api/cron/fx` trae las del BCE (Frankfurter) cada día.
+- **Semilla de desarrollo:** `SEED_HOUSEHOLD_ID=<uuid> pnpm db:seed:trips` crea tres viajes
+  (por planear, en curso, por cerrar) con su cuenta y sus movimientos. Idempotente; se niega en
+  producción.
+- **E2E:** `apps/web/e2e/trips.spec.ts`, con `E2E_EMAIL`/`E2E_PASSWORD` de una cuenta cuyo hogar
+  tenga el flag encendido.
+- **Pendiente conocido:** las cuentas siguen en USD/PAB; el efectivo del viaje vive en tu moneda
+  con su tasa real (decisión 15).

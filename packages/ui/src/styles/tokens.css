@@ -403,6 +403,12 @@
   --color-rule: oklch(100% 0 0 / 0.14);
   --color-rule-strong: oklch(100% 0 0 / 0.3);
   --color-surface-border: var(--color-panel-rule);
+  /* State colors take their dark-mode steps: the light-mode ones sit near
+     2.5:1 on the ink and a Status there would be unreadable. */
+  --color-positive: oklch(74% 0.15 158);
+  --color-negative: oklch(70% 0.16 25);
+  --color-caution: oklch(78% 0.13 75);
+  --color-signal: oklch(72% 0.11 232);
   /* The level reads in brass against the ink — the one place the brand hue
      carries a quantity. */
   --color-gauge-level: var(--color-brand);
