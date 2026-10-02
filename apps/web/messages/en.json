@@ -4453,6 +4453,27 @@
       },
       "rollingUpLast": "Yesterday you spent {amount} less than planned: today gets {perDay}.",
       "rollingDownLast": "Yesterday you spent {amount} more than planned: today drops to {perDay}."
+    },
+    "cash": {
+      "title": "Cash and exchange",
+      "detail": "Buying local currency or using an ATM moves money; it doesn't spend it. Cash expenses use the rate you actually got.",
+      "open": "Record a currency purchase or withdrawal",
+      "body": "Tell us how much you got and how much you were charged: the rate follows.",
+      "received": "You received",
+      "currency": "Currency",
+      "charged": "You were charged ({currency})",
+      "chargedHint": "What left your account, without the fee.",
+      "fee": "Fee ({currency})",
+      "feeHint": "If the bank charged separately. It is recorded as a trip expense.",
+      "from": "From account",
+      "day": "Day",
+      "save": "Record the exchange",
+      "cancel": "Cancel",
+      "amountError": "Enter an amount, for example 200.",
+      "error": "It could not be recorded. Check the amounts.",
+      "sameCurrency": "This trip is in your own currency: no exchange needed.",
+      "effectDearer": "Because of the exchange rate, this trip has cost you {amount} more than planned.",
+      "effectCheaper": "Because of the exchange rate, this trip has cost you {amount} less than planned."
     }
   }
 }

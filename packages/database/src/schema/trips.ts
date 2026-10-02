@@ -108,6 +108,8 @@ export const trips = appSchema.table(
       onDelete: 'set null',
     }),
     activeScenarioId: uuid('active_scenario_id'),
+    /** Where local cash bought for this trip is held (20261002000000). */
+    cashAccountId: uuid('cash_account_id').references(() => accounts.id, { onDelete: 'set null' }),
     reserveReleased: money('reserve_released').notNull().default('0'),
     /** `{ EUR: { rate: "1.0850", date: "2026-10-01" } }`: local units per base unit. */
     planningFx: jsonb('planning_fx')

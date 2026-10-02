@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { BookingManager } from '@/components/trips/booking-manager';
+import { CashWithdrawal } from '@/components/trips/cash-withdrawal';
 import { DocumentList, DocumentUpload } from '@/components/trips/document-upload';
 import {
   ChecklistPanel,
@@ -283,6 +284,15 @@ export default async function TripPage({
 
         <CostCard budget={budget} money={money} t={t} />
       </div>
+      {data.exchangeEffect !== '0.00' && (
+        <div className="mt-4">
+          <Status tone={data.exchangeEffect.startsWith('-') ? 'positive' : 'caution'}>
+            {t(data.exchangeEffect.startsWith('-') ? 'cash.effectCheaper' : 'cash.effectDearer', {
+              amount: money(data.exchangeEffect.replace(/^-/, '')),
+            })}
+          </Status>
+        </div>
+      )}
 
       <Section
         title={t('dashboard.perDiem.title')}
@@ -337,6 +347,30 @@ export default async function TripPage({
           baseCurrency={currency}
           today={context.today}
           locale={locale}
+        />
+      </Section>
+
+      <Section title={t('cash.title')} detail={t('cash.detail')} className="mt-12">
+        <CashWithdrawal
+          tripId={trip.id}
+          accounts={data.accounts
+            .filter((a) => a.currency.trim() === currency && a.id !== trip.cashAccountId)
+            .map((a) => ({ id: a.id, name: a.name }))}
+          currencies={[...new Set(data.legs.map((l) => l.localCurrency.trim()))]}
+          defaultCurrency={
+            data.legs.find((l) => l.localCurrency.trim() !== currency)?.localCurrency.trim() ??
+            currency
+          }
+          baseCurrency={currency}
+          today={context.today}
+          locale={locale}
+          withdrawals={data.withdrawals.map((w) => ({
+            id: w.id,
+            originalAmount: w.originalAmount,
+            originalCurrency: w.originalCurrency?.trim() ?? null,
+            amount: w.amount,
+            date: w.date,
+          }))}
         />
       </Section>
 

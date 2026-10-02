@@ -1,6 +1,7 @@
 'use server';
 
 import {
+  accounts,
   fxRates,
   goals,
   tripBookings,
@@ -16,6 +17,9 @@ import { Money, toPlainDate, todayIn, type CurrencyCode, type PlainDate } from '
 import {
   COST_INDEX_BY_LEVEL,
   convertToBase,
+  divide,
+  fromMinor,
+  toScaled,
   DAILY_CATEGORIES,
   DEFAULT_TRAVELER_WEIGHT,
   TRIP_CATEGORIES,
@@ -30,7 +34,13 @@ import { tripsEnabled } from './repositories/trips';
 import { revalidateTrip } from './revalidate';
 import { loadSession, queryAsUser, type Session } from './session';
 import { bookingInput, upsertTripBooking, type TripBookingInput } from './trip-booking-core';
-import { recordTripMovement, removeTripMovement, syncGoalCredit, type Tx } from './trip-ledger';
+import {
+  recordTripMovement,
+  recordTripTransfer,
+  removeTripMovement,
+  syncGoalCredit,
+  type Tx,
+} from './trip-ledger';
 import { goalDeadline } from './trip-plan';
 import type { RecordActionResult } from '@/components/records/spec';
 
@@ -1144,4 +1154,108 @@ function constraintKey(error: unknown): string {
   if (/trips_dates|trip_legs_dates/.test(message)) return 'datesInvalid';
   if (message.includes('paid_le_amount')) return 'paidExceedsAmount';
   return 'saveFailed';
+}
+
+const withdrawalInput = z.object({
+  fromAccountId: z.uuid(),
+  /** What was received, in local currency. */
+  localAmount: positiveAmount,
+  localCurrency: currencyCode,
+  /** What the bank charged for it, in the household currency. */
+  baseAmount: positiveAmount,
+  fee: positiveAmount.nullish(),
+  day: plainDateString,
+});
+
+export type CashWithdrawalInput = z.input<typeof withdrawalInput>;
+
+/**
+ * Buying local currency or taking cash out abroad: a transfer into the trip's
+ * cash account at the rate actually obtained, which the cash expenses then
+ * use. The fee, if any, is a trip expense.
+ */
+export async function recordCashWithdrawal(
+  tripId: string,
+  raw: CashWithdrawalInput,
+  locale: Locale = 'es',
+): Promise<ActionResult> {
+  const ctx = await context();
+  if (isError(ctx)) return ctx;
+  const parsed = withdrawalInput.safeParse(raw);
+  if (!parsed.success) return { error: 'invalid' };
+  const input = parsed.data;
+  if (
+    !Money.fromDecimalString(input.baseAmount, 'USD').isPositive() ||
+    !Money.fromDecimalString(input.localAmount, 'USD').isPositive()
+  ) {
+    return { error: 'amountInvalid' };
+  }
+  try {
+    const result = await queryAsUser(ctx.session, async (tx) => {
+      const [trip] = await tx
+        .select({ id: trips.id, name: trips.name, cash: trips.cashAccountId })
+        .from(trips)
+        .where(and(eq(trips.id, tripId), eq(trips.householdId, ctx.householdId)))
+        .limit(1);
+      if (!trip) return { error: 'notFound' };
+      let cashAccountId = trip.cash;
+      if (!cashAccountId) {
+        const [created] = await tx
+          .insert(accounts)
+          .values({
+            householdId: ctx.householdId,
+            name: `${trip.name} · efectivo`.slice(0, 120),
+            accountType: 'cash',
+            currency: ctx.currency,
+          })
+          .returning({ id: accounts.id });
+        cashAccountId = created?.id ?? null;
+        if (!cashAccountId) return { error: 'createFailed' };
+        await tx
+          .update(trips)
+          .set({ cashAccountId, updatedAt: new Date() })
+          .where(eq(trips.id, tripId));
+      }
+      const rate = fromMinor(
+        divide(toScaled(input.localAmount, 4) * 10n ** 10n, toScaled(input.baseAmount, 4)),
+        10,
+      );
+      const moved = await recordTripTransfer(tx, {
+        householdId: ctx.householdId,
+        userId: ctx.session.user.id,
+        tripId,
+        currency: ctx.currency,
+        fromAccountId: input.fromAccountId,
+        toAccountId: cashAccountId,
+        date: toPlainDate(input.day),
+        baseAmount: input.baseAmount,
+        localAmount: input.localAmount,
+        localCurrency: input.localCurrency,
+        rate,
+        description: `${input.localCurrency} · ${trip.name}`.slice(0, 200),
+      });
+      if (!moved) return { error: 'accountNotFound' };
+      if (input.fee && Money.fromDecimalString(input.fee, 'USD').isPositive()) {
+        const fee = await recordTripMovement(tx, {
+          householdId: ctx.householdId,
+          userId: ctx.session.user.id,
+          accountId: input.fromAccountId,
+          currency: ctx.currency,
+          date: toPlainDate(input.day),
+          baseAmount: input.fee,
+          description: locale === 'en' ? 'Exchange fee' : 'Comisión de cambio',
+          tripId,
+          category: 'other',
+          tripDay: toPlainDate(input.day),
+        });
+        if (!fee) return { error: 'accountNotFound' };
+      }
+      return { ok: true as const };
+    });
+    if ('error' in result) return { error: result.error ?? 'invalid' };
+    revalidateTrip(locale, tripId);
+    return { ok: true };
+  } catch (error) {
+    return { error: constraintKey(error) };
+  }
 }

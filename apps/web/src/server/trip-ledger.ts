@@ -1,6 +1,13 @@
 import 'server-only';
 
-import { accounts, categories, goalCredits, goals, transactions } from '@app/database/schema';
+import {
+  accounts,
+  categories,
+  goalCredits,
+  goals,
+  transactions,
+  transfers,
+} from '@app/database/schema';
 import { Money, type CurrencyCode, type PlainDate } from '@app/domain';
 import { computeFingerprint, normalizeDescription } from '@app/transaction-engine';
 import { CATEGORY_TEMPLATE, type TripCategory } from '@app/trip-engine';
@@ -285,4 +292,105 @@ export async function syncGoalCredit(
       })
       .where(eq(goals.id, input.goalId));
   }
+}
+
+/**
+ * Buying local currency or withdrawing cash for a trip: a transfer, not an
+ * expense. Two linked movements — out of the bank, into the trip's cash
+ * account — both in the household currency, with the local amount and the
+ * rate actually obtained kept beside the cash side. The bank's fee, when
+ * there is one, is a separate trip expense under «other».
+ */
+export async function recordTripTransfer(
+  tx: Tx,
+  input: {
+    readonly householdId: string;
+    readonly userId: string;
+    readonly tripId: string;
+    readonly currency: CurrencyCode;
+    readonly fromAccountId: string;
+    readonly toAccountId: string;
+    readonly date: PlainDate;
+    /** What left the bank, base currency, positive. */
+    readonly baseAmount: string;
+    readonly localAmount: string;
+    readonly localCurrency: string;
+    /** Local units per base unit, as obtained. */
+    readonly rate: string;
+    readonly description: string;
+  },
+): Promise<{ fromId: string; toId: string } | null> {
+  const [from] = await tx
+    .select({ id: accounts.id })
+    .from(accounts)
+    .where(
+      and(
+        eq(accounts.id, input.fromAccountId),
+        eq(accounts.householdId, input.householdId),
+        isNull(accounts.deletedAt),
+      ),
+    )
+    .limit(1);
+  if (!from) return null;
+
+  const magnitude = Money.fromDecimalString(input.baseAmount, input.currency).abs();
+  const { normalized } = normalizeDescription(input.description);
+  const legs = [
+    { accountId: input.fromAccountId, signed: magnitude.negate(), direction: 'outflow' as const },
+    { accountId: input.toAccountId, signed: magnitude, direction: 'inflow' as const },
+  ];
+  const ids: string[] = [];
+  for (const leg of legs) {
+    const [row] = await tx
+      .insert(transactions)
+      .values({
+        householdId: input.householdId,
+        accountId: leg.accountId,
+        ownerId: input.userId,
+        transactionDate: input.date,
+        amount: leg.signed.toDecimalString(),
+        currency: input.currency,
+        direction: leg.direction,
+        descriptionOriginal: input.description,
+        descriptionNormalized: normalized,
+        status: 'transfer',
+        source: 'user',
+        fingerprint: computeFingerprint({
+          accountId: leg.accountId,
+          transactionDate: input.date,
+          amount: leg.signed,
+          descriptionNormalized: normalized,
+        }),
+        tripId: input.tripId,
+        originalAmount: leg.direction === 'outflow' ? `-${input.localAmount}` : input.localAmount,
+        originalCurrency: input.localCurrency,
+        fxRate: input.rate,
+        fxRateDate: input.date,
+        fxSource: 'manual',
+      })
+      .returning({ id: transactions.id });
+    if (!row) return null;
+    ids.push(row.id);
+    await tx
+      .update(accounts)
+      .set({
+        currentBalance: sql`${accounts.currentBalance} + ${leg.signed.toDecimalString()}::numeric`,
+        updatedAt: new Date(),
+      })
+      .where(eq(accounts.id, leg.accountId));
+  }
+  const [fromId, toId] = ids;
+  if (!fromId || !toId) return null;
+  await tx.insert(transfers).values({
+    householdId: input.householdId,
+    fromTransactionId: fromId,
+    toTransactionId: toId,
+    amount: magnitude.toDecimalString(),
+    currency: input.currency,
+    confidence: '1.000',
+    detectedBy: 'user',
+    confirmedBy: input.userId,
+    confirmedAt: new Date(),
+  });
+  return { fromId, toId };
 }

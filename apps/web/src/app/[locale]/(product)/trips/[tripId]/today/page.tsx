@@ -169,7 +169,9 @@ export default async function TripTodayPage({
     accounts: data.accounts
       .filter((a) => a.currency.trim() === base)
       .map((a) => ({ id: a.id, name: a.name, type: a.type })),
-    fundingAccountId: trip.fundingAccountId,
+    fundingAccountId: trip.cashAccountId ?? trip.fundingAccountId,
+    cashAccountId: trip.cashAccountId,
+    cashRate: data.cashRates.get(localCurrency) ?? null,
     travelers: data.travelers.map((tr) => ({ id: tr.id, displayName: tr.displayName })),
     reserveAvailable: budget.reserve.available,
     shortfall:

@@ -62,6 +62,9 @@ export interface TodayData {
   }[];
   readonly accounts: readonly { id: string; name: string; type: string }[];
   readonly fundingAccountId: string | null;
+  readonly cashAccountId: string | null;
+  /** The rate the trip's cash was actually bought at, for expenses paid in cash. */
+  readonly cashRate: string | null;
   readonly travelers: readonly { id: string; displayName: string }[];
   readonly reserveAvailable: string;
   readonly shortfall: string;
@@ -579,7 +582,13 @@ function QuickAdd({
       accountId,
       amount,
       currency,
-      fxRate: useLocal ? data.rate : null,
+      // Cash bought for the trip is spent at the rate it was bought at.
+      fxRate: useLocal
+        ? accountId === data.cashAccountId && data.cashRate
+          ? data.cashRate
+          : data.rate
+        : null,
+      fxSource: useLocal && accountId === data.cashAccountId && data.cashRate ? 'manual' : 'ecb',
       category,
       tripDay: day,
       description: note.trim() || tc(`category.${category}`),

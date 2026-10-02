@@ -4453,6 +4453,27 @@
       },
       "rollingUpLast": "Ayer gastaron {amount} menos de lo previsto: hoy tienen {perDay}.",
       "rollingDownLast": "Ayer gastaron {amount} más de lo previsto: hoy baja a {perDay}."
+    },
+    "cash": {
+      "title": "Efectivo y cambio",
+      "detail": "Comprar moneda local o sacar del cajero es mover dinero, no gastarlo. Los gastos en efectivo usan la tasa real que te dieron.",
+      "open": "Registrar compra de moneda o retiro",
+      "body": "Cuéntanos cuánto recibiste y cuánto te cobraron: la tasa sale sola.",
+      "received": "Recibiste",
+      "currency": "Moneda",
+      "charged": "Te cobraron ({currency})",
+      "chargedHint": "Lo que salió de tu cuenta, sin la comisión.",
+      "fee": "Comisión ({currency})",
+      "feeHint": "Si el banco cobró aparte. Queda como gasto del viaje.",
+      "from": "Desde la cuenta",
+      "day": "Día",
+      "save": "Registrar el cambio",
+      "cancel": "Cancelar",
+      "amountError": "Escribe un monto, por ejemplo 200.",
+      "error": "No se pudo registrar. Revisa los montos.",
+      "sameCurrency": "Este viaje es en tu misma moneda: no hace falta cambiar.",
+      "effectDearer": "Por el tipo de cambio, este viaje te ha costado {amount} más de lo planificado.",
+      "effectCheaper": "Por el tipo de cambio, este viaje te ha costado {amount} menos de lo planificado."
     }
   }
 }

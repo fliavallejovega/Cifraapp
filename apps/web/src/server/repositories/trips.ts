@@ -16,7 +16,12 @@ import {
   transactions,
 } from '@app/database/schema';
 import { Money, type CurrencyCode, type PlainDate } from '@app/domain';
-import { computeTripBudget, type Proposal, type TripBudget } from '@app/trip-engine';
+import {
+  computeTripBudget,
+  exchangeEffect,
+  type Proposal,
+  type TripBudget,
+} from '@app/trip-engine';
 import { and, asc, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import { cache } from 'react';
 
@@ -114,7 +119,13 @@ export async function loadTrips(
           spent: sql<string>`coalesce(sum(-${transactions.amount}), 0)::text`,
         })
         .from(transactions)
-        .where(and(inArray(transactions.tripId, ids), isNull(transactions.deletedAt)))
+        .where(
+          and(
+            inArray(transactions.tripId, ids),
+            isNull(transactions.deletedAt),
+            sql`${transactions.status} <> 'transfer'`,
+          ),
+        )
         .groupBy(transactions.tripId),
       tx
         .select({ id: goals.id, current: goals.currentAmount, target: goals.targetAmount })
@@ -159,6 +170,9 @@ export interface TripExpense {
   readonly legId: string | null;
   readonly paidByTravelerId: string | null;
   readonly accountId: string;
+  readonly status: string;
+  readonly fxRate: string | null;
+  readonly direction: string;
 }
 
 export interface TripDashboard {
@@ -192,6 +206,11 @@ export interface TripDashboard {
   }[];
   readonly minorUnits: ReadonlyMap<string, number>;
   readonly rates: ReadonlyMap<string, string>;
+  /** Base-currency cost of paying at real rates instead of the planning rates. Positive: more expensive. */
+  readonly exchangeEffect: string;
+  /** Cash bought for the trip: what came in, and the latest rate per currency. */
+  readonly withdrawals: readonly TripExpense[];
+  readonly cashRates: ReadonlyMap<string, string>;
 }
 
 /** One trip with its computed budget, or null when it is not this household's. */
@@ -261,6 +280,7 @@ export async function loadTripDashboard(
           and(
             eq(transactions.tripId, tripId),
             isNull(transactions.deletedAt),
+            sql`${transactions.status} <> 'transfer'`,
             sql`not exists (select 1 from app.trip_bookings b where b.transaction_id = ${transactions.id} and b.deleted_at is null)`,
           ),
         )
@@ -278,6 +298,9 @@ export async function loadTripDashboard(
           legId: transactions.tripLegId,
           paidByTravelerId: transactions.paidByTravelerId,
           accountId: transactions.accountId,
+          status: transactions.status,
+          fxRate: transactions.fxRate,
+          direction: transactions.direction,
         })
         .from(transactions)
         .where(and(eq(transactions.tripId, tripId), isNull(transactions.deletedAt)))
@@ -404,6 +427,38 @@ export async function loadTripDashboard(
     budget: engineFor(s.params as ScenarioParams),
   }));
 
+  const expenses = data.expenses.filter((e) => e.status !== 'transfer');
+  const withdrawals = data.expenses.filter(
+    (e) => e.status === 'transfer' && e.direction === 'inflow',
+  );
+  const cashRates = new Map<string, string>();
+  for (const w of [...withdrawals].reverse()) {
+    if (w.originalCurrency && w.fxRate) cashRates.set(w.originalCurrency.trim(), w.fxRate);
+  }
+  const magnitude = (v: string) => v.replace(/^-/, '');
+  const exchange = exchangeEffect(
+    [
+      ...expenses
+        .filter((e) => e.originalCurrency && e.originalAmount)
+        .map((e) => ({
+          localAmount: magnitude(e.originalAmount ?? '0'),
+          localMinor: minorUnits.get(e.originalCurrency?.trim() ?? '') ?? 2,
+          currency: e.originalCurrency?.trim() ?? '',
+          baseAmount: magnitude(e.amount),
+        })),
+      ...data.bookings
+        .filter((b) => b.currency.trim() !== data.trip.baseCurrency.trim())
+        .map((b) => ({
+          localAmount: b.amount,
+          localMinor: minorUnits.get(b.currency.trim()) ?? 2,
+          currency: b.currency.trim(),
+          baseAmount: b.amountBase,
+        })),
+    ].map((x) => ({ ...x, localAmount: toTwo(x.localAmount), baseAmount: toTwo(x.baseAmount) })),
+    data.trip.planningFx,
+    2,
+  );
+
   return {
     trip: data.trip,
     legs: data.legs,
@@ -411,14 +466,23 @@ export async function loadTripDashboard(
     bookings: data.bookings,
     scenarios: data.scenarios,
     checklist: data.checklist,
-    expenses: data.expenses,
+    expenses,
     budget,
     scenarioBudgets,
     goal: goalView,
     accounts: data.accountRows,
     minorUnits,
     rates,
+    exchangeEffect: exchange,
+    withdrawals,
+    cashRates,
   };
+}
+
+/** A scale-4 database figure trimmed to the two decimals the conversion expects. */
+function toTwo(value: string): string {
+  const [whole = '0', fraction = ''] = value.split('.');
+  return `${whole}.${(fraction + '00').slice(0, 2)}`;
 }
 
 /**

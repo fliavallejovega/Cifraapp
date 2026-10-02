@@ -9,7 +9,8 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
-const { recordTripMovement, removeTripMovement, syncGoalCredit } = await import('./trip-ledger');
+const { recordTripMovement, recordTripTransfer, removeTripMovement, syncGoalCredit } =
+  await import('./trip-ledger');
 
 /**
  * The ledger side of Viajes against a real Postgres: an expense is a household
@@ -208,5 +209,46 @@ describeWithDatabase('trip ledger', () => {
       tx.select().from(goalCredits).where(eq(goalCredits.goalId, goalId)),
     );
     expect(credits).toEqual([]);
+  });
+
+  it('records a cash withdrawal as a linked transfer that moves both balances', async () => {
+    const cash = await withUserContext(db, ctx, async (tx) => {
+      const [row] = await tx.execute<{ id: string }>(
+        sql`insert into app.accounts (household_id, name, account_type) values (${householdId}, 'Efectivo', 'cash') returning id`,
+      );
+      return row?.id ?? '';
+    });
+    const moved = await withUserContext(db, ctx, (tx) =>
+      recordTripTransfer(tx, {
+        householdId,
+        userId: USER,
+        tripId,
+        currency: 'USD',
+        fromAccountId: accountId,
+        toAccountId: cash,
+        date: toPlainDate('2027-07-01'),
+        baseAmount: '220.00',
+        localAmount: '200.00',
+        localCurrency: 'EUR',
+        rate: '0.9090909091',
+        description: 'EUR · Madrid',
+      }),
+    );
+    expect(moved).not.toBeNull();
+    const rows = await withUserContext(db, ctx, (tx) =>
+      tx.execute<{ name: string; b: string }>(
+        sql`select name, current_balance::text as b from app.accounts where id in (${accountId}, ${cash}) order by name`,
+      ),
+    );
+    expect(rows.map((r) => [r.name, r.b])).toEqual([
+      ['Banco', '780.0000'],
+      ['Efectivo', '220.0000'],
+    ]);
+    const link = await withUserContext(db, ctx, (tx) =>
+      tx.execute<{ n: string }>(
+        sql`select count(*)::text as n from app.transfers where from_transaction_id = ${moved?.fromId ?? ''} and to_transaction_id = ${moved?.toId ?? ''}`,
+      ),
+    );
+    expect(link[0]?.n).toBe('1');
   });
 });
