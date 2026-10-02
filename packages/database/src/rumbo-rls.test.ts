@@ -21,6 +21,7 @@ const RUMBO_TABLES = [
   'trip_lodging_options',
   'trip_todos',
   'trip_shares',
+  'trip_extra_stops',
 ] as const;
 
 describeWithDatabase('rumbo: row-level security and invariants', () => {
@@ -115,6 +116,10 @@ describeWithDatabase('rumbo: row-level security and invariants', () => {
       await tx`
         insert into app.trip_shares (household_id, trip_id, token_hash, hint)
         values (${albaHousehold}, ${trip}, ${'b'.repeat(64)}, 'abcd')
+      `;
+      await tx`
+        insert into app.trip_extra_stops (household_id, trip_id, stop_date, place_id, minutes)
+        values (${albaHousehold}, ${trip}, '2026-12-16', ${place}, 90)
       `;
     });
   });

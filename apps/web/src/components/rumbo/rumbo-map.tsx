@@ -2,101 +2,105 @@
 
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 import type { ClientDay, ClientPlace } from '@/lib/rumbo-types';
 
 /**
- * The route in relief.
+ * The route on Google Maps: the real map, with its towns, restaurants,
+ * viewpoints and fuel stations around the road, so the person sees what is
+ * near and can add it to the day.
  *
- * Country outlines from Natural Earth and elevation from open terrain tiles,
- * both shipped as static files and clipped here to the trip's area. Height is
- * exaggerated fifteen times so the Alps read as Alps on a phone. The selected
- * day's route is drawn thick in brass; the rest of the trip stays faint; the
- * ferry is dashed. Labels are HTML laid over the canvas, so they stay sharp
- * and readable in both themes.
+ * Every stretch of the trip is drawn faint; the selected day's is drawn in
+ * brass and the map frames it. The ferry is dashed. Tapping a place on the
+ * map — a museum, a café — offers to add it to that day.
  *
- * Without WebGL the same data draws as a flat SVG map.
+ * Without a Google Maps key the same lines draw on a flat map, and the screen
+ * says what is missing.
  */
 
 type Geometry = Readonly<Record<string, readonly (readonly [number, number, number])[]>>;
 
-interface Relief {
-  readonly bbox: { west: number; east: number; south: number; north: number };
-  readonly step: number;
-  readonly cols: number;
-  readonly rows: number;
-  readonly data: Int16Array;
+export interface PickedPlace {
+  readonly googlePlaceId: string;
+  readonly name: string;
+  readonly country: string | null;
+  readonly lat: number;
+  readonly lon: number;
+  readonly address: string | null;
 }
 
-interface Countries {
-  readonly countries: readonly { iso: string; rings: readonly (readonly [number, number])[][] }[];
-}
+let loader: Promise<typeof google> | null = null;
 
-const EXAGGERATION = 15;
-const METRES_PER_UNIT = 111_000;
-let cache: Promise<{ relief: Relief; countries: Countries }> | null = null;
-
-function loadData(): Promise<{ relief: Relief; countries: Countries }> {
-  cache ??= Promise.all([
-    fetch('/rumbo/relief.json').then((r) => r.json() as Promise<Omit<Relief, 'data'>>),
-    fetch('/rumbo/relief.bin').then((r) => r.arrayBuffer()),
-    fetch('/rumbo/countries.json').then((r) => r.json() as Promise<Countries>),
-  ]).then(([meta, bin, countries]) => ({
-    relief: { ...meta, data: new Int16Array(bin) },
-    countries,
-  }));
-  cache.catch(() => {
-    cache = null;
-  });
-  return cache;
-}
-
-function elevationAt(relief: Relief, lon: number, lat: number): number {
-  const c = (lon - relief.bbox.west) / relief.step;
-  const r = (relief.bbox.north - lat) / relief.step;
-  const c0 = Math.max(0, Math.min(relief.cols - 2, Math.floor(c)));
-  const r0 = Math.max(0, Math.min(relief.rows - 2, Math.floor(r)));
-  const fx = Math.min(Math.max(c - c0, 0), 1);
-  const fy = Math.min(Math.max(r - r0, 0), 1);
-  const at = (cc: number, rr: number) => Math.max(relief.data[rr * relief.cols + cc] ?? 0, 0);
-  const top = at(c0, r0) * (1 - fx) + at(c0 + 1, r0) * fx;
-  const bottom = at(c0, r0 + 1) * (1 - fx) + at(c0 + 1, r0 + 1) * fx;
-  return top * (1 - fy) + bottom * fy;
-}
-
-function webglAvailable(): boolean {
-  try {
-    const canvas = document.createElement('canvas');
-    return Boolean(canvas.getContext('webgl2') ?? canvas.getContext('webgl'));
-  } catch {
-    return false;
+/** Loads the Maps JavaScript API once per page, in the person's language. */
+export function loadGoogleMaps(key: string, language: string): Promise<typeof google> {
+  if (typeof window === 'undefined') return Promise.reject(new Error('server'));
+  if (typeof google !== 'undefined' && typeof google.maps.importLibrary === 'function') {
+    return Promise.resolve(google);
   }
+  loader ??= new Promise((resolve, reject) => {
+    const callback = '__rumboMapsReady';
+    (window as unknown as Record<string, () => void>)[callback] = () => {
+      resolve(google);
+    };
+    const script = document.createElement('script');
+    const q = new URLSearchParams({ key, v: 'weekly', language, loading: 'async', callback });
+    script.src = `https://maps.googleapis.com/maps/api/js?${q.toString()}`;
+    script.async = true;
+    script.onerror = () => {
+      loader = null;
+      reject(new Error('maps'));
+    };
+    document.head.appendChild(script);
+  });
+  return loader;
 }
 
 /**
- * A design token as a three.js colour. Tokens may be written in any CSS colour
- * syntax (oklch included), which three cannot parse; the browser can, so the
- * colour is painted on a 1×1 canvas and read back as sRGB.
+ * A numbered name pinned to a point: plain HTML over the map, so it reads in
+ * the product's own type and theme. Built when Google's library is loaded.
  */
-function token(name: string, fallback: string): THREE.Color {
-  const value =
-    getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
-  try {
-    const canvas = document.createElement('canvas');
-    canvas.width = 1;
-    canvas.height = 1;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return new THREE.Color(fallback);
-    ctx.fillStyle = fallback;
-    ctx.fillStyle = value;
-    ctx.fillRect(0, 0, 1, 1);
-    const [r = 0, g = 0, b = 0] = ctx.getImageData(0, 0, 1, 1).data;
-    return new THREE.Color().setRGB(r / 255, g / 255, b / 255, THREE.SRGBColorSpace);
-  } catch {
-    return new THREE.Color(fallback);
+function placeLabel(
+  map: google.maps.Map,
+  position: google.maps.LatLngLiteral,
+  text: string,
+): google.maps.OverlayView {
+  class Label extends google.maps.OverlayView {
+    private el: HTMLDivElement | null = null;
+    override onAdd(): void {
+      const el = document.createElement('div');
+      el.textContent = text;
+      el.className =
+        'absolute whitespace-nowrap rounded-full border border-[color:var(--color-surface-border)] bg-[color:var(--color-surface)] px-3 py-1 text-xs font-medium text-[color:var(--color-ink)] shadow-(--shadow-card)';
+      el.style.transform = 'translate(-50%, calc(-100% - 8px))';
+      this.el = el;
+      this.getPanes()?.floatPane.appendChild(el);
+    }
+    override draw(): void {
+      const point = this.getProjection().fromLatLngToDivPixel(new google.maps.LatLng(position));
+      if (this.el && point) {
+        this.el.style.left = `${String(point.x)}px`;
+        this.el.style.top = `${String(point.y)}px`;
+      }
+    }
+    override onRemove(): void {
+      this.el?.remove();
+      this.el = null;
+    }
   }
+  const label = new Label();
+  label.setMap(map);
+  return label;
+}
+
+/** A design token as a colour Google understands; the browser translates any CSS colour. */
+function token(name: string, fallback: string): string {
+  if (typeof window === 'undefined') return fallback;
+  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const probe = document.createElement('canvas').getContext('2d');
+  if (!value || !probe) return fallback;
+  probe.fillStyle = fallback;
+  probe.fillStyle = value;
+  return probe.fillStyle;
 }
 
 export interface RumboMapProps {
@@ -104,402 +108,22 @@ export interface RumboMapProps {
   readonly geometry: Geometry;
   readonly days: readonly ClientDay[];
   readonly selected: number;
+  readonly apiKey: string | null;
+  readonly locale: string;
+  /** A place tapped on the map, offered to the day. */
+  readonly onPick?: (place: PickedPlace) => void;
 }
 
-interface Frame {
-  readonly lon0: number;
-  readonly lat0: number;
-  readonly cos: number;
-  readonly west: number;
-  readonly east: number;
-  readonly south: number;
-  readonly north: number;
-}
-
-function frameOf(
-  geometry: Geometry,
-  places: Readonly<Record<string, ClientPlace>>,
-  days: readonly ClientDay[],
-): Frame | null {
-  const pts: { lon: number; lat: number }[] = [];
-  for (const line of Object.values(geometry)) for (const [lon, lat] of line) pts.push({ lon, lat });
-  if (pts.length === 0) {
-    for (const d of days)
-      for (const id of d.focus) {
-        const p = places[id];
-        if (p && d.drives.length > 0) pts.push(p);
-      }
-  }
-  if (pts.length === 0) return null;
-  const west = Math.min(...pts.map((p) => p.lon)) - 0.8;
-  const east = Math.max(...pts.map((p) => p.lon)) + 0.8;
-  const south = Math.min(...pts.map((p) => p.lat)) - 0.6;
-  const north = Math.max(...pts.map((p) => p.lat)) + 0.6;
-  const lat0 = (south + north) / 2;
-  return {
-    lon0: (west + east) / 2,
-    lat0,
-    cos: Math.cos((lat0 * Math.PI) / 180),
-    west,
-    east,
-    south,
-    north,
-  };
-}
-
-export function RumboMap({ places, geometry, days, selected }: RumboMapProps) {
+export function RumboMap(props: RumboMapProps) {
   const t = useTranslations('rumbo.map');
-  const host = useRef<HTMLDivElement>(null);
-  const labels = useRef<HTMLDivElement>(null);
-  const [state, setState] = useState<'loading' | 'ready' | 'flat' | 'error'>('loading');
-  const frame = useMemo(() => frameOf(geometry, places, days), [geometry, places, days]);
-  const selectedRef = useRef(selected);
-  const apiRef = useRef<{ select: (i: number) => void } | null>(null);
-
-  useEffect(() => {
-    selectedRef.current = selected;
-    apiRef.current?.select(selected);
-  }, [selected]);
-
-  useEffect(() => {
-    if (!frame || !host.current) return;
-    if (!webglAvailable()) {
-      setState('flat');
-      return;
-    }
-    let disposed = false;
-    let raf = 0;
-    const container = host.current;
-    const labelLayer = labels.current;
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    const project = (lon: number, lat: number, elevation: number) =>
-      new THREE.Vector3(
-        (lon - frame.lon0) * frame.cos,
-        (elevation / METRES_PER_UNIT) * EXAGGERATION,
-        -(lat - frame.lat0),
-      );
-
-    loadData()
-      .then(({ relief, countries }) => {
-        if (disposed) return;
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        container.appendChild(renderer.domElement);
-        renderer.domElement.setAttribute('aria-hidden', 'true');
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(40, 1, 0.05, 200);
-        const controls = new OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = !reduced;
-        controls.maxPolarAngle = Math.PI * 0.45;
-        controls.minDistance = 1.5;
-        controls.maxDistance = 40;
-
-        const colors = {
-          land: token('--color-ground-sunk', '#ece6da'),
-          high: token('--color-ink-tertiary', '#6b6457'),
-          outline: token('--color-ink-tertiary', '#6b6457'),
-          route: token('--color-brand', '#a8843c'),
-          dim: token('--color-ink-secondary', '#4b4a52'),
-          ferry: token('--color-positive', '#2f6f5e'),
-        };
-
-        // Terrain over the trip's area.
-        const spanX = (frame.east - frame.west) * frame.cos;
-        const spanZ = frame.north - frame.south;
-        const segX = Math.min(220, Math.round((frame.east - frame.west) / relief.step));
-        const segZ = Math.min(180, Math.round((frame.north - frame.south) / relief.step));
-        const plane = new THREE.PlaneGeometry(spanX, spanZ, segX, segZ);
-        plane.rotateX(-Math.PI / 2);
-        const pos = plane.attributes['position'] as THREE.BufferAttribute;
-        const vertexColors: number[] = [];
-        for (let i = 0; i < pos.count; i++) {
-          const x = pos.getX(i);
-          const z = pos.getZ(i);
-          const lon = x / frame.cos + frame.lon0;
-          const lat = -z + frame.lat0;
-          const e = elevationAt(relief, lon, lat);
-          pos.setY(i, (e / METRES_PER_UNIT) * EXAGGERATION);
-          // Hypsometric tint: paper in the plains, ink on the summits.
-          const c = colors.land.clone().lerp(colors.high, Math.min(e / 3200, 1) * 0.7);
-          vertexColors.push(c.r, c.g, c.b);
-        }
-        plane.setAttribute('color', new THREE.Float32BufferAttribute(vertexColors, 3));
-        plane.computeVertexNormals();
-        const terrain = new THREE.Mesh(
-          plane,
-          new THREE.MeshStandardMaterial({
-            vertexColors: true,
-            roughness: 1,
-            metalness: 0,
-            flatShading: false,
-          }),
-        );
-        terrain.position.set((frame.west + frame.east) / 2 - frame.lon0, 0, 0);
-        terrain.position.x *= frame.cos;
-        scene.add(terrain);
-        scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1.6));
-        const sun = new THREE.DirectionalLight(0xffffff, 1.4);
-        sun.position.set(-4, 6, 3);
-        scene.add(sun);
-
-        // Country outlines, clipped by keeping only vertices inside the area.
-        const outline = new THREE.LineBasicMaterial({
-          color: colors.outline,
-          transparent: true,
-          opacity: 0.55,
-        });
-        for (const country of countries.countries) {
-          for (const ring of country.rings) {
-            let run: THREE.Vector3[] = [];
-            const flush = () => {
-              if (run.length > 1)
-                scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(run), outline));
-              run = [];
-            };
-            for (const [lon, lat] of ring) {
-              if (lon < frame.west || lon > frame.east || lat < frame.south || lat > frame.north) {
-                flush();
-                continue;
-              }
-              const v = project(lon, lat, elevationAt(relief, lon, lat));
-              v.y += 0.004;
-              run.push(v);
-            }
-            flush();
-          }
-        }
-
-        // Routes: every stored piece, faint; the selected day's, thick.
-        const pieceLine = (key: string) => {
-          const line = geometry[key];
-          if (!line) return null;
-          return line.map(([lon, lat, e]) => {
-            const v = project(lon, lat, Math.max(e, elevationAt(relief, lon, lat)));
-            v.y += 0.012;
-            return v;
-          });
-        };
-        const faint = new THREE.LineBasicMaterial({
-          color: colors.dim,
-          transparent: true,
-          opacity: 0.45,
-        });
-        const ferryMaterial = new THREE.LineDashedMaterial({
-          color: colors.ferry,
-          dashSize: 0.08,
-          gapSize: 0.05,
-        });
-        for (const key of Object.keys(geometry)) {
-          const pts = pieceLine(key);
-          if (!pts) continue;
-          const obj = new THREE.Line(
-            new THREE.BufferGeometry().setFromPoints(pts),
-            key.startsWith('ferry|') ? ferryMaterial : faint,
-          );
-          if (key.startsWith('ferry|')) obj.computeLineDistances();
-          scene.add(obj);
-        }
-        const highlight = new THREE.Group();
-        scene.add(highlight);
-        const brass = new THREE.MeshStandardMaterial({
-          color: colors.route,
-          roughness: 0.4,
-          metalness: 0.3,
-        });
-
-        // Labels: overnight places always, the day's stops when selected.
-        const stayIds = [...new Set(days.flatMap((d) => (d.sleep ? d.focus.slice(-1) : [])))];
-        const labelEls = new Map<string, HTMLSpanElement>();
-        const labelPos = new Map<string, THREE.Vector3>();
-        const ensureLabel = (id: string) => {
-          const p = places[id];
-          if (!p || !labelLayer) return;
-          if (
-            p.lon < frame.west ||
-            p.lon > frame.east ||
-            p.lat < frame.south ||
-            p.lat > frame.north
-          )
-            return;
-          if (!labelEls.has(id)) {
-            const el = document.createElement('span');
-            el.textContent = p.name;
-            el.className =
-              'pointer-events-none absolute left-0 top-0 whitespace-nowrap rounded-(--radius-xs) border border-[color:var(--color-surface-border)] bg-[color:var(--color-surface)] px-2 py-1 text-xs text-[color:var(--color-ink)] shadow-(--shadow-card)';
-            labelLayer.appendChild(el);
-            labelEls.set(id, el);
-            const v = project(p.lon, p.lat, elevationAt(relief, p.lon, p.lat));
-            v.y += 0.03;
-            labelPos.set(id, v);
-          }
-        };
-        for (const id of stayIds) ensureLabel(id);
-
-        let target = new THREE.Vector3();
-        let wantCamera = new THREE.Vector3();
-        const select = (i: number) => {
-          const day = days[i];
-          highlight.clear();
-          for (const [id, el] of labelEls) {
-            el.style.opacity = day?.focus.includes(id) ? '1' : stayIds.includes(id) ? '0.55' : '0';
-          }
-          if (!day) return;
-          const pts: THREE.Vector3[] = [];
-          for (const dr of day.drives) {
-            for (const leg of dr.legs) {
-              const line = pieceLine(leg.geometryKey);
-              if (!line) continue;
-              pts.push(...line);
-              if (leg.mode === 'ferry') continue;
-              const curve = new THREE.CatmullRomCurve3(line);
-              highlight.add(
-                new THREE.Mesh(
-                  new THREE.TubeGeometry(curve, Math.max(line.length * 2, 8), 0.018, 6, false),
-                  brass,
-                ),
-              );
-            }
-          }
-          for (const id of day.focus) ensureLabel(id);
-          for (const id of day.focus) {
-            const el = labelEls.get(id);
-            if (el) el.style.opacity = '1';
-          }
-          if (pts.length === 0) {
-            for (const id of day.focus) {
-              const v = labelPos.get(id);
-              if (v) pts.push(v);
-            }
-          }
-          if (pts.length > 0) {
-            const box = new THREE.Box3().setFromPoints(pts);
-            target = box.getCenter(new THREE.Vector3());
-            const size = Math.max(box.getSize(new THREE.Vector3()).length(), 1.2);
-            wantCamera = target.clone().add(new THREE.Vector3(0, size * 0.9, size * 1.1));
-          } else {
-            target = new THREE.Vector3();
-            wantCamera = new THREE.Vector3(0, spanZ * 0.9, spanZ * 1.05);
-          }
-          if (reduced) {
-            controls.target.copy(target);
-            camera.position.copy(wantCamera);
-          }
-        };
-
-        camera.position.set(0, spanZ * 0.9, spanZ * 1.05);
-        select(selectedRef.current);
-        apiRef.current = { select };
-
-        const resize = () => {
-          const w = container.clientWidth;
-          const h = container.clientHeight;
-          renderer.setSize(w, h, false);
-          renderer.domElement.style.width = '100%';
-          renderer.domElement.style.height = '100%';
-          camera.aspect = w / Math.max(h, 1);
-          camera.updateProjectionMatrix();
-        };
-        resize();
-        const observer = new ResizeObserver(resize);
-        observer.observe(container);
-
-        let moving = 0;
-        const vec = new THREE.Vector3();
-        const loop = () => {
-          raf = requestAnimationFrame(loop);
-          if (!reduced && moving < 90) {
-            controls.target.lerp(target, 0.08);
-            camera.position.lerp(wantCamera, 0.08);
-            moving += 1;
-          }
-          controls.update();
-          renderer.render(scene, camera);
-          const w = container.clientWidth;
-          const h = container.clientHeight;
-          for (const [id, el] of labelEls) {
-            const p = labelPos.get(id);
-            if (!p) continue;
-            vec.copy(p).project(camera);
-            const visible = vec.z < 1 && Math.abs(vec.x) < 1.05 && Math.abs(vec.y) < 1.05;
-            el.style.display = visible ? 'block' : 'none';
-            if (!visible) continue;
-            // Keep the whole label inside the map: a name cut by the edge reads as a bug.
-            const half = el.offsetWidth / 2;
-            const x = Math.min(Math.max(((vec.x + 1) / 2) * w, half + 4), w - half - 4);
-            const y = Math.max(((1 - vec.y) / 2) * h, el.offsetHeight * 1.3 + 4);
-            el.style.transform = `translate(${String(Math.round(x))}px, ${String(Math.round(y))}px) translate(-50%, -130%)`;
-          }
-        };
-        const origSelect = select;
-        apiRef.current = {
-          select: (i: number) => {
-            moving = 0;
-            origSelect(i);
-          },
-        };
-        loop();
-        setState('ready');
-
-        const cleanup = () => {
-          cancelAnimationFrame(raf);
-          observer.disconnect();
-          controls.dispose();
-          renderer.dispose();
-          scene.traverse((o) => {
-            if (o instanceof THREE.Mesh || o instanceof THREE.Line) {
-              (o.geometry as THREE.BufferGeometry).dispose();
-            }
-          });
-          renderer.domElement.remove();
-          for (const el of labelEls.values()) el.remove();
-        };
-        disposers.push(cleanup);
-      })
-      .catch(() => {
-        if (!disposed) setState('error');
-      });
-
-    const disposers: (() => void)[] = [];
-    return () => {
-      disposed = true;
-      apiRef.current = null;
-      for (const d of disposers) d();
-    };
-  }, [frame, geometry, places, days]);
-
-  if (!frame) return null;
-
   return (
-    <div className="relative">
-      <div
-        ref={host}
-        role="img"
-        aria-label={t('label')}
-        className="relative h-[clamp(16rem,55vh,32rem)] w-full touch-none overflow-hidden rounded-(--radius-lg) bg-[color:var(--color-ground-sunk)]"
-      >
-        <div ref={labels} className="pointer-events-none absolute inset-0 overflow-hidden" />
-        {state === 'loading' && (
-          <p className="absolute inset-x-0 bottom-4 text-center text-sm text-[color:var(--color-ink-secondary)]">
-            {t('loading')}
-          </p>
-        )}
-        {state === 'flat' && (
-          <FlatMap
-            frame={frame}
-            places={places}
-            geometry={geometry}
-            days={days}
-            selected={selected}
-          />
-        )}
-        {state === 'error' && (
-          <p className="absolute inset-0 flex items-center justify-center px-6 text-center text-sm text-[color:var(--color-ink-secondary)]">
-            {t('error')}
-          </p>
-        )}
-      </div>
-      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[color:var(--color-ink-secondary)]">
+    <div className="flex flex-col gap-2">
+      {props.apiKey ? (
+        <GoogleRouteMap {...props} apiKey={props.apiKey} />
+      ) : (
+        <FlatRouteMap {...props} />
+      )}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[color:var(--color-ink-secondary)]">
         <span className="inline-flex items-center gap-2">
           <span aria-hidden className="h-1 w-6 rounded-full bg-[color:var(--color-brand)]" />
           {t('legendRoute')}
@@ -515,26 +139,213 @@ export function RumboMap({ places, geometry, days, selected }: RumboMapProps) {
           />
           {t('legendFerry')}
         </span>
-        <span className="ml-auto">{state === 'flat' ? t('flat') : t('hint')}</span>
+        <span className="ml-auto">{props.apiKey ? t('hintGoogle') : t('noKey')}</span>
       </div>
     </div>
   );
 }
 
-/** The flat fallback: same frame, same lines, no WebGL. */
-function FlatMap({
-  frame,
+function dayKeys(day: ClientDay | undefined): Set<string> {
+  return new Set(day?.drives.flatMap((d) => d.legs.map((l) => l.geometryKey)) ?? []);
+}
+
+function GoogleRouteMap({
   places,
   geometry,
   days,
   selected,
-}: {
-  readonly frame: Frame;
-  readonly places: Readonly<Record<string, ClientPlace>>;
-  readonly geometry: Geometry;
-  readonly days: readonly ClientDay[];
-  readonly selected: number;
-}) {
+  apiKey,
+  locale,
+  onPick,
+}: RumboMapProps & { readonly apiKey: string }) {
+  const t = useTranslations('rumbo.map');
+  const host = useRef<HTMLDivElement>(null);
+  const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
+  const mapRef = useRef<google.maps.Map | null>(null);
+  const linesRef = useRef(new Map<string, google.maps.Polyline>());
+  const markersRef = useRef<google.maps.OverlayView[]>([]);
+  const pickRef = useRef(onPick);
+
+  useEffect(() => {
+    pickRef.current = onPick;
+  }, [onPick]);
+
+  // The map and every stretch, once.
+  useEffect(() => {
+    if (!host.current) return;
+    let cancelled = false;
+    const lines = linesRef.current;
+    const element = host.current;
+    loadGoogleMaps(apiKey, locale)
+      .then(async (g) => {
+        if (cancelled) return;
+        const { Map: GoogleMap } = await g.maps.importLibrary('maps');
+        const map = new GoogleMap(element, {
+          center: { lat: 47.5, lng: 10 },
+          zoom: 6,
+          mapTypeControl: true,
+          streetViewControl: false,
+          fullscreenControl: true,
+          clickableIcons: true,
+          gestureHandling: 'cooperative',
+        });
+        mapRef.current = map;
+        const dim = token('--color-ink-tertiary', '#6b6457');
+        const ferry = token('--color-positive', '#2f6f5e');
+        for (const [key, line] of Object.entries(geometry)) {
+          const isFerry = key.startsWith('ferry|');
+          const poly = new g.maps.Polyline({
+            map,
+            path: line.map(([lon, lat]) => ({ lat, lng: lon })),
+            strokeColor: isFerry ? ferry : dim,
+            strokeOpacity: isFerry ? 0 : 0.55,
+            strokeWeight: 3,
+            ...(isFerry
+              ? {
+                  icons: [
+                    {
+                      icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, strokeColor: ferry, scale: 3 },
+                      offset: '0',
+                      repeat: '14px',
+                    },
+                  ],
+                }
+              : {}),
+          });
+          lines.set(key, poly);
+        }
+        // A place on the base map: its details, then the offer to add it.
+        map.addListener(
+          'click',
+          (event: google.maps.MapMouseEvent | google.maps.IconMouseEvent) => {
+            if (!('placeId' in event) || !event.placeId) return;
+            event.stop();
+            const id = event.placeId;
+            void (async () => {
+              const { Place } = await g.maps.importLibrary('places');
+              const place = new Place({ id, requestedLanguage: locale });
+              await place.fetchFields({
+                fields: ['displayName', 'location', 'addressComponents', 'formattedAddress'],
+              });
+              if (!place.location) return;
+              const country =
+                place.addressComponents?.find((c) => c.types.includes('country'))?.shortText ??
+                null;
+              pickRef.current?.({
+                googlePlaceId: id,
+                name: place.displayName ?? '',
+                country,
+                lat: place.location.lat(),
+                lon: place.location.lng(),
+                address: place.formattedAddress ?? null,
+              });
+            })();
+          },
+        );
+        setState('ready');
+      })
+      .catch(() => {
+        if (!cancelled) setState('error');
+      });
+    return () => {
+      cancelled = true;
+      for (const l of lines.values()) l.setMap(null);
+      lines.clear();
+    };
+  }, [apiKey, locale, geometry]);
+
+  // The selected day: brass, framed, its stops numbered.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (state !== 'ready' || !map) return;
+    const day = days[selected];
+    const keys = dayKeys(day);
+    const brass = token('--color-brand', '#a8843c');
+    const dim = token('--color-ink-tertiary', '#6b6457');
+    for (const [key, poly] of linesRef.current) {
+      if (key.startsWith('ferry|')) continue;
+      const on = keys.has(key);
+      poly.setOptions({
+        strokeColor: on ? brass : dim,
+        strokeOpacity: on ? 0.95 : 0.4,
+        strokeWeight: on ? 6 : 3,
+        zIndex: on ? 10 : 1,
+      });
+    }
+    for (const m of markersRef.current) m.setMap(null);
+    markersRef.current = [];
+    const bounds = new google.maps.LatLngBounds();
+    for (const key of keys)
+      for (const [lon, lat] of geometry[key] ?? []) bounds.extend({ lat, lng: lon });
+    const focus = day?.focus ?? [];
+    focus.forEach((id, i) => {
+      const p = places[id];
+      if (!p) return;
+      bounds.extend({ lat: p.lat, lng: p.lon });
+      markersRef.current.push(
+        placeLabel(map, { lat: p.lat, lng: p.lon }, `${String(i + 1)} · ${p.name}`),
+      );
+    });
+    if (!bounds.isEmpty()) {
+      map.fitBounds(bounds, 48);
+      if (focus.length === 1 && keys.size === 0) map.setZoom(12);
+    }
+  }, [state, selected, days, places, geometry]);
+
+  return (
+    <div className="relative">
+      <div
+        ref={host}
+        role="region"
+        aria-label={t('label')}
+        className="h-[clamp(18rem,60vh,36rem)] w-full overflow-hidden rounded-(--radius-lg) bg-[color:var(--color-ground-sunk)]"
+      />
+      {state === 'loading' && (
+        <p className="absolute inset-x-0 bottom-4 text-center text-sm text-[color:var(--color-ink-secondary)]">
+          {t('loading')}
+        </p>
+      )}
+      {state === 'error' && (
+        <p className="absolute inset-0 flex items-center justify-center px-6 text-center text-sm text-[color:var(--color-ink-secondary)]">
+          {t('error')}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** Without a key: the same lines on a plain projection, labelled. */
+function FlatRouteMap({ places, geometry, days, selected }: RumboMapProps) {
+  const t = useTranslations('rumbo.map');
+  // Framed on the selected day, so a short drive is not a dot on a country.
+  const frame = useMemo(() => {
+    const day = days[selected];
+    const keys = dayKeys(day);
+    const collect = (only: Set<string> | null) => {
+      const pts: { lat: number; lon: number }[] = [];
+      for (const [key, line] of Object.entries(geometry)) {
+        if (only && !only.has(key)) continue;
+        for (const [lon, lat] of line) pts.push({ lat, lon });
+      }
+      return pts;
+    };
+    let pts = keys.size > 0 ? collect(keys) : [];
+    if (pts.length === 0) {
+      pts = (day?.focus ?? []).map((id) => places[id]).filter((p) => p !== undefined);
+    }
+    if (pts.length < 2) pts = [...pts, ...collect(null)];
+    if (pts.length === 0) return null;
+    const lats = pts.map((p) => p.lat);
+    const lons = pts.map((p) => p.lon);
+    const padLat = Math.max((Math.max(...lats) - Math.min(...lats)) * 0.15, 0.08);
+    const padLon = Math.max((Math.max(...lons) - Math.min(...lons)) * 0.15, 0.12);
+    const south = Math.min(...lats) - padLat;
+    const north = Math.max(...lats) + padLat;
+    const west = Math.min(...lons) - padLon;
+    const east = Math.max(...lons) + padLon;
+    return { west, east, south, north, cos: Math.cos((((south + north) / 2) * Math.PI) / 180) };
+  }, [geometry, days, selected, places]);
+  if (!frame) return null;
   const width = 1000;
   const height = Math.round(
     ((frame.north - frame.south) / ((frame.east - frame.west) * frame.cos)) * width,
@@ -542,46 +353,51 @@ function FlatMap({
   const x = (lon: number) => ((lon - frame.west) / (frame.east - frame.west)) * width;
   const y = (lat: number) => ((frame.north - lat) / (frame.north - frame.south)) * height;
   const day = days[selected];
-  const dayKeys = new Set(day?.drives.flatMap((d) => d.legs.map((l) => l.geometryKey)) ?? []);
+  const keys = dayKeys(day);
   const path = (line: readonly (readonly [number, number, number])[]) =>
     line
       .map(([lon, lat], i) => `${i === 0 ? 'M' : 'L'}${x(lon).toFixed(1)},${y(lat).toFixed(1)}`)
       .join(' ');
   return (
-    <svg
-      viewBox={`0 0 ${String(width)} ${String(height)}`}
-      className="absolute inset-0 h-full w-full"
-      aria-hidden
-    >
-      {Object.entries(geometry).map(([key, line]) => (
-        <path
-          key={key}
-          d={path(line)}
-          fill="none"
-          stroke={
-            dayKeys.has(key)
-              ? 'var(--color-brand)'
-              : key.startsWith('ferry|')
-                ? 'var(--color-positive)'
-                : 'var(--color-ink-tertiary)'
-          }
-          strokeWidth={dayKeys.has(key) ? 5 : 2}
-          strokeDasharray={key.startsWith('ferry|') ? '8 6' : undefined}
-          strokeLinecap="round"
-        />
-      ))}
-      {(day?.focus ?? []).map((id) => {
-        const p = places[id];
-        if (!p) return null;
-        return (
-          <g key={id}>
-            <circle cx={x(p.lon)} cy={y(p.lat)} r={6} fill="var(--color-ink)" />
-            <text x={x(p.lon) + 10} y={y(p.lat) - 10} fontSize={22} fill="var(--color-ink)">
-              {p.name}
-            </text>
-          </g>
-        );
-      })}
-    </svg>
+    <div className="overflow-hidden rounded-(--radius-lg) bg-[color:var(--color-ground-sunk)]">
+      <svg
+        viewBox={`0 0 ${String(width)} ${String(height)}`}
+        className="block h-auto max-h-[60vh] w-full"
+        role="img"
+        aria-label={t('label')}
+      >
+        {Object.entries(geometry).map(([key, line]) => (
+          <path
+            key={key}
+            d={path(line)}
+            fill="none"
+            stroke={
+              keys.has(key)
+                ? 'var(--color-brand)'
+                : key.startsWith('ferry|')
+                  ? 'var(--color-positive)'
+                  : 'var(--color-ink-tertiary)'
+            }
+            strokeOpacity={keys.has(key) ? 1 : 0.5}
+            strokeWidth={keys.has(key) ? 6 : 2.5}
+            strokeDasharray={key.startsWith('ferry|') ? '8 6' : undefined}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        ))}
+        {(day?.focus ?? []).map((id) => {
+          const p = places[id];
+          if (!p) return null;
+          return (
+            <g key={id}>
+              <circle cx={x(p.lon)} cy={y(p.lat)} r={7} fill="var(--color-ink)" />
+              <text x={x(p.lon) + 12} y={y(p.lat) - 10} fontSize={24} fill="var(--color-ink)">
+                {p.name}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+    </div>
   );
 }

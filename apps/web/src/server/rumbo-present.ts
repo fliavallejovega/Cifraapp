@@ -203,6 +203,8 @@ export function presentRoute(p: Presenter, view: RumboView): ClientRumbo {
     box !== null &&
     (q.lat < box.south || q.lat > box.north || q.lon < box.west || q.lon > box.east);
 
+  const pickup = view.anchors.find((a) => a.kind === 'car_pickup')?.from;
+  const dropoff = view.anchors.find((a) => a.kind === 'car_return')?.from;
   const days: ClientDay[] = (it?.days ?? []).map((d) => {
     const drives: ClientDrive[] = d.drives.map((dr) => {
       const pts = dr.points.map(place).filter((x) => x !== undefined);
@@ -379,6 +381,11 @@ export function presentRoute(p: Presenter, view: RumboView): ClientRumbo {
       activities,
       offMap,
       focus,
+      carDay:
+        pickup !== undefined && dropoff !== undefined && d.date >= pickup && d.date <= dropoff,
+      extraStops: view.extraStops
+        .filter((s) => s.date === d.date)
+        .map((s) => ({ id: s.id, name: s.name, minutes: s.minutes })),
     };
   });
 

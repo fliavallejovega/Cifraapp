@@ -3,12 +3,15 @@
 import { Button, Card, Status, type StatusTone } from '@app/ui';
 import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 import type { ClientDay, ClientLeg, ClientNotice, ClientRumbo } from '@/lib/rumbo-types';
 import { setManualDrive } from '@/server/rumbo-actions';
 
 import { useTripAction } from '../trips/use-trip-action';
+
+import { AddStop } from './add-stop';
+import type { PickedPlace } from './rumbo-map';
 
 /**
  * The route: the map on top, the days as a strip under it, and the selected
@@ -29,6 +32,15 @@ const TONE: Readonly<Record<ClientNotice['severity'], StatusTone>> = {
   critical: 'signal',
 };
 
+function centreOf(day: ClientDay, data: ClientRumbo): { lat: number; lon: number } | null {
+  const pts = day.focus.map((id) => data.places[id]).filter((p) => p !== undefined);
+  if (pts.length === 0) return null;
+  return {
+    lat: pts.reduce((s, p) => s + p.lat, 0) / pts.length,
+    lon: pts.reduce((s, p) => s + p.lon, 0) / pts.length,
+  };
+}
+
 function firstDayToShow(days: readonly ClientDay[]): number {
   const drive = days.findIndex((d) => d.kind === 'drive');
   return drive >= 0 ? drive : 0;
@@ -38,14 +50,18 @@ export function RouteExplorer({
   data,
   locale,
   readOnly = false,
+  mapsKey = null,
 }: {
   readonly data: ClientRumbo;
   readonly locale: string;
   /** A shared link: nothing on it can write. */
   readonly readOnly?: boolean;
+  /** Google Maps browser key; without it the map is flat. */
+  readonly mapsKey?: string | null;
 }) {
   const t = useTranslations('rumbo');
   const [selected, setSelected] = useState(() => firstDayToShow(data.days));
+  const [picked, setPicked] = useState<PickedPlace | null>(null);
   const strip = useRef<HTMLDivElement>(null);
   const day = data.days[selected];
   const maxMinutes = Math.max(...data.days.map((d) => d.drivingMinutes), 1);
@@ -74,6 +90,9 @@ export function RouteExplorer({
         geometry={data.geometry}
         days={data.days}
         selected={selected}
+        apiKey={mapsKey}
+        locale={locale}
+        {...(readOnly ? {} : { onPick: setPicked })}
       />
 
       <nav aria-label={t('days.strip')}>
@@ -131,7 +150,31 @@ export function RouteExplorer({
         </div>
       </nav>
 
-      {day && <DayPanel day={day} locale={locale} tripId={data.tripId} readOnly={readOnly} />}
+      {day && (
+        <DayPanel
+          day={day}
+          locale={locale}
+          tripId={data.tripId}
+          readOnly={readOnly}
+          addStop={
+            !readOnly && day.carDay ? (
+              <AddStop
+                tripId={data.tripId}
+                date={day.date}
+                dayLabel={day.shortLabel}
+                stops={day.extraStops}
+                apiKey={mapsKey}
+                locale={locale}
+                bias={centreOf(day, data)}
+                picked={picked}
+                onPickedUsed={() => {
+                  setPicked(null);
+                }}
+              />
+            ) : null
+          }
+        />
+      )}
     </div>
   );
 }
@@ -140,11 +183,13 @@ function DayPanel({
   day,
   tripId,
   readOnly,
+  addStop,
 }: {
   readonly day: ClientDay;
   readonly locale: string;
   readonly tripId: string;
   readonly readOnly: boolean;
+  readonly addStop: ReactNode;
 }) {
   const t = useTranslations('rumbo');
   const legs = day.drives.flatMap((d) => d.legs);
@@ -257,6 +302,8 @@ function DayPanel({
             </ul>
           </section>
         )}
+
+        {addStop}
 
         <section className="flex flex-col gap-3" aria-labelledby={`todo-${day.date}`}>
           <h3 id={`todo-${day.date}`} className="text-base font-medium">

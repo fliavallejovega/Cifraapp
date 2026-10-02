@@ -104,7 +104,10 @@ export const serverEnvSchema = z.object({
    * pendiente en vez de fingir que Supabase ya tiene el texto nuevo.
    */
   SUPABASE_ACCESS_TOKEN: z.string().min(20).optional(),
-  SUPABASE_PROJECT_REF: z.string().regex(/^[a-z0-9]{20}$/).optional(),
+  SUPABASE_PROJECT_REF: z
+    .string()
+    .regex(/^[a-z0-9]{20}$/)
+    .optional(),
 
   /**
    * El par VAPID que firma cada notificación push.
@@ -162,6 +165,12 @@ export const clientEnvSchema = z.object({
    * apagado, y la pantalla de preferencias lo dice.
    */
   NEXT_PUBLIC_VAPID_PUBLIC_KEY: z.string().min(20).optional(),
+  /**
+   * Google Maps en el navegador, para el mapa de Rumbo y su buscador de
+   * lugares. Pública por diseño: Google la limita por dominio (referrer), no
+   * por secreto. Sin ella, Rumbo muestra el mapa plano.
+   */
+  NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: z.string().min(20).optional(),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;

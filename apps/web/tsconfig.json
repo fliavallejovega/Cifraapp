@@ -1,7 +1,7 @@
 {
   "extends": "@app/config/tsconfig/next.json",
   "compilerOptions": {
-    "types": ["node"],
+    "types": ["node", "google.maps"],
     "paths": {
       "@/*": ["./src/*"]
     }

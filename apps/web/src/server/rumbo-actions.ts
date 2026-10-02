@@ -3,6 +3,7 @@
 import {
   tripAnchors,
   tripDrives,
+  tripExtraStops,
   tripFlightSegments,
   tripLegs,
   tripLodgingOptions,
@@ -27,7 +28,12 @@ import { revalidateTrip } from './revalidate';
 import { composeAndStore, loadRumbo, RUMBO_ROUTE_JOB } from './rumbo';
 import { newShareToken } from './rumbo-share';
 import { parseTicketText } from './rumbo-ticket';
-import { geocodePlace, routingConfigured, type GeocodedPlace } from './routing/openrouteservice';
+import {
+  geocodePlace,
+  routingConfigured,
+  SINGLE_ZONE,
+  type GeocodedPlace,
+} from './routing/openrouteservice';
 import { loadSession, queryAsUser, type Session } from './session';
 import type { RecordActionResult } from '@/components/records/spec';
 
@@ -1055,4 +1061,149 @@ export async function importTicketText(
   });
   revalidateRumbo(locale, input.tripId);
   return { ok: true, count: inserted };
+}
+
+// ---------------------------------------------------------------------------
+// Stops the person adds to a day
+// ---------------------------------------------------------------------------
+
+const extraStopInput = z.object({
+  tripId,
+  date: plainDateString,
+  place: z.union([
+    placeInput,
+    z.object({
+      googlePlaceId: z.string().min(1).max(300),
+      name: z.string().trim().min(1).max(160),
+      country: country.nullish(),
+      lat: z.number().min(-90).max(90),
+      lon: z.number().min(-180).max(180),
+    }),
+  ]),
+  minutes: z.number().int().min(0).max(720).nullish(),
+});
+
+/**
+ * A place added to a day: Rumbo slots it into that day's drive where it costs
+ * the least detour (or makes a round trip on a day without driving), asks the
+ * router again and recomputes the hours and the daylight.
+ */
+export async function addExtraStop(
+  raw: z.input<typeof extraStopInput>,
+  locale: Locale = 'es',
+): Promise<RecordActionResult & { readonly pending?: number }> {
+  const ctx = await context();
+  if ('error' in ctx) return { error: ctx.error };
+  const parsed = extraStopInput.safeParse(raw);
+  if (!parsed.success) return { error: 'invalid' };
+  const input = parsed.data;
+  let result;
+  try {
+    result = await queryAsUser(ctx.session, async (tx) => {
+      const anchors = await tx
+        .select({ kind: tripAnchors.kind, from: tripAnchors.fromDate })
+        .from(tripAnchors)
+        .where(
+          and(eq(tripAnchors.tripId, input.tripId), eq(tripAnchors.householdId, ctx.householdId)),
+        );
+      const pickup = anchors.find((a) => a.kind === 'car_pickup')?.from;
+      const dropoff = anchors.find((a) => a.kind === 'car_return')?.from;
+      if (!pickup || !dropoff || input.date < pickup || input.date > dropoff)
+        return { error: 'noCarThatDay' } as const;
+
+      let placeId: string | null;
+      const p = input.place;
+      if ('googlePlaceId' in p) {
+        const [existing] = await tx
+          .select({ id: tripPlaces.id })
+          .from(tripPlaces)
+          .where(
+            and(eq(tripPlaces.tripId, input.tripId), eq(tripPlaces.googlePlaceId, p.googlePlaceId)),
+          )
+          .limit(1);
+        if (existing) {
+          placeId = existing.id;
+        } else {
+          const countryCode = p.country ?? 'ZZ';
+          const [row] = await tx
+            .insert(tripPlaces)
+            .values({
+              householdId: ctx.householdId,
+              tripId: input.tripId,
+              googlePlaceId: p.googlePlaceId,
+              name: p.name,
+              countryCode: /^[A-Z]{2}$/.test(countryCode) ? countryCode : 'ZZ',
+              lat: p.lat.toFixed(6),
+              lon: p.lon.toFixed(6),
+              timeZone: SINGLE_ZONE[countryCode] ?? 'UTC',
+              kind: 'poi',
+              certainty: 'estimated',
+              sourceName: 'Google Maps',
+              sourceUrl: 'https://www.google.com/maps',
+              checkedOn: todayIn('UTC'),
+            })
+            .returning({ id: tripPlaces.id });
+          placeId = row?.id ?? null;
+        }
+      } else {
+        placeId = await placeIdFor(tx, ctx.householdId, input.tripId, p);
+      }
+      if (!placeId) return { error: 'placeUnknown' } as const;
+      await tx
+        .insert(tripExtraStops)
+        .values({
+          householdId: ctx.householdId,
+          tripId: input.tripId,
+          stopDate: input.date,
+          placeId,
+          minutes: input.minutes ?? null,
+          createdBy: ctx.session.user.id,
+        })
+        .onConflictDoUpdate({
+          target: [tripExtraStops.tripId, tripExtraStops.stopDate, tripExtraStops.placeId],
+          set: { minutes: input.minutes ?? null },
+        });
+      return composeAndStore(tx, ctx.householdId, input.tripId, { replaceManualLegs: false });
+    });
+  } catch {
+    return { error: 'saveFailed' };
+  }
+  if ('error' in result) return { error: result.error };
+  if (result.pending > 0) await startRouting(ctx, input.tripId);
+  revalidateRumbo(locale, input.tripId);
+  return { ok: true, pending: result.pending };
+}
+
+export async function removeExtraStop(
+  trip: string,
+  stopId: string,
+  locale: Locale = 'es',
+): Promise<RecordActionResult> {
+  const ctx = await context();
+  if ('error' in ctx) return { error: ctx.error };
+  if (!tripId.safeParse(trip).success || !z.uuid().safeParse(stopId).success)
+    return { error: 'invalid' };
+  let result;
+  try {
+    result = await queryAsUser(ctx.session, async (tx) => {
+      const removed = await tx
+        .delete(tripExtraStops)
+        .where(
+          and(
+            eq(tripExtraStops.id, stopId),
+            eq(tripExtraStops.tripId, trip),
+            eq(tripExtraStops.householdId, ctx.householdId),
+          ),
+        )
+        .returning({ id: tripExtraStops.id });
+      if (removed.length === 0) return { error: 'notFound' } as const;
+      return composeAndStore(tx, ctx.householdId, trip, { replaceManualLegs: false });
+    });
+  } catch {
+    return { error: 'saveFailed' };
+  }
+  if ('error' in result) return { error: result.error };
+  if (result.pending > 0) await startRouting(ctx, trip);
+  revalidateRumbo(locale, trip);
+  return { ok: true };
 }

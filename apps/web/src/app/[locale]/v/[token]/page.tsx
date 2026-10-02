@@ -6,6 +6,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { RouteExplorer } from '@/components/rumbo/route-explorer';
 import { presentRoute, presentTodos, type Presenter } from '@/server/rumbo-present';
 import { sharedTrip } from '@/server/rumbo-share';
+import { getClientEnv } from '@app/validation/env';
 
 /**
  * A trip shared by link: the route, the days, what to watch out for and what
@@ -45,7 +46,12 @@ export default async function SharedTripPage({
       <PageHeader title={view.trip.name} {...(route.summary ? { detail: route.summary } : {})} />
       <div className="flex flex-col gap-8">
         {route.sacrifices && <p className="max-w-[68ch] text-pretty">{route.sacrifices}</p>}
-        <RouteExplorer data={route} locale={locale} readOnly />
+        <RouteExplorer
+          data={route}
+          locale={locale}
+          readOnly
+          mapsKey={getClientEnv().NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? null}
+        />
         {todos.length > 0 && (
           <Card padding="lg">
             <h2 className="mb-4 text-lg font-medium">{t('todos.title')}</h2>

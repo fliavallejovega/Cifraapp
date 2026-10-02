@@ -135,7 +135,11 @@ export default async function RumboPage({
                 {route.tripNotices.length > 0 && <Notices notices={route.tripNotices} />}
               </div>
             )}
-            <RouteExplorer data={route} locale={locale} />
+            <RouteExplorer
+              data={route}
+              locale={locale}
+              mapsKey={getClientEnv().NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? null}
+            />
           </>
         )}
 

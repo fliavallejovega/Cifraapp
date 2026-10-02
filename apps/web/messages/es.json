@@ -4602,7 +4602,7 @@
     "title": "Rumbo",
     "backToTrip": "Volver al viaje",
     "tabs": {
-      "route": "Ruta en 3D",
+      "route": "Ruta y mapa",
       "stay": "Dónde dormir",
       "entry": "Visas y reservas",
       "label": "Secciones de Rumbo"
@@ -4749,12 +4749,12 @@
     "map": {
       "label": "Mapa de la ruta en 3D",
       "loading": "Cargando el relieve…",
-      "flat": "Tu navegador no muestra 3D: ves el mapa plano.",
       "error": "No se pudo cargar el mapa. La ruta sigue abajo, día por día.",
-      "hint": "Arrastra para girar · rueda o pellizco para acercar",
       "legendRoute": "Ruta del día",
       "legendOther": "Resto del viaje",
-      "legendFerry": "Ferry"
+      "legendFerry": "Ferry",
+      "hintGoogle": "Toquen un lugar del mapa para agregarlo al día",
+      "noKey": "Mapa simple: falta la clave de Google Maps"
     },
     "lodging": {
       "title": "Dónde dormir",
@@ -5047,7 +5047,8 @@
       "cardNumber": "Eso parece un número de tarjeta: no se guarda.",
       "saveFailed": "No se pudo guardar. Intenten de nuevo.",
       "network": "Sin conexión. Intenten de nuevo.",
-      "ticketUnreadable": "Rumbo no encontró aeropuertos con fecha y hora en ese texto. Prueben subiendo el PDF."
+      "ticketUnreadable": "Rumbo no encontró aeropuertos con fecha y hora en ese texto. Prueben subiendo el PDF.",
+      "noCarThatDay": "Ese día el carro no está con ustedes: las paradas se agregan entre que lo recogen y lo devuelven."
     },
     "severity": {
       "info": "Para saber",
@@ -5090,6 +5091,17 @@
         "revoke": "Revocar",
         "none": "No hay enlaces activos."
       }
+    },
+    "addStop": {
+      "title": "Agregar una parada a este día",
+      "search": "Buscar un lugar",
+      "hint": "Un pueblo, un mirador, un restaurante. Rumbo lo pone donde menos desvío cuesta.",
+      "hintMap": "O toquen un lugar en el mapa. Rumbo lo pone donde menos desvío cuesta y recalcula las horas.",
+      "minutes": "Tiempo ahí",
+      "minutesShort": "{minutes} min",
+      "add": "Agregar {place} al {day}",
+      "addEmpty": "Elijan un lugar",
+      "remove": "Quitar"
     }
   }
 }

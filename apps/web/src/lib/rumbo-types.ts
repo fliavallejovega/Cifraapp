@@ -102,6 +102,14 @@ export interface ClientDay {
   readonly offMap: string | null;
   /** Places the map labels on this day. */
   readonly focus: readonly string[];
+  /** The car is theirs this day: stops can be added to it. */
+  readonly carDay: boolean;
+  /** Stops the person added to this day. */
+  readonly extraStops: readonly {
+    readonly id: string;
+    readonly name: string;
+    readonly minutes: number | null;
+  }[];
 }
 
 export interface ClientRumbo {

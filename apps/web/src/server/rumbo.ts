@@ -11,6 +11,7 @@ import {
   tripAnchors,
   tripBookings,
   tripDrives,
+  tripExtraStops,
   tripFlightSegments,
   tripLegs,
   tripLodgingOptions,
@@ -320,6 +321,7 @@ export interface RumboRows {
   readonly drives: DriveRow[];
   readonly options: (typeof tripLodgingOptions.$inferSelect)[];
   readonly todos: (typeof tripTodos.$inferSelect)[];
+  readonly extraStops: (typeof tripExtraStops.$inferSelect)[];
   readonly rules: (typeof entryRules.$inferSelect)[];
   readonly systems: (typeof borderSystems.$inferSelect)[];
 }
@@ -346,6 +348,7 @@ export async function readRumboRows(
     todos,
     rules,
     systems,
+    extraStops,
   ] = await Promise.all([
     tx
       .select()
@@ -386,6 +389,11 @@ export async function readRumboRows(
     tx.select().from(tripTodos).where(eq(tripTodos.tripId, tripId)),
     tx.select().from(entryRules).where(isNull(entryRules.validTo)),
     tx.select().from(borderSystems),
+    tx
+      .select()
+      .from(tripExtraStops)
+      .where(eq(tripExtraStops.tripId, tripId))
+      .orderBy(asc(tripExtraStops.createdAt)),
   ]);
   return {
     trip,
@@ -400,6 +408,7 @@ export async function readRumboRows(
     todos,
     rules,
     systems,
+    extraStops,
   };
 }
 
@@ -457,6 +466,14 @@ export interface RumboView {
     readonly id: string;
     readonly listingId: string | null;
     readonly url: string | null;
+  }[];
+  /** Stops the person added, by day. */
+  readonly extraStops: readonly {
+    readonly id: string;
+    readonly date: PlainDate;
+    readonly placeId: string;
+    readonly name: string;
+    readonly minutes: number | null;
   }[];
   /** Stored routing requests by `mode|a>b>c`, for the manual mode. */
   readonly driveRows: readonly {
@@ -710,6 +727,16 @@ export function buildView(rows: RumboRows, today: PlainDate): RumboView {
       adults,
     },
     lodgingRows: rows.options.map((o) => ({ id: o.id, listingId: o.listingId, url: o.url })),
+    extraStops: rows.extraStops.map((s) => {
+      const p = placesById.get(s.placeId);
+      return {
+        id: s.id,
+        date: toPlainDate(s.stopDate),
+        placeId: p ? engineId(p) : s.placeId,
+        name: p?.name ?? '',
+        minutes: s.minutes,
+      };
+    }),
     driveRows: rows.drives.map((d) => ({
       id: d.id,
       key: `${d.mode}|${d.points.join('>')}`,
@@ -828,6 +855,24 @@ export async function composeAndStore(
     wishes,
     corridors: CORRIDORS,
     sleepNear: SLEEP_NEAR,
+    extraStops: rows.extraStops.flatMap((s) => {
+      const p = placesById.get(s.placeId);
+      return p
+        ? [
+            {
+              date: toPlainDate(s.stopDate),
+              placeId: engineId(p),
+              ...(s.minutes !== null ? { minutes: s.minutes } : {}),
+            },
+          ]
+        : [];
+    }),
+    locate: (id) => {
+      const row = rows.places.find((p) => engineId(p) === id || p.id === id);
+      if (row) return { lat: Number(row.lat), lon: Number(row.lon) };
+      const c = PLACES.get(id);
+      return c ? { lat: c.lat, lon: c.lon } : null;
+    },
   });
   const flights = rows.flights.map(flightFromRow);
   const stays: Stay[] = [

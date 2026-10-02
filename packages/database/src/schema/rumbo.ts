@@ -78,6 +78,7 @@ export const tripPlaces = appSchema.table('trip_places', {
     .$type<'city' | 'town' | 'pass' | 'poi' | 'airport' | 'port' | 'market'>()
     .notNull(),
   altitudeM: integer('altitude_m'),
+  googlePlaceId: text('google_place_id'),
   ...source,
   sourceUrl: text('source_url'),
   ...stamps,
@@ -265,4 +266,18 @@ export const tripShares = appSchema.table('trip_shares', {
   createdBy: uuid('created_by'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   revokedAt: timestamp('revoked_at', { withTimezone: true }),
+});
+
+export const tripExtraStops = appSchema.table('trip_extra_stops', {
+  id: id(),
+  householdId: uuid('household_id').notNull(),
+  tripId: tripRef(),
+  stopDate: date('stop_date').notNull(),
+  placeId: uuid('place_id')
+    .notNull()
+    .references(() => tripPlaces.id, { onDelete: 'cascade' }),
+  minutes: smallint('minutes'),
+  note: text('note'),
+  createdBy: uuid('created_by'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });

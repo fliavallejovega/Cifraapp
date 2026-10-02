@@ -79,6 +79,9 @@ export function getClientEnv(): ClientEnv {
     NEXT_PUBLIC_ADMIN_URL: process.env['NEXT_PUBLIC_ADMIN_URL']?.trim()
       ? process.env['NEXT_PUBLIC_ADMIN_URL']
       : undefined,
+    NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: process.env['NEXT_PUBLIC_GOOGLE_MAPS_API_KEY']?.trim()
+      ? process.env['NEXT_PUBLIC_GOOGLE_MAPS_API_KEY']
+      : undefined,
   };
 
   if (validationIsSkipped()) {

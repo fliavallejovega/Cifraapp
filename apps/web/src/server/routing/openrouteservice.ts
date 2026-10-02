@@ -172,7 +172,7 @@ const GEOCODE = 'https://api.openrouteservice.org/geocode/search';
  * Zones for countries with a single one. A place in a country with several
  * (the United States, Brazil…) needs the person to pick its zone.
  */
-const SINGLE_ZONE: Readonly<Record<string, string>> = {
+export const SINGLE_ZONE: Readonly<Record<string, string>> = {
   IT: 'Europe/Rome',
   AT: 'Europe/Vienna',
   CH: 'Europe/Zurich',

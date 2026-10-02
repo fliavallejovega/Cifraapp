@@ -33,6 +33,17 @@ export interface ComposeInput {
   readonly corridors: readonly Corridor[];
   /** Where you sleep for an event held somewhere else (market → nearest town). */
   readonly sleepNear?: Readonly<Record<string, string>>;
+  /** Places the person added to a day: a viewpoint, a lunch, a museum. */
+  readonly extraStops?: readonly ExtraStop[];
+  /** Coordinates, to slot an added stop where it costs the least detour. */
+  readonly locate?: (placeId: string) => { readonly lat: number; readonly lon: number } | null;
+}
+
+export interface ExtraStop {
+  readonly date: PlainDate;
+  readonly placeId: string;
+  /** Minutes the person plans to spend there; the default depends on the kind of place. */
+  readonly minutes?: number;
 }
 
 /** One drive the plan needs: the router turns it into legs. */
@@ -41,6 +52,8 @@ export interface DriveRequest {
   /** Start, places passed, end — in order. */
   readonly points: readonly string[];
   readonly purpose: 'move' | 'day_trip';
+  /** Minutes at a stop the person chose, overriding the default for its kind. */
+  readonly stopMinutes?: Readonly<Record<string, number>>;
 }
 
 export type Sacrifice =
@@ -354,5 +367,75 @@ function drivesOf(input: ComposeInput, solved: Solved): DriveRequest[] {
       drives.push({ date: a.from, points: [base, a.placeId, base], purpose: 'day_trip' });
     }
   }
-  return drives.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  const sorted = drives.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  return addExtraStops(input, solved, sorted);
+}
+
+function distanceKm(a: { lat: number; lon: number }, b: { lat: number; lon: number }): number {
+  const r = Math.PI / 180;
+  const dLat = (b.lat - a.lat) * r;
+  const dLon = (b.lon - a.lon) * r * Math.cos(((a.lat + b.lat) / 2) * r);
+  return Math.hypot(dLat, dLon) * 6371;
+}
+
+/** Where the night before a day was spent: the start of that day's drive. */
+function wokeUpAt(input: ComposeInput, solved: Solved, date: PlainDate): string {
+  let at = input.ground.start.placeId;
+  for (const p of solved.planned) {
+    if (p.firstNight < date) at = p.placeId;
+  }
+  return at;
+}
+
+/**
+ * Each added stop goes into its day's drive at the position that adds the
+ * fewest kilometres; on a day with no drive it becomes a round trip from
+ * where the night was spent.
+ */
+function addExtraStops(
+  input: ComposeInput,
+  solved: Solved,
+  drives: DriveRequest[],
+): DriveRequest[] {
+  const extras = input.extraStops ?? [];
+  if (extras.length === 0) return drives;
+  const out = drives.map((d) => ({
+    ...d,
+    points: [...d.points],
+    stopMinutes: { ...(d.stopMinutes ?? {}) },
+  }));
+  for (const extra of extras) {
+    // Only on days with the car.
+    if (extra.date < input.ground.start.date || extra.date > input.ground.end.date) continue;
+    let drive =
+      out.find((d) => d.date === extra.date && d.purpose === 'move') ??
+      out.find((d) => d.date === extra.date && d.purpose === 'day_trip');
+    if (!drive) {
+      const base = wokeUpAt(input, solved, extra.date);
+      drive = { date: extra.date, points: [base, base], purpose: 'day_trip', stopMinutes: {} };
+      out.push(drive);
+    }
+    if (drive.points.includes(extra.placeId)) {
+      if (extra.minutes !== undefined) drive.stopMinutes[extra.placeId] = extra.minutes;
+      continue;
+    }
+    let best = drive.points.length - 1;
+    const here = input.locate?.(extra.placeId) ?? null;
+    if (here) {
+      let cost = Number.POSITIVE_INFINITY;
+      for (let i = 1; i < drive.points.length; i++) {
+        const a = input.locate?.(drive.points[i - 1] ?? '');
+        const b = input.locate?.(drive.points[i] ?? '');
+        if (!a || !b) continue;
+        const added = distanceKm(a, here) + distanceKm(here, b) - distanceKm(a, b);
+        if (added < cost) {
+          cost = added;
+          best = i;
+        }
+      }
+    }
+    drive.points.splice(best, 0, extra.placeId);
+    if (extra.minutes !== undefined) drive.stopMinutes[extra.placeId] = extra.minutes;
+  }
+  return out.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
 }

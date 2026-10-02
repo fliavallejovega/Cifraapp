@@ -254,3 +254,57 @@ describe('wishes in plain words', () => {
     );
   });
 });
+
+describe('stops the person adds', () => {
+  it('slot into the day where they cost the least detour, or make a round trip', async () => {
+    const { placeOf } = await import('./catalog/places.js');
+    const { realCaseComposeInput } = await import('./fixtures/real-case.js');
+    const base = realCaseComposeInput();
+    const result = composeGround({
+      ...base,
+      extraStops: [
+        { date: d('2026-12-20'), placeId: 'freiburg', minutes: 30 },
+        { date: d('2026-12-14'), placeId: 'ortisei' },
+        { date: d('2026-12-18'), placeId: 'freiburg', minutes: 120 },
+      ],
+      locate: (id) => {
+        try {
+          const p = placeOf(id);
+          return { lat: p.lat, lon: p.lon };
+        } catch {
+          return null;
+        }
+      },
+    });
+    const day = (date: string) => result.drives.filter((x) => x.date === d(date));
+    // Already on the way: nothing changes but the minutes there.
+    expect(day('2026-12-20')[0]?.points).toEqual([
+      'hinterzarten',
+      'freiburg',
+      'heidelberg',
+      'ruedesheim',
+    ]);
+    expect(day('2026-12-20')[0]?.stopMinutes?.['freiburg']).toBe(30);
+    // A rest day becomes a round trip from where they slept.
+    expect(day('2026-12-18')[0]).toMatchObject({
+      purpose: 'day_trip',
+      points: ['hinterzarten', 'freiburg', 'hinterzarten'],
+    });
+    expect(day('2026-12-18')[0]?.stopMinutes?.['freiburg']).toBe(120);
+  });
+
+  it('inserts a new place between the two stops it sits between', async () => {
+    const { placeOf } = await import('./catalog/places.js');
+    const { realCaseComposeInput } = await import('./fixtures/real-case.js');
+    const result = composeGround({
+      ...realCaseComposeInput(),
+      extraStops: [{ date: d('2026-12-21'), placeId: 'heidelberg' }],
+      locate: (id) => ({ lat: placeOf(id).lat, lon: placeOf(id).lon }),
+    });
+    expect(result.drives.find((x) => x.date === d('2026-12-21'))?.points).toEqual([
+      'ruedesheim',
+      'heidelberg',
+      'koeln',
+    ]);
+  });
+});

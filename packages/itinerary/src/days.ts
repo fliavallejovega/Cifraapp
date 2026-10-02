@@ -92,6 +92,7 @@ export interface DayDrive {
   readonly legs: readonly DayLeg[];
   /** True when some stretch has not been routed yet. */
   readonly incomplete: boolean;
+  readonly stopMinutes?: Readonly<Record<string, number>>;
 }
 
 export interface ItineraryDay {
@@ -243,7 +244,13 @@ export function buildItinerary(input: ItineraryInput): Itinerary {
         }
       }
       if (incomplete) notices.push({ code: 'route_pending', severity: 'info' });
-      drives.push({ purpose: req.purpose, points: req.points, legs, incomplete });
+      drives.push({
+        purpose: req.purpose,
+        points: req.points,
+        legs,
+        incomplete,
+        ...(req.stopMinutes ? { stopMinutes: req.stopMinutes } : {}),
+      });
     }
 
     const carLegs = drives.flatMap((d) => d.legs).filter((l) => l.mode === 'car');
@@ -267,7 +274,7 @@ export function buildItinerary(input: ItineraryInput): Itinerary {
       departure = atMinute(date, h * 60 + m, first.timeZone);
       const stops = move.points
         .slice(1, -1)
-        .reduce((s, p) => s + STOP_MINUTES[input.place(p).kind], 0);
+        .reduce((s, p) => s + (move.stopMinutes?.[p] ?? STOP_MINUTES[input.place(p).kind]), 0);
       const moveMinutes = move.legs.reduce((s, l) => s + l.plannedMinutes, 0);
       estimatedArrival = atMinute(date, h * 60 + m + moveMinutes + stops, last.timeZone);
       sunset = sunTimes(date, last.lat, last.lon, last.timeZone)?.sunset ?? null;

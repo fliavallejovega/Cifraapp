@@ -4602,7 +4602,7 @@
     "title": "Rumbo",
     "backToTrip": "Back to the trip",
     "tabs": {
-      "route": "3D route",
+      "route": "Route and map",
       "stay": "Where to sleep",
       "entry": "Visas and bookings",
       "label": "Rumbo sections"
@@ -4749,12 +4749,12 @@
     "map": {
       "label": "3D map of the route",
       "loading": "Loading the relief…",
-      "flat": "Your browser does not show 3D: this is the flat map.",
       "error": "The map could not load. The route is below, day by day.",
-      "hint": "Drag to turn · wheel or pinch to zoom",
       "legendRoute": "The day's route",
       "legendOther": "The rest of the trip",
-      "legendFerry": "Ferry"
+      "legendFerry": "Ferry",
+      "hintGoogle": "Tap a place on the map to add it to the day",
+      "noKey": "Simple map: the Google Maps key is missing"
     },
     "lodging": {
       "title": "Where to sleep",
@@ -5047,7 +5047,8 @@
       "cardNumber": "That looks like a card number: it is not saved.",
       "saveFailed": "It could not be saved. Try again.",
       "network": "No connection. Try again.",
-      "ticketUnreadable": "Rumbo found no airports with a date and time in that text. Try uploading the PDF."
+      "ticketUnreadable": "Rumbo found no airports with a date and time in that text. Try uploading the PDF.",
+      "noCarThatDay": "You do not have the car that day: stops can be added between picking it up and returning it."
     },
     "severity": {
       "info": "Good to know",
@@ -5090,6 +5091,17 @@
         "revoke": "Revoke",
         "none": "No active links."
       }
+    },
+    "addStop": {
+      "title": "Add a stop to this day",
+      "search": "Search for a place",
+      "hint": "A town, a viewpoint, a restaurant. Rumbo slots it where the detour is shortest.",
+      "hintMap": "Or tap a place on the map. Rumbo slots it where the detour is shortest and recomputes the hours.",
+      "minutes": "Time there",
+      "minutesShort": "{minutes} min",
+      "add": "Add {place} to {day}",
+      "addEmpty": "Pick a place",
+      "remove": "Remove"
     }
   }
 }
