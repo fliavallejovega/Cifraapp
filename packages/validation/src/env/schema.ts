@@ -70,6 +70,16 @@ export const serverEnvSchema = z.object({
   CRON_SECRET: z.string().min(16).optional(),
 
   /**
+   * openrouteservice, para las rutas de Rumbo: kilómetros, minutos y altitud
+   * de cada tramo en carro.
+   *
+   * Opcional: sin clave, Rumbo arma el viaje igual, deja los tramos «por
+   * calcular» y acepta kilómetros y minutos escritos a mano. Cada respuesta se
+   * guarda con su fuente y su fecha, así que la cuota gratuita alcanza.
+   */
+  ORS_API_KEY: z.string().min(20).optional(),
+
+  /**
    * Brevo, para el correo saliente.
    *
    * Opcional a propósito y comprobado en el momento de enviar: un despliegue sin

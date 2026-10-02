@@ -16,3 +16,8 @@ export * from './roads.js';
 export * from './days.js';
 export * from './entry.js';
 export * from './fixtures/real-case.js';
+export * from './catalog/activities.js';
+export * from './catalog/events.js';
+export * from './todos.js';
+export * from './lodging.js';
+export * from './links.js';

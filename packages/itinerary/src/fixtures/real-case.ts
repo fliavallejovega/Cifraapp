@@ -1,6 +1,6 @@
 import { toPlainDate } from '@app/domain';
 
-import { CORRIDORS } from '../catalog/corridors.js';
+import { CORRIDORS, SLEEP_NEAR } from '../catalog/corridors.js';
 import { placeOf } from '../catalog/places.js';
 import type { ComposeInput } from '../compose.js';
 import type { RouteResolver } from '../days.js';
@@ -105,7 +105,7 @@ export function realCaseComposeInput(wishes: readonly Wish[] = REAL_CASE_WISHES)
     anchors: REAL_CASE_ANCHORS.filter((a) => a.kind !== 'car_pickup' && a.kind !== 'car_return'),
     wishes,
     corridors: CORRIDORS,
-    sleepNear: { ravenna: 'hinterzarten' },
+    sleepNear: SLEEP_NEAR,
   };
 }
 

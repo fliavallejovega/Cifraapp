@@ -150,7 +150,10 @@ export const AIRPORTS: ReadonlyMap<string, Airport> = new Map(
  */
 export const TYPICAL_BLOCK_MINUTES: Readonly<Record<string, number>> = {
   'PTY-IST': 760,
-  'IST-PTY': 820,
+  // Turkish Airlines flies Istanbul → Panama with a stop in Bogotá (TK800),
+  // leaving Istanbul around dawn. Flight trackers, 2026-10-02; to be confirmed
+  // against the ticket's «Itinerary details».
+  'IST-PTY': 1110,
   'IST-VCE': 155,
   'VCE-IST': 145,
   'CPH-IST': 205,

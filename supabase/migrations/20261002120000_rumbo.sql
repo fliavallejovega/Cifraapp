@@ -24,6 +24,17 @@ create type app.rumbo_ground_mode as enum ('car', 'train', 'mixed');
 create type app.rumbo_todo_status as enum ('pending', 'bought', 'dismissed');
 create type platform.entry_status as enum ('visa_free', 'evisa', 'eta', 'visa_required', 'unknown');
 
+-- Monedas de los países que Rumbo recorre y que Viajes aún no tenía.
+insert into platform.currencies (code, name_en, name_es, symbol, minor_units) values
+  ('DKK', 'Danish krone', 'Corona danesa', 'kr', 2),
+  ('SEK', 'Swedish krona', 'Corona sueca', 'kr', 2),
+  ('NOK', 'Norwegian krone', 'Corona noruega', 'kr', 2),
+  ('CZK', 'Czech koruna', 'Corona checa', 'Kč', 2),
+  ('HUF', 'Hungarian forint', 'Forinto húngaro', 'Ft', 2),
+  ('PLN', 'Polish złoty', 'Esloti polaco', 'zł', 2),
+  ('TRY', 'Turkish lira', 'Lira turca', '₺', 2)
+on conflict (code) do nothing;
+
 -- ---------------------------------------------------------------------------
 -- Viaje y viajeros
 -- ---------------------------------------------------------------------------

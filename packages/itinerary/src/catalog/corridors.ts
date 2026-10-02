@@ -92,3 +92,8 @@ export function isFerry(from: string, to: string): boolean {
     (f) => (f.from === from && f.to === to) || (f.from === to && f.to === from),
   );
 }
+
+/** Where to sleep for an event held at a place with no beds of its own. */
+export const SLEEP_NEAR: Readonly<Record<string, string>> = {
+  ravenna: 'hinterzarten',
+};
