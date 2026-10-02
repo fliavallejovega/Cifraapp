@@ -3,6 +3,7 @@
 import {
   accounts,
   fxRates,
+  goalCredits,
   goals,
   tripBookings,
   tripChecklistItems,
@@ -22,6 +23,8 @@ import {
   toScaled,
   DAILY_CATEGORIES,
   DEFAULT_TRAVELER_WEIGHT,
+  PROFILES as ENGINE_PROFILES,
+  rebalanceShares,
   TRIP_CATEGORIES,
   validateShares,
 } from '@app/trip-engine';
@@ -30,7 +33,7 @@ import { z } from 'zod';
 
 import { currencyOf } from './household-context';
 import { optionalText, plainDateString, positiveAmount, recordName } from './record-input';
-import { tripsEnabled } from './repositories/trips';
+import { loadTripReport, tripsEnabled } from './repositories/trips';
 import { revalidateTrip } from './revalidate';
 import { loadSession, queryAsUser, type Session } from './session';
 import { bookingInput, upsertTripBooking, type TripBookingInput } from './trip-booking-core';
@@ -1255,6 +1258,218 @@ export async function recordCashWithdrawal(
     if ('error' in result) return { error: result.error ?? 'invalid' };
     revalidateTrip(locale, tripId);
     return { ok: true };
+  } catch (error) {
+    return { error: constraintKey(error) };
+  }
+}
+
+const closeInput = z.object({
+  destination: z.enum(['goal', 'account', 'none']),
+  goalId: z.uuid().nullish(),
+  /** Account the leftover is moved to, and the one it comes from. */
+  toAccountId: z.uuid().nullish(),
+  fromAccountId: z.uuid().nullish(),
+});
+
+export type CloseTripInput = z.input<typeof closeInput>;
+
+/**
+ * Closes a trip: freezes its report, marks it completed and its goal reached,
+ * and — when there is money left — returns it as the family chooses: credited
+ * to a goal, with its source, or moved to an account as a real transfer.
+ */
+export async function closeTrip(
+  tripId: string,
+  raw: CloseTripInput,
+  locale: Locale = 'es',
+): Promise<ActionResult> {
+  const ctx = await context();
+  if (isError(ctx)) return ctx;
+  const parsed = closeInput.safeParse(raw);
+  if (!parsed.success) return { error: 'invalid' };
+  const input = parsed.data;
+  const timeZone =
+    ctx.session.households.find((h) => h.id === ctx.householdId)?.timeZone ?? 'America/Panama';
+  const view = await loadTripReport(
+    ctx.session,
+    ctx.householdId,
+    tripId,
+    todayIn(timeZone),
+    ctx.currency,
+  );
+  if (!view) return { error: 'notFound' };
+  const { report, dashboard } = view;
+  if (dashboard.trip.status === 'completed') return { error: 'alreadyClosed' };
+  const surplus = Money.fromDecimalString(report.surplus, ctx.currency);
+
+  try {
+    await queryAsUser(ctx.session, async (tx) => {
+      if (surplus.isPositive() && input.destination === 'goal' && input.goalId) {
+        const [goal] = await tx
+          .select({ id: goals.id })
+          .from(goals)
+          .where(and(eq(goals.id, input.goalId), eq(goals.householdId, ctx.householdId)))
+          .limit(1);
+        if (goal) {
+          await tx.insert(goalCredits).values({
+            householdId: ctx.householdId,
+            goalId: goal.id,
+            sourceKind: 'trip_surplus',
+            sourceId: tripId,
+            amount: surplus.toDecimalString(),
+            createdBy: ctx.session.user.id,
+          });
+          await tx
+            .update(goals)
+            .set({
+              currentAmount: sql`${goals.currentAmount} + ${surplus.toDecimalString()}::numeric`,
+              updatedAt: new Date(),
+            })
+            .where(eq(goals.id, goal.id));
+        }
+      }
+      if (
+        surplus.isPositive() &&
+        input.destination === 'account' &&
+        input.toAccountId &&
+        input.fromAccountId &&
+        input.toAccountId !== input.fromAccountId
+      ) {
+        const moved = await recordTripTransfer(tx, {
+          householdId: ctx.householdId,
+          userId: ctx.session.user.id,
+          tripId,
+          currency: ctx.currency,
+          fromAccountId: input.fromAccountId,
+          toAccountId: input.toAccountId,
+          date: todayIn(timeZone),
+          baseAmount: surplus.toDecimalString(),
+          description:
+            locale === 'en'
+              ? `Left over · ${dashboard.trip.name}`
+              : `Sobrante · ${dashboard.trip.name}`,
+        });
+        if (!moved) throw new Error('transfer failed');
+      }
+      // The trip's own goal was for this trip: it is reached, whatever it held.
+      if (dashboard.trip.goalId) {
+        await tx
+          .update(goals)
+          .set({ status: 'reached', updatedAt: new Date() })
+          .where(eq(goals.id, dashboard.trip.goalId));
+      }
+      await tx
+        .update(trips)
+        .set({
+          status: 'completed',
+          completedAt: new Date(),
+          closingReport: report,
+          updatedAt: new Date(),
+        })
+        .where(and(eq(trips.id, tripId), eq(trips.householdId, ctx.householdId)));
+    });
+    revalidateTrip(locale, tripId);
+    return { ok: true };
+  } catch (error) {
+    return { error: constraintKey(error) };
+  }
+}
+
+/**
+ * The next trip, from this one: same places and durations a year later, the
+ * same people, and the split the family actually spent as a custom profile.
+ * It starts as an idea, with nothing booked and nothing spent.
+ */
+export async function duplicateTripAsTemplate(
+  tripId: string,
+  locale: Locale = 'es',
+): Promise<ActionResult> {
+  const ctx = await context();
+  if (isError(ctx)) return ctx;
+  const timeZone =
+    ctx.session.households.find((h) => h.id === ctx.householdId)?.timeZone ?? 'America/Panama';
+  const view = await loadTripReport(
+    ctx.session,
+    ctx.householdId,
+    tripId,
+    todayIn(timeZone),
+    ctx.currency,
+  );
+  if (!view) return { error: 'notFound' };
+  const { dashboard, report } = view;
+  const source = dashboard.trip;
+  const shift = (date: string) => {
+    const d = new Date(`${date}T00:00:00Z`);
+    d.setUTCFullYear(d.getUTCFullYear() + 1);
+    return d.toISOString().slice(0, 10);
+  };
+  const original =
+    source.profile === 'custom' ? ENGINE_PROFILES.balanced : ENGINE_PROFILES[source.profile];
+  let shares = report.learnedShares;
+  // A trip whose bed was paid ahead spent nothing on lodging day by day; the
+  // template keeps the profile's lodging share so a future trip without a
+  // booking still gets a bed.
+  if (shares?.lodging === 0) shares = rebalanceShares(shares, 'lodging', original.lodging);
+  try {
+    const id = await queryAsUser(ctx.session, async (tx) => {
+      const [trip] = await tx
+        .insert(trips)
+        .values({
+          householdId: ctx.householdId,
+          createdBy: ctx.session.user.id,
+          name: `${source.name} · ${locale === 'en' ? 'template' : 'plantilla'}`.slice(0, 120),
+          status: 'idea',
+          startDate: shift(source.startDate),
+          endDate: shift(source.endDate),
+          baseCurrency: ctx.currency,
+          totalBudget: source.totalBudget,
+          contingencyType: source.contingencyType,
+          contingencyValue: source.contingencyValue,
+          profile: shares ? 'custom' : source.profile,
+          customShares: shares ? { ...shares } : null,
+          includeArrivalDay: source.includeArrivalDay,
+          includeDepartureDay: source.includeDepartureDay,
+          partialDayWeight: source.partialDayWeight,
+          rollingPolicy: source.rollingPolicy,
+          planningFx: source.planningFx,
+        })
+        .returning({ id: trips.id });
+      if (!trip) throw new Error('insert failed');
+      if (dashboard.legs.length > 0) {
+        await tx.insert(tripLegs).values(
+          dashboard.legs.map((leg) => ({
+            householdId: ctx.householdId,
+            tripId: trip.id,
+            position: leg.position,
+            city: leg.city,
+            countryCode: leg.countryCode,
+            placeLabel: leg.placeLabel,
+            arrivalDate: shift(leg.arrivalDate),
+            departureDate: shift(leg.departureDate),
+            localCurrency: leg.localCurrency.trim(),
+            costLevel: leg.costLevel,
+            costIndex: leg.costIndex,
+            timezone: leg.timezone,
+            lodgingMode: 'undecided' as const,
+          })),
+        );
+      }
+      if (dashboard.travelers.length > 0) {
+        await tx.insert(tripTravelers).values(
+          dashboard.travelers.map((t) => ({
+            householdId: ctx.householdId,
+            tripId: trip.id,
+            personId: t.personId,
+            displayName: t.displayName,
+            travelerType: t.travelerType,
+            weight: t.weight,
+          })),
+        );
+      }
+      return trip.id;
+    });
+    revalidateTrip(locale, id);
+    return { created: id };
   } catch (error) {
     return { error: constraintKey(error) };
   }

@@ -15,12 +15,15 @@ import {
   tripTravelers,
   transactions,
 } from '@app/database/schema';
-import { Money, type CurrencyCode, type PlainDate } from '@app/domain';
+import { Money, toPlainDate, type CurrencyCode, type PlainDate } from '@app/domain';
 import {
+  buildTripReport,
   computeTripBudget,
   exchangeEffect,
   type Proposal,
+  type SpentLine,
   type TripBudget,
+  type TripReport,
 } from '@app/trip-engine';
 import { and, asc, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import { cache } from 'react';
@@ -764,4 +767,96 @@ export async function loadTripDocumentReview(
     possibleDuplicates: data.duplicates,
     rates: await loadLatestRates(session, currency),
   };
+}
+
+export interface TripReportView {
+  readonly dashboard: TripDashboard;
+  readonly report: TripReport;
+  /** Where the trip's spending came out of, by account. */
+  readonly byAccount: readonly {
+    readonly accountId: string;
+    readonly name: string;
+    readonly amount: string;
+  }[];
+  /** The household's open goals, where a leftover can go. */
+  readonly goals: readonly { readonly id: string; readonly name: string }[];
+}
+
+/**
+ * The closing report. The budget is computed as of the day after the trip, so
+ * every day keeps its original plan and all spending counts as past. A trip
+ * already closed shows the report frozen at closing — the past does not move
+ * when the engine does.
+ */
+export async function loadTripReport(
+  session: Session,
+  householdId: string,
+  tripId: string,
+  today: PlainDate,
+  currency: CurrencyCode,
+): Promise<TripReportView | null> {
+  const probe = await loadTripDashboard(session, householdId, tripId, today, currency);
+  if (!probe) return null;
+  const after = addOneDay(probe.trip.endDate);
+  const dashboard =
+    today > probe.trip.endDate
+      ? probe
+      : await loadTripDashboard(session, householdId, tripId, after, currency);
+  if (!dashboard) return null;
+
+  const frozen = dashboard.trip.closingReport as TripReport | null;
+  const paidBookings = new Set(
+    dashboard.bookings.map((b) => b.transactionId).filter((id): id is string => id !== null),
+  );
+  const lines: SpentLine[] = dashboard.expenses
+    .filter((e) => !paidBookings.has(e.id))
+    .map((e) => ({
+      day: e.tripDay ?? e.date,
+      category: (e.category ?? 'other') as SpentLine['category'],
+      legId: e.legId,
+      travelerId: e.paidByTravelerId,
+      amount: e.amount.replace(/^-/, ''),
+    }));
+  const report =
+    frozen ??
+    buildTripReport({
+      budget: dashboard.budget,
+      spent: lines,
+      exchangeEffect: dashboard.exchangeEffect,
+    });
+
+  const totals = new Map<string, bigint>();
+  for (const e of dashboard.expenses) {
+    const [w = '0', f = ''] = e.amount.replace(/^-/, '').split('.');
+    totals.set(
+      e.accountId,
+      (totals.get(e.accountId) ?? 0n) + BigInt(w) * 10_000n + BigInt((f + '0000').slice(0, 4)),
+    );
+  }
+  const byAccount = [...totals.entries()].map(([accountId, units]) => ({
+    accountId,
+    name: dashboard.accounts.find((a) => a.id === accountId)?.name ?? '—',
+    amount: `${String(units / 10_000n)}.${String(units % 10_000n)
+      .padStart(4, '0')
+      .slice(0, 2)}`,
+  }));
+  const openGoals = await queryAsUser(session, (tx) =>
+    tx
+      .select({ id: goals.id, name: goals.name })
+      .from(goals)
+      .where(and(eq(goals.householdId, householdId), eq(goals.status, 'active')))
+      .orderBy(asc(goals.name)),
+  );
+  return {
+    dashboard,
+    report,
+    byAccount,
+    goals: openGoals.filter((g) => g.id !== dashboard.trip.goalId),
+  };
+}
+
+function addOneDay(date: string): PlainDate {
+  const d = new Date(`${date}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + 1);
+  return toPlainDate(d.toISOString().slice(0, 10));
 }

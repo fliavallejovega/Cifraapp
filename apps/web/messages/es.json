@@ -4474,6 +4474,93 @@
       "sameCurrency": "Este viaje es en tu misma moneda: no hace falta cambiar.",
       "effectDearer": "Por el tipo de cambio, este viaje te ha costado {amount} más de lo planificado.",
       "effectCheaper": "Por el tipo de cambio, este viaje te ha costado {amount} menos de lo planificado."
+    },
+    "report": {
+      "title": "Informe del viaje",
+      "provisional": "El viaje todavía no termina: estas cifras cambian con cada gasto.",
+      "hero": {
+        "label": "Gastaron en destino",
+        "under": "De {planned} planificados: les sobraron {difference}.",
+        "over": "De {planned} planificados: se pasaron por {difference}.",
+        "planned": "Tenían {planned} planificados para los días."
+      },
+      "empty": {
+        "title": "Todavía no hay gastos del viaje",
+        "body": "Cuando registren lo que gastan en destino, aquí van a ver lo planificado contra lo real, por categoría y por día.",
+        "action": "Registrar un gasto"
+      },
+      "insights": "Lo que pasó",
+      "insight": {
+        "categoryOver": "En {category} gastaron {percent} % más de lo planificado.",
+        "categoryUnder": "En {category} gastaron {percent} % menos de lo planificado.",
+        "overallUnder": "Los días costaron {amount} menos de lo planificado.",
+        "overallOver": "Los días costaron {amount} más de lo planificado.",
+        "reserveUntouched": "No tocaron la reserva para imprevistos.",
+        "reserveUsed": "Usaron {percent} % de la reserva para imprevistos.",
+        "exchangeCheaper": "El tipo de cambio les ahorró {amount}.",
+        "exchangeDearer": "El tipo de cambio les costó {amount} más."
+      },
+      "actual": "Real",
+      "planned": "Planificado",
+      "ofPlanned": "de {planned}",
+      "byCategory": {
+        "title": "Por categoría",
+        "detail": "La barra es lo gastado; la marca, lo planificado."
+      },
+      "byDay": {
+        "title": "Día a día",
+        "detail": "Lo gastado acumulado contra lo planificado acumulado.",
+        "day": "Día",
+        "caption": "Gasto acumulado por día, real y planificado"
+      },
+      "byLeg": "Por ciudad",
+      "byTraveler": "Por persona",
+      "shared": "Gastos compartidos",
+      "reserve": {
+        "title": "Reserva y cambio",
+        "used": "Reserva usada ({percent} %)"
+      },
+      "exchange": {
+        "cheaper": "Ahorro por tipo de cambio",
+        "dearer": "Costo por tipo de cambio"
+      },
+      "overrun": "Por encima del fondo y la reserva",
+      "byAccount": "De dónde salió el dinero",
+      "close": {
+        "title": "Cerrar el viaje",
+        "detail": "Cerrar congela este informe y deja el viaje en el historial.",
+        "notYet": "Se puede cerrar desde el {date}, cuando termine el viaje.",
+        "bodySurplus": "Les sobraron {amount}. Elijan a dónde va.",
+        "bodyNoSurplus": "No quedó dinero por devolver.",
+        "legend": "A dónde va lo que sobró",
+        "option": {
+          "goal": "A una meta",
+          "account": "A una cuenta",
+          "none": "Dejarlo donde está"
+        },
+        "optionDetail": {
+          "goal": "Se suma a la meta, con el viaje como origen.",
+          "account": "Se registra una transferencia real.",
+          "none": "El dinero se queda en la cuenta del viaje."
+        },
+        "goal": "Meta",
+        "account": "Cuenta de destino",
+        "submitGoal": "Cerrar y sumar {amount} a {goal}",
+        "submitAccount": "Cerrar y mover {amount} a {account}",
+        "submitKeep": "Cerrar el viaje",
+        "submitPlain": "Cerrar el viaje",
+        "error": "No pudimos cerrar el viaje. Intenten de nuevo."
+      },
+      "closed": {
+        "title": "Viaje cerrado",
+        "detail": "Cerrado el {date}. Este informe ya no cambia."
+      },
+      "template": {
+        "action": "Usar como plantilla",
+        "detail": "La plantilla copia ciudades, duración y personas un año después, con el reparto que de verdad gastaron.",
+        "error": "No pudimos crear la plantilla. Intenten de nuevo."
+      },
+      "csv": "Descargar gastos (CSV)"
     }
   }
 }

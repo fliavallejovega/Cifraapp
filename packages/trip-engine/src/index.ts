@@ -57,3 +57,10 @@ export {
   type Proposal,
   type RawExtraction,
 } from './documents.js';
+export {
+  buildTripReport,
+  type Insight,
+  type ReportRow,
+  type SpentLine,
+  type TripReport,
+} from './report.js';

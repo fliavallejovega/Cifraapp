@@ -4474,6 +4474,93 @@
       "sameCurrency": "This trip is in your own currency: no exchange needed.",
       "effectDearer": "Because of the exchange rate, this trip has cost you {amount} more than planned.",
       "effectCheaper": "Because of the exchange rate, this trip has cost you {amount} less than planned."
+    },
+    "report": {
+      "title": "Trip report",
+      "provisional": "The trip is not over yet: these figures change with every expense.",
+      "hero": {
+        "label": "Spent at the destination",
+        "under": "Of {planned} planned: {difference} left over.",
+        "over": "Of {planned} planned: {difference} over.",
+        "planned": "{planned} was planned for the days."
+      },
+      "empty": {
+        "title": "No trip expenses yet",
+        "body": "Once you record what you spend at the destination, this shows planned against actual, by category and by day.",
+        "action": "Record an expense"
+      },
+      "insights": "What happened",
+      "insight": {
+        "categoryOver": "{category} came to {percent} % more than planned.",
+        "categoryUnder": "{category} came to {percent} % less than planned.",
+        "overallUnder": "The days cost {amount} less than planned.",
+        "overallOver": "The days cost {amount} more than planned.",
+        "reserveUntouched": "The contingency reserve went untouched.",
+        "reserveUsed": "You used {percent} % of the contingency reserve.",
+        "exchangeCheaper": "Exchange rates saved you {amount}.",
+        "exchangeDearer": "Exchange rates cost you {amount} more."
+      },
+      "actual": "Actual",
+      "planned": "Planned",
+      "ofPlanned": "of {planned}",
+      "byCategory": {
+        "title": "By category",
+        "detail": "The bar is what was spent; the mark, what was planned."
+      },
+      "byDay": {
+        "title": "Day by day",
+        "detail": "Cumulative spending against the cumulative plan.",
+        "day": "Day",
+        "caption": "Cumulative spending per day, actual and planned"
+      },
+      "byLeg": "By city",
+      "byTraveler": "By person",
+      "shared": "Shared expenses",
+      "reserve": {
+        "title": "Reserve and exchange",
+        "used": "Reserve used ({percent} %)"
+      },
+      "exchange": {
+        "cheaper": "Saved on exchange rates",
+        "dearer": "Cost of exchange rates"
+      },
+      "overrun": "Beyond the fund and reserve",
+      "byAccount": "Where the money came from",
+      "close": {
+        "title": "Close the trip",
+        "detail": "Closing freezes this report and keeps the trip in your history.",
+        "notYet": "You can close it from {date}, when the trip ends.",
+        "bodySurplus": "{amount} was left over. Choose where it goes.",
+        "bodyNoSurplus": "No money was left to return.",
+        "legend": "Where the leftover goes",
+        "option": {
+          "goal": "To a goal",
+          "account": "To an account",
+          "none": "Leave it where it is"
+        },
+        "optionDetail": {
+          "goal": "Added to the goal, with the trip as its source.",
+          "account": "Recorded as a real transfer.",
+          "none": "The money stays in the trip's account."
+        },
+        "goal": "Goal",
+        "account": "Destination account",
+        "submitGoal": "Close and add {amount} to {goal}",
+        "submitAccount": "Close and move {amount} to {account}",
+        "submitKeep": "Close the trip",
+        "submitPlain": "Close the trip",
+        "error": "We couldn't close the trip. Try again."
+      },
+      "closed": {
+        "title": "Trip closed",
+        "detail": "Closed on {date}. This report no longer changes."
+      },
+      "template": {
+        "action": "Use as a template",
+        "detail": "The template copies cities, length and people a year later, with the split you actually spent.",
+        "error": "We couldn't create the template. Try again."
+      },
+      "csv": "Download expenses (CSV)"
     }
   }
 }

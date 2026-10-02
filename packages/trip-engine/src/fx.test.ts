@@ -23,7 +23,13 @@ describe('conversion', () => {
 describe('exchangeEffect', () => {
   it('is positive when the real rates cost more than the plan', () => {
     // Planned at 0.92 €/$: €92 would cost $100. Paid $105.
-    expect(exchangeEffect([{ localAmount: '92.00', localMinor: 2, currency: 'EUR', baseAmount: '105.00' }], { EUR: { rate: '0.92' } }, 2)).toBe('5.00');
+    expect(
+      exchangeEffect(
+        [{ localAmount: '92.00', localMinor: 2, currency: 'EUR', baseAmount: '105.00' }],
+        { EUR: { rate: '0.92' } },
+        2,
+      ),
+    ).toBe('5.00');
   });
 
   it('is negative when the trip came out cheaper, and ignores currencies without a planning rate', () => {
@@ -43,7 +49,9 @@ describe('exchangeEffect', () => {
 describe('shiftedRate', () => {
   it('makes the local currency dearer by the given percent', () => {
     expect(shiftedRate('0.92', '10')).toBe('0.8363636364');
-    expect(convertToBase('100.00', shiftedRate('0.92', '10'), { minorUnits: 2 }, { minorUnits: 2 })).toBe('119.57');
+    expect(
+      convertToBase('100.00', shiftedRate('0.92', '10'), { minorUnits: 2 }, { minorUnits: 2 }),
+    ).toBe('119.57');
   });
 });
 
@@ -84,6 +92,8 @@ describe('references', () => {
     });
     expect(toMinor(range.low, 2)).toBeLessThan(toMinor(range.estimate, 2));
     expect(toMinor(range.estimate, 2)).toBeLessThan(toMinor(range.high, 2));
-    expect(range.estimate).toBe(fromMinor(toMinor('55.00', 2) * 26n * 7n / 10n + toMinor('90.00', 2) * 2n * 6n, 2));
+    expect(range.estimate).toBe(
+      fromMinor((toMinor('55.00', 2) * 26n * 7n) / 10n + toMinor('90.00', 2) * 2n * 6n, 2),
+    );
   });
 });

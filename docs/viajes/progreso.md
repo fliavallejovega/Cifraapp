@@ -11,7 +11,8 @@
 | 6 · Documentos de viaje  | Hecha (2026-10-01) | Lector de pasajes, hoteles y recibos sobre el mismo pipeline; revisión y confirmación atómica; probado de punta a punta con el proveedor real |
 | 7 · En viaje             | Hecha (2026-10-01) | «Hoy puedes gastar», gasto en 3 toques, presupuesto rodante, calendario, reserva, cola sin conexión con sincronización idempotente            |
 | 8 · Varias monedas       | Hecha (2026-10-02) | Tasa de planificación y real, efecto cambiario, escenario de tipo de cambio, compra de moneda o retiro como transferencia con su tasa real    |
-| 9–11                     | Pendientes         | —                                                                                                                                             |
+| 9 · Cierre e informe     | Hecha (2026-10-02) | Informe planificado contra real (categoría, día, ciudad, persona, reserva, cambio), cierre con destino del sobrante, plantilla, CSV           |
+| 10–11                    | Pendientes         | —                                                                                                                                             |
 
 Notas de la Fase 2:
 
@@ -27,3 +28,5 @@ Notas de la Fase 2:
 - Fase 7: las barras de acción usan `sticky` y las hojas un portal, porque el contenedor de la página tiene `transform` (animación de entrada) y ahí `fixed` no funciona. La cola sin conexión vive en IndexedDB; abrir la app en frío sin señal no está cubierto (el service worker no guarda páginas).
 
 - Fase 8: las cuentas siguen en USD/PAB. El efectivo del viaje vive en una cuenta de efectivo en la moneda del hogar que guarda al lado el monto local y la tasa real; los gastos en efectivo usan esa tasa. Cuentas en cualquier moneda quedan como decisión abierta (tocan `Money` en todo el producto).
+
+- Fase 9: el informe se calcula con el motor como si fuera el día siguiente al viaje y, al cerrar, se congela en `trips.closing_report`. Las frases («en comida gastaron 37 % menos») salen de reglas sobre esas cifras, nunca del modelo, y nombran como mucho las tres categorías más alejadas del plan. El sobrante va a una meta (crédito con origen `trip_surplus`), a una cuenta (transferencia real) o se queda; `20261002010000_trip_close.sql` aplicada en producción. Probado con un viaje de prueba en producción (cierre a meta y CSV), revertido después.

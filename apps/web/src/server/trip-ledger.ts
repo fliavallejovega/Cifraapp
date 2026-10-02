@@ -313,10 +313,11 @@ export async function recordTripTransfer(
     readonly date: PlainDate;
     /** What left the bank, base currency, positive. */
     readonly baseAmount: string;
-    readonly localAmount: string;
-    readonly localCurrency: string;
+    /** For a currency purchase: what was received and at what rate. Absent for a plain transfer. */
+    readonly localAmount?: string | null;
+    readonly localCurrency?: string | null;
     /** Local units per base unit, as obtained. */
-    readonly rate: string;
+    readonly rate?: string | null;
     readonly description: string;
   },
 ): Promise<{ fromId: string; toId: string } | null> {
@@ -362,11 +363,16 @@ export async function recordTripTransfer(
           descriptionNormalized: normalized,
         }),
         tripId: input.tripId,
-        originalAmount: leg.direction === 'outflow' ? `-${input.localAmount}` : input.localAmount,
-        originalCurrency: input.localCurrency,
-        fxRate: input.rate,
-        fxRateDate: input.date,
-        fxSource: 'manual',
+        ...(input.localAmount && input.localCurrency && input.rate
+          ? {
+              originalAmount:
+                leg.direction === 'outflow' ? `-${input.localAmount}` : input.localAmount,
+              originalCurrency: input.localCurrency,
+              fxRate: input.rate,
+              fxRateDate: input.date,
+              fxSource: 'manual',
+            }
+          : {}),
       })
       .returning({ id: transactions.id });
     if (!row) return null;
