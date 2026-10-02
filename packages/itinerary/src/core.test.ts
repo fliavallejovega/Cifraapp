@@ -244,3 +244,13 @@ describe('entry windows', () => {
     expect(maxDaysInWindow(days, 180)).toBe(3);
   });
 });
+
+describe('wishes in plain words', () => {
+  it('finds the Dolomites in a sentence', async () => {
+    const { tagsFromText } = await import('./catalog/corridors.js');
+    expect(tagsFromText('Mi esposa quiere ir a las Dolomitas')).toEqual(['dolomitas']);
+    expect(tagsFromText('Ver los mercados navideños y el lago de Como')).toEqual(
+      expect.arrayContaining(['lagos', 'mercados navideños']),
+    );
+  });
+});

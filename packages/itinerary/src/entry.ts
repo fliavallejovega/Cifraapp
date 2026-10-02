@@ -27,6 +27,8 @@ export interface EntryRule {
   /** Passport validity and anything else the rule states. */
   readonly conditions: {
     readonly passportValidMonthsAfterExit?: number;
+    /** Advised validity counted from the day of arrival (Türkiye: 6 months). */
+    readonly passportValidMonthsFromArrival?: number;
     readonly passportValidDaysAfterExit?: number;
     readonly passportIssuedWithinYears?: number;
     readonly mayAsk?: readonly ('onward_ticket' | 'lodging_proof' | 'funds' | 'insurance')[];
@@ -213,6 +215,14 @@ export function evaluateEntry(input: EntryInput): EntryVerdict[] {
           code: 'passport_valid_months',
           severity: 'info',
           params: { zone, months: c.passportValidMonthsAfterExit, exit: lastDay },
+        });
+      }
+      const arrival = days[0];
+      if (c?.passportValidMonthsFromArrival && arrival) {
+        notices.push({
+          code: 'passport_valid_months_from_arrival',
+          severity: 'info',
+          params: { zone, months: c.passportValidMonthsFromArrival, arrival },
         });
       }
       if (c?.passportValidDaysAfterExit && lastDay) {

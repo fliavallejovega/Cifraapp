@@ -17,6 +17,7 @@ import { runJobNow } from './jobs';
 import { plainDateString, positiveAmount, recordName } from './record-input';
 import { tripsEnabled } from './repositories/trips';
 import { revalidateTrip } from './revalidate';
+import { rumboFromDocument } from './rumbo-documents';
 import { loadSession, queryAsUser } from './session';
 import { bookingInput, upsertTripBooking } from './trip-booking-core';
 import { syncFinancialChecklist } from './trip-checklist';
@@ -352,6 +353,9 @@ export async function confirmTripDocument(
           transactionId ??= movement.id;
         }
       }
+
+      // Rumbo takes its fixed points from the same confirmation.
+      await rumboFromDocument(tx, ctx.householdId, tripId, documentId, bookingId);
 
       await tx
         .update(documents)

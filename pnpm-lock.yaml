@@ -132,6 +132,9 @@ importers:
       '@app/investment-engine':
         specifier: workspace:*
         version: link:../../packages/investment-engine
+      '@app/itinerary':
+        specifier: workspace:*
+        version: link:../../packages/itinerary
       '@app/market-data':
         specifier: workspace:*
         version: link:../../packages/market-data
