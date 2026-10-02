@@ -105,12 +105,46 @@ export default async function AccountsPage({ params }: { params: Promise<{ local
       {/* El desglose por persona. Sólo cuando hay más de un dueño: una tabla de
           una fila repite la cifra de arriba y no dice nada nuevo. */}
       {view.byPerson.length > 0 && (
-        <Section
-          title={t('byPerson.title')}
-          detail={t('byPerson.detail')}
-          className="mt-12"
-        >
-          <Card>
+        <Section title={t('byPerson.title')} detail={t('byPerson.detail')} className="mt-12">
+          {/* On a phone, one block per person: four money columns do not fit
+              in a phone's width, and a table that scrolls sideways hides the
+              figure that matters most, what each one has left. */}
+          <Card className="sm:hidden">
+            <ul className="flex flex-col divide-y divide-[color:var(--color-rule)]">
+              {view.byPerson.map((entry) => (
+                <li key={entry.personId ?? 'unassigned'} className="py-4 first:pt-0 last:pb-0">
+                  <p className="font-medium">
+                    {entry.name === 'unassigned' ? t('byPerson.unassigned') : entry.name}
+                  </p>
+                  <p className="mt-1 text-xs text-[color:var(--color-ink-secondary)]">
+                    {t('byPerson.counts', {
+                      accounts: entry.accountCount,
+                      debts: entry.debtCount,
+                    })}
+                  </p>
+                  <dl className="mt-3 grid grid-cols-[1fr_auto] gap-x-4 gap-y-2 text-sm">
+                    <dt className="text-[color:var(--color-ink-secondary)]">
+                      {t('byPerson.liquid')}
+                    </dt>
+                    <dd className="text-right">
+                      <Amount value={entry.liquid} locale={moneyLocale} tone="plain" />
+                    </dd>
+                    <dt className="text-[color:var(--color-ink-secondary)]">
+                      {t('byPerson.owed')}
+                    </dt>
+                    <dd className="text-right">
+                      <Amount value={entry.liabilities} locale={moneyLocale} tone="plain" />
+                    </dd>
+                    <dt className="font-medium">{t('byPerson.net')}</dt>
+                    <dd className="text-right">
+                      <Amount value={entry.net} locale={moneyLocale} />
+                    </dd>
+                  </dl>
+                </li>
+              ))}
+            </ul>
+          </Card>
+          <Card className="hidden sm:block">
             <Ledger caption={t('byPerson.title')}>
               <LedgerHead>
                 <LedgerColumn>{t('byPerson.person')}</LedgerColumn>
@@ -238,11 +272,7 @@ export default async function AccountsPage({ params }: { params: Promise<{ local
         Sumado al total sólo cuando hay cotización: una posición que nadie pudo
         cotizar se enseña sin valor y se dice, en vez de contarse como cero.
       */}
-      <Section
-        title={t('investments.title')}
-        detail={t('investments.detail')}
-        className="mt-12"
-      >
+      <Section title={t('investments.title')} detail={t('investments.detail')} className="mt-12">
         {portfolio.positions.length > 0 && (
           <div className="mb-4 grid gap-4 sm:grid-cols-2">
             <Card>

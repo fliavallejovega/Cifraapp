@@ -173,7 +173,7 @@ function ManagedRow({
             {row.href ? (
               <Link
                 href={row.href}
-                className="underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-brand)]"
+                className="inline-flex min-h-11 items-center underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-brand)]"
               >
                 {row.title}
               </Link>

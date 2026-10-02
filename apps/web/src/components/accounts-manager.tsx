@@ -255,7 +255,7 @@ function AccountRow({
               onClick={() => {
                 setRecording(!recording);
               }}
-              className="text-sm underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
+              className="inline-flex min-h-11 items-center text-sm underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
             >
               {recording ? labels.cancel : labels.addMovement}
             </button>

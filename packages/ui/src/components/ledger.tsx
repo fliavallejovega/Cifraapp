@@ -22,10 +22,14 @@ export interface LedgerProps {
 
 export function Ledger({ caption, children, className }: LedgerProps) {
   return (
-    <table className={cn('w-full border-collapse text-sm', className)}>
-      {caption && <caption className="sr-only">{caption}</caption>}
-      {children}
-    </table>
+    // On a phone four money columns can be wider than the card: the table
+    // scrolls sideways inside it instead of spilling over its edge.
+    <div className="overflow-x-auto">
+      <table className={cn('w-full border-collapse text-sm', className)}>
+        {caption && <caption className="sr-only">{caption}</caption>}
+        {children}
+      </table>
+    </div>
   );
 }
 
@@ -98,7 +102,7 @@ export function LedgerCell({ children, align = 'start', secondary, className }: 
     <td
       className={cn(
         'px-3 py-3.5 align-baseline first:pl-0 last:pr-0',
-        align === 'end' ? 'text-right' : 'text-left',
+        align === 'end' ? 'text-right whitespace-nowrap' : 'text-left',
         secondary && 'text-[color:var(--color-ink-secondary)]',
         className,
       )}

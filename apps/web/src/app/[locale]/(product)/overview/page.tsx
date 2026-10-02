@@ -133,7 +133,10 @@ export default async function OverviewPage({ params }: { params: Promise<{ local
                     <LedgerHead>
                       <LedgerColumn>{t('claims.columns.item')}</LedgerColumn>
                       <LedgerColumn>{t('claims.columns.due')}</LedgerColumn>
-                      <LedgerColumn>{t('claims.columns.kind')}</LedgerColumn>
+                      {/* The kind steps aside on a phone so the amount stays in view. */}
+                      <LedgerColumn className="hidden sm:table-cell">
+                        {t('claims.columns.kind')}
+                      </LedgerColumn>
                       <LedgerColumn align="end">{t('claims.columns.amount')}</LedgerColumn>
                     </LedgerHead>
                     <LedgerBody>
@@ -147,7 +150,7 @@ export default async function OverviewPage({ params }: { params: Promise<{ local
                               timeZone: 'America/Panama',
                             })}
                           </LedgerCell>
-                          <LedgerCell>
+                          <LedgerCell className="hidden sm:table-cell">
                             <Status tone={claim.isEssential ? 'neutral' : 'caution'}>
                               {claim.isEssential
                                 ? t('claims.kinds.essential')
@@ -182,16 +185,16 @@ export default async function OverviewPage({ params }: { params: Promise<{ local
             )}
           </Section>
 
-          <div className="mt-8 flex flex-wrap gap-x-8 gap-y-2">
+          <div className="mt-8 flex flex-wrap gap-x-8">
             <Link
               href="/plan"
-              className="text-sm font-medium text-[color:var(--color-ink)] underline decoration-[color:var(--color-brand)] underline-offset-4 hover:decoration-2"
+              className="inline-flex min-h-11 items-center text-sm font-medium text-[color:var(--color-ink)] underline decoration-[color:var(--color-brand)] underline-offset-4 hover:decoration-2"
             >
               {t('planLink')}
             </Link>
             <Link
               href="/documents"
-              className="text-sm font-medium text-[color:var(--color-ink)] underline decoration-[color:var(--color-brand)] underline-offset-4 hover:decoration-2"
+              className="inline-flex min-h-11 items-center text-sm font-medium text-[color:var(--color-ink)] underline decoration-[color:var(--color-brand)] underline-offset-4 hover:decoration-2"
             >
               {t('importLink')}
             </Link>

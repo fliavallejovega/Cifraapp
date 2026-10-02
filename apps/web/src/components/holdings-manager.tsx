@@ -141,10 +141,13 @@ export interface HoldingsManagerProps {
   readonly labels: HoldingsLabels;
 }
 
-type Editing = { readonly mode: 'closed' } | { readonly mode: 'new' } | {
-  readonly mode: 'edit';
-  readonly row: HoldingRowView;
-};
+type Editing =
+  | { readonly mode: 'closed' }
+  | { readonly mode: 'new' }
+  | {
+      readonly mode: 'edit';
+      readonly row: HoldingRowView;
+    };
 
 export function HoldingsManager({
   locale,
@@ -221,7 +224,7 @@ export function HoldingsManager({
                       </div>
                     </div>
 
-                    <div className="flex shrink-0 items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                       {/* Un valor que nadie pudo cotizar se dice, no se pinta como
                           cero: un total que se lee entero cuando le falta una
                           posición es peor que uno que avisa. */}
