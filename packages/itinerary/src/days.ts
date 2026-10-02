@@ -337,7 +337,9 @@ export function buildItinerary(input: ItineraryInput): Itinerary {
     }
     if (ferryLegs.length > 0)
       notices.push({ code: 'ferry_book', severity: 'warning', params: { minutes: ferryMinutes } });
-    for (const t of dayTimelines) notices.push(...t.notices);
+    // A timeline's notices belong to the day of the moment they describe.
+    for (const t of dayTimelines)
+      notices.push(...t.notices.filter((n) => n.params?.['date'] === date));
     for (const l of dayLayovers) notices.push(...l.notices);
 
     const sleep = index === dayCount - 1 ? null : stayOn(stays, date);

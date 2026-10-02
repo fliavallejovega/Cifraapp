@@ -211,7 +211,9 @@ export function flightTimeline(seg: FlightSegment, ctx: TimelineContext): Flight
     const atAirport = addMinutes(seg.departs, -INTERNATIONAL_CHECKIN_MINUTES);
     const transfer = pickTransfer(seg.from, atAirport);
     if (transfer) {
-      notices.push(...transfer.notices);
+      notices.push(
+        ...transfer.notices.map((n) => ({ ...n, params: { ...n.params, date: atAirport.date } })),
+      );
       entries.push({
         step: 'leave_lodging',
         at: addMinutes(atAirport, -transfer.minutes),
@@ -245,7 +247,9 @@ export function flightTimeline(seg: FlightSegment, ctx: TimelineContext): Flight
     entries.push({ step: 'exit_airport', at: exit, certainty: 'estimated', airport: seg.to });
     const transfer = pickTransfer(seg.to, exit);
     if (transfer) {
-      notices.push(...transfer.notices);
+      notices.push(
+        ...transfer.notices.map((n) => ({ ...n, params: { ...n.params, date: exit.date } })),
+      );
       entries.push({
         step: 'at_lodging',
         at: addMinutes(exit, transfer.minutes),

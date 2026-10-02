@@ -204,6 +204,15 @@ describe('flight days', () => {
     expect(arrival?.zoneDifferenceMinutes).toBe(8 * 60);
   });
 
+  it('keeps a transfer warning on the day it happens', () => {
+    const { itinerary } = realCase();
+    const rush = itinerary.days.filter((day) =>
+      day.notices.some((n) => n.code === 'transfer_rush_hour' && n.params?.['airport'] === 'PTY'),
+    );
+    // Leaving at 17:55 on the 9th and landing at 17:10 on the 27th: both at rush hour, never the 10th.
+    expect(rush.map((day) => day.date.slice(8))).toEqual(['09', '27']);
+  });
+
   it('plans the Istanbul connections as nights in the city', () => {
     const { itinerary } = realCase();
     const layovers = itinerary.days.flatMap((day) => day.layovers);
