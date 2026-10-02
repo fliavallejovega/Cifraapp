@@ -120,6 +120,17 @@ export const trips = appSchema.table(
     notes: text('notes'),
     closingReport: jsonb('closing_report'),
     completedAt: timestamp('completed_at', { withTimezone: true }),
+    // Rumbo (20261002120000): how the trip is armed end to end.
+    rumboGroundMode: text('rumbo_ground_mode').$type<'car' | 'train' | 'mixed'>(),
+    rumboDrivingBudget: smallint('rumbo_driving_budget').notNull().default(360),
+    rumboDepartureTime: text('rumbo_departure_time').notNull().default('09:00'),
+    rumboLodgingCap: money('rumbo_lodging_cap'),
+    rumboLodgingPrefs: jsonb('rumbo_lodging_prefs')
+      .$type<{ breakfast?: boolean; parking?: boolean }>()
+      .notNull()
+      .default({}),
+    rumboPlan: jsonb('rumbo_plan').$type<Record<string, unknown>>(),
+    rumboComposedAt: timestamp('rumbo_composed_at', { withTimezone: true }),
     createdBy: uuid('created_by').references(() => profiles.id, { onDelete: 'set null' }),
     ...stamps,
     archivedAt: timestamp('archived_at', { withTimezone: true }),
@@ -150,6 +161,13 @@ export const tripLegs = appSchema.table(
       .default('1.00'),
     timezone: text('timezone').notNull().default('America/Panama'),
     lodgingMode: tripLodgingMode('lodging_mode').notNull().default('undecided'),
+    // Rumbo (20261002120000): the stay behind the leg and what the person pays for it.
+    placeId: uuid('place_id'),
+    stayOrigin: text('stay_origin').$type<'anchor' | 'wish' | 'catalog' | 'flight' | 'manual'>(),
+    hosted: boolean('hosted').notNull().default(false),
+    myLodgingPrice: money('my_lodging_price'),
+    myLodgingCurrency: char('my_lodging_currency', { length: 3 }).references(() => currencies.code),
+    chosenOptionId: uuid('chosen_option_id'),
     ...stamps,
   },
   (table) => [index('trip_legs_trip_idx').on(table.tripId, table.position)],
@@ -167,6 +185,8 @@ export const tripTravelers = appSchema.table(
     displayName: text('display_name').notNull(),
     travelerType: tripTravelerType('traveler_type').notNull().default('adult'),
     weight: numeric('weight', { precision: 4, scale: 3, mode: 'string' }).notNull().default('1'),
+    nationalities: char('nationalities', { length: 2 }).array().notNull().default([]),
+    residence: char('residence', { length: 2 }),
     ...stamps,
   },
   (table) => [index('trip_travelers_trip_idx').on(table.tripId)],
