@@ -308,7 +308,7 @@ function isSnapshot(value: unknown): value is RumboPlanSnapshot {
 // Reading
 // ---------------------------------------------------------------------------
 
-interface RumboRows {
+export interface RumboRows {
   readonly trip: typeof trips.$inferSelect;
   readonly travelers: (typeof tripTravelers.$inferSelect)[];
   readonly places: PlaceRow[];
@@ -323,7 +323,11 @@ interface RumboRows {
   readonly systems: (typeof borderSystems.$inferSelect)[];
 }
 
-async function readRows(tx: Tx, householdId: string, tripId: string): Promise<RumboRows | null> {
+export async function readRumboRows(
+  tx: Tx,
+  householdId: string,
+  tripId: string,
+): Promise<RumboRows | null> {
   const [trip] = await tx
     .select()
     .from(trips)
@@ -702,7 +706,7 @@ export async function loadRumbo(
   tripId: string,
   today: PlainDate,
 ): Promise<RumboView | null> {
-  const rows = await queryAsUser(session, (tx) => readRows(tx, householdId, tripId));
+  const rows = await queryAsUser(session, (tx) => readRumboRows(tx, householdId, tripId));
   return rows ? buildView(rows, today) : null;
 }
 
@@ -785,7 +789,7 @@ export async function composeAndStore(
   tripId: string,
   options: { readonly replaceManualLegs: boolean },
 ): Promise<ComposeResult | { error: ComposeError }> {
-  const rows = await readRows(tx, householdId, tripId);
+  const rows = await readRumboRows(tx, householdId, tripId);
   if (!rows) return { error: 'tripNotFound' };
   const placesById = new Map(rows.places.map((p) => [p.id, p]));
   const anchors = rows.anchors

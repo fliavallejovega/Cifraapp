@@ -386,6 +386,9 @@ importers:
       '@app/config':
         specifier: workspace:*
         version: link:../config
+      '@app/itinerary':
+        specifier: workspace:*
+        version: link:../itinerary
       '@types/node':
         specifier: 26.1.2
         version: 26.1.2

@@ -29,7 +29,8 @@
     "db:generate": "drizzle-kit generate",
     "db:types": "supabase gen types typescript --db-url \"$DIRECT_URL\" --schema public --schema app --schema platform > src/generated/supabase.ts",
     "db:local": "tsx scripts/local-db.ts",
-    "db:seed:trips": "tsx scripts/seed-trips.ts"
+    "db:seed:trips": "tsx scripts/seed-trips.ts",
+    "db:seed:rumbo": "tsx scripts/seed-rumbo.ts"
   },
   "dependencies": {
     "@app/domain": "workspace:*",
@@ -44,6 +45,7 @@
     "eslint": "10.8.0",
     "tsx": "4.23.9",
     "typescript": "6.0.3",
-    "vitest": "4.1.10"
+    "vitest": "4.1.10",
+    "@app/itinerary": "workspace:*"
   }
 }

@@ -21,3 +21,4 @@ export * from './catalog/events.js';
 export * from './todos.js';
 export * from './lodging.js';
 export * from './links.js';
+export * from './fixtures/real-case-routes.js';
