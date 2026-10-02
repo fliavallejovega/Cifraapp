@@ -3137,7 +3137,9 @@
       "thirteenthMonth": "Llega el décimo tercer mes",
       "thirteenthMonthDetail": "Una de las tres partidas cae hoy. Es de las pocas entradas grandes que se pueden planear con meses de anticipación.",
       "statementUpload": "Toca subir los estados de cuenta",
-      "statementUploadDetail": "Dos veces al mes, para que lo que ves sea tu gasto real y no lo que calculamos."
+      "statementUploadDetail": "Dos veces al mes, para que lo que ves sea tu gasto real y no lo que calculamos.",
+      "tripDigest": "Avisos de viajes",
+      "tripDigestDetail": "Pendientes de dinero antes de salir, una línea cada día del viaje y el cierre al volver. Uno al día como máximo."
     },
     "default": "Por defecto",
     "log": {
@@ -4104,6 +4106,30 @@
           "legsOverlap": "Dos destinos se pisan. Revisa las fechas.",
           "signInRequired": "Tu sesión terminó. Vuelve a entrar."
         }
+      },
+      "quick": {
+        "label": "Cuéntennos el viaje en una frase",
+        "placeholder": "Madrid y Lisboa del 10 al 20 de diciembre, dos adultos y un niño, unos 6 mil dólares",
+        "hint": "Llenamos lugares, fechas, personas y presupuesto. Todo se puede cambiar después.",
+        "submit": "Llenar el plan con esto",
+        "filled": "{count, plural, one {Llenamos un lugar con sus fechas.} other {Llenamos # lugares con sus fechas.}} Revisen cada paso antes de crear el viaje.",
+        "filledNoPlaces": "Llenamos lo que entendimos. No encontramos un lugar: agréguenlo abajo.",
+        "dropped": {
+          "dates": "Unas fechas no se pudieron usar (pasadas o incompletas). Pónganlas abajo.",
+          "budget": "No pudimos calcular el presupuesto con lo escrito. Pónganlo en el paso de dinero.",
+          "currency": "El presupuesto estaba en otra moneda. Pónganlo en su moneda en el paso de dinero.",
+          "places": "Un lugar no se entendió. Agréguenlo abajo."
+        },
+        "error": {
+          "tooShort": "Escriban un poco más: a dónde y cuándo.",
+          "notConfigured": "La lectura automática no está disponible ahora. Llenen los pasos a mano.",
+          "generic": "No pudimos leer la frase. Intenten de nuevo o llenen los pasos a mano."
+        },
+        "extra": {
+          "adult": "Adulto {n}",
+          "child": "Niño {n}",
+          "infant": "Bebé {n}"
+        }
       }
     },
     "dashboard": {
@@ -4205,7 +4231,7 @@
         "dueOn": "Para el {date}",
         "empty": "Nada pendiente. Los saldos por pagar aparecen aquí solos.",
         "new": "Nuevo pendiente",
-        "newPlaceholder": "Avisar al banco que viajamos",
+        "newPlaceholder": "Renovar el pasaporte",
         "due": "Para cuándo",
         "add": "Agregar",
         "error": "No se pudo guardar el pendiente."
@@ -4561,6 +4587,15 @@
         "error": "No pudimos crear la plantilla. Intenten de nuevo."
       },
       "csv": "Descargar gastos (CSV)"
+    },
+    "notify": {
+      "errandsTitle": "{trip}: {count, plural, one {un pendiente para hoy} other {# pendientes para hoy}}",
+      "tomorrowTitle": "{trip} sale mañana",
+      "tomorrowBody": "Todo lo de dinero está listo. Al llegar, «Hoy pueden gastar» les dice cuánto tienen cada día.",
+      "duringTitle": "{trip}: día {day} de {days}",
+      "duringBody": "Abran «Hoy pueden gastar» para ver lo de hoy y anotar lo de ayer.",
+      "afterTitle": "{trip} terminó",
+      "afterBody": "Vean el informe y decidan qué hacer con lo que sobró."
     }
   }
 }

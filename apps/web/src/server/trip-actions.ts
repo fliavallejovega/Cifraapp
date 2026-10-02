@@ -37,6 +37,7 @@ import { loadTripReport, tripsEnabled } from './repositories/trips';
 import { revalidateTrip } from './revalidate';
 import { loadSession, queryAsUser, type Session } from './session';
 import { bookingInput, upsertTripBooking, type TripBookingInput } from './trip-booking-core';
+import { syncFinancialChecklist } from './trip-checklist';
 import {
   recordTripMovement,
   recordTripTransfer,
@@ -343,6 +344,7 @@ export async function createTrip(
           })),
         );
       }
+      await syncFinancialChecklist(tx, ctx.householdId, trip.id);
       return trip.id;
     });
     revalidateTrip(locale, id);
@@ -370,6 +372,7 @@ export async function updateTripSettings(
         .set({ ...settingsValues(parsed.data), updatedAt: new Date() })
         .where(and(eq(trips.id, tripId), eq(trips.householdId, ctx.householdId)))
         .returning({ id: trips.id, goalId: trips.goalId });
+      if (row) await syncFinancialChecklist(tx, ctx.householdId, tripId);
       return row ?? null;
     });
     if (!updated) return { error: 'notFound' };
@@ -456,12 +459,14 @@ export async function saveTripLeg(
           .set({ ...rest, updatedAt: new Date() })
           .where(and(eq(tripLegs.id, parsed.data.id), eq(tripLegs.tripId, tripId)))
           .returning({ id: tripLegs.id });
+        await syncFinancialChecklist(tx, ctx.householdId, tripId);
         return row?.id ?? null;
       }
       const [row] = await tx
         .insert(tripLegs)
         .values({ householdId: ctx.householdId, tripId, ...values })
         .returning({ id: tripLegs.id });
+      await syncFinancialChecklist(tx, ctx.householdId, tripId);
       return row?.id ?? null;
     });
     if (!id) return { error: 'notFound' };
@@ -486,7 +491,7 @@ export async function deleteTripLeg(
       .where(eq(tripLegs.tripId, tripId));
     // A trip keeps at least one place: without it there is nowhere to spend.
     if (remaining.length <= 1) return 'last';
-    return tx
+    const deleted = await tx
       .delete(tripLegs)
       .where(
         and(
@@ -496,6 +501,8 @@ export async function deleteTripLeg(
         ),
       )
       .returning({ id: tripLegs.id });
+    await syncFinancialChecklist(tx, ctx.householdId, tripId);
+    return deleted;
   });
   if (rows === 'last') return { error: 'lastLeg' };
   if (rows.length === 0) return { error: 'notFound' };
@@ -641,6 +648,7 @@ export async function deleteTripBooking(
     if (row.transactionId && !options.keepMovement)
       await removeTripMovement(tx, ctx.householdId, row.transactionId);
     await tx.delete(tripChecklistItems).where(eq(tripChecklistItems.bookingId, bookingId));
+    await syncFinancialChecklist(tx, ctx.householdId, tripId);
     return true;
   });
   if (!done) return { error: 'notFound' };
@@ -1253,6 +1261,7 @@ export async function recordCashWithdrawal(
         });
         if (!fee) return { error: 'accountNotFound' };
       }
+      await syncFinancialChecklist(tx, ctx.householdId, tripId);
       return { ok: true as const };
     });
     if ('error' in result) return { error: result.error ?? 'invalid' };
@@ -1466,6 +1475,7 @@ export async function duplicateTripAsTemplate(
           })),
         );
       }
+      await syncFinancialChecklist(tx, ctx.householdId, trip.id);
       return trip.id;
     });
     revalidateTrip(locale, id);

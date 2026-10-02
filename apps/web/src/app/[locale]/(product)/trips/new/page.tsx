@@ -4,6 +4,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { TripWizard, type WizardPerson } from '@/components/trips/trip-wizard';
 import { Link } from '@/i18n/navigation';
+import { copilotIsConfigured } from '@/server/ai';
 import { loadHouseholdContext } from '@/server/household-context';
 import { loadPeople } from '@/server/repositories/administration';
 import { loadLatestRates, tripsEnabled } from '@/server/repositories/trips';
@@ -69,6 +70,7 @@ export default async function NewTripPage({
           people={travelers}
           rates={rates}
           from={from === 'budget' || from === 'documents' ? from : null}
+          quickCreate={copilotIsConfigured()}
         />
       </div>
     </Page>

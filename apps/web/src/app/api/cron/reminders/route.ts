@@ -5,6 +5,7 @@ import { refreshCatalogue } from '@/server/catalogue/refresh';
 import { publishCalendars } from '@/server/google/publish';
 import { sweepMailboxes } from '@/server/google/sweep';
 import { runDailyReminders } from '@/server/reminders';
+import { runTripReminders } from '@/server/trip-reminders';
 
 /**
  * Los recordatorios del día.
@@ -61,6 +62,12 @@ export async function GET(request: Request): Promise<NextResponse> {
     return null;
   });
 
+  // Viajes: una palabra al día por viaje, sólo en los hogares con el módulo.
+  const trips = await runTripReminders().catch((error: unknown) => {
+    console.error('[trips] reminder sweep failed', error);
+    return null;
+  });
+
   const mail = await sweepMailboxes().catch((error: unknown) => {
     console.error('[google] mailbox sweep failed', error);
     return null;
@@ -92,7 +99,7 @@ export async function GET(request: Request): Promise<NextResponse> {
   // conexión, que es donde se mira.
   const status = reminders ? 'ok' : 'error';
   return NextResponse.json(
-    { status, reminders, mail, calendar, catalogue },
+    { status, reminders, trips, mail, calendar, catalogue },
     { status: reminders ? 200 : 503 },
   );
 }

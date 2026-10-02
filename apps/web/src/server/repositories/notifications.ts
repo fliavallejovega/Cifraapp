@@ -4,6 +4,7 @@ import { notificationDeliveries, notificationPreferences } from '@app/database/s
 import { and, desc, eq } from 'drizzle-orm';
 
 import { queryAsUser, type Session } from '../session';
+import { tripsEnabled } from './trips';
 
 /**
  * What this member wants to be told, and what they were actually told.
@@ -27,6 +28,7 @@ export const NOTIFICATION_KINDS = [
   'weeklySummary',
   'thirteenthMonth',
   'statementUpload',
+  'tripDigest',
 ] as const;
 
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
@@ -60,6 +62,8 @@ const DEFAULTS: Readonly<Record<NotificationKind, KindDefault>> = {
    * tercero por un reintento sería el que enseña a ignorarlos.
    */
   statementUpload: { channel: 'email', throttleHours: 24 * 10, isEnabled: true },
+  /** Viajes: a lo sumo una palabra al día por viaje — pendientes, el día, el cierre. */
+  tripDigest: { channel: 'email', throttleHours: 20, isEnabled: true },
 };
 
 export interface PreferenceView {
@@ -100,7 +104,9 @@ export async function loadPreferences(
 
   const stored = new Map(rows.map((row) => [row.kind, row]));
 
-  return NOTIFICATION_KINDS.map((kind) => {
+  // The trips' notice exists only for households that have Viajes.
+  const withTrips = await tripsEnabled(session, householdId);
+  return NOTIFICATION_KINDS.filter((kind) => kind !== 'tripDigest' || withTrips).map((kind) => {
     const row = stored.get(kind);
     const fallback = DEFAULTS[kind];
 

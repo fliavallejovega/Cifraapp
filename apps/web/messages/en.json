@@ -3137,7 +3137,9 @@
       "thirteenthMonth": "The thirteenth month is due",
       "thirteenthMonthDetail": "One of the three instalments lands today. It is one of the few large payments you can plan months ahead.",
       "statementUpload": "Time to upload your statements",
-      "statementUploadDetail": "Twice a month, so what you see is your real spending and not our estimate."
+      "statementUploadDetail": "Twice a month, so what you see is your real spending and not our estimate.",
+      "tripDigest": "Trip notices",
+      "tripDigestDetail": "Money errands before you leave, one line each day of the trip, and closing when you're back. At most one a day."
     },
     "default": "Default",
     "log": {
@@ -4104,6 +4106,30 @@
           "legsOverlap": "Two destinations overlap. Check the dates.",
           "signInRequired": "Your session ended. Sign in again."
         }
+      },
+      "quick": {
+        "label": "Tell us about the trip in one sentence",
+        "placeholder": "Madrid and Lisbon from December 10 to 20, two adults and a child, about 6 thousand dollars",
+        "hint": "We fill in places, dates, people and budget. Everything can be changed afterwards.",
+        "submit": "Fill the plan with this",
+        "filled": "{count, plural, one {We filled in one place with its dates.} other {We filled in # places with their dates.}} Check each step before creating the trip.",
+        "filledNoPlaces": "We filled in what we understood. We found no place: add it below.",
+        "dropped": {
+          "dates": "Some dates could not be used (past or incomplete). Add them below.",
+          "budget": "We couldn't work out the budget from the text. Enter it in the money step.",
+          "currency": "The budget was in another currency. Enter it in your currency in the money step.",
+          "places": "A place wasn't understood. Add it below."
+        },
+        "error": {
+          "tooShort": "Write a bit more: where and when.",
+          "notConfigured": "Automatic reading isn't available right now. Fill in the steps by hand.",
+          "generic": "We couldn't read the sentence. Try again or fill in the steps by hand."
+        },
+        "extra": {
+          "adult": "Adult {n}",
+          "child": "Child {n}",
+          "infant": "Baby {n}"
+        }
       }
     },
     "dashboard": {
@@ -4205,7 +4231,7 @@
         "dueOn": "By {date}",
         "empty": "Nothing to do. Balances owed show up here on their own.",
         "new": "New item",
-        "newPlaceholder": "Tell the bank we're travelling",
+        "newPlaceholder": "Renew the passport",
         "due": "By when",
         "add": "Add",
         "error": "The item could not be saved."
@@ -4561,6 +4587,15 @@
         "error": "We couldn't create the template. Try again."
       },
       "csv": "Download expenses (CSV)"
+    },
+    "notify": {
+      "errandsTitle": "{trip}: {count, plural, one {one errand for today} other {# errands for today}}",
+      "tomorrowTitle": "{trip} leaves tomorrow",
+      "tomorrowBody": "The money side is ready. Once you land, «Today you can spend» shows what each day has.",
+      "duringTitle": "{trip}: day {day} of {days}",
+      "duringBody": "Open «Today you can spend» to see today and record yesterday.",
+      "afterTitle": "{trip} is over",
+      "afterBody": "See the report and decide what to do with what was left."
     }
   }
 }

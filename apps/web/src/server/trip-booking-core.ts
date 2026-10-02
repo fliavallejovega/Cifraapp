@@ -7,6 +7,7 @@ import { and, eq, isNull, sql } from 'drizzle-orm';
 import { z } from 'zod';
 
 import { plainDateString, positiveAmount } from './record-input';
+import { syncFinancialChecklist } from './trip-checklist';
 import { recordTripMovement, syncGoalCredit, type Tx } from './trip-ledger';
 import { BOOKING_CATEGORY } from './trip-plan';
 
@@ -205,5 +206,6 @@ export async function upsertTripBooking(
         set: { dueOn: input.dueDate, updatedAt: new Date() },
       });
   }
+  await syncFinancialChecklist(tx, ctx.householdId, tripId);
   return { id: bookingId, created: !input.id };
 }

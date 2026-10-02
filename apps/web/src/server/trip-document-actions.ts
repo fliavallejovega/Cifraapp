@@ -19,6 +19,7 @@ import { tripsEnabled } from './repositories/trips';
 import { revalidateTrip } from './revalidate';
 import { loadSession, queryAsUser } from './session';
 import { bookingInput, upsertTripBooking } from './trip-booking-core';
+import { syncFinancialChecklist } from './trip-checklist';
 import { stageTripDocument } from './trip-documents';
 import { recordTripMovement } from './trip-ledger';
 import type { RecordActionResult } from '@/components/records/spec';
@@ -362,6 +363,7 @@ export async function confirmTripDocument(
           tripTransactionId: transactionId,
         })
         .where(eq(documents.id, documentId));
+      await syncFinancialChecklist(tx, ctx.householdId, tripId);
       return { tripId } as const;
     });
     if ('error' in result) return { error: result.error };

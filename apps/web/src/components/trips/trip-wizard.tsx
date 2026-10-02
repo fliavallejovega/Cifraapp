@@ -22,6 +22,9 @@ import { useRouter } from '@/i18n/navigation';
 import { COUNTRIES, CITIES, countryByCode, inferPlace, type CostLevel } from '@/lib/places';
 import { formatAmount, formatDateRange } from '@/lib/trip-format';
 import { createTrip, saveTripBooking } from '@/server/trip-actions';
+import type { QuickTrip } from '@/server/trip-quick';
+
+import { TripQuickDescribe } from './trip-quick-describe';
 
 /**
  * Creating a trip, in six short steps.
@@ -119,6 +122,7 @@ export function TripWizard({
   people,
   rates,
   from,
+  quickCreate = false,
 }: {
   readonly locale: string;
   /** The household's base currency. */
@@ -128,8 +132,11 @@ export function TripWizard({
   /** Latest reference rates: local units per one unit of the base currency. */
   readonly rates: Readonly<Record<string, string>>;
   readonly from: 'budget' | 'documents' | null;
+  /** Whether «describe the trip in a sentence» is offered: a model is configured. */
+  readonly quickCreate?: boolean;
 }) {
   const t = useTranslations('trips.wizard');
+  const tq = useTranslations('trips.wizard.quick');
   const tc = useTranslations('trips.common');
   const router = useRouter();
   const formId = useId();
@@ -200,6 +207,49 @@ export function TripWizard({
 
   const update = (patch: Partial<Draft>) => {
     setDraft((d) => ({ ...d, ...patch }));
+  };
+  // A sentence's reading fills the first answers; every one stays editable.
+  const applyQuick = (quick: QuickTrip) => {
+    setDraft((d) => {
+      const next: Draft = { ...d };
+      if (quick.name) next.name = quick.name;
+      if (quick.legs.length > 0)
+        next.legs = quick.legs.map((leg) => ({
+          key: key(),
+          city: leg.city,
+          countryCode: leg.countryCode,
+          arrivalDate: leg.arrivalDate,
+          departureDate: leg.departureDate,
+          localCurrency: leg.localCurrency,
+          costLevel: leg.costLevel,
+          timezone: leg.timezone,
+          lodgingMode: 'undecided',
+        }));
+      if (quick.totalBudget) next.totalBudget = quick.totalBudget;
+      if (quick.profile) next.profile = quick.profile;
+      if (quick.travelers) {
+        const wanted = quick.travelers;
+        const left = { adult: wanted.adults, child: wanted.children, infant: wanted.infants };
+        const people = d.travelers
+          .filter((tr) => tr.personId !== null)
+          .map((tr) => {
+            const take = left[tr.travelerType] > 0;
+            if (take) left[tr.travelerType] -= 1;
+            return { ...tr, selected: take };
+          });
+        const extra: TravelerDraft[] = (['adult', 'child', 'infant'] as const).flatMap((type) =>
+          Array.from({ length: left[type] }, (_, i) => ({
+            key: key(),
+            personId: null,
+            displayName: tq(`extra.${type}`, { n: i + 1 }),
+            travelerType: type,
+            selected: true,
+          })),
+        );
+        next.travelers = [...people, ...extra];
+      }
+      return next;
+    });
   };
   const updateLeg = (k: string, patch: Partial<LegDraft>) => {
     setDraft((d) => ({
@@ -477,6 +527,7 @@ export function TripWizard({
       >
         {draft.step === 0 && (
           <div className="flex flex-col gap-4">
+            {quickCreate && <TripQuickDescribe onApply={applyQuick} />}
             <datalist id={`${formId}-cities`}>
               {CITIES.map((c) => (
                 <option key={`${c.name}-${c.country}`} value={c.name} />
