@@ -295,7 +295,7 @@ function TravelersStep({ data }: { readonly data: SetupData }) {
             );
           }}
         >
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 lg:grid-cols-3">
             <Field label={t('setup.travelers.name')} required>
               {({ id }) => (
                 <Input
@@ -398,7 +398,7 @@ function TravelerCard({
         }}
       >
         <p className="font-medium">{traveler.name}</p>
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 lg:grid-cols-3">
           {nats.map((n, i) => (
             <Field
               key={String(i)}
@@ -676,7 +676,7 @@ function AnchorsStep({ data }: { readonly data: SetupData }) {
             )}
           </Field>
           <PlacePicker value={place} onChange={setPlace} />
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 lg:grid-cols-3">
             <Field label={oneDay ? t('setup.anchors.date') : t('setup.anchors.firstNight')}>
               {({ id }) => (
                 <Input
@@ -1212,7 +1212,7 @@ function SettingsStep({ data }: { readonly data: SetupData }) {
             );
           }}
         >
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 lg:grid-cols-3">
             <Field label={t('setup.settings.budget')}>
               {({ id }) => (
                 <Select
