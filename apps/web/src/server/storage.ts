@@ -90,6 +90,17 @@ export function buildStorageKey(
   return `${prefix}/${householdId}/${documentId}${safeExtension ? `.${safeExtension}` : ''}`;
 }
 
+/**
+ * Where one piece of a file sent in parts waits until the last one arrives.
+ *
+ * Under the household's own prefix, so the pieces carry the same tenant
+ * boundary as the document they become, and the upload id is the server's own
+ * UUID — never a name the browser chose.
+ */
+export function buildUploadPartKey(householdId: string, uploadId: string, index: number): string {
+  return `documents/${householdId}/uploads/${uploadId}/${index}`;
+}
+
 export async function putDocument(
   key: string,
   body: Uint8Array,

@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState, useTransition } from 'react';
 
 import { Link, useRouter } from '@/i18n/navigation';
+import { shrinkImage } from '@/lib/shrink-image';
 import { formatAmount } from '@/lib/trip-format';
 import { uploadTripDocuments } from '@/server/trip-document-actions';
 
@@ -14,27 +15,6 @@ import { uploadTripDocuments } from '@/server/trip-document-actions';
  * twelve-megapixel receipt is three megabytes of paper texture — and every
  * file is read in the background while the person keeps going.
  */
-
-const MAX_SIDE = 2000;
-
-async function shrink(file: File): Promise<File> {
-  if (!file.type.startsWith('image/') || file.size < 1_200_000) return file;
-  try {
-    const bitmap = await createImageBitmap(file);
-    const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height));
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.round(bitmap.width * scale);
-    canvas.height = Math.round(bitmap.height * scale);
-    canvas.getContext('2d')?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-    const blob = await new Promise<Blob | null>((resolve) => {
-      canvas.toBlob(resolve, 'image/jpeg', 0.85);
-    });
-    if (!blob || blob.size >= file.size) return file;
-    return new File([blob], file.name.replace(/\.\w+$/, '.jpg'), { type: 'image/jpeg' });
-  } catch {
-    return file;
-  }
-}
 
 export function DocumentUpload({
   tripId,
@@ -65,7 +45,7 @@ export function DocumentUpload({
         const form = new FormData();
         if (tripId) form.set('tripId', tripId);
         form.set('locale', locale);
-        const ready = await shrink(file);
+        const ready = await shrinkImage(file);
         if (ready.size > 4_000_000) {
           lastError = 'tooLarge';
           continue;

@@ -1,7 +1,7 @@
 'use server';
 
 import { accounts, debts, importRows, imports, transactions } from '@app/database/schema';
-import { Money } from '@app/domain';
+import { Money, newId } from '@app/domain';
 import { and, eq, isNull } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { after } from 'next/server';
@@ -9,9 +9,11 @@ import { z } from 'zod';
 
 import { scheduleAnalysis } from './analysis-service';
 import { applyPaymentToDebt, paysTheDebt } from './debt-payments';
-import { stageDocument } from './import-service';
+import { MAX_STATEMENT_BYTES, MAX_UPLOAD_PARTS, UPLOAD_CHUNK_BYTES } from '../lib/upload-limits';
+import { isAcceptedStatementType, isAlreadyStored, stageDocument } from './import-service';
 import { runJobNow, runQueuedJobs } from './jobs';
-import { loadSession, queryAsUser } from './session';
+import { loadSession, queryAsUser, type Session } from './session';
+import { buildUploadPartKey, deleteDocument, putDocument, readDocument } from './storage';
 
 /**
  * The upload action.
@@ -47,11 +49,174 @@ export async function importStatement(
   }
 
   const householdId = session.activeHouseholdId;
-  const chosen = z.uuid().safeParse(formData.get('accountId'));
+  const target = await resolveTargetAccount(session, householdId, formData.get('accountId'));
+  if (!target) return { error: 'noAccount' };
 
-  // The account the statement belongs to. A person who picked one gets that
-  // one; otherwise the first active account, because filing against the wrong
-  // account is worse than not filing, and the form always offers the choice.
+  return stageAndQueue(session, {
+    householdId,
+    target,
+    fileName: file.name,
+    mimeType: file.type || 'text/csv',
+    bytes: new Uint8Array(await file.arrayBuffer()),
+    locale: formData.get('locale'),
+  });
+}
+
+/*
+  Un archivo en partes.
+
+  Un estado de cuenta en PDF de 6 MB no cabía en una petición de 4 MB, y el
+  rechazo llegaba como un error genérico después de esperar la subida entera.
+  Ahora el navegador lo manda en pedazos de 3,5 MB: se pide permiso, se guarda
+  cada pedazo al llegar y, con el último, el servidor los une y sigue por el
+  mismo camino de siempre — el mismo hash, el mismo veto de formato, la misma
+  cola. Nada de lo que decide si un archivo entra cambió de lugar.
+*/
+
+export interface BeginUploadResult {
+  readonly error?: string;
+  readonly uploadId?: string;
+}
+
+export async function beginStatementUpload(input: {
+  readonly accountId: string;
+  readonly byteSize: number;
+  readonly mimeType: string;
+  readonly contentHash: string;
+}): Promise<BeginUploadResult> {
+  const session = await loadSession();
+  if (!session?.activeHouseholdId) return { error: 'noAccount' };
+  const householdId = session.activeHouseholdId;
+
+  if (!Number.isInteger(input.byteSize) || input.byteSize <= 0) {
+    return { error: 'unsupportedType' };
+  }
+  if (input.byteSize > MAX_STATEMENT_BYTES) return { error: 'tooLarge' };
+  if (!isAcceptedStatementType(input.mimeType)) return { error: 'unsupportedType' };
+
+  const target = await resolveTargetAccount(session, householdId, input.accountId);
+  if (!target) return { error: 'noAccount' };
+
+  if (
+    /^[0-9a-f]{64}$/.test(input.contentHash) &&
+    (await isAlreadyStored(session, householdId, input.contentHash))
+  ) {
+    return { error: 'alreadyImported' };
+  }
+
+  return { uploadId: newId<string>() };
+}
+
+export async function uploadStatementPart(
+  formData: FormData,
+): Promise<{ readonly error?: string }> {
+  const session = await loadSession();
+  if (!session?.activeHouseholdId) return { error: 'noAccount' };
+
+  const uploadId = z.uuid().safeParse(formData.get('uploadId'));
+  const index = z.coerce
+    .number()
+    .int()
+    .min(0)
+    .max(MAX_UPLOAD_PARTS - 1)
+    .safeParse(formData.get('index'));
+  const part = formData.get('part');
+
+  if (!uploadId.success || !index.success || !(part instanceof Blob)) {
+    return { error: 'unreadable' };
+  }
+  if (part.size === 0 || part.size > UPLOAD_CHUNK_BYTES) return { error: 'tooLarge' };
+
+  try {
+    await putDocument(
+      buildUploadPartKey(session.activeHouseholdId, uploadId.data, index.data),
+      new Uint8Array(await part.arrayBuffer()),
+      'application/octet-stream',
+    );
+  } catch {
+    return { error: 'storageUnavailable' };
+  }
+
+  return {};
+}
+
+export async function finishStatementUpload(input: {
+  readonly uploadId: string;
+  readonly parts: number;
+  readonly accountId: string;
+  readonly fileName: string;
+  readonly mimeType: string;
+  readonly locale: string;
+}): Promise<ImportActionResult> {
+  const session = await loadSession();
+  if (!session?.activeHouseholdId) return { error: 'noAccount' };
+  const householdId = session.activeHouseholdId;
+
+  const uploadId = z.uuid().safeParse(input.uploadId);
+  const parts = z.number().int().min(1).max(MAX_UPLOAD_PARTS).safeParse(input.parts);
+  if (!uploadId.success || !parts.success) return { error: 'unreadable' };
+
+  const target = await resolveTargetAccount(session, householdId, input.accountId);
+  if (!target) return { error: 'noAccount' };
+
+  const keys = Array.from({ length: parts.data }, (_, index) =>
+    buildUploadPartKey(householdId, uploadId.data, index),
+  );
+
+  // The pieces go whatever happens next: joined, refused or failed, they have
+  // done their job, and a piece left behind is a fragment of a bank statement
+  // sitting in storage with nothing pointing at it.
+  after(async () => {
+    await Promise.allSettled(keys.map((key) => deleteDocument(key)));
+  });
+
+  const pieces: Uint8Array[] = [];
+  let total = 0;
+  try {
+    for (const key of keys) {
+      const piece = await readDocument(key);
+      total += piece.byteLength;
+      if (total > MAX_STATEMENT_BYTES) return { error: 'tooLarge' };
+      pieces.push(piece);
+    }
+  } catch {
+    return { error: 'storageUnavailable' };
+  }
+
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const piece of pieces) {
+    bytes.set(piece, offset);
+    offset += piece.byteLength;
+  }
+
+  return stageAndQueue(session, {
+    householdId,
+    target,
+    fileName: input.fileName,
+    mimeType: input.mimeType || 'application/octet-stream',
+    bytes,
+    locale: input.locale,
+  });
+}
+
+interface TargetAccount {
+  readonly id: string;
+  readonly currency: string;
+}
+
+/**
+ * The account the statement belongs to. A person who picked one gets that one;
+ * otherwise the first active account, because filing against the wrong account
+ * is worse than not filing, and every form offers the choice.
+ */
+async function resolveTargetAccount(
+  session: Session,
+  householdId: string,
+  rawAccountId: unknown,
+): Promise<TargetAccount | undefined> {
+  const chosen = z.uuid().safeParse(rawAccountId);
+
   const available = await queryAsUser(session, (tx) =>
     tx
       .select({ id: accounts.id, currency: accounts.currency })
@@ -65,21 +230,27 @@ export async function importStatement(
       ),
   );
 
-  const target = chosen.success
-    ? available.find((account) => account.id === chosen.data)
-    : available[0];
+  return chosen.success ? available.find((account) => account.id === chosen.data) : available[0];
+}
 
-  if (!target) return { error: 'noAccount' };
-
-  const bytes = new Uint8Array(await file.arrayBuffer());
-
+async function stageAndQueue(
+  session: Session,
+  input: {
+    readonly householdId: string;
+    readonly target: TargetAccount;
+    readonly fileName: string;
+    readonly mimeType: string;
+    readonly bytes: Uint8Array;
+    readonly locale: unknown;
+  },
+): Promise<ImportActionResult> {
   const outcome = await stageDocument(session, {
-    householdId,
-    accountId: target.id,
-    currency: target.currency.trim() === 'PAB' ? 'PAB' : 'USD',
-    fileName: file.name,
-    mimeType: file.type || 'text/csv',
-    bytes,
+    householdId: input.householdId,
+    accountId: input.target.id,
+    currency: input.target.currency.trim() === 'PAB' ? 'PAB' : 'USD',
+    fileName: input.fileName,
+    mimeType: input.mimeType,
+    bytes: input.bytes,
   });
 
   if (!outcome.ok) {
@@ -97,7 +268,7 @@ export async function importStatement(
     }
   });
 
-  const locale = formData.get('locale') === 'en' ? 'en' : 'es';
+  const locale = input.locale === 'en' ? 'en' : 'es';
   revalidatePath(`/${locale}/documents`);
 
   return { jobId };

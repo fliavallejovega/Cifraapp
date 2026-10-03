@@ -24,6 +24,7 @@ import { enqueueJob, registerJobHandler } from './jobs';
 import { queryAsUser, type Session } from './session';
 import { canReadByOcr, readStatementByOcr, type OcrFailure } from './statement-ocr';
 import { buildStorageKey, putDocument, readDocument } from './storage';
+import { MAX_STATEMENT_BYTES } from '../lib/upload-limits';
 
 /**
  * The import pipeline, in two halves.
@@ -45,8 +46,7 @@ import { buildStorageKey, putDocument, readDocument } from './storage';
  *   3. The identity engine assesses every row against what is already stored.
  */
 
-/** Anything larger is a document nobody exports from a bank. */
-const MAX_UPLOAD_BYTES = 15 * 1024 * 1024;
+const MAX_UPLOAD_BYTES = MAX_STATEMENT_BYTES;
 
 export const STATEMENT_IMPORT_JOB = 'statement_import';
 
@@ -68,6 +68,40 @@ const ACCEPTED_MIME_TYPES = new Set([
   'image/gif',
   'application/octet-stream',
 ]);
+
+/** Whether a file of this type can be read at all, asked before it travels. */
+export function isAcceptedStatementType(mimeType: string): boolean {
+  return ACCEPTED_MIME_TYPES.has(mimeType);
+}
+
+/**
+ * Whether this household already holds a file with these exact bytes.
+ *
+ * Asked before a large file is sent, with a hash the browser computed, so a
+ * statement downloaded twice is caught before fifteen megabytes cross a phone
+ * connection. The browser's word is only a shortcut: `stageDocument` hashes
+ * the bytes again on arrival and that is the check that decides.
+ */
+export async function isAlreadyStored(
+  session: Session,
+  householdId: string,
+  contentHash: string,
+): Promise<boolean> {
+  const existing = await queryAsUser(session, (tx) =>
+    tx
+      .select({ id: documents.id })
+      .from(documents)
+      .where(
+        and(
+          eq(documents.householdId, householdId),
+          eq(documents.contentHash, contentHash),
+          isNull(documents.deletedAt),
+        ),
+      )
+      .limit(1),
+  );
+  return existing.length > 0;
+}
 
 export type StageOutcome =
   | { readonly ok: true; readonly documentId: string; readonly jobId: string }
@@ -327,31 +361,34 @@ async function fileImportRows(
    * «Esto ya está registrado» no le sirve a nadie. «Esto ya lo anotó Vale a
    * mano en su cuenta el 7» es lo que deja decidir sin salir de la pantalla.
    */
-  const provenance = new Map<string, { accountId: string; accountName: string | null; source: string }>();
+  const provenance = new Map<
+    string,
+    { accountId: string; accountName: string | null; source: string }
+  >();
 
   const storedRows =
     earliest && latest
       ? await db
-            .select({
-              id: transactions.id,
-              accountId: transactions.accountId,
-              accountName: sql<string | null>`(
+          .select({
+            id: transactions.id,
+            accountId: transactions.accountId,
+            accountName: sql<string | null>`(
                 select a.name from app.accounts a where a.id = ${transactions.accountId}
               )`,
-              source: transactions.source,
-              transactionDate: transactions.transactionDate,
-              postedDate: transactions.postedDate,
-              amount: transactions.amount,
-              descriptionNormalized: transactions.descriptionNormalized,
-              externalReference: transactions.externalReference,
-              fingerprint: transactions.fingerprint,
-              merchantId: transactions.merchantId,
-              sourceDocumentId: transactions.sourceDocumentId,
-            })
-            .from(transactions)
-            .where(
-              and(
-                /*
+            source: transactions.source,
+            transactionDate: transactions.transactionDate,
+            postedDate: transactions.postedDate,
+            amount: transactions.amount,
+            descriptionNormalized: transactions.descriptionNormalized,
+            externalReference: transactions.externalReference,
+            fingerprint: transactions.fingerprint,
+            merchantId: transactions.merchantId,
+            sourceDocumentId: transactions.sourceDocumentId,
+          })
+          .from(transactions)
+          .where(
+            and(
+              /*
                   Todo el hogar, no la cuenta que se está importando.
 
                   Antes esto decía `eq(transactions.accountId, input.accountId)`
@@ -365,12 +402,12 @@ async function fileImportRows(
                   Una casa no lleva sus cuentas por cuenta bancaria. Lleva una
                   sola, y el mismo pago sale de donde salga.
                 */
-                eq(transactions.householdId, input.householdId),
-                isNull(transactions.deletedAt),
-                gte(transactions.transactionDate, shiftDate(earliest, -10)),
-                lte(transactions.transactionDate, shiftDate(latest, 10)),
-              ),
-            )
+              eq(transactions.householdId, input.householdId),
+              isNull(transactions.deletedAt),
+              gte(transactions.transactionDate, shiftDate(earliest, -10)),
+              lte(transactions.transactionDate, shiftDate(latest, 10)),
+            ),
+          )
       : [];
 
   const stored: ExistingTransaction[] = storedRows.map((row) => {
