@@ -41,6 +41,7 @@ const DESTINATIONS = [
   { href: '/income', key: 'income', group: 'claims' },
   { href: '/budgets', key: 'budgets', group: 'claims' },
 
+  { href: '/family-expenses', key: 'familyExpenses', group: 'intake' },
   { href: '/documents', key: 'documents', group: 'intake' },
   { href: '/review', key: 'review', group: 'intake' },
   { href: '/merchants', key: 'merchants', group: 'intake' },

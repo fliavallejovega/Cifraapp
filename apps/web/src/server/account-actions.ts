@@ -1,6 +1,6 @@
 'use server';
 
-import { accounts } from '@app/database/schema';
+import { accounts, householdPeople } from '@app/database/schema';
 import { and, eq, isNull } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
@@ -170,6 +170,75 @@ export async function updateAccount(
 }
 
 /**
+ * Says whose an account is, and nothing else.
+ *
+ * Gastos familiares lists accounts under the person they belong to, and an
+ * account nobody assigned lands under the household's shared ones — which is
+ * wrong for a card in one partner's name. This lets that be fixed in one tap
+ * from where it shows, without opening the whole account form.
+ *
+ * The person must belong to the same household: an id from another house is
+ * refused, not written.
+ */
+export async function assignAccountOwner(
+  _previous: AccountActionResult,
+  formData: FormData,
+): Promise<AccountActionResult> {
+  const session = await loadSession();
+  if (!session?.activeHouseholdId) return { error: 'signInRequired' };
+
+  const id = z.uuid().safeParse(formData.get('id'));
+  if (!id.success) return { error: 'notFound' };
+
+  const raw = formData.get('personId');
+  const person = raw === '' ? null : z.uuid().safeParse(raw);
+  if (person !== null && !person.success) return { error: 'notFound' };
+
+  const householdId = session.activeHouseholdId;
+  const owner = person === null ? null : person.data;
+
+  const updated = await queryAsUser(session, async (tx) => {
+    if (owner !== null) {
+      const [known] = await tx
+        .select({ id: householdPeople.id })
+        .from(householdPeople)
+        .where(
+          and(
+            eq(householdPeople.id, owner),
+            eq(householdPeople.householdId, householdId),
+            isNull(householdPeople.deletedAt),
+          ),
+        )
+        .limit(1);
+      if (!known) return null;
+    }
+
+    const [row] = await tx
+      .update(accounts)
+      .set({
+        personId: owner,
+        scope: owner === null ? 'household' : 'personal',
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(accounts.id, id.data),
+          eq(accounts.householdId, householdId),
+          isNull(accounts.deletedAt),
+        ),
+      )
+      .returning({ id: accounts.id });
+    return row ?? null;
+  });
+
+  if (!updated) return { error: 'notFound' };
+
+  revalidateProduct(formData);
+  revalidatePath(`/${formData.get('locale') === 'en' ? 'en' : 'es'}/family-expenses`);
+  return {};
+}
+
+/**
  * Archives an account, or brings an archived one back.
  *
  * Never a delete. The movements filed against it stay where they are and keep
@@ -217,7 +286,7 @@ export async function setAccountStatus(
 function revalidateProduct(formData: FormData): void {
   const raw = formData.get('locale');
   const locale = raw === 'en' ? 'en' : 'es';
-  for (const path of ['accounts', 'overview', 'plan', 'reports', 'documents']) {
+  for (const path of ['accounts', 'overview', 'plan', 'reports', 'documents', 'family-expenses']) {
     revalidatePath(`/${locale}/${path}`);
   }
 }

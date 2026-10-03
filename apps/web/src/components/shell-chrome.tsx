@@ -20,6 +20,7 @@ import {
   IconExport,
   IconGoals,
   IconImport,
+  IconStatements,
   IconInvestments,
   IconIncome,
   IconMerchants,
@@ -73,6 +74,7 @@ export type DestinationKey =
   | 'goals'
   | 'trips'
   | 'budgets'
+  | 'familyExpenses'
   | 'documents'
   | 'merchants'
   | 'review'
@@ -137,6 +139,7 @@ const ICONS: Record<DestinationKey, () => ReactNode> = {
   goals: IconGoals,
   trips: IconTrips,
   budgets: IconBudget,
+  familyExpenses: IconStatements,
   documents: IconImport,
   merchants: IconMerchants,
   review: IconReview,

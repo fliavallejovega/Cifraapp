@@ -270,6 +270,7 @@ async function stageAndQueue(
 
   const locale = input.locale === 'en' ? 'en' : 'es';
   revalidatePath(`/${locale}/documents`);
+  revalidatePath(`/${locale}/family-expenses`);
 
   return { jobId };
 }
@@ -508,6 +509,7 @@ export async function confirmImport(
   const locale = formData.get('locale') === 'en' ? 'en' : 'es';
   for (const path of [
     'documents',
+    'family-expenses',
     'overview',
     'plan',
     'reports',

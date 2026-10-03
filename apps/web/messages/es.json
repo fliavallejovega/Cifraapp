@@ -922,7 +922,8 @@
     "investments": "Inversiones",
     "console": "Consola SaaS",
     "cards": "Tarjetas",
-    "offers": "Ofertas"
+    "offers": "Ofertas",
+    "familyExpenses": "Gastos familiares"
   },
   "accounts": {
     "title": "Tus cuentas",
@@ -5102,6 +5103,63 @@
       "add": "Agregar {place} al {day}",
       "addEmpty": "Elijan un lugar",
       "remove": "Quitar"
+    }
+  },
+  "familyExpenses": {
+    "title": "Gastos familiares",
+    "detail": "Sube el estado de cada cuenta en su lugar: el PDF del banco, una captura de la app o una foto. Lo leemos y te mostramos los movimientos antes de guardarlos.",
+    "formats": "PDF, captura, foto, CSV, OFX o Excel. Hasta 15 MB por archivo.",
+    "you": "Tú",
+    "shared": "De la casa",
+    "sharedHint": "Cuentas que no tienen dueño asignado. Si alguna es de una persona, elige de quién.",
+    "accounts": "Cuentas",
+    "cards": "Tarjetas",
+    "personEmpty": "{name} todavía no tiene cuentas ni tarjetas a su nombre.",
+    "personEmptyHint": "Asígnale una de las de la casa con «¿De quién es?» o agrega una nueva.",
+    "addAccount": "Agregar cuenta",
+    "noAccounts": {
+      "title": "Primero agrega una cuenta",
+      "body": "Cada estado se guarda en la cuenta o tarjeta a la que pertenece. Agrega las de tu casa y aquí aparece un lugar para subir cada una.",
+      "action": "Agregar cuenta"
+    },
+    "zone": {
+      "upload": "Subir estado",
+      "uploadLabel": "Subir estado de {name}",
+      "drop": "Suelta aquí para subir a {name}",
+      "digits": "···{digits}",
+      "upToDate": "Al día hasta {month}",
+      "missing": "Falta {months}",
+      "never": "Todavía no has subido ningún estado",
+      "reading": "{count, plural, one {Leyendo un archivo} other {Leyendo # archivos}}",
+      "toReview": "{count, plural, one {# movimiento por revisar} other {# movimientos por revisar}}",
+      "review": "Revisar"
+    },
+    "owner": {
+      "label": "¿De quién es?",
+      "household": "De la casa",
+      "failed": "No pudimos cambiar el dueño. Intenta de nuevo."
+    },
+    "queue": {
+      "waiting": "En espera",
+      "preparing": "Preparando",
+      "sending": "Subiendo · {percent}",
+      "reading": "Leyendo los movimientos",
+      "ready": "{found, plural, one {# movimiento} other {# movimientos}} · {created, plural, one {# nuevo} other {# nuevos}}",
+      "readyNothing": "Leído. No encontramos movimientos nuevos.",
+      "review": "Revisar y guardar",
+      "dismiss": "Quitar",
+      "dismissLabel": "Quitar {name} de la lista"
+    },
+    "errors": {
+      "tooLarge": "Pesa más de 15 MB. Descarga un rango de fechas más corto.",
+      "unsupportedType": "No leemos este tipo de archivo. Sube un PDF, una foto, una captura, CSV, OFX o Excel.",
+      "alreadyImported": "Ya subiste este mismo archivo. No lo volvemos a leer para no duplicar movimientos.",
+      "unreadable": "No pudimos abrir este archivo.",
+      "storageUnavailable": "No pudimos guardar el archivo. Revisa la conexión e intenta de nuevo.",
+      "queueUnavailable": "No pudimos ponerlo en la fila de lectura. Intenta de nuevo en un momento.",
+      "noAccount": "Esta cuenta ya no está disponible.",
+      "readFailed": "No pudimos leer los movimientos. Revisa que sea el estado completo y vuelve a subirlo.",
+      "generic": "Algo no salió bien. Intenta de nuevo."
     }
   }
 }

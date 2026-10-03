@@ -97,6 +97,18 @@ export function IconImport() {
   );
 }
 
+/** Family expenses: two statements, one behind the other, going up. */
+export function IconStatements() {
+  return (
+    <Icon>
+      <path d="M7 5.5V4.25C7 3.56 7.56 3 8.25 3h6.5c.69 0 1.25.56 1.25 1.25v8.5c0 .69-.56 1.25-1.25 1.25H13.5" />
+      <rect x="4" y="6" width="9" height="11" rx="1.25" />
+      <path d="M8.5 14.5v-5" />
+      <path d="m6.5 11.5 2-2 2 2" />
+    </Icon>
+  );
+}
+
 /** The plan: a compass pointing north. */
 export function IconPlan() {
   return (

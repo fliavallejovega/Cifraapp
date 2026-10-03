@@ -922,7 +922,8 @@
     "investments": "Investing",
     "console": "SaaS console",
     "cards": "Cards",
-    "offers": "Offers"
+    "offers": "Offers",
+    "familyExpenses": "Family expenses"
   },
   "accounts": {
     "title": "Your accounts",
@@ -5102,6 +5103,63 @@
       "add": "Add {place} to {day}",
       "addEmpty": "Pick a place",
       "remove": "Remove"
+    }
+  },
+  "familyExpenses": {
+    "title": "Family expenses",
+    "detail": "Upload each account's statement in its own place: the bank's PDF, a screenshot from the app or a photo. We read it and show you the movements before saving them.",
+    "formats": "PDF, screenshot, photo, CSV, OFX or Excel. Up to 15 MB per file.",
+    "you": "You",
+    "shared": "Household",
+    "sharedHint": "Accounts with no owner assigned. If one belongs to a person, choose whose.",
+    "accounts": "Accounts",
+    "cards": "Cards",
+    "personEmpty": "{name} has no accounts or cards in their name yet.",
+    "personEmptyHint": "Assign one of the household's with “Whose is it?” or add a new one.",
+    "addAccount": "Add account",
+    "noAccounts": {
+      "title": "Add an account first",
+      "body": "Each statement is saved to the account or card it belongs to. Add your household's and a place to upload each one appears here.",
+      "action": "Add account"
+    },
+    "zone": {
+      "upload": "Upload statement",
+      "uploadLabel": "Upload statement for {name}",
+      "drop": "Drop here to upload to {name}",
+      "digits": "···{digits}",
+      "upToDate": "Up to date through {month}",
+      "missing": "Missing {months}",
+      "never": "No statement uploaded yet",
+      "reading": "{count, plural, one {Reading one file} other {Reading # files}}",
+      "toReview": "{count, plural, one {# movement to review} other {# movements to review}}",
+      "review": "Review"
+    },
+    "owner": {
+      "label": "Whose is it?",
+      "household": "Household",
+      "failed": "We couldn't change the owner. Try again."
+    },
+    "queue": {
+      "waiting": "Waiting",
+      "preparing": "Preparing",
+      "sending": "Uploading · {percent}",
+      "reading": "Reading the movements",
+      "ready": "{found, plural, one {# movement} other {# movements}} · {created, plural, one {# new} other {# new}}",
+      "readyNothing": "Read. No new movements found.",
+      "review": "Review and save",
+      "dismiss": "Remove",
+      "dismissLabel": "Remove {name} from the list"
+    },
+    "errors": {
+      "tooLarge": "It's over 15 MB. Download a shorter date range.",
+      "unsupportedType": "We can't read this kind of file. Upload a PDF, photo, screenshot, CSV, OFX or Excel.",
+      "alreadyImported": "You already uploaded this exact file. We won't read it again so movements aren't duplicated.",
+      "unreadable": "We couldn't open this file.",
+      "storageUnavailable": "We couldn't save the file. Check your connection and try again.",
+      "queueUnavailable": "We couldn't queue it for reading. Try again in a moment.",
+      "noAccount": "This account is no longer available.",
+      "readFailed": "We couldn't read the movements. Check it's the full statement and upload it again.",
+      "generic": "Something went wrong. Try again."
     }
   }
 }
