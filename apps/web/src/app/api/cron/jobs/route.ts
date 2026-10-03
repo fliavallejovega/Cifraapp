@@ -30,7 +30,9 @@ import { runQueuedJobs } from '@/server/jobs';
  */
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
-export const maxDuration = 60;
+// A scanned statement or a screenshot is read by a model with a 120 s timeout;
+// 60 s cut that read off halfway and the job retried into the same wall.
+export const maxDuration = 300;
 
 export async function GET(request: Request): Promise<NextResponse> {
   const { CRON_SECRET } = getServerEnv();

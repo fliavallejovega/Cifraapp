@@ -1,5 +1,6 @@
 import { Money, type CurrencyCode } from '@app/domain';
 
+import { findAccountDigits } from '../account-digits.js';
 import { computeFingerprint } from '../fingerprint.js';
 import { normalizeDescription } from '../normalize.js';
 import {
@@ -204,7 +205,17 @@ export function parsePdfStatement(bytes: Uint8Array, options: PdfParseOptions): 
     );
   }
 
-  return { format: 'pdf', currency: options.currency, transactions, rejected };
+  // The card or account the statement is about, so the importer can tell a
+  // household it dropped one person's statement under the other's card.
+  const accountHint = findAccountDigits(lines);
+
+  return {
+    format: 'pdf',
+    currency: options.currency,
+    ...(accountHint ? { accountHint } : {}),
+    transactions,
+    rejected,
+  };
 }
 
 /**

@@ -2,7 +2,7 @@ import 'server-only';
 
 import { parseOutput, toJsonSchema, type ObjectShape } from '@app/ai';
 import { readOcrRows, type OcrRow, type ParsedStatement } from '@app/transaction-engine';
-import type { CurrencyCode } from '@app/domain';
+import type { CurrencyCode, PlainDate } from '@app/domain';
 
 import { buildProvider } from './ai';
 
@@ -44,6 +44,19 @@ import { buildProvider } from './ai';
  */
 
 const SHAPE = {
+  accountDigits: {
+    kind: 'text',
+    description:
+      'The account or card number printed in the header, exactly as printed, masked or not: "XXXX-XXXX-XXXX-0209", "****0209", "04-72-01-091783-1". Empty if the page does not show one. Never take it from a movement line.',
+    maxLength: 48,
+  },
+  printedYear: {
+    kind: 'text',
+    description:
+      'The four-digit year printed on the page for the statement period or the movements, if any is printed. Empty if no year appears — do not assume one.',
+    // Holgado a propósito: un «2026-2027» de más no puede tumbar la lectura entera.
+    maxLength: 16,
+  },
   rows: {
     kind: 'record_list',
     description:
@@ -53,7 +66,7 @@ const SHAPE = {
       date: {
         kind: 'text',
         description:
-          'The date exactly as printed on that line: "07/09/2026", "7 SEP", "2026-09-07". Do not convert it, do not reformat it, do not fill in a missing year.',
+          'The date exactly as printed on that line: "07/09/2026", "7 SEP", "2026-09-07", "Ayer", "Hoy". In a banking-app screenshot where movements sit under a date heading, repeat that heading on each line under it. Do not convert it, do not reformat it, do not fill in a missing year.',
         maxLength: 24,
       },
       description: {
@@ -96,7 +109,7 @@ const SYSTEM = [
 ].join('\n');
 
 const USER = [
-  'Transcribe every movement line in the attached statement.',
+  'Transcribe every movement line in the attached statement or banking-app screenshot.',
   'Return them in the order they are printed.',
 ].join('\n');
 
@@ -108,12 +121,7 @@ export type OcrOutcome =
   | { readonly ok: false; readonly reason: OcrFailure; readonly detail?: string };
 
 export type OcrFailure =
-  | 'not_configured'
-  | 'unsupported_type'
-  | 'too_large'
-  | 'transport'
-  | 'malformed'
-  | 'no_rows';
+  'not_configured' | 'unsupported_type' | 'too_large' | 'transport' | 'malformed' | 'no_rows';
 
 /**
  * El tope de tamaño de lo que se manda a leer.
@@ -135,6 +143,8 @@ export async function readStatementByOcr(input: {
   readonly accountId: string;
   readonly currency: CurrencyCode;
   readonly dayFirst?: boolean;
+  /** The upload day: a screenshot prints «28 sep» or «Ayer» and no year. */
+  readonly referenceDate?: PlainDate;
 }): Promise<OcrOutcome> {
   if (!canReadByOcr(input.mimeType)) {
     return { ok: false, reason: 'unsupported_type' };
@@ -185,10 +195,17 @@ export async function readStatementByOcr(input: {
     return { ok: false, reason: 'malformed' };
   }
 
+  const asText = (value: unknown): string => (typeof value === 'string' ? value : '');
+  const printedYear = Number(/\b(20\d{2})\b/.exec(asText(parsed.value['printedYear']))?.[1] ?? 0);
+  const accountDigits = asText(parsed.value['accountDigits']).trim();
+
   const statement = readOcrRows(rows.map(toOcrRow), {
     accountId: input.accountId,
     currency: input.currency,
     ...(input.dayFirst === undefined ? {} : { dayFirst: input.dayFirst }),
+    ...(input.referenceDate ? { referenceDate: input.referenceDate } : {}),
+    ...(printedYear >= 2000 && printedYear <= 2100 ? { printedYear } : {}),
+    ...(accountDigits ? { accountDigits } : {}),
   });
 
   // Cero filas legibles no es un estado vacío: es una lectura fallida, y decirlo

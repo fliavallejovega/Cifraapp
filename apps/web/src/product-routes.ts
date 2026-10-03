@@ -32,6 +32,7 @@ export const PROTECTED_SEGMENTS = [
   '/budgets',
 
   '/documents',
+  '/family-expenses',
   '/review',
   '/merchants',
 

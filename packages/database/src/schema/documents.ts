@@ -124,6 +124,15 @@ export const imports = appSchema.table(
      * Quien revisa merece saber cuál de las dos está mirando.
      */
     readByOcr: boolean('read_by_ocr').notNull().default(false),
+    /** Últimos cuatro dígitos de la cuenta que el estado dice ser, cuando los imprime. */
+    statedAccountDigits: text('stated_account_digits'),
+    /**
+     * La cuenta cuyos dígitos coinciden con los del estado, si no es la elegida.
+     * Una sugerencia: la persona decide si mover la importación.
+     */
+    suggestedAccountId: uuid('suggested_account_id').references(() => accounts.id, {
+      onDelete: 'set null',
+    }),
     source: importSource('source').notNull().default('upload'),
     status: importStatus('status').notNull().default('uploaded'),
     format: text('format'),

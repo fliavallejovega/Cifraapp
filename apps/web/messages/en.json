@@ -5159,7 +5159,15 @@
       "queueUnavailable": "We couldn't queue it for reading. Try again in a moment.",
       "noAccount": "This account is no longer available.",
       "readFailed": "We couldn't read the movements. Check it's the full statement and upload it again.",
-      "generic": "Something went wrong. Try again."
+      "generic": "Something went wrong. Try again.",
+      "cannotMove": "It can't be moved anymore: it has saved movements or was discarded."
+    },
+    "mismatch": {
+      "body": "This statement says ···{digits}, but you uploaded it to {account}.",
+      "suggest": "Those digits belong to {name}.",
+      "move": "Move it to {name}",
+      "noMatch": "No household account ends in {digits}. Check it's the right one or add those digits to the account.",
+      "moveFailed": "We couldn't move it. Open it and review it from there."
     }
   }
 }

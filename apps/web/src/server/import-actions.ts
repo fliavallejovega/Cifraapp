@@ -1,8 +1,15 @@
 'use server';
 
-import { accounts, debts, importRows, imports, transactions } from '@app/database/schema';
+import {
+  accounts,
+  debts,
+  documents,
+  importRows,
+  imports,
+  transactions,
+} from '@app/database/schema';
 import { Money, newId } from '@app/domain';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, isNotNull, isNull } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { after } from 'next/server';
 import { z } from 'zod';
@@ -10,8 +17,13 @@ import { z } from 'zod';
 import { scheduleAnalysis } from './analysis-service';
 import { applyPaymentToDebt, paysTheDebt } from './debt-payments';
 import { MAX_STATEMENT_BYTES, MAX_UPLOAD_PARTS, UPLOAD_CHUNK_BYTES } from '../lib/upload-limits';
-import { isAcceptedStatementType, isAlreadyStored, stageDocument } from './import-service';
-import { runJobNow, runQueuedJobs } from './jobs';
+import {
+  isAcceptedStatementType,
+  isAlreadyStored,
+  STATEMENT_IMPORT_JOB,
+  stageDocument,
+} from './import-service';
+import { enqueueJob, runJobNow, runQueuedJobs } from './jobs';
 import { loadSession, queryAsUser, type Session } from './session';
 import { buildUploadPartKey, deleteDocument, putDocument, readDocument } from './storage';
 
@@ -553,4 +565,93 @@ export async function discardImport(
   revalidatePath(`/${locale}/documents/${importId.data}`);
 
   return { filed: 0 };
+}
+
+/**
+ * Moving a statement to the account it says it belongs to.
+ *
+ * The rows were read against the account it was dropped under, and every
+ * fingerprint carries that account — so the import is not edited in place. It
+ * is closed without filing anything, the document is pointed at the right
+ * account, and the same file is read again there. Nothing had entered the
+ * ledger yet: an import that already filed rows is refused, because moving it
+ * then would move money that was already counted.
+ */
+export async function moveImportToAccount(input: {
+  readonly importId: string;
+  readonly accountId: string;
+  readonly locale: string;
+}): Promise<ImportActionResult> {
+  const session = await loadSession();
+  if (!session?.activeHouseholdId) return { error: 'noAccount' };
+  const householdId = session.activeHouseholdId;
+
+  const importId = z.uuid().safeParse(input.importId);
+  if (!importId.success) return { error: 'unreadable' };
+
+  const target = await resolveTargetAccount(session, householdId, input.accountId);
+  if (target?.id !== input.accountId) return { error: 'noAccount' };
+
+  const moved = await queryAsUser(session, async (tx) => {
+    const [run] = await tx
+      .select({
+        id: imports.id,
+        status: imports.status,
+        documentId: imports.documentId,
+        fileName: documents.fileName,
+        mimeType: documents.mimeType,
+        storageKey: documents.storageKey,
+        uploadedAt: documents.createdAt,
+      })
+      .from(imports)
+      .innerJoin(documents, eq(documents.id, imports.documentId))
+      .where(and(eq(imports.id, importId.data), eq(imports.householdId, householdId)))
+      .limit(1);
+
+    if (!run?.documentId || run.status !== 'review') return null;
+
+    const [filed] = await tx
+      .select({ id: importRows.id })
+      .from(importRows)
+      .where(and(eq(importRows.importId, run.id), isNotNull(importRows.createdTransactionId)))
+      .limit(1);
+    if (filed) return null;
+
+    await tx
+      .update(imports)
+      .set({ status: 'discarded', completedAt: new Date() })
+      .where(eq(imports.id, run.id));
+    await tx
+      .update(documents)
+      .set({ accountId: target.id })
+      .where(eq(documents.id, run.documentId));
+
+    return run;
+  });
+
+  if (!moved?.documentId) return { error: 'cannotMove' };
+
+  const jobId = await enqueueJob(session, householdId, STATEMENT_IMPORT_JOB, {
+    documentId: moved.documentId,
+    accountId: target.id,
+    currency: target.currency.trim() === 'PAB' ? 'PAB' : 'USD',
+    fileName: moved.fileName,
+    mimeType: moved.mimeType,
+    storageKey: moved.storageKey,
+    uploadedAt: moved.uploadedAt.toISOString(),
+  });
+  if (!jobId) return { error: 'queueUnavailable' };
+
+  after(async () => {
+    try {
+      await runJobNow(jobId);
+    } catch (error: unknown) {
+      console.error('[import] inline run failed', { jobId, error });
+    }
+  });
+
+  const locale = input.locale === 'en' ? 'en' : 'es';
+  revalidatePath(`/${locale}/family-expenses`);
+  revalidatePath(`/${locale}/documents`);
+  return { jobId };
 }

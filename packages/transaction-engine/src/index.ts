@@ -1,5 +1,7 @@
 export { computeDocumentHash, computeFingerprint } from './fingerprint.js';
 
+export { digitsDisagree, findAccountDigits } from './account-digits.js';
+
 export {
   assessDuplicate,
   CERTAIN_THRESHOLD,
@@ -56,6 +58,7 @@ export {
   parseStatementDate,
   parseTable,
   parseXlsxStatement,
+  readLooseDate,
   readOcrRows,
   readXlsxSheet,
   readZipEntries,

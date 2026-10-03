@@ -1,7 +1,15 @@
 import 'server-only';
 
 import { getAdminDb, type Database } from '@app/database';
-import { debts, documents, imports, importRows, transactions } from '@app/database/schema';
+import {
+  accounts,
+  debts,
+  documents,
+  households,
+  imports,
+  importRows,
+  transactions,
+} from '@app/database/schema';
 import { Money, newId, type CurrencyCode, type PlainDate } from '@app/domain';
 import { classify } from '@app/category-engine';
 import {
@@ -10,6 +18,7 @@ import {
   proposeDebt,
   computeDocumentHash,
   detectStatementFormat,
+  digitsDisagree,
   parseDocument,
   StatementParseError,
   type DebtTarget,
@@ -221,6 +230,8 @@ export async function stageDocument(
     // manos, y `canReadByOcr('')` cerraba el camino del lector visual.
     mimeType: request.mimeType,
     storageKey,
+    // Cuándo se subió: una captura dice «28 sep» o «Ayer» y el año sale de aquí.
+    uploadedAt: new Date().toISOString(),
   });
 
   if (!jobId) return { ok: false, reason: 'queueUnavailable' };
@@ -244,6 +255,7 @@ registerJobHandler(STATEMENT_IMPORT_JOB, async (job, report) => {
     fileName?: string;
     mimeType?: string;
     storageKey?: string;
+    uploadedAt?: string;
   };
 
   const { documentId, accountId, storageKey } = payload;
@@ -294,7 +306,14 @@ registerJobHandler(STATEMENT_IMPORT_JOB, async (job, report) => {
     if (canReadByOcr(mimeType)) {
       await report(45, 'reading_scan');
 
-      const read = await readStatementByOcr({ bytes, mimeType, accountId, currency });
+      const referenceDate = await uploadDay(db, job.householdId, payload.uploadedAt);
+      const read = await readStatementByOcr({
+        bytes,
+        mimeType,
+        accountId,
+        currency,
+        referenceDate,
+      });
       if (read.ok) {
         parsed = read.statement;
         readByOcr = true;
@@ -317,7 +336,14 @@ registerJobHandler(STATEMENT_IMPORT_JOB, async (job, report) => {
 
   await report(65, 'matching');
 
+  const accountCheck = await checkStatedAccount(db, {
+    householdId: job.householdId,
+    accountId,
+    stated: parsed.accountHint ?? null,
+  });
+
   const summary = await fileImportRows(db, {
+    ...accountCheck,
     householdId: job.householdId,
     documentId,
     accountId,
@@ -340,6 +366,68 @@ interface FileRowsInput {
   readonly jobId: string;
   readonly parsed: ReturnType<typeof parseDocument>;
   readonly readByOcr: boolean;
+  readonly statedAccountDigits: string | null;
+  readonly suggestedAccountId: string | null;
+}
+
+/**
+ * Whether the statement says it belongs to another account.
+ *
+ * The digits printed on the statement against the digits on file for the
+ * account it was dropped under. Only a clear contradiction counts, and the
+ * answer is a suggestion — the account in the household whose digits do match,
+ * if one does. The import stays where the person put it until they move it.
+ */
+async function checkStatedAccount(
+  db: Database,
+  input: { householdId: string; accountId: string; stated: string | null },
+): Promise<{ statedAccountDigits: string | null; suggestedAccountId: string | null }> {
+  const digits = input.stated?.replace(/\D/g, '').slice(-4) ?? '';
+  if (digits.length !== 4) return { statedAccountDigits: null, suggestedAccountId: null };
+
+  const candidates = await db
+    .select({ id: accounts.id, maskedNumber: accounts.maskedNumber })
+    .from(accounts)
+    .where(
+      and(
+        eq(accounts.householdId, input.householdId),
+        eq(accounts.status, 'active'),
+        isNull(accounts.deletedAt),
+      ),
+    );
+
+  const chosen = candidates.find((account) => account.id === input.accountId);
+  if (!chosen || !digitsDisagree(digits, chosen.maskedNumber)) {
+    return { statedAccountDigits: digits, suggestedAccountId: null };
+  }
+
+  const match = candidates.find(
+    (account) =>
+      account.id !== input.accountId &&
+      (account.maskedNumber?.replace(/\D/g, '').slice(-4) ?? '') === digits,
+  );
+  return { statedAccountDigits: digits, suggestedAccountId: match?.id ?? null };
+}
+
+/** The household's calendar day the file was uploaded on. */
+async function uploadDay(
+  db: Database,
+  householdId: string,
+  uploadedAt: string | undefined,
+): Promise<PlainDate> {
+  const [household] = await db
+    .select({ timeZone: households.timeZone })
+    .from(households)
+    .where(eq(households.id, householdId))
+    .limit(1);
+  const instant = uploadedAt ? new Date(uploadedAt) : new Date();
+  const when = Number.isNaN(instant.getTime()) ? new Date() : instant;
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: household?.timeZone ?? 'America/Panama',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(when) as PlainDate;
 }
 
 async function fileImportRows(
@@ -633,6 +721,8 @@ async function fileImportRows(
     status: 'review',
     format: input.parsed.format,
     readByOcr: input.readByOcr,
+    statedAccountDigits: input.statedAccountDigits,
+    suggestedAccountId: input.suggestedAccountId,
     rowsFound: counts.found,
     rowsNew: counts.created,
     rowsDuplicate: counts.duplicate,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { readOcrRows, type OcrRow } from './ocr.js';
+import { readLooseDate, readOcrRows, type OcrRow } from './ocr.js';
 
 /**
  * El filtro entre lo que un modelo dijo que leyó y lo que entra al sistema.
@@ -83,7 +83,10 @@ describe('readOcrRows', () => {
   it('asume cargo cuando la página no declara dirección', () => {
     // El signo no desempata a propósito: un menos significa cosas opuestas en
     // un estado de banco y en uno de tarjeta.
-    const { transactions } = readOcrRows([row({ direction: 'unknown', amount: '-40.00' })], options);
+    const { transactions } = readOcrRows(
+      [row({ direction: 'unknown', amount: '-40.00' })],
+      options,
+    );
     expect(transactions[0]?.direction).toBe('outflow');
   });
 
@@ -91,8 +94,10 @@ describe('readOcrRows', () => {
     // Es lo que permite que el motor de duplicados reconozca como una sola cosa
     // el escaneo de hoy y el CSV que el banco publique mañana.
     const [uno] = readOcrRows([row()], options).transactions;
-    const [otro] = readOcrRows([row({ amount: '125.40', direction: 'unknown' })], options)
-      .transactions;
+    const [otro] = readOcrRows(
+      [row({ amount: '125.40', direction: 'unknown' })],
+      options,
+    ).transactions;
 
     expect(uno?.fingerprint).toBe(otro?.fingerprint);
     expect(uno?.fingerprint).toHaveLength(32);
@@ -112,5 +117,62 @@ describe('readOcrRows', () => {
     const result = readOcrRows([], options);
     expect(result.transactions).toEqual([]);
     expect(result.rejected).toEqual([]);
+  });
+});
+
+/**
+ * Capturas de la app del banco: fechas sin año.
+ *
+ * Una captura dice «28 sep» o «Ayer». Antes eso se rechazaba entero, y una
+ * captura de la app —lo que la gente tiene a mano en el teléfono— no servía.
+ */
+describe('readLooseDate', () => {
+  const today = '2026-10-03' as Parameters<typeof readLooseDate>[2] & string;
+
+  it('reads a day and a month name, Spanish or English', () => {
+    expect(readLooseDate('28 sep', true, today)).toBe('2026-09-28');
+    expect(readLooseDate('28 de septiembre', true, today)).toBe('2026-09-28');
+    expect(readLooseDate('Sep 28', true, today)).toBe('2026-09-28');
+    expect(readLooseDate('2 OCT.', true, today)).toBe('2026-10-02');
+    expect(readLooseDate('15 ago 2025', true, today)).toBe('2025-08-15');
+  });
+
+  it('reads today and yesterday', () => {
+    expect(readLooseDate('Hoy, 10:42', true, today)).toBe('2026-10-03');
+    expect(readLooseDate('Ayer', true, today)).toBe('2026-10-02');
+  });
+
+  it('puts a date that would be in the future in the previous year', () => {
+    expect(readLooseDate('28 dic', true, today)).toBe('2025-12-28');
+    expect(readLooseDate('15/11', true, today)).toBe('2025-11-15');
+  });
+
+  it('uses the year printed on the page', () => {
+    expect(readLooseDate('07/09', true, today, 2026)).toBe('2026-09-07');
+  });
+
+  it('refuses to guess without the upload date', () => {
+    expect(readLooseDate('28 sep', true, undefined)).toBeNull();
+  });
+
+  it('feeds the OCR rows, with the account digits', () => {
+    const statement = readOcrRows(
+      [
+        { date: '28 sep', description: 'SUPER 99', amount: '12.40', direction: 'debit' },
+        { date: 'Ayer', description: 'UBER', amount: '7.10', direction: 'unknown' },
+      ],
+      {
+        accountId: 'acc',
+        currency: 'USD',
+        referenceDate: today,
+        accountDigits: '**** 0209',
+      },
+    );
+    expect(statement.transactions.map((row) => row.transactionDate)).toEqual([
+      '2026-09-28',
+      '2026-10-02',
+    ]);
+    expect(statement.accountHint).toBe('0209');
+    expect(statement.rejected).toEqual([]);
   });
 });

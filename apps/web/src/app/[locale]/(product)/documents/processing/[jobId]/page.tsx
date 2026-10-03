@@ -9,6 +9,13 @@ import { loadJob } from '@/server/repositories/jobs';
 import { requireHousehold } from '@/server/session';
 
 /**
+ * The upload and the polls on this screen run the reader inline (`after()` and
+ * `runJobNow`). A scan or a screenshot can take up to two minutes to read, so
+ * the actions get the platform's full five minutes instead of the default.
+ */
+export const maxDuration = 300;
+
+/**
  * A file being read.
  *
  * This screen exists because the import stopped happening inside the request.

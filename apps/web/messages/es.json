@@ -5159,7 +5159,15 @@
       "queueUnavailable": "No pudimos ponerlo en la fila de lectura. Intenta de nuevo en un momento.",
       "noAccount": "Esta cuenta ya no está disponible.",
       "readFailed": "No pudimos leer los movimientos. Revisa que sea el estado completo y vuelve a subirlo.",
-      "generic": "Algo no salió bien. Intenta de nuevo."
+      "generic": "Algo no salió bien. Intenta de nuevo.",
+      "cannotMove": "Ya no se puede mover: tiene movimientos guardados o se descartó."
+    },
+    "mismatch": {
+      "body": "Este estado dice ···{digits}, pero lo subiste en {account}.",
+      "suggest": "Esos dígitos son de {name}.",
+      "move": "Moverlo a {name}",
+      "noMatch": "Ninguna cuenta de la casa termina en {digits}. Revisa que sea la correcta o agrega esos dígitos a la cuenta.",
+      "moveFailed": "No pudimos moverlo. Ábrelo y revísalo desde ahí."
     }
   }
 }

@@ -104,6 +104,17 @@ export function useStatementQueue(locale: string) {
     [drain],
   );
 
+  /** A file read again under another account: same line, new job, new zone. */
+  const moved = useCallback((key: string, jobId: string, accountId: string) => {
+    setItems((current) =>
+      current.map((item) => {
+        if (item.key !== key) return item;
+        const { job: _job, error: _error, detail: _detail, ...rest } = item;
+        return { ...rest, state: 'reading', jobId, accountId, fraction: 0 };
+      }),
+    );
+  }, []);
+
   const dismiss = useCallback((key: string) => {
     setItems((current) => current.filter((item) => item.key !== key));
   }, []);
@@ -147,5 +158,5 @@ export function useStatementQueue(locale: string) {
     };
   }, [watching, patch]);
 
-  return { items, add, dismiss };
+  return { items, add, dismiss, moved };
 }

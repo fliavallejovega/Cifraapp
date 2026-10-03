@@ -1,7 +1,8 @@
 import 'server-only';
 
-import { documents, imports, jobs } from '@app/database/schema';
-import { and, desc, eq } from 'drizzle-orm';
+import { accounts, documents, imports, jobs } from '@app/database/schema';
+import { digitsDisagree } from '@app/transaction-engine';
+import { and, desc, eq, inArray } from 'drizzle-orm';
 
 import { queryAsUser, type Session } from '../session';
 
@@ -34,6 +35,15 @@ export interface JobView {
     readonly duplicate: number;
     readonly review: number;
     readonly rejected: number;
+  } | null;
+  /**
+   * When the statement prints another account's digits than the one it was
+   * uploaded to: what it says, and the household's account that matches, if any.
+   */
+  readonly mismatch: {
+    readonly statedDigits: string;
+    readonly uploadedTo: string;
+    readonly suggested: { readonly id: string; readonly name: string } | null;
   } | null;
 }
 
@@ -71,10 +81,15 @@ export async function loadJob(
         duplicate: imports.rowsDuplicate,
         review: imports.rowsReview,
         rejected: imports.rowsRejected,
+        accountId: imports.accountId,
+        statedDigits: imports.statedAccountDigits,
+        suggestedAccountId: imports.suggestedAccountId,
       })
       .from(imports)
       .where(and(eq(imports.jobId, job.id), eq(imports.householdId, householdId)))
       .limit(1);
+
+    const mismatch = await describeMismatch(tx, run);
 
     return {
       id: job.id,
@@ -98,8 +113,44 @@ export async function loadJob(
             rejected: run.rejected,
           }
         : null,
+      mismatch,
     };
   });
+}
+
+/**
+ * Turns the import's stated digits into something a person can act on.
+ *
+ * Only when the statement's digits contradict the account's — an account with
+ * no digits on file is not a contradiction, it is a blank.
+ */
+async function describeMismatch(
+  tx: Parameters<Parameters<typeof queryAsUser>[1]>[0],
+  run:
+    | {
+        accountId: string | null;
+        statedDigits: string | null;
+        suggestedAccountId: string | null;
+      }
+    | undefined,
+): Promise<JobView['mismatch']> {
+  if (!run?.statedDigits || !run.accountId) return null;
+
+  const ids = [run.accountId, run.suggestedAccountId].filter((id): id is string => id !== null);
+  const named = await tx
+    .select({ id: accounts.id, name: accounts.name, maskedNumber: accounts.maskedNumber })
+    .from(accounts)
+    .where(inArray(accounts.id, ids));
+
+  const uploadedTo = named.find((account) => account.id === run.accountId);
+  if (!uploadedTo || !digitsDisagree(run.statedDigits, uploadedTo.maskedNumber)) return null;
+
+  const suggested = named.find((account) => account.id === run.suggestedAccountId);
+  return {
+    statedDigits: run.statedDigits,
+    uploadedTo: uploadedTo.name,
+    suggested: suggested ? { id: suggested.id, name: suggested.name } : null,
+  };
 }
 
 /** Recent jobs, for the list beside the upload form. */

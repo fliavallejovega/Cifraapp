@@ -1,4 +1,4 @@
-import { Money, type CurrencyCode } from '@app/domain';
+import { addDays, Money, plainDateFromParts, type CurrencyCode, type PlainDate } from '@app/domain';
 
 import { computeFingerprint } from '../fingerprint.js';
 import { normalizeDescription } from '../normalize.js';
@@ -64,6 +64,18 @@ export interface OcrParseOptions {
   readonly currency: CurrencyCode;
   /** Panamá escribe día primero. Es lo que decide si `07/09` es julio o setiembre. */
   readonly dayFirst?: boolean;
+  /**
+   * El día en que se subió el archivo.
+   *
+   * Una captura de la app del banco dice «28 sep», «Ayer» o «Hoy», sin año. Con
+   * esta fecha cada línea toma el año que la deja en el pasado más cercano: un
+   * «28 dic» leído en enero es del año anterior, no del que empieza.
+   */
+  readonly referenceDate?: PlainDate;
+  /** El año impreso en la página (el periodo del estado), cuando lo hay. */
+  readonly printedYear?: number;
+  /** Los dígitos de la cuenta o tarjeta tal como el lector los vio impresos. */
+  readonly accountDigits?: string;
 }
 
 /**
@@ -75,10 +87,7 @@ export interface OcrParseOptions {
  */
 const MAX_ROWS = 600;
 
-export function readOcrRows(
-  rows: readonly OcrRow[],
-  options: OcrParseOptions,
-): ParsedStatement {
+export function readOcrRows(rows: readonly OcrRow[], options: OcrParseOptions): ParsedStatement {
   const dayFirst = options.dayFirst ?? true;
   const transactions: CandidateTransaction[] = [];
   const rejected: RejectedRow[] = [];
@@ -87,7 +96,9 @@ export function readOcrRows(
     const line = index + 1;
     const raw = `${row.date} ${row.description} ${row.amount}`.trim();
 
-    const date = parseStatementDate(row.date, dayFirst);
+    const date =
+      parseStatementDate(row.date, dayFirst) ??
+      readLooseDate(row.date, dayFirst, options.referenceDate, options.printedYear);
     if (!date) {
       rejected.push({ line, raw, reason: 'unreadable_date' });
       return;
@@ -140,7 +151,107 @@ export function readOcrRows(
     });
   }
 
-  return { format: 'pdf', currency: options.currency, transactions, rejected };
+  const digits = options.accountDigits?.replace(/\D/g, '') ?? '';
+  const accountHint = digits.length >= 4 ? digits.slice(-4) : undefined;
+
+  return {
+    format: 'pdf',
+    currency: options.currency,
+    ...(accountHint ? { accountHint } : {}),
+    transactions,
+    rejected,
+  };
+}
+
+const MONTHS: Record<string, number> = {
+  ene: 1,
+  jan: 1,
+  feb: 2,
+  mar: 3,
+  abr: 4,
+  apr: 4,
+  may: 5,
+  jun: 6,
+  jul: 7,
+  ago: 8,
+  aug: 8,
+  sep: 9,
+  set: 9,
+  oct: 10,
+  nov: 11,
+  dic: 12,
+  dec: 12,
+};
+
+/**
+ * Una fecha sin año, como la imprime una app de banco.
+ *
+ * `28 sep`, `sep 28`, `28 de septiembre`, `07/09`, `Hoy`, `Ayer`. Sin la fecha
+ * de referencia no hay forma honesta de saber el año, y la línea se rechaza con
+ * su texto a la vista, como antes. Con ella, el año es el impreso en la página
+ * si lo hay; si no, el de la referencia — y si eso deja la fecha en el futuro,
+ * el anterior, porque un estado no trae movimientos que todavía no pasaron.
+ */
+export function readLooseDate(
+  raw: string,
+  dayFirst: boolean,
+  reference: PlainDate | undefined,
+  printedYear?: number,
+): PlainDate | null {
+  if (!reference) return null;
+  const text = raw
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
+  if (/^(hoy|today)\b/.test(text)) return reference;
+  if (/^(ayer|yesterday)\b/.test(text)) return addDays(reference, -1);
+
+  let day: number | undefined;
+  let month: number | undefined;
+  let year: number | undefined;
+
+  const dayName = /^(\d{1,2})\s*(?:de\s+)?([a-z]{3,})\.?(?:,?\s+(?:de\s+)?(\d{2,4}))?/.exec(text);
+  const nameDay = /^([a-z]{3,})\.?\s+(\d{1,2})(?:,?\s+(\d{2,4}))?/.exec(text);
+  const numeric = /^(\d{1,2})[/\-.](\d{1,2})$/.exec(text);
+
+  if (dayName) {
+    day = Number(dayName[1]);
+    month = MONTHS[dayName[2]?.slice(0, 3) ?? ''];
+    if (dayName[3]) year = Number(dayName[3]);
+  } else if (nameDay) {
+    month = MONTHS[nameDay[1]?.slice(0, 3) ?? ''];
+    day = Number(nameDay[2]);
+    if (nameDay[3]) year = Number(nameDay[3]);
+  } else if (numeric) {
+    const first = Number(numeric[1]);
+    const second = Number(numeric[2]);
+    day = second > 12 ? second : first > 12 ? first : dayFirst ? first : second;
+    month = second > 12 ? first : first > 12 ? second : dayFirst ? second : first;
+  }
+
+  if (!day || !month || day > 31) return null;
+  if (year !== undefined && year < 100) year += 2000;
+
+  const explicit = year !== undefined;
+  const base = year ?? printedYear ?? Number(reference.slice(0, 4));
+
+  let date: PlainDate;
+  try {
+    date = plainDateFromParts(base, month, day);
+  } catch {
+    return null;
+  }
+
+  if (!explicit && date > reference) {
+    try {
+      date = plainDateFromParts(base - 1, month, day);
+    } catch {
+      return null;
+    }
+  }
+  return date;
 }
 
 /**

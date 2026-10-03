@@ -2,11 +2,12 @@
 
 import { Button, Select, Status } from '@app/ui';
 import { useTranslations } from 'next-intl';
-import { useActionState, useRef, useState, type DragEvent } from 'react';
+import { useActionState, useRef, useState, useTransition, type DragEvent } from 'react';
 
 import { Link, useRouter } from '@/i18n/navigation';
 import { useStatementQueue, type QueueItem } from '@/lib/use-statement-queue';
 import { assignAccountOwner, type AccountActionResult } from '@/server/account-actions';
+import { moveImportToAccount } from '@/server/import-actions';
 import type { BoardAccount, BoardPerson, FamilyBoard } from '@/server/repositories/family-expenses';
 
 /**
@@ -56,6 +57,7 @@ export function UploadBoard({
           onPick={pick}
           onDrop={queue.add}
           onDismiss={queue.dismiss}
+          onMoved={queue.moved}
         />
       ))}
 
@@ -86,6 +88,7 @@ function PersonSection({
   onPick,
   onDrop,
   onDismiss,
+  onMoved,
 }: {
   readonly person: BoardPerson;
   readonly owners: FamilyBoard['owners'];
@@ -94,6 +97,7 @@ function PersonSection({
   readonly onPick: (accountId: string) => void;
   readonly onDrop: (files: FileList, accountId: string) => void;
   readonly onDismiss: (key: string) => void;
+  readonly onMoved: (key: string, jobId: string, accountId: string) => void;
 }) {
   const t = useTranslations('familyExpenses');
   const shared = person.personId === null;
@@ -149,6 +153,7 @@ function PersonSection({
                         onPick={onPick}
                         onDrop={onDrop}
                         onDismiss={onDismiss}
+                        onMoved={onMoved}
                       />
                     </li>
                   ))}
@@ -170,6 +175,7 @@ function AccountZone({
   onPick,
   onDrop,
   onDismiss,
+  onMoved,
 }: {
   readonly account: BoardAccount;
   /** Offered only where an account has no owner yet. */
@@ -179,6 +185,7 @@ function AccountZone({
   readonly onPick: (accountId: string) => void;
   readonly onDrop: (files: FileList, accountId: string) => void;
   readonly onDismiss: (key: string) => void;
+  readonly onMoved: (key: string, jobId: string, accountId: string) => void;
 }) {
   const t = useTranslations('familyExpenses');
   const [over, setOver] = useState(false);
@@ -262,7 +269,13 @@ function AccountZone({
       {items.length > 0 && (
         <ul className="flex list-none flex-col gap-2 border-t border-[color:var(--color-rule)] p-0 pt-3">
           {items.map((item) => (
-            <QueueLine key={item.key} item={item} onDismiss={onDismiss} />
+            <QueueLine
+              key={item.key}
+              item={item}
+              locale={locale}
+              onDismiss={onDismiss}
+              onMoved={onMoved}
+            />
           ))}
         </ul>
       )}
@@ -315,10 +328,14 @@ function CoverageLine({
 
 function QueueLine({
   item,
+  locale,
   onDismiss,
+  onMoved,
 }: {
   readonly item: QueueItem;
+  readonly locale: string;
   readonly onDismiss: (key: string) => void;
+  readonly onMoved: (key: string, jobId: string, accountId: string) => void;
 }) {
   const t = useTranslations('familyExpenses');
   const router = useRouter();
@@ -393,6 +410,16 @@ function QueueLine({
           />
         </div>
       )}
+      {item.state === 'ready' && item.job?.mismatch && importId && (
+        <MismatchNotice
+          mismatch={item.job.mismatch}
+          importId={importId}
+          locale={locale}
+          onMoved={(jobId, accountId) => {
+            onMoved(item.key, jobId, accountId);
+          }}
+        />
+      )}
       {item.state === 'ready' && importId && (
         <Link
           href={`/documents/${importId}`}
@@ -402,6 +429,60 @@ function QueueLine({
         </Link>
       )}
     </li>
+  );
+}
+
+function MismatchNotice({
+  mismatch,
+  importId,
+  locale,
+  onMoved,
+}: {
+  readonly mismatch: NonNullable<NonNullable<QueueItem['job']>['mismatch']>;
+  readonly importId: string;
+  readonly locale: string;
+  readonly onMoved: (jobId: string, accountId: string) => void;
+}) {
+  const t = useTranslations('familyExpenses');
+  const [pending, start] = useTransition();
+  const [failed, setFailed] = useState(false);
+  const suggested = mismatch.suggested;
+
+  return (
+    <div
+      role="status"
+      className="flex flex-col gap-2 rounded-(--radius-sm) border-l-2 border-[color:var(--color-caution)] bg-[color:var(--color-caution-sunk)] px-3 py-2"
+    >
+      <p className="text-sm [overflow-wrap:anywhere]">
+        {t('mismatch.body', { digits: mismatch.statedDigits, account: mismatch.uploadedTo })}{' '}
+        {suggested
+          ? t('mismatch.suggest', { name: suggested.name })
+          : t('mismatch.noMatch', { digits: mismatch.statedDigits })}
+      </p>
+      {suggested && (
+        <Button
+          variant="primary"
+          size="md"
+          className="min-h-11 self-start"
+          loading={pending}
+          onClick={() => {
+            setFailed(false);
+            start(async () => {
+              const result = await moveImportToAccount({
+                importId,
+                accountId: suggested.id,
+                locale,
+              });
+              if (result.jobId) onMoved(result.jobId, suggested.id);
+              else setFailed(true);
+            });
+          }}
+        >
+          {t('mismatch.move', { name: suggested.name })}
+        </Button>
+      )}
+      {failed && <Status tone="negative">{t('mismatch.moveFailed')}</Status>}
+    </div>
   );
 }
 

@@ -8,6 +8,13 @@ import { loadFamilyBoard } from '@/server/repositories/family-expenses';
 import { requireHousehold } from '@/server/session';
 
 /**
+ * The upload and the polls on this screen run the reader inline (`after()` and
+ * `runJobNow`). A scan or a screenshot can take up to two minutes to read, so
+ * the actions get the platform's full five minutes instead of the default.
+ */
+export const maxDuration = 300;
+
+/**
  * Gastos familiares: every account and card in the house, under its owner,
  * each one a place to upload that account's statement.
  *
