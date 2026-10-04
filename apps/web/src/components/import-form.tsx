@@ -143,9 +143,15 @@ export function ImportForm({ locale, accounts, fixedAccountId, labels }: ImportF
   );
 }
 
-/** «Visa Davo · Tarjeta de crédito · Davo», in the order a person scans it. */
+/**
+ * «Visa Davo · Davo», in the order a person scans it.
+ *
+ * The kind of account is not repeated: the option already sits under its group
+ * («Tarjetas», «Cuentas»), and repeating it pushed the owner's name past the
+ * edge of a closed select on a phone — the part that tells two Visas apart.
+ */
 function describeAccount(account: ImportFormProps['accounts'][number]): string {
-  return [account.name, account.typeLabel, account.personName]
+  return [account.name, account.personName]
     .filter((part): part is string => Boolean(part))
     .join(' · ');
 }
