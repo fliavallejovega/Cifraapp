@@ -68,6 +68,8 @@ export function Field({ label, hint, error, required, children, className }: Fie
 
 const CONTROL_BASE = cn(
   'w-full rounded-(--radius-sm) border bg-[color:var(--color-surface)] px-3 text-[color:var(--color-ink)]',
+  // 16px on a phone, or iOS zooms the page on every tap; 44px tall for the thumb.
+  'h-11 text-base sm:h-10 sm:text-sm',
   'shadow-[inset_0_1px_2px_var(--c-shadow-near)]',
   'placeholder:text-[color:var(--color-ink-tertiary)]',
   'transition-[border-color,box-shadow] duration-(--duration-quick) ease-(--ease-settle)',
@@ -87,7 +89,6 @@ export function Input({ invalid, numeric, className, ...props }: InputProps) {
       aria-invalid={invalid ? true : undefined}
       className={cn(
         CONTROL_BASE,
-        'h-10',
         numeric && 'readout text-right',
         invalid
           ? 'border-[color:var(--color-negative)]'
@@ -208,7 +209,7 @@ export function Select({ invalid, className, children, ...props }: SelectProps) 
       aria-invalid={invalid ? true : undefined}
       className={cn(
         CONTROL_BASE,
-        'h-10 appearance-none pr-8',
+        'appearance-none pr-8',
         invalid
           ? 'border-[color:var(--color-negative)]'
           : 'border-[color:var(--color-surface-border)] hover:border-[color:var(--color-rule-strong)]',

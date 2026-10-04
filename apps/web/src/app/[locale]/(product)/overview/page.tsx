@@ -214,8 +214,10 @@ export default async function OverviewPage({ params }: { params: Promise<{ local
                       <LedgerBody>
                         {glance.recent.map((row) => (
                           <LedgerRow key={row.id}>
-                            <LedgerCell className="max-w-0 min-w-0">
-                              <span className="block truncate font-medium">{row.description}</span>
+                            <LedgerCell className="min-w-0">
+                              <span className="line-clamp-2 block font-medium break-words">
+                                {row.description}
+                              </span>
                               <span className="tabular block text-xs text-[color:var(--color-ink-secondary)]">
                                 {format.dateTime(new Date(`${row.date}T12:00:00Z`), {
                                   day: 'numeric',
