@@ -48,6 +48,25 @@ interface ConnectionOptions {
   readonly maxConnections?: number;
 }
 
+/**
+ * Whether a URL goes through Supabase's session pooler (port 5432).
+ *
+ * The product moved its request traffic there in October 2026: under
+ * concurrency the transaction pooler (6543) left queries hanging with no reply,
+ * and pages that read the card catalogue stopped loading until the server
+ * restarted — reproduced in isolation, and absent on the session port. The
+ * session pooler holds one server connection per client for the whole
+ * project's fifteen, so request clients stay small here: three for the
+ * household's connection and two for the catalogue's, per warm instance.
+ */
+function sessionMode(url: string): boolean {
+  try {
+    return new URL(url).port === '5432';
+  } catch {
+    return false;
+  }
+}
+
 function createClient({ url, pooled, maxConnections }: ConnectionOptions): postgres.Sql {
   return postgres(url, {
     prepare: !pooled,
@@ -64,7 +83,7 @@ function createClient({ url, pooled, maxConnections }: ConnectionOptions): postg
       soon as a few renders ran at once.
     */
     ...(pooled ? { max_pipeline: 1 } : {}),
-    max: maxConnections ?? (pooled ? 10 : 4),
+    max: maxConnections ?? (pooled ? (sessionMode(url) ? 3 : 10) : 4),
     idle_timeout: 20,
     connect_timeout: 10,
     // Money and large identifiers must not round-trip through a JS number.
@@ -118,7 +137,11 @@ export function getAdminDb(connectionUrl: string): Database {
  * uses `withUserContext` and lets the database decide.
  */
 export function getPlatformDb(connectionUrl: string): Database {
-  platformClient ??= createClient({ url: connectionUrl, pooled: true, maxConnections: 4 });
+  platformClient ??= createClient({
+    url: connectionUrl,
+    pooled: true,
+    maxConnections: sessionMode(connectionUrl) ? 2 : 4,
+  });
   platformDb ??= drizzle(platformClient, { schema, casing: 'snake_case' });
   return platformDb;
 }
