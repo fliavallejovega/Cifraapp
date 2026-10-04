@@ -10,6 +10,7 @@ import { Button, Card, Field, Input, Select, Status } from '@app/ui';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState, useTransition } from 'react';
 
+import { conflictText, type DocumentRowView } from '@/components/trips/document-upload';
 import { useRouter } from '@/i18n/navigation';
 import { COUNTRIES, inferPlace } from '@/lib/places';
 import { formatAmount } from '@/lib/trip-format';
@@ -51,6 +52,8 @@ export interface ReviewData {
     date: string | null;
   }[];
   readonly rates: Readonly<Record<string, string>>;
+  /** What this document clashes with on the trip, when the reader held it back. */
+  readonly conflict?: DocumentRowView['conflict'];
 }
 
 const AMOUNT = /^\d{1,12}(\.\d{1,4})?$/;
@@ -74,6 +77,7 @@ export function DocumentReview({
   readonly today: string;
 }) {
   const t = useTranslations('trips.documents.review');
+  const td = useTranslations('trips.documents');
   const tc = useTranslations('trips.common');
   const te = useTranslations('trips.errors');
   const router = useRouter();
@@ -377,6 +381,14 @@ export function DocumentReview({
                 ))}
               </div>
             </div>
+
+            {data.conflict && (
+              <Card tone="sunk">
+                <p className="max-w-[68ch] text-sm font-medium [overflow-wrap:anywhere] text-[color:var(--color-caution)]">
+                  {conflictText(td, data.conflict, locale)}
+                </p>
+              </Card>
+            )}
 
             {data.possibleDuplicates.length > 0 && (
               <Card tone="sunk">

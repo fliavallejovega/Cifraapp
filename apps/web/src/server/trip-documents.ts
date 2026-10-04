@@ -11,6 +11,7 @@ import { createHash } from 'node:crypto';
 
 import { buildProvider } from './ai';
 import { enqueueJob, registerJobHandler } from './jobs';
+import { autoApplyTripDocument } from './trip-auto-apply';
 import { queryAsUser, type Session } from './session';
 import { buildStorageKey, putDocument, readDocument } from './storage';
 
@@ -29,6 +30,24 @@ export const TRIP_DOCUMENT_JOB = 'trip_document';
 const MAX_UPLOAD_BYTES = 15 * 1024 * 1024;
 const MAX_MODEL_BYTES = 5 * 1024 * 1024;
 const PROMPT_ID = 'trip-document-v1';
+
+/**
+ * What the family said they were uploading, from the zone they used.
+ *
+ * A hint, never a verdict: it tells the reader where to look («this is a hotel
+ * confirmation»), and the reader still says what the document is.
+ */
+export const TRIP_DOCUMENT_HINTS = ['flight', 'lodging', 'ticket', 'transport'] as const;
+export type TripDocumentHint = (typeof TRIP_DOCUMENT_HINTS)[number];
+
+const HINT_TEXT: Readonly<Record<TripDocumentHint, string>> = {
+  flight: 'The family says this is a flight: an itinerary, an e-ticket or a boarding pass.',
+  lodging: 'The family says this is a lodging confirmation: a hotel, apartment or similar stay.',
+  ticket:
+    'The family says this is a ticket for an activity, a museum, a show or an event on a given day.',
+  transport:
+    'The family says this is ground transport: a train, bus, ferry, transfer or car rental. Use kind "ticket" for a dated trip and "receipt" otherwise.',
+};
 
 export const TRIP_DOCUMENT_TYPES = new Set([
   'application/pdf',
@@ -179,6 +198,7 @@ export async function stageTripDocument(
     fileName: string;
     mimeType: string;
     bytes: Uint8Array;
+    hint?: TripDocumentHint | null;
   },
 ): Promise<
   | { ok: true; documentId: string; duplicate: boolean; jobId: string | null }
@@ -238,6 +258,7 @@ export async function stageTripDocument(
     mimeType: request.mimeType,
     tripId: request.tripId,
     userId: session.user.id,
+    hint: request.hint ?? null,
   });
   if (!jobId) return { ok: false, reason: 'queueUnavailable' };
   return { ok: true, documentId, duplicate: false, jobId };
@@ -318,6 +339,7 @@ registerJobHandler(TRIP_DOCUMENT_JOB, async (job, report) => {
     mimeType?: string;
     tripId?: string | null;
     userId?: string;
+    hint?: string | null;
   };
   if (!payload.documentId || !payload.storageKey || !payload.mimeType) {
     return { failure: 'This document is missing its file.', retryable: false };
@@ -356,7 +378,13 @@ registerJobHandler(TRIP_DOCUMENT_JOB, async (job, report) => {
     dataBase64: Buffer.from(bytes).toString('base64'),
   };
   const started = Date.now();
-  let user = 'Read the attached travel document and fill every field you can see.';
+  const hint = TRIP_DOCUMENT_HINTS.find((h) => h === payload.hint);
+  let user = [
+    'Read the attached travel document and fill every field you can see.',
+    hint ? HINT_TEXT[hint] : '',
+  ]
+    .filter(Boolean)
+    .join('\n');
   let output: StructuredOutput | null = null;
   let model = provider.model;
   let usage = { inputTokens: 0, outputTokens: 0 };
@@ -448,8 +476,21 @@ registerJobHandler(TRIP_DOCUMENT_JOB, async (job, report) => {
     })
     .where(and(eq(documents.id, documentId), eq(documents.householdId, job.householdId)));
 
+  // A hotel or a flight that fits the trip is applied now, and the family is
+  // told; one that clashes keeps waiting, with the before and the after.
+  const outcome =
+    payload.tripId && payload.userId
+      ? await autoApplyTripDocument(db, {
+          householdId: job.householdId,
+          userId: payload.userId,
+          tripId: payload.tripId,
+          documentId,
+          proposal,
+        })
+      : 'review';
+
   await report(100, 'ready');
-  return { result: { kind: proposal.kind, confidence: proposal.confidence } };
+  return { result: { kind: proposal.kind, confidence: proposal.confidence, outcome } };
 });
 
 async function logInvocation(

@@ -4412,6 +4412,43 @@
         "uploadFailed": "It could not be uploaded. Try again.",
         "moduleOff": "Trips is not active for your household.",
         "signInRequired": "Your session ended. Sign in again."
+      },
+      "zones": {
+        "title": "What are you uploading?",
+        "detail": "Tap the type and choose the photo, screenshot or PDF. A hotel or flight that fits the trip is added on its own; if it clashes with the plan, we show you first.",
+        "flight": "Flights",
+        "flightHint": "Itinerary, e-ticket or boarding pass",
+        "lodging": "Lodging",
+        "lodgingHint": "Hotel, apartment or house",
+        "ticket": "Tickets and activities",
+        "ticketHint": "Museums, tours, shows",
+        "transport": "Cars and transfers",
+        "transportHint": "Train, bus, ferry, car",
+        "other": "Other document",
+        "otherHint": "We'll sort it for you",
+        "drop": "Drop here: {kind}",
+        "uploadLabel": "Upload {kind}",
+        "gapsTitle": "What the trip still needs",
+        "gapsNone": "No nights missing: each one has a city and lodging.",
+        "gapNoCity": "{from} to {to}: nights with no city. Upload the hotel or the ticket that covers them.",
+        "gapNoLodging": "{city}, {from} to {to}: lodging missing.",
+        "gapNoCityOne": "{date}: a night with no city. Upload the hotel or the ticket that covers it.",
+        "gapNoLodgingOne": "{city}, {date}: lodging missing."
+      },
+      "applied": {
+        "status": "Added to the trip",
+        "undo": "Undo",
+        "undoLabel": "Undo what {name} added",
+        "undone": "Removed from the trip. It's waiting for review.",
+        "undoFailed": "We couldn't undo it. Open it and review it from there.",
+        "unplaced": "Place {cities} on the route map to see it on the itinerary.",
+        "stay": "{city}, {from} to {to}"
+      },
+      "conflict": {
+        "conflict": "Clashes with the plan: from {from} to {to} you were going to be in {planned}; this document is in {incoming}.",
+        "already_planned": "There's already lodging in {planned} those nights ({from} to {to}). Review it so you don't book twice.",
+        "outside_trip": "The dates fall outside the trip. Review it before adding it.",
+        "no_rate": "It's in a currency with no planning rate. Review it to set the rate."
       }
     },
     "today": {

@@ -4412,6 +4412,43 @@
         "uploadFailed": "No se pudo subir. Intenta de nuevo.",
         "moduleOff": "Viajes no está activo para tu hogar.",
         "signInRequired": "Tu sesión terminó. Vuelve a entrar."
+      },
+      "zones": {
+        "title": "¿Qué estás subiendo?",
+        "detail": "Toca el tipo y elige la foto, la captura o el PDF. Un hotel o un vuelo que encaja en el viaje se agrega solo; si choca con lo planeado, te lo mostramos antes.",
+        "flight": "Pasajes de avión",
+        "flightHint": "Itinerario, boleto o pase de abordar",
+        "lodging": "Hospedaje",
+        "lodgingHint": "Hotel, apartamento o casa",
+        "ticket": "Tickets y actividades",
+        "ticketHint": "Museos, tours, shows",
+        "transport": "Autos y traslados",
+        "transportHint": "Tren, bus, ferry, auto",
+        "other": "Otro documento",
+        "otherHint": "Lo clasificamos por ti",
+        "drop": "Suelta aquí: {kind}",
+        "uploadLabel": "Subir {kind}",
+        "gapsTitle": "Lo que falta del viaje",
+        "gapsNone": "No faltan noches: cada una tiene ciudad y hospedaje.",
+        "gapNoCity": "{from} al {to}: noches sin ciudad. Sube el hotel o el pasaje que las cubre.",
+        "gapNoLodging": "{city}, {from} al {to}: falta el hospedaje.",
+        "gapNoCityOne": "{date}: noche sin ciudad. Sube el hotel o el pasaje que la cubre.",
+        "gapNoLodgingOne": "{city}, {date}: falta el hospedaje."
+      },
+      "applied": {
+        "status": "Agregado al viaje",
+        "undo": "Deshacer",
+        "undoLabel": "Deshacer lo que agregó {name}",
+        "undone": "Lo quitamos del viaje. Quedó por revisar.",
+        "undoFailed": "No pudimos deshacerlo. Ábrelo y revísalo desde ahí.",
+        "unplaced": "Ubica {cities} en el mapa de la ruta para verlo en el recorrido.",
+        "stay": "{city}, {from} al {to}"
+      },
+      "conflict": {
+        "conflict": "Choca con lo planeado: del {from} al {to} ibas a estar en {planned}; este documento es en {incoming}.",
+        "already_planned": "Ya hay un hospedaje en {planned} esas noches ({from} al {to}). Revísalo para no reservar dos veces.",
+        "outside_trip": "Las fechas caen fuera del viaje. Revísalo antes de agregarlo.",
+        "no_rate": "Está en una moneda sin tasa de planificación. Revísalo para fijar la tasa."
       }
     },
     "today": {

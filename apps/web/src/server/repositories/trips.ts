@@ -572,6 +572,20 @@ export interface TripDocumentRow {
     provider: string | null;
     amount: string | null;
     currency: string | null;
+    city: string | null;
+    checkIn: string | null;
+    checkOut: string | null;
+    outbound: string | null;
+  } | null;
+  /** Applied to the trip by the reader, without review: undoable. */
+  readonly autoApplied: { readonly unplaced: readonly string[] } | null;
+  /** Why it waits for review, when it clashes with the plan. */
+  readonly conflict: {
+    readonly reason: string;
+    readonly from?: string;
+    readonly to?: string;
+    readonly plannedCity?: string;
+    readonly incomingCity?: string;
   } | null;
 }
 
@@ -592,6 +606,8 @@ export async function loadTripDocuments(
         failure: documents.tripFailure,
         createdAt: documents.createdAt,
         extraction: documents.tripExtraction,
+        autoApplied: documents.tripAutoApplied,
+        conflict: documents.tripConflict,
       })
       .from(documents)
       .where(
@@ -607,17 +623,32 @@ export async function loadTripDocuments(
       .orderBy(desc(documents.createdAt))
       .limit(50),
   );
-  return rows.map(({ extraction, ...row }) => {
+  return rows.map(({ extraction, autoApplied, conflict, ...row }) => {
     const p = extraction as {
       provider?: string | null;
       amount?: string | null;
       currency?: string;
+      city?: string | null;
+      checkIn?: string | null;
+      checkOut?: string | null;
+      outbound?: string | null;
     } | null;
     return {
       ...row,
       summary: p
-        ? { provider: p.provider ?? null, amount: p.amount ?? null, currency: p.currency ?? null }
+        ? {
+            provider: p.provider ?? null,
+            amount: p.amount ?? null,
+            currency: p.currency ?? null,
+            city: p.city ?? null,
+            checkIn: p.checkIn ?? null,
+            checkOut: p.checkOut ?? null,
+            outbound: p.outbound ?? null,
+          }
         : null,
+      autoApplied:
+        autoApplied && row.status === 'confirmed' ? { unplaced: autoApplied.unplaced } : null,
+      conflict: conflict && row.status === 'needs_review' ? conflict : null,
     };
   });
 }
@@ -642,6 +673,7 @@ export interface TripDocumentReview {
     date: string | null;
   }[];
   readonly rates: Readonly<Record<string, string>>;
+  readonly conflict: TripDocumentRow['conflict'];
 }
 
 export async function loadTripDocumentReview(
@@ -766,6 +798,7 @@ export async function loadTripDocumentReview(
     travelers: data.travelerRows,
     possibleDuplicates: data.duplicates,
     rates: await loadLatestRates(session, currency),
+    conflict: data.doc.tripStatus === 'needs_review' ? (data.doc.tripConflict ?? null) : null,
   };
 }
 

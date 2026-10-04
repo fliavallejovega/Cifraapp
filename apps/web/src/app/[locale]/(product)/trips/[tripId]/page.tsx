@@ -6,7 +6,9 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { BookingManager } from '@/components/trips/booking-manager';
 import { CashWithdrawal } from '@/components/trips/cash-withdrawal';
-import { DocumentList, DocumentUpload } from '@/components/trips/document-upload';
+import { DocumentList } from '@/components/trips/document-upload';
+import { TripUploadZones } from '@/components/trips/upload-zones';
+import { findTripGaps } from '@/lib/trip-gaps';
 import {
   ChecklistPanel,
   PerDiemPanel,
@@ -396,7 +398,11 @@ export default async function TripPage({
         <Section title={t('documents.title')} detail={t('documents.detail')}>
           <Card>
             <div className="@container flex flex-col gap-6">
-              <DocumentUpload tripId={trip.id} locale={locale} />
+              <TripUploadZones
+                tripId={trip.id}
+                locale={locale}
+                gaps={findTripGaps(trip, data.legs)}
+              />
               <DocumentList documents={tripDocuments} locale={locale} />
             </div>
           </Card>

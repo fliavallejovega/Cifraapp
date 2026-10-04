@@ -86,6 +86,22 @@ export const documents = appSchema.table(
     tripExtraction: jsonb('trip_extraction').$type<Record<string, unknown>>(),
     tripConfidence: numeric('trip_confidence', { precision: 4, scale: 3, mode: 'string' }),
     tripFailure: text('trip_failure'),
+    /** Set when the document was applied to its trip without review: what to undo. */
+    tripAutoApplied: jsonb('trip_auto_applied').$type<{
+      at: string;
+      bookingId: string | null;
+      createdLegId: string | null;
+      unplaced: string[];
+    }>(),
+    /** Set when the document clashes with the plan: the before and the after. */
+    tripConflict: jsonb('trip_conflict').$type<{
+      reason: string;
+      from?: string;
+      to?: string;
+      plannedCity?: string;
+      plannedLabel?: string | null;
+      incomingCity?: string;
+    }>(),
     tripReviewedAt: timestamp('trip_reviewed_at', { withTimezone: true }),
     tripBookingId: uuid('trip_booking_id'),
     tripTransactionId: uuid('trip_transaction_id'),
