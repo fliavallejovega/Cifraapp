@@ -660,6 +660,7 @@ async function fileImportRows(
       descriptionNormalized: one.candidate.descriptionNormalized,
       externalReference: one.candidate.externalReference ?? null,
       fingerprint: one.candidate.fingerprint,
+      sourceTop: one.candidate.sourceTop === undefined ? null : one.candidate.sourceTop.toFixed(4),
       verdict: ruling.verdict,
       confidence: one.assessment.confidence.toFixed(3),
       matchedTransactionId: matchedId,

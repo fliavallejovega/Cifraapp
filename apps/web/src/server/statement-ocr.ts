@@ -87,6 +87,13 @@ const SHAPE = {
           'What the page itself says: debit if the line is a charge or withdrawal, credit if it is a payment or deposit, unknown if the page does not make it clear. Read the page’s own marks: in a bank account or a banking-app list, a minus sign or a red figure is a debit, and an unsigned figure in a list where others carry a minus is a credit. On a credit-card statement, a minus, «CR» or «PAGO» on the figure is a credit. Do not infer from the merchant.',
         options: ['debit', 'credit', 'unknown'],
       },
+      top: {
+        kind: 'number',
+        description:
+          'Where this line sits on the page, as a fraction of the page height: 0 is the top edge, 1 the bottom edge, 0.5 the middle. Measure the middle of the line. For a multi-page PDF, measure within its own page.',
+        minimum: 0,
+        maximum: 1,
+      },
     },
   },
 } as const satisfies ObjectShape;
@@ -224,5 +231,6 @@ function toOcrRow(record: Readonly<Record<string, string | number | boolean>>): 
     description: String(record['description'] ?? ''),
     amount: String(record['amount'] ?? ''),
     direction: String(record['direction'] ?? 'unknown'),
+    ...(typeof record['top'] === 'number' ? { top: record['top'] } : {}),
   };
 }

@@ -5304,7 +5304,7 @@
     },
     "outflow": "Salida",
     "inflow": "Entrada",
-    "whyAsk": "{count, plural, one {Aparece en # captura.} other {Aparece en # capturas. Toca una para verla completa.}}",
+    "whyAsk": "{count, plural, one {Aparece en # captura.} other {Aparece en # capturas. La línea está marcada en cada una; tócala para verla completa.}}",
     "openCapture": "Abrir {file} completa",
     "captureAlt": "Captura {file}",
     "merged": {
@@ -5319,7 +5319,8 @@
       "undone": "Deshecho: se guardan los dos.",
       "more": "Ver {count} más",
       "less": "Ver menos"
-    }
+    },
+    "captureOf": "Captura {index} de {total} · {file}"
   },
   "saveAll": {
     "title": "{files, plural, one {Un archivo leído espera que lo guardes} other {# archivos leídos esperan que los guardes}}",

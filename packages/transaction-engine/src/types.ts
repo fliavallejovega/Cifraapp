@@ -11,6 +11,8 @@ export interface CandidateTransaction {
   /** The institution's own identifier, when the format carries one. */
   readonly externalReference?: string;
   readonly fingerprint: string;
+  /** Where the line sits in its source image, 0 (top) to 1 (bottom). */
+  readonly sourceTop?: number;
 }
 
 /** A transaction already stored, as the duplicate engine needs to see it. */

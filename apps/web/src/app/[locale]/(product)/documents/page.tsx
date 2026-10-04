@@ -138,6 +138,7 @@ export default async function DocumentsPage({ params }: { params: Promise<{ loca
               description: merge.description,
               reason: merge.reason,
               fileName: merge.fileName,
+              files: merge.files,
               amount: (
                 <Amount
                   value={Money.fromDecimalString(

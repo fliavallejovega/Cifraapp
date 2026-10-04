@@ -28,11 +28,14 @@ export interface RepeatItem {
   readonly outflow: boolean;
   /** Formatted on the server, where the money lives. */
   readonly amount: ReactNode;
-  readonly files: readonly {
-    readonly documentId: string;
-    readonly fileName: string;
-    readonly isImage: boolean;
-  }[];
+  readonly files: readonly CaptureFile[];
+}
+
+export interface CaptureFile {
+  readonly documentId: string;
+  readonly fileName: string;
+  readonly isImage: boolean;
+  readonly top: number | null;
 }
 
 export interface MergedItem {
@@ -43,6 +46,7 @@ export interface MergedItem {
   readonly amount: ReactNode;
   readonly reason: 'same_reference' | 'screenshot_overlap' | 'screenshot_seam';
   readonly fileName: string;
+  readonly files: readonly CaptureFile[];
 }
 
 export function RepeatQuestions({
@@ -148,6 +152,7 @@ function MergedLine({ item, locale }: { readonly item: MergedItem; readonly loca
       <p className="text-xs [overflow-wrap:anywhere] text-[color:var(--color-ink-secondary)]">
         {t(`merged.reason.${item.reason}`, { file: item.fileName })}
       </p>
+      <Captures files={item.files} />
       {undone ? (
         <Status tone="neutral">{t('merged.undone')}</Status>
       ) : (
@@ -266,34 +271,62 @@ function Question({
   );
 }
 
-/** The captures side by side; a tap opens one at full size in a new tab. */
-function Captures({ files }: { readonly files: RepeatItem['files'] }) {
+/**
+ * Each capture cut around the line in question, with the line marked — so the
+ * check happens here, not by opening files and hunting for a row. The reader
+ * says where on the page it read the line; without that, the whole capture is
+ * shown small. A tap opens it at full size.
+ */
+function Captures({ files }: { readonly files: readonly CaptureFile[] }) {
   const t = useTranslations('repeatQuestions');
+  const images = files.filter((file) => file.isImage);
+  if (images.length === 0) return null;
   return (
-    <ul className="grid list-none grid-cols-2 gap-3 p-0 sm:grid-cols-3">
-      {files.map((file) => (
-        <li key={file.documentId} className="flex min-w-0 flex-col gap-1">
-          {file.isImage ? (
+    <ul className="grid list-none grid-cols-1 gap-3 p-0 sm:grid-cols-2">
+      {images.map((file, index) => {
+        const src = `/api/documents/${file.documentId}/file`;
+        return (
+          <li key={`${file.documentId}-${String(index)}`} className="flex min-w-0 flex-col gap-1">
             <a
-              href={`/api/documents/${file.documentId}/file`}
+              href={src}
               target="_blank"
               rel="noopener"
-              className="block overflow-hidden rounded-(--radius-sm) border border-[color:var(--color-rule)] bg-[color:var(--color-ground)]"
+              className="relative block overflow-hidden rounded-(--radius-sm) border border-[color:var(--color-rule)] bg-[color:var(--color-ground)]"
               aria-label={t('openCapture', { file: file.fileName })}
             >
-              <img
-                src={`/api/documents/${file.documentId}/file`}
-                alt={t('captureAlt', { file: file.fileName })}
-                loading="lazy"
-                className="aspect-[9/16] w-full object-cover object-top"
-              />
+              {file.top === null ? (
+                <img
+                  src={src}
+                  alt={t('captureAlt', { file: file.fileName })}
+                  loading="lazy"
+                  className="mx-auto max-h-96 w-auto"
+                />
+              ) : (
+                <>
+                  <div
+                    role="img"
+                    aria-label={t('captureAlt', { file: file.fileName })}
+                    className="h-48 w-full bg-no-repeat"
+                    style={{
+                      backgroundImage: `url(${src})`,
+                      backgroundSize: '100% auto',
+                      backgroundPosition: `center ${String(Math.round(file.top * 1000) / 10)}%`,
+                    }}
+                  />
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-x-0 h-12 -translate-y-1/2 border-y-2 border-[color:var(--color-brand)] bg-[color:var(--color-brand)]/10"
+                    style={{ top: `${String(Math.round(file.top * 1000) / 10)}%` }}
+                  />
+                </>
+              )}
             </a>
-          ) : null}
-          <span className="truncate text-xs text-[color:var(--color-ink-secondary)]">
-            {file.fileName}
-          </span>
-        </li>
-      ))}
+            <span className="truncate text-xs text-[color:var(--color-ink-secondary)]">
+              {t('captureOf', { index: index + 1, total: images.length, file: file.fileName })}
+            </span>
+          </li>
+        );
+      })}
     </ul>
   );
 }

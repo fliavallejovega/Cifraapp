@@ -57,6 +57,8 @@ export interface OcrRow {
    * asume cargo, que es lo que es la mayoría de las líneas de un estado.
    */
   readonly direction: string;
+  /** Posición vertical de la línea en la imagen, de 0 (arriba) a 1 (abajo). */
+  readonly top?: number;
 }
 
 export interface OcrParseOptions {
@@ -137,6 +139,7 @@ export function readOcrRows(rows: readonly OcrRow[], options: OcrParseOptions): 
       direction,
       descriptionOriginal: description,
       descriptionNormalized: normalized,
+      ...(row.top !== undefined && row.top >= 0 && row.top <= 1 ? { sourceTop: row.top } : {}),
       fingerprint: computeFingerprint({
         accountId: options.accountId,
         transactionDate: date,

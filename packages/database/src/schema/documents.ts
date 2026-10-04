@@ -189,6 +189,7 @@ export const importRows = appSchema.table(
     verdict: text('verdict').notNull(),
     /** A person said this line is not the same as an identical one in another pending file. */
     distinctConfirmed: boolean('distinct_confirmed').notNull().default(false),
+    sourceTop: numeric('source_top', { precision: 5, scale: 4 }),
     confidence: numeric('confidence', { precision: 4, scale: 3, mode: 'string' }),
     matchedTransactionId: uuid('matched_transaction_id').references(() => transactions.id, {
       onDelete: 'set null',

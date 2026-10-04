@@ -36,6 +36,8 @@ export interface RepeatFileRef {
   readonly documentId: string;
   readonly fileName: string;
   readonly isImage: boolean;
+  /** Where the line sits in the image, 0 to 1, when the reader said. */
+  readonly top: number | null;
 }
 
 export interface RepeatQuestion {
@@ -62,6 +64,8 @@ export interface MergedRepeat {
   readonly currency: string;
   readonly reason: RepeatReason;
   readonly fileName: string;
+  /** The copy that stays first, then the one merged into it. */
+  readonly files: readonly RepeatFileRef[];
 }
 
 export interface RepeatReport {
@@ -146,7 +150,7 @@ export async function loadRepeatQuestions(
       description: string;
       amount: string;
       currency: string;
-      files: { documentId: string; fileName: string; mimeType: string }[];
+      files: { documentId: string; fileName: string; mimeType: string; top: number | null }[];
       copies: number;
     }>(sql`
       select i.account_id,
@@ -158,7 +162,8 @@ export async function loadRepeatQuestions(
              min(r.amount)::text as amount,
              a.currency,
              json_agg(json_build_object(
-               'documentId', d.id, 'fileName', d.file_name, 'mimeType', d.mime_type
+               'documentId', d.id, 'fileName', d.file_name, 'mimeType', d.mime_type,
+               'top', r.source_top::float8
              ) order by i.started_at) as files,
              count(*)::int as copies
         from app.import_rows r
@@ -188,8 +193,24 @@ export async function loadRepeatQuestions(
       currency: string;
       reason: RepeatReason;
       file_name: string;
+      files: { documentId: string; fileName: string; mimeType: string; top: number | null }[];
     }>(sql`
       select r.id, a.name as account_name, a.masked_number,
+             coalesce((
+               select json_agg(f order by f.started_at) from (
+                 select d2.id as "documentId", d2.file_name as "fileName",
+                        d2.mime_type as "mimeType", r2.source_top::float8 as top, i2.started_at
+                   from app.import_rows r2
+                   join app.imports i2 on i2.id = r2.import_id
+                   join app.documents d2 on d2.id = i2.document_id
+                  where i2.account_id = i.account_id
+                    and i2.status = 'review'
+                    and r2.fingerprint = r.fingerprint
+                    and r2.created_transaction_id is null
+                    and (r2.id = r.id or r2.verdict = 'new')
+                  limit 4
+               ) f
+             ), '[]') as files,
              r.transaction_date::text as transaction_date,
              r.description_original as description, r.amount::text as amount,
              a.currency, r.matched_signals->>0 as reason, d.file_name
@@ -216,11 +237,7 @@ export async function loadRepeatQuestions(
         description: row.description,
         amount: row.amount,
         currency: row.currency.trim(),
-        files: row.files.map((file) => ({
-          documentId: file.documentId,
-          fileName: file.fileName,
-          isImage: file.mimeType.startsWith('image/'),
-        })),
+        files: row.files.map(toFileRef),
         copies: row.copies,
       })),
       merged: merged.map((row) => ({
@@ -233,7 +250,22 @@ export async function loadRepeatQuestions(
         currency: row.currency.trim(),
         reason: row.reason,
         fileName: row.file_name,
+        files: row.files.map(toFileRef),
       })),
     };
   });
+}
+
+function toFileRef(file: {
+  documentId: string;
+  fileName: string;
+  mimeType: string;
+  top: number | null;
+}): RepeatFileRef {
+  return {
+    documentId: file.documentId,
+    fileName: file.fileName,
+    isImage: file.mimeType.startsWith('image/'),
+    top: typeof file.top === 'number' && file.top >= 0 && file.top <= 1 ? file.top : null,
+  };
 }
