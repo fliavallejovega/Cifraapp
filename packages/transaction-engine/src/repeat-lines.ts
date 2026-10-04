@@ -22,8 +22,12 @@
  *   3. **The seam.** A single shared line that is the oldest of one file and
  *      the newest of the other is where one capture ends and the next begins.
  *
- * Anything else — a lone match in the middle of both files — stays a question
- * for the person, with what the engine knows.
+ *   4. **Same details.** Anything else with the same account, day, amount and
+ *      description in two files is merged too — the household's rule — and
+ *      reported apart, so it can be checked and undone.
+ *
+ * Only different reference numbers keep two lines apart. Repeats inside one
+ * file are never touched: two equal coffees on one receipt are two coffees.
  *
  * Pure: no database, no dates beyond ISO strings that compare as text.
  */
@@ -43,7 +47,8 @@ export interface RepeatFile {
   readonly lines: readonly RepeatLine[];
 }
 
-export type RepeatReason = 'same_reference' | 'screenshot_overlap' | 'screenshot_seam';
+export type RepeatReason =
+  'same_reference' | 'screenshot_overlap' | 'screenshot_seam' | 'same_details';
 
 export interface RepeatResolution {
   /** Later copies of a movement already present in an older file. */
@@ -155,8 +160,14 @@ function comparePair(
     const b = range(newer);
     if ((low === a.first && low === b.last) || (low === a.last && low === b.first)) {
       markShared('screenshot_seam');
+      return;
     }
   }
+
+  // Everything else: same account, same day, same amount, same description in
+  // two files. The household decided that is one movement; it is merged and
+  // shown with a way back, never deleted.
+  markShared('same_details');
 }
 
 function isText(value: string | null | undefined): value is string {

@@ -30,6 +30,7 @@ const AUTO_REASONS: readonly RepeatReason[] = [
   'same_reference',
   'screenshot_overlap',
   'screenshot_seam',
+  'same_details',
 ];
 
 export interface RepeatFileRef {
@@ -222,7 +223,7 @@ export async function loadRepeatQuestions(
          and i.status = 'review'
          and r.verdict = 'duplicate'
          and r.created_transaction_id is null
-         and r.matched_signals->>0 in ('same_reference', 'screenshot_overlap', 'screenshot_seam')
+         and r.matched_signals->>0 in ('same_reference', 'screenshot_overlap', 'screenshot_seam', 'same_details')
        order by r.transaction_date desc
        limit 100
     `);

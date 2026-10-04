@@ -5304,23 +5304,27 @@
     },
     "outflow": "Money out",
     "inflow": "Money in",
-    "whyAsk": "{count, plural, one {It appears in # capture.} other {It appears in # captures. The line is marked in each; tap one to see it in full.}}",
+    "whyAsk": "{count, plural, one {It appears in # capture.} other {It appears in # captures. Below, each one around that line; tap it to see it in full.}}",
     "openCapture": "Open {file} in full",
     "captureAlt": "Capture {file}",
     "merged": {
-      "title": "{count, plural, one {Cifra merged one repeated movement} other {Cifra merged # repeated movements}}",
-      "detail": "They appeared twice because your captures overlap. They are saved once. If any really were two, undo it.",
+      "title": "{count, plural, one {Cifra fixed one repeated movement} other {Cifra fixed # repeated movements}}",
+      "detail": "They were in two captures with the same date, amount and description. They are saved once. Reviewing is optional; if any really were two, undo it there.",
       "reason": {
         "screenshot_overlap": "In {file} it sits in the part repeated from the previous capture: both show the same movements on those dates.",
         "screenshot_seam": "In {file} it is the first line and in the previous capture the last: that is where the two meet.",
-        "same_reference": "In {file} it carries the same reference number as in the other file."
+        "same_reference": "In {file} it carries the same reference number as in the other file.",
+        "same_details": "In {file} it has the same date, amount and description as in another capture of this account."
       },
       "undo": "No, they were two: undo",
       "undone": "Undone: both are saved.",
-      "more": "See {count} more",
-      "less": "See less"
+      "less": "Hide",
+      "showCaptures": "See it in the captures",
+      "hideCaptures": "Hide captures",
+      "review": "Review (optional)"
     },
-    "captureOf": "Capture {index} of {total} · {file}"
+    "captureOf": "Capture {index} of {total} · {file}",
+    "lookFor": "Look for it in each capture:"
   },
   "saveAll": {
     "title": "{files, plural, one {One read file is waiting to be saved} other {# read files are waiting to be saved}}",

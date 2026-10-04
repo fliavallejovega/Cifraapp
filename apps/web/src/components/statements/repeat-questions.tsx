@@ -44,7 +44,7 @@ export interface MergedItem {
   readonly date: string;
   readonly description: string;
   readonly amount: ReactNode;
-  readonly reason: 'same_reference' | 'screenshot_overlap' | 'screenshot_seam';
+  readonly reason: 'same_reference' | 'screenshot_overlap' | 'screenshot_seam' | 'same_details';
   readonly fileName: string;
   readonly files: readonly CaptureFile[];
 }
@@ -101,32 +101,33 @@ function MergedNotice({
   readonly locale: string;
 }) {
   const t = useTranslations('repeatQuestions');
-  const [expanded, setExpanded] = useState(false);
-  const shown = expanded ? merged : merged.slice(0, 3);
+  const [open, setOpen] = useState(false);
   return (
-    <Card>
-      <h2 className="text-base font-medium text-balance">
-        {t('merged.title', { count: merged.length })}
-      </h2>
-      <p className="mt-1 max-w-[68ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]">
-        {t('merged.detail')}
-      </p>
-      <ul className="mt-4 flex list-none flex-col gap-3 p-0">
-        {shown.map((item) => (
-          <MergedLine key={item.rowId} item={item} locale={locale} />
-        ))}
-      </ul>
-      {merged.length > 3 && (
+    <Card tone="sunk">
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <Status tone="positive">{t('merged.title', { count: merged.length })}</Status>
+          <p className="max-w-[68ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]">
+            {t('merged.detail')}
+          </p>
+        </div>
         <button
           type="button"
-          className="mt-2 inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4"
-          aria-expanded={expanded}
+          className="inline-flex min-h-11 shrink-0 items-center text-sm font-medium underline underline-offset-4"
+          aria-expanded={open}
           onClick={() => {
-            setExpanded((value) => !value);
+            setOpen((value) => !value);
           }}
         >
-          {expanded ? t('merged.less') : t('merged.more', { count: merged.length - 3 })}
+          {open ? t('merged.less') : t('merged.review')}
         </button>
+      </div>
+      {open && (
+        <ul className="mt-4 flex list-none flex-col gap-3 p-0">
+          {merged.map((item) => (
+            <MergedLine key={item.rowId} item={item} locale={locale} />
+          ))}
+        </ul>
       )}
     </Card>
   );
@@ -138,6 +139,7 @@ function MergedLine({ item, locale }: { readonly item: MergedItem; readonly loca
   const [pending, start] = useTransition();
   const [undone, setUndone] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [looking, setLooking] = useState(false);
   return (
     <li className="flex flex-col gap-1 border-t border-[color:var(--color-rule)] pt-3">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
@@ -152,7 +154,28 @@ function MergedLine({ item, locale }: { readonly item: MergedItem; readonly loca
       <p className="text-xs [overflow-wrap:anywhere] text-[color:var(--color-ink-secondary)]">
         {t(`merged.reason.${item.reason}`, { file: item.fileName })}
       </p>
-      <Captures files={item.files} />
+      {item.files.some((file) => file.isImage) && (
+        <button
+          type="button"
+          aria-expanded={looking}
+          className="inline-flex min-h-11 items-center self-start text-sm font-medium underline underline-offset-4"
+          onClick={() => {
+            setLooking((value) => !value);
+          }}
+        >
+          {looking ? t('merged.hideCaptures') : t('merged.showCaptures')}
+        </button>
+      )}
+      {looking && (
+        <Captures
+          files={item.files}
+          lookFor={
+            <>
+              {item.date} · {item.amount}
+            </>
+          }
+        />
+      )}
       {undone ? (
         <Status tone="neutral">{t('merged.undone')}</Status>
       ) : (
@@ -234,7 +257,14 @@ function Question({
       <p className="max-w-[68ch] text-xs text-pretty text-[color:var(--color-ink-secondary)]">
         {t('whyAsk', { count: item.files.length })}
       </p>
-      <Captures files={item.files} />
+      <Captures
+        files={item.files}
+        lookFor={
+          <>
+            {item.date} · {item.amount}
+          </>
+        }
+      />
       {answer === undefined ? (
         <div className="flex flex-wrap gap-2">
           <Button
@@ -277,56 +307,66 @@ function Question({
  * says where on the page it read the line; without that, the whole capture is
  * shown small. A tap opens it at full size.
  */
-function Captures({ files }: { readonly files: readonly CaptureFile[] }) {
+function Captures({
+  files,
+  lookFor,
+}: {
+  readonly files: readonly CaptureFile[];
+  /** «24 jul · −$1,000.00»: what to find in the window. */
+  readonly lookFor: ReactNode;
+}) {
   const t = useTranslations('repeatQuestions');
   const images = files.filter((file) => file.isImage);
   if (images.length === 0) return null;
   return (
-    <ul className="grid list-none grid-cols-1 gap-3 p-0 sm:grid-cols-2">
-      {images.map((file, index) => {
-        const src = `/api/documents/${file.documentId}/file`;
-        return (
-          <li key={`${file.documentId}-${String(index)}`} className="flex min-w-0 flex-col gap-1">
-            <a
-              href={src}
-              target="_blank"
-              rel="noopener"
-              className="relative block overflow-hidden rounded-(--radius-sm) border border-[color:var(--color-rule)] bg-[color:var(--color-ground)]"
-              aria-label={t('openCapture', { file: file.fileName })}
-            >
-              {file.top === null ? (
-                <img
-                  src={src}
-                  alt={t('captureAlt', { file: file.fileName })}
-                  loading="lazy"
-                  className="mx-auto max-h-96 w-auto"
-                />
-              ) : (
-                <>
-                  <div
-                    role="img"
-                    aria-label={t('captureAlt', { file: file.fileName })}
-                    className="h-48 w-full bg-no-repeat"
-                    style={{
-                      backgroundImage: `url(${src})`,
-                      backgroundSize: '100% auto',
-                      backgroundPosition: `center ${String(Math.round(file.top * 1000) / 10)}%`,
-                    }}
+    <div className="flex flex-col gap-2">
+      <p className="text-xs text-[color:var(--color-ink-secondary)]">
+        {t('lookFor')} <span className="font-medium text-[color:var(--color-ink)]">{lookFor}</span>
+      </p>
+      <ul className="grid list-none grid-cols-1 gap-3 p-0 sm:grid-cols-2">
+        {images.map((file, index) => {
+          const src = `/api/documents/${file.documentId}/file`;
+          return (
+            <li key={`${file.documentId}-${String(index)}`} className="flex min-w-0 flex-col gap-1">
+              <a
+                href={src}
+                target="_blank"
+                rel="noopener"
+                className="relative block overflow-hidden rounded-(--radius-sm) border border-[color:var(--color-rule)] bg-[color:var(--color-ground)]"
+                aria-label={t('openCapture', { file: file.fileName })}
+              >
+                {file.top === null ? (
+                  <img
+                    src={src}
+                    alt={t('captureAlt', { file: file.fileName })}
+                    loading="lazy"
+                    className="mx-auto max-h-96 w-auto"
                   />
-                  <span
-                    aria-hidden="true"
-                    className="pointer-events-none absolute inset-x-0 h-12 -translate-y-1/2 border-y-2 border-[color:var(--color-brand)] bg-[color:var(--color-brand)]/10"
-                    style={{ top: `${String(Math.round(file.top * 1000) / 10)}%` }}
-                  />
-                </>
-              )}
-            </a>
-            <span className="truncate text-xs text-[color:var(--color-ink-secondary)]">
-              {t('captureOf', { index: index + 1, total: images.length, file: file.fileName })}
-            </span>
-          </li>
-        );
-      })}
-    </ul>
+                ) : (
+                  // The reader's position is an estimate, a few lines either
+                  // way: the window shows the neighbourhood, wide enough to
+                  // hold the line, rather than a mark that could sit on the
+                  // wrong one.
+                  <div className="relative h-56 w-full">
+                    <img
+                      src={src}
+                      alt={t('captureAlt', { file: file.fileName })}
+                      loading="lazy"
+                      className="absolute inset-x-0 top-0 w-full max-w-none"
+                      style={{
+                        transform: `translateY(calc(${String(-Math.round(file.top * 1000) / 10)}% + 112px))`,
+                      }}
+                    />
+                  </div>
+                )}
+              </a>
+              <span className="truncate text-xs text-[color:var(--color-ink-secondary)]">
+                {t('captureOf', { index: index + 1, total: images.length, file: file.fileName })}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }

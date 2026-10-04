@@ -48,14 +48,21 @@ describe('resolveRepeatLines', () => {
     expect(result.duplicates.every((d) => second.lines.some((l) => l.id === d.id))).toBe(true);
   });
 
-  it('no une si entre las fechas compartidas una captura tiene algo que la otra no', () => {
+  it('sin solape limpio no lo llama solape, pero igual une lo idéntico', () => {
     const first = file(1, [
       line('x', '2026-07-24'),
       line('y', '2026-07-22'),
       line('z', '2026-07-20'),
     ]);
     const second = file(2, [line('x', '2026-07-24'), line('z', '2026-07-20')]);
-    expect(resolveRepeatLines([first, second]).duplicates).toHaveLength(0);
+    const result = resolveRepeatLines([first, second]);
+    expect(result.duplicates).toHaveLength(2);
+    expect(result.duplicates.every((d) => d.reason === 'same_details')).toBe(true);
+  });
+
+  it('nunca une dos líneas iguales de una misma captura', () => {
+    const only = file(1, [line('c', '2026-09-10'), line('c', '2026-09-10')]);
+    expect(resolveRepeatLines([only]).duplicates).toHaveLength(0);
   });
 
   it('une una sola línea cuando es la costura entre dos capturas', () => {
@@ -65,7 +72,7 @@ describe('resolveRepeatLines', () => {
     expect(result.duplicates).toEqual([{ id: second.lines[0]?.id, reason: 'screenshot_seam' }]);
   });
 
-  it('deja como pregunta una coincidencia suelta en medio de las dos', () => {
+  it('une por fecha, monto y descripción una coincidencia suelta, marcada aparte', () => {
     const first = file(1, [
       line('s', '2026-09-30'),
       line('t', '2026-09-15'),
@@ -77,8 +84,7 @@ describe('resolveRepeatLines', () => {
       line('w', '2026-09-02'),
     ]);
     const result = resolveRepeatLines([first, second]);
-    expect(result.duplicates).toHaveLength(0);
-    expect(result.distinct).toHaveLength(0);
+    expect(result.duplicates).toEqual([{ id: second.lines[1]?.id, reason: 'same_details' }]);
   });
 
   it('decide por número de referencia cuando las dos copias lo traen', () => {

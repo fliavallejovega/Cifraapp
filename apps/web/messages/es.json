@@ -5304,23 +5304,27 @@
     },
     "outflow": "Salida",
     "inflow": "Entrada",
-    "whyAsk": "{count, plural, one {Aparece en # captura.} other {Aparece en # capturas. La línea está marcada en cada una; tócala para verla completa.}}",
+    "whyAsk": "{count, plural, one {Aparece en # captura.} other {Aparece en # capturas. Abajo ves cada una en la zona de esa línea; tócala para verla completa.}}",
     "openCapture": "Abrir {file} completa",
     "captureAlt": "Captura {file}",
     "merged": {
-      "title": "{count, plural, one {Cifra unió un movimiento repetido} other {Cifra unió # movimientos repetidos}}",
-      "detail": "Aparecían dos veces porque tus capturas se solapan. Se guardan una sola vez. Si alguno sí eran dos, deshazlo.",
+      "title": "{count, plural, one {Cifra corrigió un movimiento repetido} other {Cifra corrigió # movimientos repetidos}}",
+      "detail": "Estaban en dos capturas con la misma fecha, monto y descripción. Se guardan una sola vez. Revisarlos es opcional; si alguno sí eran dos, se deshace ahí.",
       "reason": {
         "screenshot_overlap": "En {file} está en la parte que se repite con la captura anterior: las dos muestran los mismos movimientos en esas fechas.",
         "screenshot_seam": "En {file} es la primera línea y en la captura anterior la última: ahí se unen las dos.",
-        "same_reference": "En {file} trae el mismo número de referencia que en el otro archivo."
+        "same_reference": "En {file} trae el mismo número de referencia que en el otro archivo.",
+        "same_details": "En {file} tiene la misma fecha, monto y descripción que en otra captura de esta cuenta."
       },
       "undo": "No, eran dos: deshacer",
       "undone": "Deshecho: se guardan los dos.",
-      "more": "Ver {count} más",
-      "less": "Ver menos"
+      "less": "Ocultar",
+      "showCaptures": "Verlo en las capturas",
+      "hideCaptures": "Ocultar capturas",
+      "review": "Revisar (opcional)"
     },
-    "captureOf": "Captura {index} de {total} · {file}"
+    "captureOf": "Captura {index} de {total} · {file}",
+    "lookFor": "Busca en cada captura:"
   },
   "saveAll": {
     "title": "{files, plural, one {Un archivo leído espera que lo guardes} other {# archivos leídos esperan que los guardes}}",
