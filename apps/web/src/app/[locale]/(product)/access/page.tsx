@@ -142,7 +142,7 @@ export default async function AccessPage({ params }: { params: Promise<{ locale:
         <Card>
           <Link
             href="/access/accountants"
-            className="text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
+            className="py-3 text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
           >
             {t('accountants.open')}
           </Link>

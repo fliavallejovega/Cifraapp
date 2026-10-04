@@ -69,7 +69,6 @@ export default async function RulesPage({ params }: { params: Promise<{ locale: 
       kind: 'select',
       name: 'actionType',
       label: t('form.actionType'),
-      half: true,
       options: (['allocate_percentage', 'allocate_amount', 'set_priority'] as const).map(
         (value) => ({ value, label: t(`actions.${value}`) }),
       ),
@@ -96,7 +95,6 @@ export default async function RulesPage({ params }: { params: Promise<{ locale: 
       hint: t('form.priorityHint'),
       min: 1,
       max: 1000,
-      half: true,
       placeholder: '100',
     },
     { kind: 'date', name: 'effectiveFrom', label: t('form.from'), half: true },

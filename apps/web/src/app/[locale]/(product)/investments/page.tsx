@@ -17,6 +17,7 @@ import {
   Status,
 } from '@app/ui';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { Suspense } from 'react';
 
 import { InvestmentProfileForm } from '@/components/investment-profile-form';
 import { RiskDisclosure } from '@/components/risk-disclosure';
@@ -90,7 +91,7 @@ export default async function InvestmentsPage({ params }: { params: Promise<{ lo
           action={
             <Link
               href="/welcome"
-              className="text-sm font-medium underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
+              className="py-3 text-sm font-medium underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
             >
               {t('portfolio.empty.action')}
             </Link>
@@ -216,15 +217,6 @@ export default async function InvestmentsPage({ params }: { params: Promise<{ lo
     );
   }
 
-  const narrative = await explainInvestmentPlan(
-    session,
-    householdId,
-    view.profile,
-    view.plans,
-    locale === 'en' ? 'en' : 'es',
-    context.moneyLocale,
-  );
-
   return (
     <Page>
       <PageHeader title={t('title')} detail={t('detail')} />
@@ -248,7 +240,7 @@ export default async function InvestmentsPage({ params }: { params: Promise<{ lo
             <p className="mt-3">
               <Link
                 href="/goals"
-                className="text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
+                className="py-3 text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
               >
                 {t('emergencyFirst.action')}
               </Link>
@@ -317,7 +309,7 @@ export default async function InvestmentsPage({ params }: { params: Promise<{ lo
               action={
                 <Link
                   href="/goals"
-                  className="text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
+                  className="py-3 text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
                 >
                   {t('goals.empty.action')}
                 </Link>
@@ -424,19 +416,34 @@ export default async function InvestmentsPage({ params }: { params: Promise<{ lo
 
       {view.plans.length > 0 && (
         <Section title={t('narrative.title')} detail={t('narrative.detail')} className="mt-12">
-          <Card tone="sunk">
-            {narrative.state === 'answered' ? (
-              <p className="max-w-[62ch] text-pretty text-[color:var(--color-ink)]">
-                {narrative.body}
-              </p>
-            ) : narrative.state === 'unavailable' ? (
-              <p className="max-w-[62ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]">
-                {t('narrative.unavailable')}
-              </p>
-            ) : (
-              <Status tone="caution">{t(`narrative.${narrative.reason}`)}</Status>
-            )}
-          </Card>
+          {/* The explanation is a model call: streamed in after the page, so the
+              figures above never wait on it. */}
+          <Suspense
+            fallback={
+              <Card tone="sunk">
+                <Status tone="neutral">{t('narrative.loading')}</Status>
+              </Card>
+            }
+          >
+            <NarrativeCard
+              load={() =>
+                explainInvestmentPlan(
+                  session,
+                  householdId,
+                  view.profile,
+                  view.plans,
+                  locale === 'en' ? 'en' : 'es',
+                  context.moneyLocale,
+                )
+              }
+              labels={{
+                unavailable: t('narrative.unavailable'),
+                budget: t('narrative.budget'),
+                quality: t('narrative.quality'),
+                error: t('narrative.error'),
+              }}
+            />
+          </Suspense>
         </Section>
       )}
 
@@ -484,5 +491,28 @@ function isStringRecord(value: unknown): value is Record<string, string> {
     typeof value === 'object' &&
     value !== null &&
     Object.values(value).every((entry) => typeof entry === 'string')
+  );
+}
+
+async function NarrativeCard({
+  load,
+  labels,
+}: {
+  readonly load: () => ReturnType<typeof explainInvestmentPlan>;
+  readonly labels: Readonly<Record<string, string>>;
+}) {
+  const narrative = await load();
+  return (
+    <Card tone="sunk">
+      {narrative.state === 'answered' ? (
+        <p className="max-w-[62ch] text-pretty text-[color:var(--color-ink)]">{narrative.body}</p>
+      ) : narrative.state === 'unavailable' ? (
+        <p className="max-w-[62ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]">
+          {labels['unavailable']}
+        </p>
+      ) : (
+        <Status tone="caution">{labels[narrative.reason] ?? ''}</Status>
+      )}
+    </Card>
   );
 }

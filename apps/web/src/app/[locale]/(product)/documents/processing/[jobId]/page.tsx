@@ -55,7 +55,7 @@ export default async function ImportProcessingPage({
             action={
               <Link
                 href="/documents"
-                className="text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
+                className="py-3 text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
               >
                 {t('notFound.action')}
               </Link>
@@ -71,7 +71,7 @@ export default async function ImportProcessingPage({
       <div className="mb-6">
         <Link
           href="/documents"
-          className="text-sm text-[color:var(--color-ink-secondary)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:text-[color:var(--color-ink)] hover:decoration-[color:var(--color-brand)]"
+          className="py-3 text-sm text-[color:var(--color-ink-secondary)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:text-[color:var(--color-ink)] hover:decoration-[color:var(--color-brand)]"
         >
           {t('backToImports')}
         </Link>
@@ -121,7 +121,7 @@ export default async function ImportProcessingPage({
               <p className="mt-6">
                 <Link
                   href={`/documents/${job.importId}`}
-                  className="text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
+                  className="py-3 text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
                 >
                   {t('review')}
                 </Link>

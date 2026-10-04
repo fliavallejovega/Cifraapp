@@ -86,7 +86,7 @@ function AlertItem({
         <div className="flex flex-wrap items-center gap-4">
           <Link
             href={alert.href}
-            className="text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
+            className="py-3 text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
           >
             {labels.go}
           </Link>

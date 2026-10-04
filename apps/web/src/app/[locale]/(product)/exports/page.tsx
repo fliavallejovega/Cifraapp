@@ -70,7 +70,7 @@ export default async function ExportsPage({ params }: { params: Promise<{ locale
                         the app entirely, and the browser owns what happens. */}
                     <a
                       href={`/api/reports/export?kind=${kind}&format=${format}`}
-                      className="mt-2 self-start text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-brand)]"
+                      className="mt-2 self-start py-3 text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-brand)]"
                     >
                       {t('download')}
                     </a>

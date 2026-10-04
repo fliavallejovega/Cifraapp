@@ -6,7 +6,7 @@ export function SignOutButton({ locale, label }: { locale: string; label: string
       <input type="hidden" name="locale" value={locale} />
       <button
         type="submit"
-        className="text-xs text-[color:var(--color-ink-secondary)] underline underline-offset-4 transition-opacity duration-(--duration-quick) hover:opacity-60"
+        className="py-3 text-sm text-[color:var(--color-ink-secondary)] underline underline-offset-4 transition-opacity duration-(--duration-quick) hover:opacity-60"
       >
         {label}
       </button>

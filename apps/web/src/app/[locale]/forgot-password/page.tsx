@@ -34,7 +34,7 @@ export default async function ForgotPasswordPage({
       />
 
       <p className="mt-8 text-sm text-[color:var(--color-ink-secondary)]">
-        <Link href="/sign-in" className="underline underline-offset-4">
+        <Link href="/sign-in" className="py-3 underline underline-offset-4">
           {t('forgot.backToSignIn')}
         </Link>
       </p>

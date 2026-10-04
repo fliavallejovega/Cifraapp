@@ -157,7 +157,7 @@ export default async function TripReportPage({
             action={
               <Link
                 href={`/trips/${trip.id}/today`}
-                className="text-sm font-medium underline underline-offset-4"
+                className="py-3 text-sm font-medium underline underline-offset-4"
               >
                 {t('report.empty.action')}
               </Link>

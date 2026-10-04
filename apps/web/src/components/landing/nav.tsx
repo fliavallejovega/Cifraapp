@@ -46,7 +46,7 @@ export function LandingNav({
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-6 px-6">
         <Link
           href="/"
-          className="font-(family-name:--font-mono) text-sm font-semibold tracking-[0.18em] uppercase"
+          className="inline-flex min-h-11 items-center font-(family-name:--font-mono) text-sm font-semibold tracking-[0.18em] uppercase"
         >
           {brand}
         </Link>
@@ -56,7 +56,7 @@ export function LandingNav({
             <Link
               key={link.href}
               href={link.href}
-              className="text-sm text-[color:var(--color-ink-secondary)] transition-colors duration-(--duration-quick) hover:text-[color:var(--color-ink)]"
+              className="inline-flex min-h-11 items-center text-sm text-[color:var(--color-ink-secondary)] transition-colors duration-(--duration-quick) hover:text-[color:var(--color-ink)]"
             >
               {link.label}
             </Link>
@@ -67,19 +67,19 @@ export function LandingNav({
           <Link
             href="/"
             locale={otherLocale}
-            className="hidden text-xs text-[color:var(--color-ink-tertiary)] transition-colors duration-(--duration-quick) hover:text-[color:var(--color-ink)] sm:block"
+            className="hidden min-h-11 items-center text-xs text-[color:var(--color-ink-tertiary)] transition-colors duration-(--duration-quick) hover:text-[color:var(--color-ink)] sm:inline-flex"
           >
             {switchLabel}
           </Link>
           <Link
             href="/sign-in"
-            className="text-sm text-[color:var(--color-ink-secondary)] transition-colors duration-(--duration-quick) hover:text-[color:var(--color-ink)]"
+            className="inline-flex min-h-11 items-center text-sm text-[color:var(--color-ink-secondary)] transition-colors duration-(--duration-quick) hover:text-[color:var(--color-ink)]"
           >
             {signIn}
           </Link>
           <Link
             href="/sign-up"
-            className="inline-flex h-9 items-center rounded-full bg-[color:var(--color-ink)] px-4 text-sm font-medium text-[color:var(--color-ground)] transition-[transform,opacity] duration-(--duration-tap) ease-(--ease-settle) hover:opacity-90 active:scale-[0.985]"
+            className="inline-flex h-11 items-center rounded-full bg-[color:var(--color-ink)] px-4 text-sm font-medium text-[color:var(--color-ground)] transition-[transform,opacity] duration-(--duration-tap) ease-(--ease-settle) hover:opacity-90 active:scale-[0.985]"
           >
             {start}
           </Link>

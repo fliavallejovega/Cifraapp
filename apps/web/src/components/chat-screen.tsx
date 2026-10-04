@@ -95,7 +95,7 @@ export async function ChatScreen({
           screen.messages.length > 0 ? (
             <Link
               href="/chat/new"
-              className="text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
+              className="py-3 text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
             >
               {t('newThread')}
             </Link>
@@ -149,11 +149,7 @@ export async function ChatScreen({
       {/* Las propuestas van entre la conversación y el historial: son la
           consecuencia de lo que se acaba de hablar, y ponerlas al final las
           dejaría fuera de la vista justo cuando hacen falta. */}
-      <Section
-        title={t('proposals.title')}
-        detail={t('proposals.detail')}
-        className="mt-12"
-      >
+      <Section title={t('proposals.title')} detail={t('proposals.detail')} className="mt-12">
         <PlanProposals
           locale={locale}
           proposals={await Promise.all(

@@ -41,6 +41,8 @@ export default async function ProductLayout({
       consoleUrl={session?.isPlatformAdmin ? (getClientEnv().NEXT_PUBLIC_ADMIN_URL ?? null) : null}
     >
       {children}
+      {/* Room under the last row so the assistant's button never sits on it. */}
+      {session && <div aria-hidden="true" className="h-20" />}
       {session && <AgentLauncher locale={locale} />}
     </AppShell>
   );

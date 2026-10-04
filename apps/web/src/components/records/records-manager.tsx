@@ -159,8 +159,10 @@ function ManagedRow({
   const [state, formAction, pending] = useActionState<RecordActionResult, FormData>(remove, {});
 
   return (
-    <div className="flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-      <div className="min-w-0">
+    <div className="flex flex-col gap-3 py-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-6">
+      {/* The text keeps a readable width; the amount and buttons wrap below it
+          instead of squeezing «5% anual · mínimo $280.00» into one word a line. */}
+      <div className="min-w-0 flex-1 sm:basis-[min(100%,18rem)]">
         <p className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
           <span
             className={[
@@ -239,7 +241,7 @@ function ManagedRow({
             </Button>
           </form>
         ) : (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {row.action && rowAction && (
               <RowAction
                 locale={locale}

@@ -427,7 +427,7 @@ function NoteSection({ locale, movementId, notes, labels }: MovementEditorProps)
                 rows={3}
                 maxLength={1000}
                 defaultValue={notes ?? ''}
-                className="w-full rounded-(--radius-sm) border border-[color:var(--color-rule-strong)] bg-[color:var(--color-surface)] px-3 py-2.5 text-sm text-[color:var(--color-ink)] focus-visible:outline-2 focus-visible:outline-offset-[-1px] focus-visible:outline-[color:var(--color-brand)]"
+                className="w-full rounded-(--radius-sm) border border-[color:var(--color-rule-strong)] bg-[color:var(--color-surface)] px-3 py-2.5 text-base text-[color:var(--color-ink)] focus-visible:outline-2 focus-visible:outline-offset-[-1px] focus-visible:outline-[color:var(--color-brand)] sm:text-sm"
               />
             )}
           </Field>

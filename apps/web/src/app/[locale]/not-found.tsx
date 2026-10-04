@@ -11,7 +11,7 @@ export default async function NotFound() {
         {t('notFoundTitle')}
       </h1>
       <p className="mb-8 text-pretty text-[color:var(--color-ink-muted)]">{t('notFoundBody')}</p>
-      <Link href="/" className="text-sm underline underline-offset-4">
+      <Link href="/" className="py-3 text-sm underline underline-offset-4">
         {t('backHome')}
       </Link>
     </main>

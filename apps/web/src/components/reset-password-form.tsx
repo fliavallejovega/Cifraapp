@@ -150,7 +150,10 @@ export function ResetPasswordForm({
     return (
       <div className="flex flex-col gap-6">
         <Problem title={labels.expiredTitle} body={labels.expiredBody} />
-        <a href={`/${locale}/forgot-password`} className="text-sm underline underline-offset-4">
+        <a
+          href={`/${locale}/forgot-password`}
+          className="py-3 text-sm underline underline-offset-4"
+        >
           {labels.requestAgain}
         </a>
       </div>

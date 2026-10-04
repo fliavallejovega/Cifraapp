@@ -92,7 +92,7 @@ export function ImportForm({ locale, accounts, fixedAccountId, labels }: ImportF
           <p className="mt-2">
             <Link
               href={`/documents/processing/${state.jobId}`}
-              className="text-sm underline underline-offset-4 hover:no-underline"
+              className="py-3 text-sm underline underline-offset-4 hover:no-underline"
             >
               {labels.watchLink}
             </Link>

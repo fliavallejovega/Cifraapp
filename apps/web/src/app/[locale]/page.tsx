@@ -524,7 +524,7 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
                 <p className="max-w-[68ch] text-xs text-pretty text-[color:var(--color-ink-tertiary)]">
                   {marketing('pricing.notes.provisional')}
                 </p>
-                <Link href="/pricing" className="text-sm underline underline-offset-4">
+                <Link href="/pricing" className="py-3 text-sm underline underline-offset-4">
                   {marketing('home.pricing.link')}
                 </Link>
               </Reveal>

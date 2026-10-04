@@ -88,7 +88,7 @@ export default async function DocumentsPage({ params }: { params: Promise<{ loca
             title={t('noAccount.title')}
             body={t('noAccount.body')}
             action={
-              <Link href="/accounts" className="text-sm underline underline-offset-4">
+              <Link href="/accounts" className="py-3 text-sm underline underline-offset-4">
                 {t('noAccount.action')}
               </Link>
             }

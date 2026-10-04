@@ -60,7 +60,7 @@ export default async function SignInPage({
       />
 
       <p className="mt-6 text-sm">
-        <Link href="/forgot-password" className="underline underline-offset-4">
+        <Link href="/forgot-password" className="py-3 underline underline-offset-4">
           {t('signIn.forgotPassword')}
         </Link>
       </p>

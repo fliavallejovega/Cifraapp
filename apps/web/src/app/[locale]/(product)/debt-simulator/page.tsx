@@ -1,4 +1,10 @@
-import { comparePlans, orderDebts, simulatePayoff, totalMinimums } from '@app/debt-engine';
+import {
+  comparePlans,
+  effectiveApr,
+  orderDebts,
+  simulatePayoff,
+  totalMinimums,
+} from '@app/debt-engine';
 import { formatMoney, isOk, Money } from '@app/domain';
 import { Card, EmptyState, Page, PageHeader, Section, Stat, Status } from '@app/ui';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
@@ -108,7 +114,7 @@ export default async function DebtSimulatorPage({
       <Card>
         <SimulatorForm
           currencySymbol={context.currencySymbol}
-          current={{ monthly: typed || minimums.toDecimalString(), strategy }}
+          current={{ monthly: typed || minimums.toCurrencyString(), strategy }}
           labels={{
             monthly: t('form.monthly'),
             monthlyHint: t('form.monthlyHint', {
@@ -198,7 +204,7 @@ export default async function DebtSimulatorPage({
       <Section title={t('order.title')} detail={t('order.detail')} className="mt-12">
         <Card>
           <ol className="flex flex-col">
-            {ordered.map((entry) => (
+            {ordered.map((entry, position) => (
               <li
                 key={entry.debt.id}
                 className="flex flex-wrap items-baseline justify-between gap-3 border-b border-[color:var(--color-rule)] py-4 last:border-b-0"
@@ -208,7 +214,21 @@ export default async function DebtSimulatorPage({
                     {entry.debt.name}
                   </span>
                   <span className="mt-0.5 block text-sm text-[color:var(--color-ink-secondary)]">
-                    {entry.reason}
+                    {/* Written here, in the reader's language: the engine's own sentence
+                        is English and was reaching the screen as it was. */}
+                    {[
+                      position === 0
+                        ? t(`reason.${strategy}`, { rate: effectiveApr(entry.debt, context.today) })
+                        : t('reason.rest'),
+                      entry.debt.promotionalExpiresOn &&
+                      effectiveApr(entry.debt, context.today) !== entry.debt.apr
+                        ? t('reason.promo', {
+                            date: formatPlainDate(entry.debt.promotionalExpiresOn, locale),
+                          })
+                        : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
                   </span>
                 </span>
                 <span className="readout text-[color:var(--color-ink)] tabular-nums">

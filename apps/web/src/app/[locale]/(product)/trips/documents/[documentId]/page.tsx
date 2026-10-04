@@ -57,7 +57,7 @@ export default async function TripDocumentPage({
             action={
               <Link
                 href={data.tripId ? `/trips/${data.tripId}` : '/trips'}
-                className="text-sm font-medium underline underline-offset-4"
+                className="py-3 text-sm font-medium underline underline-offset-4"
               >
                 {t('documents.backToTrip')}
               </Link>

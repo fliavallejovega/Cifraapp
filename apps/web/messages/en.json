@@ -2286,10 +2286,10 @@
       "saved": "Settings saved."
     },
     "strategies": {
-      "avalanche": "Avalanche — highest rate first",
-      "snowball": "Snowball — smallest balance first",
-      "hybrid": "Hybrid — the rate, with exceptions",
-      "custom": "My way — I decide the order"
+      "avalanche": "Avalanche (highest rate)",
+      "snowball": "Snowball (smallest balance)",
+      "hybrid": "Hybrid (rate, with exceptions)",
+      "custom": "My way (I decide)"
     },
     "strategyNote": "Avalanche costs you less money. Snowball is the one more people finish. The product has an opinion and does not decide for you.",
     "currency": {
@@ -2699,8 +2699,8 @@
       "submit": "Work it out"
     },
     "strategies": {
-      "avalanche": "Avalanche — highest rate first",
-      "snowball": "Snowball — smallest balance first",
+      "avalanche": "Avalanche (highest rate)",
+      "snowball": "Snowball (smallest balance)",
       "hybrid": "Hybrid",
       "custom": "My own order"
     },
@@ -2725,7 +2725,15 @@
       "title": "In what order",
       "detail": "Under the chosen strategy, and why each one sits where it does."
     },
-    "note": "On today's balance and rate, with no new purchases. If you keep using the card, the result changes."
+    "note": "On today's balance and rate, with no new purchases. If you keep using the card, the result changes.",
+    "reason": {
+      "avalanche": "It has the highest rate, {rate}%, so it costs the most to keep.",
+      "snowball": "It has the smallest balance, so it clears first.",
+      "custom": "It is first in the order you set.",
+      "hybrid": "It is close enough to clear quickly, so it goes first.",
+      "rest": "It keeps its minimum payment while the extra goes elsewhere.",
+      "promo": "Its promotional rate runs until {date}."
+    }
   },
   "planHistory": {
     "title": "Plan tracking",
@@ -3504,7 +3512,8 @@
       "unavailable": "The copilot is not switched on in this installation. The figures above are exact regardless: the engine computes them.",
       "budget": "This month's assistant budget is spent. The figures are unaffected.",
       "quality": "The assistant returned a figure we could not verify against the modelling, so we did not show it. On this screen in particular that is exactly what should happen.",
-      "error": "We could not reach the assistant. The figures are still exact."
+      "error": "We could not reach the assistant. The figures are still exact.",
+      "loading": "Preparing the explanation…"
     },
     "watchlist": {
       "title": "What you are watching",

@@ -41,13 +41,13 @@ export function RecordFieldset({
     return (
       <fieldset className="flex flex-col gap-2">
         <legend className="text-sm font-medium text-[color:var(--color-ink)]">{field.label}</legend>
-        <label className="flex items-start gap-2.5 text-sm text-[color:var(--color-ink-secondary)]">
+        <label className="flex min-h-11 items-center gap-2.5 py-2 text-sm text-[color:var(--color-ink-secondary)]">
           <input
             type="checkbox"
             name={field.name}
             value="true"
             defaultChecked={value === 'true'}
-            className="mt-0.5 h-4 w-4 shrink-0 accent-[color:var(--color-brand)]"
+            className="h-4 w-4 shrink-0 accent-[color:var(--color-brand)]"
           />
           <span>{field.toggleLabel}</span>
         </label>
@@ -125,7 +125,7 @@ export function RecordFieldset({
                 numeric
                 inputMode="numeric"
                 {...(field.placeholder ? { placeholder: field.placeholder } : {})}
-                className="max-w-32 text-left"
+                className="text-left"
               />
             );
 
@@ -133,7 +133,7 @@ export function RecordFieldset({
             // A native date input, because a financial date is typed rarely and
             // has to be unambiguous: 03/04 is two different days on two sides
             // of an ocean, and a picker cannot be misread.
-            return <Input {...shared} type="date" className="max-w-52" />;
+            return <Input {...shared} type="date" />;
 
           case 'note':
             return (
@@ -141,7 +141,7 @@ export function RecordFieldset({
                 {...shared}
                 rows={3}
                 maxLength={field.maxLength ?? 500}
-                className="w-full rounded-(--radius-sm) border border-[color:var(--color-rule-strong)] bg-[color:var(--color-surface)] px-3 py-2.5 text-sm text-[color:var(--color-ink)] focus-visible:outline-2 focus-visible:outline-offset-[-1px] focus-visible:outline-[color:var(--color-brand)]"
+                className="w-full rounded-(--radius-sm) border border-[color:var(--color-rule-strong)] bg-[color:var(--color-surface)] px-3 py-2.5 text-base text-[color:var(--color-ink)] focus-visible:outline-2 focus-visible:outline-offset-[-1px] focus-visible:outline-[color:var(--color-brand)] sm:text-sm"
               />
             );
 

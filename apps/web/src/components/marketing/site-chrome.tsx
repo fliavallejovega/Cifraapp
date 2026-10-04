@@ -30,7 +30,7 @@ export async function SiteHeader({ locale }: { locale: string }) {
   return (
     <header className="mb-16">
       <div className="flex flex-wrap items-baseline justify-between gap-x-8 gap-y-4">
-        <Link href="/" className="gradation-label uppercase">
+        <Link href="/" className="gradation-label inline-flex min-h-11 items-center uppercase">
           {common('appName')}
         </Link>
 
@@ -39,7 +39,7 @@ export async function SiteHeader({ locale }: { locale: string }) {
             <Link
               key={entry.key}
               href={entry.href}
-              className="text-sm text-[color:var(--color-ink-secondary)] transition-opacity duration-(--duration-quick) hover:opacity-60"
+              className="inline-flex min-h-11 items-center text-sm text-[color:var(--color-ink-secondary)] transition-opacity duration-(--duration-quick) hover:opacity-60"
             >
               {t(`nav.${entry.key}`)}
             </Link>
@@ -50,11 +50,11 @@ export async function SiteHeader({ locale }: { locale: string }) {
           <Link
             href="/"
             locale={otherLocale}
-            className="text-xs text-[color:var(--color-ink-tertiary)] underline underline-offset-4"
+            className="py-3 text-xs text-[color:var(--color-ink-tertiary)] underline underline-offset-4"
           >
             {t('switchLanguage')}
           </Link>
-          <Link href="/sign-in" className="text-sm underline underline-offset-4">
+          <Link href="/sign-in" className="py-3 text-sm underline underline-offset-4">
             {t('nav.signIn')}
           </Link>
           <Link href="/sign-up">
@@ -115,12 +115,12 @@ export async function SiteFooter({ locale: _locale }: { locale: string }) {
         {columns.map((column) => (
           <div key={column.key}>
             <p className="gradation-label uppercase">{t(`footer.${column.key}`)}</p>
-            <ul className="mt-3 space-y-2">
+            <ul className="mt-3 space-y-0">
               {column.links.map((link) => (
                 <li key={link.key}>
                   <Link
                     href={link.href}
-                    className="text-sm text-[color:var(--color-ink-secondary)] transition-opacity duration-(--duration-quick) hover:opacity-60"
+                    className="inline-flex min-h-11 items-center text-sm text-[color:var(--color-ink-secondary)] transition-opacity duration-(--duration-quick) hover:opacity-60"
                   >
                     {t(`nav.${link.key}`)}
                   </Link>

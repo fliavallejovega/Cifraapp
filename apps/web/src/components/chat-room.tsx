@@ -199,7 +199,7 @@ export function ChatRoom({
                   event.currentTarget.form?.requestSubmit();
                 }
               }}
-              className="min-h-11 w-full resize-none bg-transparent text-sm text-[color:var(--color-ink)] placeholder:text-[color:var(--color-ink-tertiary)] focus-visible:outline-none"
+              className="min-h-11 w-full resize-none bg-transparent text-base text-[color:var(--color-ink)] placeholder:text-[color:var(--color-ink-tertiary)] focus-visible:outline-none sm:text-sm"
             />
 
             <Button type="submit" loading={pending} className="shrink-0">
@@ -334,7 +334,7 @@ function Bubble({
 
           {!mine && Object.keys(message.grounding).length > 0 && (
             <details className="mt-3">
-              <summary className="cursor-pointer text-xs text-[color:var(--color-ink-tertiary)]">
+              <summary className="flex min-h-11 cursor-pointer items-center text-xs text-[color:var(--color-ink-tertiary)]">
                 {labels.groundingTitle}
               </summary>
               <p className="mt-2 text-xs text-[color:var(--color-ink-tertiary)]">

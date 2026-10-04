@@ -55,7 +55,7 @@ export default async function AccountantsPage({ params }: { params: Promise<{ lo
       <div className="mb-6">
         <Link
           href="/access"
-          className="text-sm text-[color:var(--color-ink-secondary)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:text-[color:var(--color-ink)] hover:decoration-[color:var(--color-brand)]"
+          className="py-3 text-sm text-[color:var(--color-ink-secondary)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:text-[color:var(--color-ink)] hover:decoration-[color:var(--color-brand)]"
         >
           {t('back')}
         </Link>

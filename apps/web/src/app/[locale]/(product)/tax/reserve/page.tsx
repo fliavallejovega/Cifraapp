@@ -66,7 +66,7 @@ export default async function TaxReservePage({ params }: { params: Promise<{ loc
             action={
               <Link
                 href="/tax"
-                className="text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
+                className="py-3 text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
               >
                 {t('noProfile.action')}
               </Link>
@@ -112,7 +112,7 @@ export default async function TaxReservePage({ params }: { params: Promise<{ loc
       <div className="mb-6">
         <Link
           href="/tax"
-          className="text-sm text-[color:var(--color-ink-secondary)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:text-[color:var(--color-ink)] hover:decoration-[color:var(--color-brand)]"
+          className="py-3 text-sm text-[color:var(--color-ink-secondary)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:text-[color:var(--color-ink)] hover:decoration-[color:var(--color-brand)]"
         >
           {t('back')}
         </Link>
@@ -134,7 +134,7 @@ export default async function TaxReservePage({ params }: { params: Promise<{ loc
               action={
                 <Link
                   href="/settings"
-                  className="text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
+                  className="py-3 text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
                 >
                   {t('own.setRate')}
                 </Link>
@@ -194,11 +194,7 @@ export default async function TaxReservePage({ params }: { params: Promise<{ loc
         verificable línea por línea, que es exactamente lo que una cifra sacada
         de un borrador sin revisar nunca podría ser.
       */}
-      <Section
-        title={t('reserved.title')}
-        detail={t('reserved.detail')}
-        className="mt-12"
-      >
+      <Section title={t('reserved.title')} detail={t('reserved.detail')} className="mt-12">
         {position.receipts.length === 0 ? (
           <Card>
             <EmptyState
@@ -207,7 +203,7 @@ export default async function TaxReservePage({ params }: { params: Promise<{ loc
               action={
                 <Link
                   href="/income"
-                  className="text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
+                  className="py-3 text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
                 >
                   {t('reserved.action')}
                 </Link>
@@ -248,10 +244,20 @@ export default async function TaxReservePage({ params }: { params: Promise<{ loc
                         </span>
                       </LedgerCell>
                       <LedgerCell align="end">
-                        <Amount value={receipt.amount} locale={context.moneyLocale} size="sm" tone="plain" />
+                        <Amount
+                          value={receipt.amount}
+                          locale={context.moneyLocale}
+                          size="sm"
+                          tone="plain"
+                        />
                       </LedgerCell>
                       <LedgerCell align="end">
-                        <Amount value={receipt.reserved} locale={context.moneyLocale} size="sm" tone="plain" />
+                        <Amount
+                          value={receipt.reserved}
+                          locale={context.moneyLocale}
+                          size="sm"
+                          tone="plain"
+                        />
                       </LedgerCell>
                     </LedgerRow>
                   ))}
@@ -270,7 +276,7 @@ export default async function TaxReservePage({ params }: { params: Promise<{ loc
               action={
                 <Link
                   href="/accounts"
-                  className="text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
+                  className="py-3 text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
                 >
                   {t('accounts.create')}
                 </Link>

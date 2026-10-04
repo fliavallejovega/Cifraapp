@@ -62,7 +62,7 @@ export function SimulatorForm({
           )}
         </Field>
 
-        <Field label={labels.strategy}>
+        <Field label={labels.strategy} className="sm:col-span-2">
           {({ id }) => (
             <Select id={id} name="strategy" defaultValue={current.strategy}>
               {(['avalanche', 'snowball', 'hybrid', 'custom'] as const).map((value) => (

@@ -315,7 +315,7 @@ export default async function ReportsPage({ params }: { params: Promise<{ locale
               ).map(([format, kind, label]) => (
                 <li key={`${format}-${kind}-${label}`}>
                   <a
-                    className="font-medium text-[color:var(--color-ink)] underline decoration-[color:var(--color-brand)] underline-offset-4 hover:decoration-2"
+                    className="inline-flex min-h-11 items-center font-medium text-[color:var(--color-ink)] underline decoration-[color:var(--color-brand)] underline-offset-4 hover:decoration-2"
                     href={`/api/reports/export?format=${format}&kind=${kind}`}
                   >
                     {label}

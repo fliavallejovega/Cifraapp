@@ -82,7 +82,7 @@ export function TripCard({
   return (
     <Link
       href={href}
-      className="group block rounded-(--radius-lg) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-ink)]"
+      className="group block min-w-0 rounded-(--radius-lg) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-ink)]"
     >
       <Card
         interactive

@@ -63,7 +63,7 @@ export default async function DuplicatesPage({ params }: { params: Promise<{ loc
       <div className="mb-6">
         <Link
           href="/review"
-          className="text-sm text-[color:var(--color-ink-secondary)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:text-[color:var(--color-ink)] hover:decoration-[color:var(--color-brand)]"
+          className="py-3 text-sm text-[color:var(--color-ink-secondary)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:text-[color:var(--color-ink)] hover:decoration-[color:var(--color-brand)]"
         >
           {t('back')}
         </Link>

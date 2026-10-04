@@ -102,7 +102,7 @@ export default async function PlanPage({ params }: { params: Promise<{ locale: s
              door to that decision, and to the record of the ones already made. */
           <Link
             href="/plan/history"
-            className="text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
+            className="py-3 text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
           >
             {t('historyLink')}
           </Link>
@@ -211,11 +211,7 @@ export default async function PlanPage({ params }: { params: Promise<{ locale: s
             falta, y para cuándo.
           */}
           {view.coverage.commitments.length > 0 && (
-            <Section
-              title={t('coverage.title')}
-              detail={t('coverage.detail')}
-              className="mt-16"
-            >
+            <Section title={t('coverage.title')} detail={t('coverage.detail')} className="mt-16">
               <Card>
                 <p className="max-w-[68ch] text-pretty">
                   {view.coverage.coveredThrough

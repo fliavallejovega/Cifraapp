@@ -122,7 +122,7 @@ export function PlanProposals({ locale, proposals, labels }: PlanProposalsProps)
             minLength={3}
             maxLength={500}
             placeholder={labels.composerPlaceholder}
-            className="w-full resize-y rounded-md border border-[color:var(--color-rule)] bg-[color:var(--color-surface)] px-3 py-2 text-sm leading-relaxed"
+            className="w-full resize-y rounded-md border border-[color:var(--color-rule)] bg-[color:var(--color-surface)] px-3 py-2 text-base leading-relaxed sm:text-sm"
           />
           <div>
             <Button type="submit" disabled={asking}>
@@ -153,7 +153,10 @@ function Decision({
 }: {
   readonly locale: string;
   readonly id: string;
-  readonly action: (previous: RecordActionResult, formData: FormData) => Promise<RecordActionResult>;
+  readonly action: (
+    previous: RecordActionResult,
+    formData: FormData,
+  ) => Promise<RecordActionResult>;
   readonly label: string;
   readonly variant: 'primary' | 'ghost';
   readonly errorTitle: string;
@@ -170,10 +173,7 @@ function Decision({
       </Button>
       {state.error && (
         <span className="w-full">
-          <Problem
-            title={errorTitle}
-            body={errors[state.error] ?? errors['generic'] ?? ''}
-          />
+          <Problem title={errorTitle} body={errors[state.error] ?? errors['generic'] ?? ''} />
         </span>
       )}
     </form>

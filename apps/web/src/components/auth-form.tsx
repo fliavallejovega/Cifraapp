@@ -131,7 +131,7 @@ export function AuthForm({
           {/* Unticked, always. A pre-ticked box is not consent, and this is the
               record the product would have to stand behind if it were ever
               asked what somebody actually agreed to. */}
-          <label className="flex cursor-pointer items-start gap-3 text-sm">
+          <label className="flex min-h-11 cursor-pointer items-start gap-3 py-2 text-sm">
             <input
               type="checkbox"
               name="acceptTerms"

@@ -68,7 +68,7 @@ export default async function TripPage({
             action={
               <Link
                 href="/trips"
-                className="text-sm font-medium underline decoration-[color:var(--color-rule-strong)] underline-offset-4"
+                className="inline-flex min-h-11 items-center text-sm font-medium underline decoration-[color:var(--color-rule-strong)] underline-offset-4"
               >
                 {t('backToList')}
               </Link>
@@ -282,7 +282,7 @@ export default async function TripPage({
                 )}
                 <Link
                   href={`/goals/${data.goal.id}`}
-                  className="text-sm underline decoration-[color:var(--color-rule-strong)] underline-offset-4"
+                  className="py-3 text-sm underline decoration-[color:var(--color-rule-strong)] underline-offset-4"
                 >
                   {t('dashboard.savings.openGoal')}
                 </Link>

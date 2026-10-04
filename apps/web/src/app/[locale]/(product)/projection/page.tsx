@@ -74,7 +74,7 @@ export default async function ProjectionPage({
             action={
               <Link
                 href="/income"
-                className="text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
+                className="py-3 text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
               >
                 {t('empty.action')}
               </Link>
@@ -103,7 +103,7 @@ export default async function ProjectionPage({
                 href={`/${locale}/projection?months=${String(months)}`}
                 aria-current={months === horizon ? 'page' : undefined}
                 className={[
-                  'text-sm underline decoration-[color:var(--color-rule-strong)] underline-offset-4',
+                  'py-3 text-sm underline decoration-[color:var(--color-rule-strong)] underline-offset-4',
                   months === horizon
                     ? 'font-semibold text-[color:var(--color-brand-ink)] decoration-[color:var(--color-brand)]'
                     : 'text-[color:var(--color-ink-secondary)] hover:text-[color:var(--color-ink)]',

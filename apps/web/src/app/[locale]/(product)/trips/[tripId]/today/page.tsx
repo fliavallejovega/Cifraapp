@@ -69,7 +69,7 @@ export default async function TripTodayPage({
             action={
               <Link
                 href={budget.phase === 'before' ? `/trips/${trip.id}` : `/trips/${trip.id}/report`}
-                className="text-sm font-medium underline underline-offset-4"
+                className="py-3 text-sm font-medium underline underline-offset-4"
               >
                 {budget.phase === 'before' ? t('today.toPlan') : t('today.toReport')}
               </Link>

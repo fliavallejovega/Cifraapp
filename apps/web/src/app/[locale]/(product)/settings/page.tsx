@@ -124,7 +124,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
             )}
             <Link
               href="/people"
-              className="self-start text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
+              className="self-start py-3 text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
             >
               {t('profile.manage')}
             </Link>
@@ -164,11 +164,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
         />
       </Section>
 
-      <Section
-        title={t('integrations.title')}
-        detail={t('integrations.detail')}
-        className="mt-12"
-      >
+      <Section title={t('integrations.title')} detail={t('integrations.detail')} className="mt-12">
         <IntegrationsPanel
           locale={locale}
           configured={googleIsConfigured()}
@@ -241,7 +237,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
         <Card>
           <Link
             href="/welcome"
-            className="text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
+            className="py-3 text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
           >
             {t('danger.action')}
           </Link>

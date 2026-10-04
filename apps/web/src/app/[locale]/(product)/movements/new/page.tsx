@@ -88,7 +88,7 @@ export default async function NewMovementPage({
             action={
               <Link
                 href="/accounts"
-                className="text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
+                className="py-3 text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
               >
                 {t('noAccounts.action')}
               </Link>

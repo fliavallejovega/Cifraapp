@@ -38,7 +38,7 @@ export default async function ClientPage({
   return (
     <Page>
       <header className="mb-14">
-        <Link href="/accountant" className="text-sm underline underline-offset-4">
+        <Link href="/accountant" className="py-3 text-sm underline underline-offset-4">
           {t('client.back')}
         </Link>
       </header>

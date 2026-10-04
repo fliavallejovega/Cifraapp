@@ -2286,10 +2286,10 @@
       "saved": "Ajustes guardados."
     },
     "strategies": {
-      "avalanche": "Avalancha — primero la tasa más alta",
-      "snowball": "Bola de nieve — primero el saldo más chico",
-      "hybrid": "Mixta — la tasa, con excepciones",
-      "custom": "A mi manera — yo decido el orden"
+      "avalanche": "Avalancha (tasa más alta)",
+      "snowball": "Bola de nieve (saldo menor)",
+      "hybrid": "Mixta (tasa, con excepciones)",
+      "custom": "A mi manera (yo decido)"
     },
     "strategyNote": "Avalancha te cuesta menos dinero. Bola de nieve es la que más gente termina. El producto tiene una opinión y no decide por ti.",
     "currency": {
@@ -2699,8 +2699,8 @@
       "submit": "Calcular"
     },
     "strategies": {
-      "avalanche": "Avalancha — primero la tasa más alta",
-      "snowball": "Bola de nieve — primero el saldo más chico",
+      "avalanche": "Avalancha (tasa más alta)",
+      "snowball": "Bola de nieve (saldo menor)",
       "hybrid": "Mixta",
       "custom": "Mi orden"
     },
@@ -2725,7 +2725,15 @@
       "title": "En qué orden",
       "detail": "Con la estrategia elegida, y por qué cada una va donde va."
     },
-    "note": "Sobre el saldo y la tasa de hoy, sin compras nuevas. Si sigues usando la tarjeta, el resultado cambia."
+    "note": "Sobre el saldo y la tasa de hoy, sin compras nuevas. Si sigues usando la tarjeta, el resultado cambia.",
+    "reason": {
+      "avalanche": "Tiene la tasa más alta, {rate} %, así que es la que más cuesta mantener.",
+      "snowball": "Tiene el saldo más chico, así que se termina primero.",
+      "custom": "Es la primera en el orden que pusiste.",
+      "hybrid": "Está cerca de terminarse, así que va primero.",
+      "rest": "Sigue con su pago mínimo mientras el extra va a otra deuda.",
+      "promo": "Su tasa promocional dura hasta el {date}."
+    }
   },
   "planHistory": {
     "title": "Seguimiento del plan",
@@ -3504,7 +3512,8 @@
       "unavailable": "El copiloto no está encendido en esta instalación. Las cifras de arriba son exactas igual: las calcula el motor.",
       "budget": "Se acabó el presupuesto del asistente de este mes. Las cifras no cambian.",
       "quality": "El asistente devolvió una cifra que no pudimos verificar contra el modelado, así que no la mostramos. En esta pantalla eso es exactamente lo que tiene que pasar.",
-      "error": "No pudimos comunicarnos con el asistente. Las cifras siguen siendo exactas."
+      "error": "No pudimos comunicarnos con el asistente. Las cifras siguen siendo exactas.",
+      "loading": "Preparando la explicación…"
     },
     "watchlist": {
       "title": "Lo que estás mirando",

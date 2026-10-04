@@ -77,7 +77,7 @@ export default async function ImportReviewPage({
           when: format.dateTime(review.startedAt, { dateStyle: 'medium' }),
         })}
         actions={
-          <Link href="/documents" className="text-sm underline underline-offset-4">
+          <Link href="/documents" className="py-3 text-sm underline underline-offset-4">
             {t('review.back')}
           </Link>
         }

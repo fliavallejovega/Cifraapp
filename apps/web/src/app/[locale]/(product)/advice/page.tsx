@@ -91,7 +91,7 @@ export default async function AdvicePage({ params }: { params: Promise<{ locale:
             action={
               <Link
                 href="/accounts"
-                className="text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
+                className="py-3 text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
               >
                 {t('empty.title')}
               </Link>
@@ -133,7 +133,7 @@ export default async function AdvicePage({ params }: { params: Promise<{ locale:
                     <p className="mt-2">
                       <Link
                         href={step.href}
-                        className="text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
+                        className="py-3 text-sm font-medium text-[color:var(--color-brand-ink)] underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
                       >
                         {t('openPlan')}
                       </Link>
