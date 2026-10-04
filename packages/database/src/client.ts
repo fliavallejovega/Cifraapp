@@ -51,13 +51,14 @@ interface ConnectionOptions {
 /**
  * Whether a URL goes through Supabase's session pooler (port 5432).
  *
- * The product moved its request traffic there in October 2026: under
- * concurrency the transaction pooler (6543) left queries hanging with no reply,
- * and pages that read the card catalogue stopped loading until the server
- * restarted — reproduced in isolation, and absent on the session port. The
- * session pooler holds one server connection per client for the whole
- * project's fifteen, so request clients stay small here: three for the
- * household's connection and two for the catalogue's, per warm instance.
+ * Request traffic stays on the transaction pooler (6543). It was moved to the
+ * session pooler on 2026-10-04 and moved back within the hour: on Vercel every
+ * warm instance holds its own clients against the project's cap of fifteen,
+ * and six concurrent page loads in production failed with EMAXCONNSESSION.
+ * The transaction pooler's own weakness — replies that never arrive after an
+ * hour of heavy concurrency on one long-lived server — did not show at the
+ * product's real load. If a URL here is ever a session one, request clients
+ * stay small: three for the household's connection, two for the catalogue's.
  */
 function sessionMode(url: string): boolean {
   try {
