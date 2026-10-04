@@ -15,6 +15,7 @@ import { revalidatePath } from 'next/cache';
 import { after } from 'next/server';
 import { z } from 'zod';
 
+import { applyStatementBalance } from './account-balance';
 import { scheduleAnalysis } from './analysis-service';
 import { applyPaymentToDebt, paysTheDebt } from './debt-payments';
 import { MAX_STATEMENT_BYTES, MAX_UPLOAD_PARTS, UPLOAD_CHUNK_BYTES } from '../lib/upload-limits';
@@ -563,6 +564,11 @@ async function fileImport(
           : { status: 'review' },
       )
       .where(eq(imports.id, header.id));
+
+    // The balance the statement prints becomes the account's, in the same
+    // transaction as its movements, so the position never shows one without
+    // the other.
+    await applyStatementBalance(tx, header.id);
 
     return count;
   });

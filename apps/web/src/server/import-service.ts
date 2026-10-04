@@ -32,7 +32,12 @@ import { askAboutNearMisses } from './duplicate-opinion';
 import { loadClassificationInputs } from './classification-context';
 import { enqueueJob, registerJobHandler } from './jobs';
 import { queryAsUser, type Session } from './session';
-import { canReadByOcr, readStatementByOcr, type OcrFailure } from './statement-ocr';
+import {
+  canReadByOcr,
+  readStatementByOcr,
+  type OcrFailure,
+  type PrintedBalance,
+} from './statement-ocr';
 import { buildStorageKey, putDocument, readDocument } from './storage';
 import { MAX_STATEMENT_BYTES } from '../lib/upload-limits';
 
@@ -283,6 +288,7 @@ registerJobHandler(STATEMENT_IMPORT_JOB, async (job, report) => {
 
   let readByOcr = false;
   let edges: { top: EdgeLine | null; bottom: EdgeLine | null } | null = null;
+  let printed: PrintedBalance | null = null;
   let parsed;
   try {
     parsed = parseDocument(bytes, {
@@ -327,6 +333,7 @@ registerJobHandler(STATEMENT_IMPORT_JOB, async (job, report) => {
         parsed = read.statement;
         readByOcr = true;
         edges = read.edges;
+        printed = read.balance;
       } else {
         return { failure: ocrFailureMessage(read.reason), retryable: read.reason === 'transport' };
       }
@@ -362,6 +369,11 @@ registerJobHandler(STATEMENT_IMPORT_JOB, async (job, report) => {
     parsed,
     readByOcr,
     edges,
+    printed:
+      printed ??
+      (parsed.closingBalance
+        ? { amount: parsed.closingBalance.toDecimalString(), date: parsed.periodEnd ?? null }
+        : null),
   });
 
   await report(100, 'ready');
@@ -381,6 +393,8 @@ interface FileRowsInput {
   readonly edges?: { readonly top: EdgeLine | null; readonly bottom: EdgeLine | null } | null;
   readonly statedAccountDigits: string | null;
   readonly suggestedAccountId: string | null;
+  /** The balance the statement prints, if it prints one. Applied when the import is saved. */
+  readonly printed?: PrintedBalance | null;
 }
 
 /**
@@ -742,6 +756,13 @@ async function fileImportRows(
     edgeLines: input.edges ?? null,
     statedAccountDigits: input.statedAccountDigits,
     suggestedAccountId: input.suggestedAccountId,
+    // Without a printed date, the balance stands as of the last line the file shows.
+    ...(input.printed
+      ? {
+          printedBalance: input.printed.amount,
+          printedBalanceDate: input.printed.date ?? latest ?? null,
+        }
+      : {}),
     rowsFound: counts.found,
     rowsNew: counts.created,
     rowsDuplicate: counts.duplicate,

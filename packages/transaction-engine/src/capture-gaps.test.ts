@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { PlainDate } from '@app/domain';
 
 import { findCaptureGaps, type CaptureFile } from './capture-gaps.js';
 
@@ -39,7 +40,7 @@ describe('findCaptureGaps', () => {
         ['s', '2026-09-10', '-100'],
       ],
       {
-        top: { date: '2026-09-17', amount: null, description: 'YAPPY BG A JHASLENE' },
+        top: { date: '2026-09-17' as PlainDate, amount: null, description: 'YAPPY BG A JHASLENE' },
         bottom: null,
       },
     );
@@ -58,7 +59,7 @@ describe('findCaptureGaps', () => {
         ['s', '2026-09-17', '-6'],
       ],
       {
-        top: { date: '2026-09-23', amount: null, description: '' },
+        top: { date: '2026-09-23' as PlainDate, amount: null, description: '' },
         bottom: null,
       },
     );

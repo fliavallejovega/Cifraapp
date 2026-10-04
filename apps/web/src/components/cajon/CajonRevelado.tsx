@@ -55,6 +55,8 @@ export interface PropiedadesDelCajon {
   pie?: ReactNode;
   /** La marca que encabeza la barra. Un nodo, para que el rótulo sea del producto. */
   marca?: ReactNode;
+  /** La acción principal del producto, siempre a la vista en la barra del teléfono. */
+  accion?: ReactNode;
   /** Nombre accesible del botón de cerrar. Copy del catálogo, nunca fijo aquí. */
   textoCerrar: string;
   /** Nombre accesible de la franja de vuelta. */
@@ -84,6 +86,7 @@ export function CajonRevelado({
   etiqueta,
   pie,
   marca,
+  accion,
   textoCerrar,
   textoVolver,
   esActiva = rutaActivaPorDefecto,
@@ -219,6 +222,7 @@ export function CajonRevelado({
           </button>
           {marca}
           {actual ? <p className="cajon-donde-estoy">{actual.titulo}</p> : null}
+          {accion ? <div className="cajon-accion">{accion}</div> : null}
         </div>
 
         {children}

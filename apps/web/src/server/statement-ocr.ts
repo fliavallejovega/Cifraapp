@@ -2,13 +2,14 @@ import 'server-only';
 
 import { parseOutput, toJsonSchema, type ObjectShape } from '@app/ai';
 import {
+  parseAmountText,
   readEdgeLine,
   readOcrRows,
   type EdgeLine,
   type OcrRow,
   type ParsedStatement,
 } from '@app/transaction-engine';
-import type { CurrencyCode, PlainDate } from '@app/domain';
+import { Money, type CurrencyCode, type PlainDate } from '@app/domain';
 
 import { providerFor } from './ai';
 
@@ -143,6 +144,29 @@ const EDGE_SHAPE = {
   },
 } as const satisfies ObjectShape;
 
+/**
+ * El saldo que la página imprime, aparte de los movimientos.
+ *
+ * Es el único número del estado que dice cuánto hay, y es del banco: con él el
+ * saldo de la cuenta deja de depender de lo que alguien escribió el día que la
+ * creó. Se lee aparte porque no es una fila — sumarlo a los movimientos sería
+ * contarlo dos veces.
+ */
+const BALANCE_SHAPE = {
+  printedBalance: {
+    kind: 'text',
+    description:
+      'The account balance the page prints as of its latest date, exactly as printed with its sign: the closing balance («Saldo final», «Saldo al corte», «Saldo actual») on a statement, or the current or available balance shown at the top of a banking-app screen («Saldo disponible»). On a credit-card statement, the total balance owed («Saldo total», «Saldo al corte»), not the minimum payment. Empty if the page prints no balance. Never compute one.',
+    maxLength: 32,
+  },
+  printedBalanceDate: {
+    kind: 'text',
+    description:
+      'The date that balance is stated for, exactly as printed («30/09/2026», «Al 30 SEP»). Empty if the page prints no date for it.',
+    maxLength: 24,
+  },
+} as const satisfies ObjectShape;
+
 const SYSTEM = [
   'You transcribe bank and credit-card statements. You are a reader, not an analyst.',
   '',
@@ -153,7 +177,8 @@ const SYSTEM = [
   'statement: it may be the statement, and a silent correction is unauditable.',
   '',
   'Ignore the opening and closing balance rows, subtotals, interest-rate tables,',
-  'marketing copy and page furniture. Only movement lines.',
+  'marketing copy and page furniture. Only movement lines go in rows; the closing',
+  'or current balance goes, as printed, in printedBalance and nowhere else.',
   '',
   'If a line is partly illegible, return it anyway with the part you can read. A row',
   'that fails validation is shown to a person with its raw text; a row you dropped',
@@ -175,8 +200,16 @@ export type OcrOutcome =
       readonly model: string;
       /** Lines cut at the image's edges: evidence of continuity, never filed. */
       readonly edges: { readonly top: EdgeLine | null; readonly bottom: EdgeLine | null };
+      /** The balance the page prints, as printed and validated; null when none. */
+      readonly balance: PrintedBalance | null;
     }
   | { readonly ok: false; readonly reason: OcrFailure; readonly detail?: string };
+
+/** A balance as the page printed it: the figure with its printed sign, and its date if shown. */
+export interface PrintedBalance {
+  readonly amount: string;
+  readonly date: PlainDate | null;
+}
 
 export type OcrFailure =
   'not_configured' | 'unsupported_type' | 'too_large' | 'transport' | 'malformed' | 'no_rows';
@@ -227,7 +260,7 @@ export async function readStatementByOcr(input: {
       mediaType: input.mimeType,
       dataBase64: Buffer.from(input.bytes).toString('base64'),
     },
-    outputSchema: toJsonSchema({ ...SHAPE, ...EDGE_SHAPE }),
+    outputSchema: toJsonSchema({ ...SHAPE, ...EDGE_SHAPE, ...BALANCE_SHAPE }),
     // Un estado de cuenta largo son muchas filas cortas. El techo alto es lo que
     // impide que la transcripción se corte a la mitad del mes.
     maxOutputTokens: 16_000,
@@ -245,7 +278,7 @@ export async function readStatementByOcr(input: {
     };
   }
 
-  const parsed = parseOutput({ ...SHAPE, ...EDGE_SHAPE }, result.value.raw);
+  const parsed = parseOutput({ ...SHAPE, ...EDGE_SHAPE, ...BALANCE_SHAPE }, result.value.raw);
   if (!parsed.ok) {
     return { ok: false, reason: 'malformed', detail: parsed.error.join('; ') };
   }
@@ -319,6 +352,11 @@ export async function readStatementByOcr(input: {
     statement,
     model: result.value.model,
     edges: { top: edge('top'), bottom: edge('bottom') },
+    balance: printedBalance(
+      asText(parsed.value['printedBalance']),
+      asText(parsed.value['printedBalanceDate']),
+      options,
+    ),
   };
 }
 
@@ -331,6 +369,29 @@ function toOcrRow(record: Readonly<Record<string, string | number | boolean>>): 
     direction: String(record['direction'] ?? 'unknown'),
     ...(typeof record['top'] === 'number' ? { top: record['top'] } : {}),
   };
+}
+
+/**
+ * The printed balance, through the same validators as every movement.
+ *
+ * Zero is a real balance — a card paid off — so it is not dropped the way a
+ * zero-amount line is. Anything the amount parser refuses is no balance at all.
+ */
+function printedBalance(
+  amountText: string,
+  dateText: string,
+  options: Parameters<typeof readEdgeLine>[1],
+): PrintedBalance | null {
+  const text = parseAmountText(amountText.trim());
+  if (text === null) return null;
+  let amount: string;
+  try {
+    amount = Money.fromDecimalString(text, options.currency).toDecimalString();
+  } catch {
+    return null;
+  }
+  const { date } = readEdgeLine({ date: dateText.trim(), amount: '', description: '' }, options);
+  return { amount, date };
 }
 
 /** The reader's cut lines, flattened to text before anything reads them. */

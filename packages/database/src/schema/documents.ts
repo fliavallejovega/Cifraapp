@@ -151,6 +151,12 @@ export const imports = appSchema.table(
     suggestedAccountId: uuid('suggested_account_id').references(() => accounts.id, {
       onDelete: 'set null',
     }),
+    /**
+     * El saldo que el estado imprime, con su signo tal como viene, y la fecha a
+     * la que lo imprime. Se aplica a la cuenta cuando la importación se guarda.
+     */
+    printedBalance: numeric('printed_balance', { precision: 19, scale: 4, mode: 'string' }),
+    printedBalanceDate: date('printed_balance_date'),
     source: importSource('source').notNull().default('upload'),
     status: importStatus('status').notNull().default('uploaded'),
     format: text('format'),

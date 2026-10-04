@@ -180,7 +180,23 @@ export const accounts = appSchema.table(
       .notNull()
       .default('USD')
       .references(() => currencies.code),
+    /**
+     * Derivado: `balance_anchor` más los movimientos posteriores a
+     * `balance_anchor_date`. Lo mantiene la base (20261004180000); el código no
+     * lo suma ni lo resta. Escribirlo a mano es declarar un saldo nuevo a hoy.
+     */
     currentBalance: money('current_balance').notNull().default('0'),
+    /** El último saldo que alguien declaró — la persona o el banco en un estado. */
+    balanceAnchor: money('balance_anchor'),
+    /** La fecha de ese saldo. Sólo cuentan los movimientos posteriores. */
+    balanceAnchorDate: date('balance_anchor_date'),
+    /** `user` o `statement`. */
+    balanceAnchorSource: text('balance_anchor_source'),
+    /**
+     * Lo que separó el saldo del banco del calculado la última vez que llegó uno:
+     * banco menos calculado. Nulo cuando cuadró. Suele ser un estado que falta.
+     */
+    balanceMismatch: money('balance_mismatch'),
     availableBalance: money('available_balance'),
     creditLimit: money('credit_limit'),
     /** Visa, Mastercard, Amex. Sólo en tarjetas; la base lo exige. */

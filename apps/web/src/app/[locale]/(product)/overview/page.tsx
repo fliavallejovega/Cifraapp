@@ -21,6 +21,7 @@ import { formatMoney } from '@app/domain';
 import { getFormatter, getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { Link } from '@/i18n/navigation';
+import { loadMonthGlance } from '@/server/repositories/month-glance';
 import { loadPosition } from '@/server/repositories/position';
 import { requireHousehold } from '@/server/session';
 
@@ -40,7 +41,10 @@ export default async function OverviewPage({ params }: { params: Promise<{ local
   setRequestLocale(locale);
 
   const session = await requireHousehold(locale);
-  const position = await loadPosition(session, session.activeHouseholdId);
+  const [position, glance] = await Promise.all([
+    loadPosition(session, session.activeHouseholdId),
+    loadMonthGlance(session, session.activeHouseholdId),
+  ]);
 
   const t = await getTranslations('overview');
   const format = await getFormatter();
@@ -53,6 +57,27 @@ export default async function OverviewPage({ params }: { params: Promise<{ local
   // A gauge needs a real ceiling. With no liquid balance there is nothing to
   // measure against, and drawing an empty instrument would be theatre.
   const showGauge = !position.isEmpty && position.liquid.isPositive();
+
+  const monthName = format.dateTime(new Date(`${glance.month}T12:00:00Z`), {
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+  const typical = glance.typicalExpenses;
+  const versus =
+    typical === null
+      ? null
+      : glance.expenses.greaterThan(typical)
+        ? t('month.above', {
+            typical: formatMoney(typical, { locale: moneyLocale }),
+            gap: formatMoney(glance.expenses.subtract(typical), { locale: moneyLocale }),
+          })
+        : t('month.below', {
+            typical: formatMoney(typical, { locale: moneyLocale }),
+            gap: formatMoney(typical.subtract(glance.expenses), { locale: moneyLocale }),
+          });
+  const linkClass =
+    'inline-flex min-h-11 items-center text-sm font-medium text-[color:var(--color-ink)] underline decoration-[color:var(--color-brand)] underline-offset-4 hover:decoration-2';
 
   return (
     <Page>
@@ -122,6 +147,111 @@ export default async function OverviewPage({ params }: { params: Promise<{ local
               </Stat>
             </Card>
           </div>
+
+          {/* What the balances rest on, when the bank has not confirmed them or disagreed. */}
+          {(glance.mismatches.length > 0 || glance.unconfirmedAccounts > 0) && (
+            <Card className="mt-6">
+              <div className="grid gap-3">
+                {glance.mismatches.map((note) => (
+                  <p key={note.accountName} className="text-sm text-pretty">
+                    {t(note.gap.isPositive() ? 'balance.mismatchAbove' : 'balance.mismatchBelow', {
+                      account: note.accountName,
+                      gap: formatMoney(note.gap.abs(), { locale: moneyLocale }),
+                      date: format.dateTime(new Date(`${note.asOf}T12:00:00Z`), {
+                        day: 'numeric',
+                        month: 'long',
+                        timeZone: 'UTC',
+                      }),
+                    })}
+                  </p>
+                ))}
+                {glance.unconfirmedAccounts > 0 && (
+                  <p className="text-sm text-pretty">
+                    {t('balance.unconfirmed', { count: glance.unconfirmedAccounts })}
+                  </p>
+                )}
+                <Link href="/documents" className={linkClass}>
+                  {t('balance.action')}
+                </Link>
+              </div>
+            </Card>
+          )}
+
+          <Section
+            title={
+              glance.isCurrentMonth
+                ? t('month.title')
+                : t('month.titleEarlier', { month: monthName })
+            }
+            detail={glance.isCurrentMonth ? t('month.detail') : t('month.detailEarlier')}
+            className="mt-12"
+          >
+            {glance.hasMovements ? (
+              <>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Card>
+                    <Stat label={t('month.income')}>
+                      <Amount value={glance.income} locale={moneyLocale} tone="plain" size="lg" />
+                    </Stat>
+                  </Card>
+                  <Card>
+                    <Stat label={t('month.expenses')} {...(versus ? { detail: versus } : {})}>
+                      <Amount value={glance.expenses} locale={moneyLocale} tone="plain" size="lg" />
+                    </Stat>
+                  </Card>
+                </div>
+
+                <Card padding="none" className="mt-4 overflow-hidden">
+                  <div className="px-5 sm:px-6">
+                    <Ledger caption={t('recent.title')}>
+                      <LedgerHead>
+                        <LedgerColumn>{t('recent.columns.description')}</LedgerColumn>
+                        <LedgerColumn className="hidden sm:table-cell">
+                          {t('recent.columns.account')}
+                        </LedgerColumn>
+                        <LedgerColumn align="end">{t('recent.columns.amount')}</LedgerColumn>
+                      </LedgerHead>
+                      <LedgerBody>
+                        {glance.recent.map((row) => (
+                          <LedgerRow key={row.id}>
+                            <LedgerCell className="max-w-0 min-w-0">
+                              <span className="block truncate font-medium">{row.description}</span>
+                              <span className="tabular block text-xs text-[color:var(--color-ink-secondary)]">
+                                {format.dateTime(new Date(`${row.date}T12:00:00Z`), {
+                                  day: 'numeric',
+                                  month: 'short',
+                                  timeZone: 'UTC',
+                                })}
+                              </span>
+                            </LedgerCell>
+                            <LedgerCell secondary className="hidden sm:table-cell">
+                              {row.accountName}
+                            </LedgerCell>
+                            <LedgerCell align="end">
+                              <Amount value={row.amount} locale={moneyLocale} size="sm" />
+                            </LedgerCell>
+                          </LedgerRow>
+                        ))}
+                      </LedgerBody>
+                    </Ledger>
+                  </div>
+                </Card>
+                <Link href="/movements" className={`${linkClass} mt-2`}>
+                  {t('recent.all')}
+                </Link>
+              </>
+            ) : (
+              <EmptyState
+                title={t('month.emptyTitle')}
+                body={t('month.emptyBody')}
+                action={
+                  <Link href="/documents" className="inline-block">
+                    <Button>{t('month.emptyAction')}</Button>
+                  </Link>
+                }
+              />
+            )}
+          </Section>
 
           <Section title={t('claims.title')} detail={t('claims.detail')} className="mt-12">
             {position.claims.length === 0 ? (

@@ -126,6 +126,26 @@ export default async function DocumentsPage({
         </div>
       )}
 
+      {/* El selector va primero. Subir es la razón de esta pantalla, y lo que
+          queda por decidir de lo ya subido va debajo, no delante. */}
+      <Card padding="lg" className="mb-8">
+        <StatementUploader
+          locale={locale}
+          {...(typeof wantedAccount === 'string' ? { initialAccountId: wantedAccount } : {})}
+          accounts={importAccounts.map((account) => ({
+            id: account.id,
+            label: [account.name, account.personName].filter(Boolean).join(' · '),
+            group: t(`accountGroups.${groupForAccountType(account.type)}`),
+          }))}
+          queues={Object.fromEntries(queues)}
+          labels={{
+            account: t('form.account'),
+            accountHint: t('form.accountHint'),
+            hint: t('form.fileHint'),
+          }}
+        />
+      </Card>
+
       {/* Lo que se repite entre archivos se pregunta aquí, donde se subió, y
           antes de que alguien lo confirme dos veces. */}
       {(repeats.questions.length > 0 || repeats.merged.length > 0) && (
@@ -295,24 +315,6 @@ export default async function DocumentsPage({
           </Card>
         </div>
       )}
-
-      <Card padding="lg">
-        <StatementUploader
-          locale={locale}
-          {...(typeof wantedAccount === 'string' ? { initialAccountId: wantedAccount } : {})}
-          accounts={importAccounts.map((account) => ({
-            id: account.id,
-            label: [account.name, account.personName].filter(Boolean).join(' · '),
-            group: t(`accountGroups.${groupForAccountType(account.type)}`),
-          }))}
-          queues={Object.fromEntries(queues)}
-          labels={{
-            account: t('form.account'),
-            accountHint: t('form.accountHint'),
-            hint: t('form.fileHint'),
-          }}
-        />
-      </Card>
 
       <Section title={t('history.title')} className="mt-14">
         {runs.length === 0 ? (

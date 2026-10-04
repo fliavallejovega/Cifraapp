@@ -427,7 +427,35 @@
     "planLink": "See what to do with this money",
     "reportsLink": "See the statements",
     "scopeNote": "This is the same figure the plan shows: your liquid balance less the next 30 days of obligations, your minimum debt payments, the estimated tax reserve and your minimum buffer. The plan tells you what to do with it.",
-    "importLink": "Import a statement"
+    "importLink": "Import a statement",
+    "month": {
+      "title": "This month",
+      "titleEarlier": "Your latest month with movements: {month}",
+      "detail": "What came into and went out of your accounts, not counting money you moved between them.",
+      "detailEarlier": "This month has no movements yet. Upload a new one and it shows here.",
+      "income": "Came in",
+      "expenses": "Went out",
+      "above": "A normal full month is {typical}. You are {gap} above it.",
+      "below": "A normal full month is {typical}. You are {gap} below it.",
+      "emptyTitle": "No movements yet.",
+      "emptyBody": "Upload a statement or a screenshot from your bank. We read the movements and you see here what came in and what went out.",
+      "emptyAction": "Upload a statement"
+    },
+    "recent": {
+      "title": "Latest movements",
+      "all": "See all movements",
+      "columns": {
+        "description": "Movement",
+        "account": "Account",
+        "amount": "Amount"
+      }
+    },
+    "balance": {
+      "unconfirmed": "{count, plural, one {One account's balance is the one you typed, not the bank's.} other {# accounts' balances are the ones you typed, not the bank's.}} Upload a screenshot or statement that shows the balance and we adjust it ourselves.",
+      "mismatchAbove": "{account}: the bank says {gap} more than we calculated on {date}. It is almost always a statement still to upload.",
+      "mismatchBelow": "{account}: the bank says {gap} less than we calculated on {date}. It is almost always a statement still to upload.",
+      "action": "Upload a screenshot with the balance"
+    }
   },
   "plan": {
     "title": "What to do with this money",
@@ -925,7 +953,9 @@
     "console": "SaaS console",
     "cards": "Cards",
     "offers": "Offers",
-    "familyExpenses": "Family expenses"
+    "familyExpenses": "Family expenses",
+    "upload": "Upload statement or screenshot",
+    "uploadShort": "Upload"
   },
   "accounts": {
     "title": "Your accounts",
@@ -1549,7 +1579,8 @@
       "symbolInvalid": "Write the symbol the way TradingView does. For example, NASDAQ:AAPL or TVC:GOLD.",
       "alreadyWatching": "That symbol is already on your list.",
       "maskInvalid": "It has to be exactly 4 digits.",
-      "termInvalid": "Instalments run from 1 to 600."
+      "termInvalid": "Instalments run from 1 to 600.",
+      "categoryRequired": "Choose a category for this movement."
     }
   },
   "movements": {

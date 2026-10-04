@@ -270,6 +270,15 @@
   color: var(--color-ink-secondary);
 }
 
+.cajon-accion {
+  flex: none;
+  margin-left: auto;
+}
+
+.cajon-donde-estoy + .cajon-accion {
+  margin-left: 0;
+}
+
 .cajon-solo-lectores {
   position: absolute;
   width: 1px;

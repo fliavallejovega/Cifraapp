@@ -10,7 +10,7 @@ import {
 } from '@app/database/schema';
 import { Money, type CurrencyCode, type PlainDate } from '@app/domain';
 import { computeFingerprint, normalizeDescription } from '@app/transaction-engine';
-import { and, eq, isNull, sql } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 
@@ -408,17 +408,9 @@ export async function createManualMovement(
 
     if (!row) return null;
 
-    // Cash leaves the account it came from. A movement that did not move the
-    // balance would make the position disagree with the ledger the moment it
-    // was recorded.
-    await tx
-      .update(accounts)
-      .set({
-        // The amount already carries its sign, so the balance simply adds it.
-        currentBalance: sql`${accounts.currentBalance} + ${amount.toDecimalString()}::numeric`,
-        updatedAt: new Date(),
-      })
-      .where(eq(accounts.id, parsed.data.accountId));
+    // The account balance moves on its own: the database derives it from the
+    // movements (20261004200000), so the position agrees with the ledger the
+    // moment this row exists.
 
     /*
       Y si esto paga una deuda, se aplica en la misma transacción de base.
@@ -561,15 +553,7 @@ export async function removeMovement(
       .set({ deletedAt: new Date(), updatedAt: new Date() })
       .where(eq(transactions.id, id.data));
 
-    // The balance it moved when it was recorded moves back. The stored amount
-    // carries its sign, so undoing it is a subtraction whichever way it went.
-    await tx
-      .update(accounts)
-      .set({
-        currentBalance: sql`${accounts.currentBalance} - ${existing.amount}::numeric`,
-        updatedAt: new Date(),
-      })
-      .where(eq(accounts.id, existing.accountId));
+    // The balance it moved moves back on its own: the database derives it.
 
     return 'ok' as const;
   });

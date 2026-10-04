@@ -10,8 +10,9 @@ import {
   transfers,
 } from '@app/database/schema';
 import { Money, type CurrencyCode, type PlainDate } from '@app/domain';
-import { aliasedTable, and, count, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
+import { aliasedTable, and, count, desc, eq, inArray, isNull, or, sql } from 'drizzle-orm';
 
+import { needsACategory } from './needs-category';
 import { queryAsUser, type Session } from '../session';
 
 /**
@@ -69,7 +70,9 @@ export async function loadQueueCounts(session: Session, householdId: string): Pr
         .where(
           and(
             eq(transactions.householdId, householdId),
-            eq(transactions.status, 'needs_review'),
+            // Lo que el motor dudó y lo que no supo clasificar: las dos cosas
+            // esperan a una persona, y la segunda antes no aparecía en ninguna cola.
+            or(eq(transactions.status, 'needs_review'), needsACategory()),
             isNull(transactions.deletedAt),
           ),
         ),
@@ -372,7 +375,7 @@ export async function loadCategoryQueue(
       .where(
         and(
           eq(transactions.householdId, householdId),
-          eq(transactions.status, 'needs_review'),
+          or(eq(transactions.status, 'needs_review'), needsACategory()),
           isNull(transactions.deletedAt),
         ),
       )

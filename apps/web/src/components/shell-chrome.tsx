@@ -120,6 +120,9 @@ export interface ShellChromeProps {
     readonly collapse: string;
     readonly expand: string;
     readonly console: string;
+    /** The one action every screen offers: getting a statement in. */
+    readonly upload: string;
+    readonly uploadShort: string;
     readonly theme: ThemeSwitchLabels;
   };
   /** The sign-out form, built on the server around its action. */
@@ -247,6 +250,15 @@ export function ShellChrome({
       textoCerrar={labels.close}
       textoVolver={labels.back}
       pie={footer}
+      accion={
+        <Link
+          href="/documents"
+          className="inline-flex h-11 items-center gap-2 rounded-(--radius-md) bg-[color:var(--color-panel)] px-4 text-sm font-medium text-[color:var(--color-panel-ink)] shadow-(--shadow-card) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-ink)]"
+        >
+          <IconImport />
+          {labels.uploadShort}
+        </Link>
+      }
       marca={
         <span className="flex items-center gap-2.5">
           <Monogram size={28} />
@@ -271,6 +283,18 @@ export function ShellChrome({
             <span className="font-(family-name:--font-mono) text-sm font-semibold tracking-[0.18em] text-[color:var(--color-panel-ink)] uppercase">
               {labels.brand}
             </span>
+          </div>
+
+          {/* Getting a statement in is what the product runs on, so it is never
+              more than one click away and never buried in a group. */}
+          <div className="px-3 pb-4">
+            <Link
+              href="/documents"
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-(--radius-md) bg-[color:var(--color-brand)] px-4 text-sm font-semibold text-[color:var(--color-panel)] transition-opacity duration-(--duration-quick) hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-panel-ink)]"
+            >
+              <IconImport />
+              {labels.upload}
+            </Link>
           </div>
 
           <nav ref={navRef} aria-label={labels.menu} className="flex-1 overflow-y-auto px-3 pb-4">

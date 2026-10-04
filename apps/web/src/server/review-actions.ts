@@ -4,10 +4,12 @@ import {
   classificationLog,
   duplicateCandidates,
   merchants,
+  obligations,
   recurringSeries,
   transactions,
   transfers,
 } from '@app/database/schema';
+import { Money } from '@app/domain';
 import { and, eq, inArray, isNull } from 'drizzle-orm';
 import { after } from 'next/server';
 import { z } from 'zod';
@@ -194,8 +196,8 @@ export async function resolveRecurring(
 
   const householdId = session.activeHouseholdId;
 
-  const [updated] = await queryAsUser(session, (tx) =>
-    tx
+  const updated = await queryAsUser(session, async (tx) => {
+    const [series] = await tx
       .update(recurringSeries)
       .set(
         decision.data === 'confirm'
@@ -215,8 +217,64 @@ export async function resolveRecurring(
           isNull(recurringSeries.deletedAt),
         ),
       )
-      .returning({ id: recurringSeries.id }),
-  );
+      .returning({
+        id: recurringSeries.id,
+        name: recurringSeries.name,
+        direction: recurringSeries.direction,
+        amount: recurringSeries.expectedAmount,
+        currency: recurringSeries.currency,
+        frequency: recurringSeries.frequency,
+        anchorDays: recurringSeries.anchorDays,
+        anchorAmounts: recurringSeries.anchorAmounts,
+        next: recurringSeries.nextExpectedDate,
+        accountId: recurringSeries.accountId,
+        categoryId: recurringSeries.categoryId,
+        merchantId: recurringSeries.merchantId,
+      });
+
+    /*
+      Un gasto que se repite, confirmado, es un compromiso.
+
+      Antes confirmarlo sólo encendía la serie, y nada leía las series de gasto:
+      el plan y el disponible miran los compromisos. La persona decía «sí, esto
+      se repite, cuéntalo» y no se contaba. Ahora la confirmación crea el
+      compromiso que la serie describe, una sola vez.
+    */
+    if (series && decision.data === 'confirm' && series.direction === 'outflow') {
+      const [existing] = await tx
+        .select({ id: obligations.id })
+        .from(obligations)
+        .where(
+          and(
+            eq(obligations.householdId, householdId),
+            eq(obligations.seriesId, series.id),
+            isNull(obligations.deletedAt),
+          ),
+        )
+        .limit(1);
+      if (!existing) {
+        const currency = series.currency.trim() === 'PAB' ? 'PAB' : 'USD';
+        await tx.insert(obligations).values({
+          householdId,
+          name: series.name,
+          expectedAmount: Money.fromDecimalString(series.amount, currency).abs().toDecimalString(),
+          currency,
+          dueDate: series.next,
+          frequency: series.frequency,
+          anchorDays: series.anchorDays,
+          anchorAmounts: series.anchorAmounts,
+          isEssential: essential,
+          detectedBy: 'system',
+          seriesId: series.id,
+          accountId: series.accountId,
+          categoryId: series.categoryId,
+          merchantId: series.merchantId,
+        });
+      }
+    }
+
+    return series;
+  });
 
   if (!updated) return { error: 'notFound' };
 
@@ -266,6 +324,8 @@ export async function resolveCategory(
       .limit(1);
 
     if (!existing) return 'notFound' as const;
+    // A movement with no proposal needs a category chosen, not an empty «yes».
+    if (!categoryId.data && !existing.categoryId) return 'categoryRequired' as const;
 
     await tx
       .update(transactions)

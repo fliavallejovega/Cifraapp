@@ -7,6 +7,7 @@ import {
   households,
   importRows,
   imports,
+  transactions,
 } from '@app/database/schema';
 import { alertToCandidate, parseBankAlert } from '@app/transaction-engine';
 import { type CurrencyCode } from '@app/domain';
@@ -96,7 +97,11 @@ async function sweepOne(connection: StoredConnection): Promise<OneResult> {
   const currency = (household.currency.trim() || 'USD') as CurrencyCode;
 
   const accountRows = await db
-    .select({ id: accounts.id, maskedNumber: accounts.maskedNumber })
+    .select({
+      id: accounts.id,
+      maskedNumber: accounts.maskedNumber,
+      aliases: accounts.cardAliasDigits,
+    })
     .from(accounts)
     .where(
       and(
@@ -110,6 +115,9 @@ async function sweepOne(connection: StoredConnection): Promise<OneResult> {
   for (const account of accountRows) {
     const digits = account.maskedNumber?.replace(/\D/g, '') ?? '';
     if (digits.length >= 4) byLastFour.set(digits.slice(-4), account.id);
+    for (const alias of account.aliases) {
+      if (/^\d{4}$/.test(alias) && !byLastFour.has(alias)) byLastFour.set(alias, account.id);
+    }
   }
 
   const result = await withAccessToken(connection, async (accessToken) => {
@@ -134,23 +142,42 @@ async function sweepOne(connection: StoredConnection): Promise<OneResult> {
     const fresh = wanted.filter((id) => !already.has(id));
     if (fresh.length === 0) return { ...empty, skipped: wanted.length };
 
-    // Una importación por barrido, no una por correo. Diez avisos leídos el
-    // mismo día son una tanda que se revisa junta, y diez importaciones de una
-    // fila convierten la pantalla de importaciones en ruido.
-    const [run] = await db
-      .insert(imports)
-      .values({
-        householdId: connection.householdId,
-        documentId: null,
-        source: 'email',
-        status: 'review',
-        format: 'email',
-        idempotencyKey: `gmail:${connection.id}:${new Date().toISOString().slice(0, 16)}`,
-      })
-      .onConflictDoNothing()
-      .returning({ id: imports.id });
+    /*
+      Una importación por cuenta y por barrido, no una por correo.
 
-    if (!run) return { ...empty, skipped: wanted.length };
+      Diez avisos leídos el mismo día son una tanda que se revisa junta. Pero una
+      importación pertenece a una cuenta: la que juntaba todos los avisos no
+      tenía ninguna, y una importación sin cuenta no se puede guardar — los
+      avisos se leían y se quedaban para siempre en ninguna parte. Los que no
+      dicen de qué cuenta son van aparte, a esperar a que alguien la diga.
+    */
+    const minute = new Date().toISOString().slice(0, 16);
+    const runs = new Map<
+      string,
+      { id: string; found: number; created: number; duplicate: number; review: number }
+    >();
+    const runFor = async (accountId: string | null) => {
+      const key = accountId ?? 'unassigned';
+      const existing = runs.get(key);
+      if (existing) return existing;
+      const [run] = await db
+        .insert(imports)
+        .values({
+          householdId: connection.householdId,
+          documentId: null,
+          accountId,
+          source: 'email',
+          status: 'review',
+          format: 'email',
+          idempotencyKey: `gmail:${connection.id}:${minute}:${key}`,
+        })
+        .onConflictDoNothing()
+        .returning({ id: imports.id });
+      if (!run) return null;
+      const entry = { id: run.id, found: 0, created: 0, duplicate: 0, review: 0 };
+      runs.set(key, entry);
+      return entry;
+    };
 
     let read = 0;
     let importedCount = 0;
@@ -185,8 +212,34 @@ async function sweepOne(connection: StoredConnection): Promise<OneResult> {
       const accountId = parsed.accountHint ? (byLastFour.get(parsed.accountHint) ?? null) : null;
       // Sin cuenta resuelta la huella se calcula igual, sobre una etiqueta
       // estable, para que dos lecturas del mismo aviso sigan coincidiendo. La
-      // cola de revisión pide la cuenta y la fila se recalcula al confirmarla.
-      const candidate = alertToCandidate(parsed, accountId ?? `unassigned:${connection.householdId}`);
+      // fila se recalcula cuando alguien dice de qué cuenta es.
+      const candidate = alertToCandidate(
+        parsed,
+        accountId ?? `unassigned:${connection.householdId}`,
+      );
+
+      const run = await runFor(accountId);
+      if (!run) {
+        skippedCount += 1;
+        continue;
+      }
+
+      // Con cuenta, la huella es la misma que producirá el estado de cuenta: si
+      // ese movimiento ya está en el libro, el aviso es la misma compra.
+      const [match] = accountId
+        ? await db
+            .select({ id: transactions.id })
+            .from(transactions)
+            .where(
+              and(
+                eq(transactions.householdId, connection.householdId),
+                eq(transactions.fingerprint, candidate.fingerprint),
+                isNull(transactions.deletedAt),
+              ),
+            )
+            .limit(1)
+        : [];
+      const verdict = accountId === null ? 'review' : match ? 'duplicate' : 'new';
 
       const [row] = await db
         .insert(importRows)
@@ -200,8 +253,9 @@ async function sweepOne(connection: StoredConnection): Promise<OneResult> {
           descriptionNormalized: candidate.descriptionNormalized,
           externalReference: candidate.externalReference ?? null,
           fingerprint: candidate.fingerprint,
-          verdict: 'review',
+          verdict,
           confidence: parsed.confidence.toFixed(3),
+          matchedTransactionId: match?.id ?? null,
           matchedSignals: [...parsed.signals, ...(accountId ? [`account:${accountId}`] : [])],
           // El cuerpo del correo no se guarda. Lo que se conserva es la línea
           // que se leyó de él, que es lo que hace falta para justificar la fila.
@@ -209,14 +263,25 @@ async function sweepOne(connection: StoredConnection): Promise<OneResult> {
         })
         .returning({ id: importRows.id });
 
+      run.found += 1;
+      if (verdict === 'new') run.created += 1;
+      else if (verdict === 'duplicate') run.duplicate += 1;
+      else run.review += 1;
       importedCount += 1;
       await note(connection, messageId, 'imported', null, row?.id ?? null);
     }
 
-    await db
-      .update(imports)
-      .set({ rowsFound: read, rowsReview: importedCount })
-      .where(eq(imports.id, run.id));
+    for (const run of runs.values()) {
+      await db
+        .update(imports)
+        .set({
+          rowsFound: run.found,
+          rowsNew: run.created,
+          rowsDuplicate: run.duplicate,
+          rowsReview: run.review,
+        })
+        .where(eq(imports.id, run.id));
+    }
 
     return { read, imported: importedCount, skipped: skippedCount, failed: failedCount };
   });

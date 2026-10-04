@@ -132,6 +132,14 @@ SQL is read before it is committed.
 
 Commits follow `type(scope): summary`, e.g. `feat(import): add OFX parser`.
 
+## Respuestas y decisiones en un artifact
+
+Todo análisis, plan, lista de acciones o decisión para el usuario se entrega en
+un artifact con el formato de la skill `artifact-unificado`, sin esperar a que
+lo pida. Las preguntas van ahí, con la opción recomendada marcada, y se envían
+juntas. En la terminal basta una línea con el enlace. El usuario decide en el
+artifact.
+
 ## Phase discipline
 
 Work proceeds in phases (`docs/roadmap.md`). Before implementing one: inspect

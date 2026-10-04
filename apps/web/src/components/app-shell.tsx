@@ -110,6 +110,8 @@ export async function AppShell({
         collapse: t('collapse'),
         expand: t('expand'),
         console: t('console'),
+        upload: t('upload'),
+        uploadShort: t('uploadShort'),
         theme: {
           legend: t('theme.legend'),
           system: t('theme.system'),

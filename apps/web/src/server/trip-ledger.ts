@@ -179,18 +179,10 @@ export async function recordTripMovement(
     return winner ? { id: winner.id, created: false } : null;
   }
 
-  await tx
-    .update(accounts)
-    .set({
-      currentBalance: sql`${accounts.currentBalance} + ${signed.toDecimalString()}::numeric`,
-      updatedAt: new Date(),
-    })
-    .where(eq(accounts.id, movement.accountId));
-
   return { id: row.id, created: true };
 }
 
-/** Soft-deletes a trip movement and gives its amount back to the account. */
+/** Soft-deletes a trip movement; the account balance follows on its own (20261004200000). */
 export async function removeTripMovement(
   tx: Tx,
   householdId: string,
@@ -208,13 +200,6 @@ export async function removeTripMovement(
     )
     .returning({ accountId: transactions.accountId, amount: transactions.amount });
   if (!row) return false;
-  await tx
-    .update(accounts)
-    .set({
-      currentBalance: sql`${accounts.currentBalance} - ${row.amount}::numeric`,
-      updatedAt: new Date(),
-    })
-    .where(eq(accounts.id, row.accountId));
   return true;
 }
 
@@ -377,13 +362,6 @@ export async function recordTripTransfer(
       .returning({ id: transactions.id });
     if (!row) return null;
     ids.push(row.id);
-    await tx
-      .update(accounts)
-      .set({
-        currentBalance: sql`${accounts.currentBalance} + ${leg.signed.toDecimalString()}::numeric`,
-        updatedAt: new Date(),
-      })
-      .where(eq(accounts.id, leg.accountId));
   }
   const [fromId, toId] = ids;
   if (!fromId || !toId) return null;
