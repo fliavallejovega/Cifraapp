@@ -1,7 +1,13 @@
 import 'server-only';
 
 import { parseOutput, toJsonSchema, type ObjectShape } from '@app/ai';
-import { readOcrRows, type OcrRow, type ParsedStatement } from '@app/transaction-engine';
+import {
+  readEdgeLine,
+  readOcrRows,
+  type EdgeLine,
+  type OcrRow,
+  type ParsedStatement,
+} from '@app/transaction-engine';
 import type { CurrencyCode, PlainDate } from '@app/domain';
 
 import { providerFor } from './ai';
@@ -98,6 +104,45 @@ const SHAPE = {
   },
 } as const satisfies ObjectShape;
 
+const EDGE_SHAPE = {
+  topCutDate: {
+    kind: 'text',
+    description:
+      'Look at the strip directly under the app header bar, above the first movement you transcribed. In a scrolled list there is often the lower half of one more movement there — only its date line, or a sliver of its amount, shows. If so, copy that date exactly as printed («23 Septiembre 2026»); if only an amount shows, leave this empty and fill topCutAmount. Empty when the first movement below the header is complete.',
+    maxLength: 32,
+  },
+  topCutAmount: {
+    kind: 'text',
+    description:
+      'The amount of that half-hidden movement at the top, with its sign, if legible. Empty otherwise.',
+    maxLength: 32,
+  },
+  cutLines: {
+    kind: 'record_list',
+    description:
+      'Movement lines you could NOT transcribe in full because the image itself cuts them: at the top, a line partly hidden under the app header bar or above the first fully visible line (often only its date or its amount shows); at the bottom, a line sliced by the lower edge. Look carefully at the strip just below the header and at the very bottom. A line whose date and amount you CAN read — even if a floating button covers part of it — is not cut: it belongs in rows, not here. Give whatever part of a cut line is legible and leave the rest empty. Empty list when no line is cut.',
+    maxItems: 4,
+    fields: {
+      edge: { kind: 'choice', description: 'Which edge cuts it.', options: ['top', 'bottom'] },
+      date: {
+        kind: 'text',
+        description: 'The date as printed, if legible; empty otherwise.',
+        maxLength: 24,
+      },
+      description: {
+        kind: 'text',
+        description: 'The concept as printed, as far as legible; empty otherwise.',
+        maxLength: 200,
+      },
+      amount: {
+        kind: 'text',
+        description: 'The figure as printed with its sign, if legible; empty otherwise.',
+        maxLength: 32,
+      },
+    },
+  },
+} as const satisfies ObjectShape;
+
 const SYSTEM = [
   'You transcribe bank and credit-card statements. You are a reader, not an analyst.',
   '',
@@ -124,7 +169,13 @@ const USER = [
 const IMAGE_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/gif']);
 
 export type OcrOutcome =
-  | { readonly ok: true; readonly statement: ParsedStatement; readonly model: string }
+  | {
+      readonly ok: true;
+      readonly statement: ParsedStatement;
+      readonly model: string;
+      /** Lines cut at the image's edges: evidence of continuity, never filed. */
+      readonly edges: { readonly top: EdgeLine | null; readonly bottom: EdgeLine | null };
+    }
   | { readonly ok: false; readonly reason: OcrFailure; readonly detail?: string };
 
 export type OcrFailure =
@@ -176,7 +227,7 @@ export async function readStatementByOcr(input: {
       mediaType: input.mimeType,
       dataBase64: Buffer.from(input.bytes).toString('base64'),
     },
-    outputSchema: toJsonSchema(SHAPE),
+    outputSchema: toJsonSchema({ ...SHAPE, ...EDGE_SHAPE }),
     // Un estado de cuenta largo son muchas filas cortas. El techo alto es lo que
     // impide que la transcripción se corte a la mitad del mes.
     maxOutputTokens: 16_000,
@@ -194,7 +245,7 @@ export async function readStatementByOcr(input: {
     };
   }
 
-  const parsed = parseOutput(SHAPE, result.value.raw);
+  const parsed = parseOutput({ ...SHAPE, ...EDGE_SHAPE }, result.value.raw);
   if (!parsed.ok) {
     return { ok: false, reason: 'malformed', detail: parsed.error.join('; ') };
   }
@@ -208,7 +259,25 @@ export async function readStatementByOcr(input: {
   const printedYear = Number(/\b(20\d{2})\b/.exec(asText(parsed.value['printedYear']))?.[1] ?? 0);
   const accountDigits = asText(parsed.value['accountDigits']).trim();
 
-  const statement = readOcrRows(rows.map(toOcrRow), {
+  // A «cut» line whose date, concept and amount are all legible is a full line
+  // the reader was too cautious with: it is filed like any other, and stays an
+  // edge for the continuity check.
+  const legibleCut = cutLines(parsed.value['cutLines']).filter(
+    (line) => line.date !== '' && line.amount !== '' && line.description !== '',
+  );
+  const promoted = legibleCut.map((line) => ({
+    date: line.date,
+    description: line.description,
+    amount: line.amount,
+    direction: 'unknown',
+  }));
+  const ordered = [
+    ...promoted.filter((_, index) => legibleCut[index]?.edge === 'top'),
+    ...rows.map(toOcrRow),
+    ...promoted.filter((_, index) => legibleCut[index]?.edge === 'bottom'),
+  ];
+
+  const statement = readOcrRows(ordered, {
     accountId: input.accountId,
     currency: input.currency,
     ...(input.dayFirst === undefined ? {} : { dayFirst: input.dayFirst }),
@@ -224,7 +293,33 @@ export async function readStatementByOcr(input: {
     return { ok: false, reason: 'no_rows' };
   }
 
-  return { ok: true, statement, model: result.value.model };
+  const options = {
+    accountId: input.accountId,
+    currency: input.currency,
+    ...(input.dayFirst === undefined ? {} : { dayFirst: input.dayFirst }),
+    ...(input.referenceDate ? { referenceDate: input.referenceDate } : {}),
+    ...(printedYear >= 2000 && printedYear <= 2100 ? { printedYear } : {}),
+  };
+  const cut = cutLines(parsed.value['cutLines']);
+  const topDate = asText(parsed.value['topCutDate']).trim();
+  const topAmount = asText(parsed.value['topCutAmount']).trim();
+  const edge = (which: 'top' | 'bottom'): EdgeLine | null => {
+    // Nearest to the edge: the first cut at the top, the last at the bottom.
+    const found = cut.filter((line) => line.edge === which);
+    const line = which === 'top' ? found[0] : found.at(-1);
+    if (line) return readEdgeLine(line, options);
+    if (which === 'top' && (topDate !== '' || topAmount !== '')) {
+      return readEdgeLine({ date: topDate, amount: topAmount, description: '' }, options);
+    }
+    return null;
+  };
+
+  return {
+    ok: true,
+    statement,
+    model: result.value.model,
+    edges: { top: edge('top'), bottom: edge('bottom') },
+  };
 }
 
 /** Un registro del modelo, aplanado a texto antes de que lo toque el validador. */
@@ -236,4 +331,25 @@ function toOcrRow(record: Readonly<Record<string, string | number | boolean>>): 
     direction: String(record['direction'] ?? 'unknown'),
     ...(typeof record['top'] === 'number' ? { top: record['top'] } : {}),
   };
+}
+
+/** The reader's cut lines, flattened to text before anything reads them. */
+function cutLines(
+  raw: unknown,
+): { edge: string; date: string; amount: string; description: string }[] {
+  const asText = (value: unknown): string => (typeof value === 'string' ? value.trim() : '');
+  return (Array.isArray(raw) ? (raw as unknown[]) : []).map((line) => {
+    const record = (typeof line === 'object' && line !== null ? line : {}) as {
+      readonly edge?: unknown;
+      readonly date?: unknown;
+      readonly amount?: unknown;
+      readonly description?: unknown;
+    };
+    return {
+      edge: asText(record.edge),
+      date: asText(record.date),
+      amount: asText(record.amount),
+      description: asText(record.description),
+    };
+  });
 }

@@ -140,6 +140,8 @@ export const imports = appSchema.table(
      * Quien revisa merece saber cuál de las dos está mirando.
      */
     readByOcr: boolean('read_by_ocr').notNull().default(false),
+    edgeLines: jsonb('edge_lines'),
+    continuityConfirmed: boolean('continuity_confirmed').notNull().default(false),
     /** Últimos cuatro dígitos de la cuenta que el estado dice ser, cuando los imprime. */
     statedAccountDigits: text('stated_account_digits'),
     /**

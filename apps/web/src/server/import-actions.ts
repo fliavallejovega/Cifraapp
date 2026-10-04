@@ -992,3 +992,24 @@ export async function linkCardDigits(input: {
   revalidatePath(`/${input.locale === 'en' ? 'en' : 'es'}/documents`);
   return { linked };
 }
+
+/** «Nothing is missing there»: the seam above this capture is not asked again. */
+export async function confirmCaptureContinuity(input: {
+  readonly importId: string;
+  readonly locale: string;
+}): Promise<{ readonly error?: string; readonly ok?: true }> {
+  const session = await loadSession();
+  if (!session?.activeHouseholdId) return { error: 'signInRequired' };
+  const importId = z.uuid().safeParse(input.importId);
+  if (!importId.success) return { error: 'notFound' };
+  const householdId = session.activeHouseholdId;
+
+  await queryAsUser(session, (tx) =>
+    tx
+      .update(imports)
+      .set({ continuityConfirmed: true })
+      .where(and(eq(imports.id, importId.data), eq(imports.householdId, householdId))),
+  );
+  revalidatePath(`/${input.locale === 'en' ? 'en' : 'es'}/documents`);
+  return { ok: true };
+}

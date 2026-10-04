@@ -866,7 +866,8 @@
       "months": "falta {months}",
       "never": "nunca subiste un estado de cuenta de esta"
     },
-    "cardsUnlinked": "{count, plural, one {Si guardas ahora, el pago a una tarjeta que no reconocemos cuenta como gasto. Vincúlalo arriba primero.} other {Si guardas ahora, los # pagos a tarjetas que no reconocemos cuentan como gasto. Vincúlalos arriba primero.}}"
+    "cardsUnlinked": "{count, plural, one {Si guardas ahora, el pago a una tarjeta que no reconocemos cuenta como gasto. Vincúlalo arriba primero.} other {Si guardas ahora, los # pagos a tarjetas que no reconocemos cuentan como gasto. Vincúlalos arriba primero.}}",
+    "gapsOpen": "{count, plural, one {Además, puede faltar un movimiento entre dos capturas: revísalo arriba.} other {Además, puede faltar algo en # cortes entre capturas: revísalos arriba.}}"
   },
   "nav": {
     "label": "Secciones",
@@ -5362,5 +5363,24 @@
     "register": "Es otra tarjeta: registrarla",
     "linked": "{count, plural, =0 {Vinculada con {card}.} one {Vinculada con {card}: # pago cuenta como pago a la tarjeta.} other {Vinculada con {card}: # pagos cuentan como pago a la tarjeta.}}",
     "failed": "No se pudo vincular. Revisa que la tarjeta tenga su deuda registrada e inténtalo de nuevo."
+  },
+  "captureGaps": {
+    "title": "{count, plural, one {Puede faltar un movimiento entre dos capturas} other {Puede faltar algo en # cortes entre capturas}}",
+    "detail": "Al pasar de una captura a la siguiente, una línea quedó cortada y no se leyó completa en ninguna. Si ahí hubo un movimiento, no va a aparecer en tus cuentas. Mira el borde de las dos capturas y dinos.",
+    "cut": "Arriba de la segunda captura se alcanza a ver una línea del {text} que no está completa en ninguna.",
+    "lookFor": "el final de la primera y el comienzo de la segunda",
+    "upload": "Subir una captura de ese tramo",
+    "nothingMissing": "No falta nada",
+    "confirmed": "Listo: no volvemos a preguntar por este corte.",
+    "failed": "No se pudo guardar tu respuesta. Inténtalo de nuevo.",
+    "why": {
+      "cut_line": "Entre el {from} y el {to} hay una línea cortada que no es de ninguna de las dos capturas: probablemente falta un movimiento.",
+      "days_apart": "Las capturas saltan del {from} al {to} sin solaparse: si hubo movimientos en esos días, no están en ninguna.",
+      "no_overlap": "Una captura termina el {from} y la siguiente empieza el {to}, sin repetir ninguna línea, así que no se puede comprobar que conecten."
+    },
+    "minorTitle": "Cortes entre capturas sin comprobar",
+    "minorDetail": "{count, plural, one {Hay un corte entre capturas que no se pudo comprobar porque no se solapan. Lo más probable es que esté completo.} other {Hay # cortes entre capturas que no se pudieron comprobar porque no se solapan. Lo más probable es que estén completos.}} Para que Cifra lo confirme sola, deja que cada captura repita la última línea de la anterior.",
+    "minorShow": "Revisar (opcional)",
+    "minorHide": "Ocultar"
   }
 }

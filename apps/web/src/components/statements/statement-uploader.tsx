@@ -31,6 +31,7 @@ export interface UploaderAccount {
 export function StatementUploader({
   accounts,
   fixedAccountId,
+  initialAccountId,
   queues,
   locale,
   labels,
@@ -38,6 +39,8 @@ export function StatementUploader({
   readonly accounts: readonly UploaderAccount[];
   /** The account is decided by the screen: no selector. */
   readonly fixedAccountId?: string;
+  /** Preselected, e.g. when arriving from «upload a capture of that stretch». */
+  readonly initialAccountId?: string;
   readonly queues: Readonly<Record<string, readonly QueueEntry[]>>;
   readonly locale: string;
   readonly labels: {
@@ -48,7 +51,12 @@ export function StatementUploader({
 }) {
   const t = useTranslations('statementQueue');
   const router = useRouter();
-  const [accountId, setAccountId] = useState(fixedAccountId ?? accounts[0]?.id ?? '');
+  const [accountId, setAccountId] = useState(
+    fixedAccountId ??
+      accounts.find((account) => account.id === initialAccountId)?.id ??
+      accounts[0]?.id ??
+      '',
+  );
   const [bumps, setBumps] = useState<Readonly<Record<string, number>>>({});
   const onQueued = useCallback((id: string) => {
     setBumps((current) => ({ ...current, [id]: (current[id] ?? 0) + 1 }));
@@ -77,7 +85,7 @@ export function StatementUploader({
   }
 
   return (
-    <div className="flex max-w-xl flex-col gap-5">
+    <div id="subir" className="flex max-w-xl scroll-mt-24 flex-col gap-5">
       {fixedAccountId === undefined && accounts.length > 0 && (
         <Field label={labels.account} hint={labels.accountHint} required>
           {({ id, describedBy }) => (

@@ -307,7 +307,7 @@ function Question({
  * says where on the page it read the line; without that, the whole capture is
  * shown small. A tap opens it at full size.
  */
-function Captures({
+export function Captures({
   files,
   lookFor,
 }: {

@@ -305,3 +305,40 @@ function directionOf(declared: string): 'inflow' | 'outflow' {
   const said = declared.trim().toLowerCase();
   return said === 'credit' || said === 'inflow' ? 'inflow' : 'outflow';
 }
+
+/**
+ * Una línea cortada en el borde de una captura: lo que se alcanza a leer.
+ *
+ * No se archiva nunca — le falta la mitad. Sirve de evidencia de continuidad:
+ * si la línea cortada arriba de una captura es la última completa de la captura
+ * anterior, entre las dos no falta nada; si no lo es, puede faltar algo.
+ */
+export interface EdgeLine {
+  readonly date: PlainDate | null;
+  /** Firmado como las demás, o null si el monto quedó fuera. */
+  readonly amount: string | null;
+  readonly description: string;
+}
+
+export function readEdgeLine(
+  row: { readonly date: string; readonly amount: string; readonly description: string },
+  options: OcrParseOptions,
+): EdgeLine {
+  const dayFirst = options.dayFirst ?? true;
+  const date =
+    row.date.trim() === ''
+      ? null
+      : (parseStatementDate(row.date, dayFirst) ??
+        readLooseDate(row.date, dayFirst, options.referenceDate, options.printedYear));
+  const text = parseAmountText(row.amount);
+  let amount: string | null = null;
+  if (text !== null) {
+    try {
+      const value = Money.fromDecimalString(text, options.currency);
+      amount = value.isZero() ? null : value.toDecimalString();
+    } catch {
+      amount = null;
+    }
+  }
+  return { date, amount, description: row.description.trim() };
+}

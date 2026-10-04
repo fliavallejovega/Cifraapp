@@ -58,6 +58,7 @@ export {
   parseStatementDate,
   parseTable,
   parseXlsxStatement,
+  readEdgeLine,
   readLooseDate,
   readOcrRows,
   readXlsxSheet,
@@ -65,6 +66,7 @@ export {
   readZipFile,
   splitCsvLine,
   ZipError,
+  type EdgeLine,
   type OcrParseOptions,
   type OcrRow,
   type ParseOptions,
@@ -111,3 +113,5 @@ export {
   type RepeatReason,
   type RepeatResolution,
 } from './repeat-lines.js';
+
+export { findCaptureGaps, type CaptureFile, type CaptureGap } from './capture-gaps.js';

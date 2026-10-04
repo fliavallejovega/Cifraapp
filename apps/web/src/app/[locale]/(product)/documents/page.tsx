@@ -19,6 +19,7 @@ import { desc, eq } from 'drizzle-orm';
 import { getFormatter, getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { RepeatQuestions } from '@/components/statements/repeat-questions';
+import { CaptureGaps } from '@/components/statements/capture-gaps';
 import { CardLinks } from '@/components/statements/card-links';
 import { PendingSummary } from '@/components/statements/pending-summary';
 import { SaveAll } from '@/components/statements/save-all';
@@ -28,6 +29,7 @@ import { formatPlainDate } from '@/lib/format';
 import { loadHouseholdContext } from '@/server/household-context';
 import { loadAccountOptions } from '@/server/repositories/administration';
 import { loadStatementCoverage } from '@/server/repositories/statement-coverage';
+import { loadCaptureGaps } from '@/server/repositories/capture-gaps';
 import { loadCardPaymentsToLink } from '@/server/repositories/card-payments';
 import { loadPendingSummary } from '@/server/repositories/pending-summary';
 import { loadRepeatQuestions } from '@/server/repositories/repeat-questions';
@@ -42,8 +44,15 @@ import { queryAsUser, requireHousehold } from '@/server/session';
  * visible so any figure can be traced back to the file it came from
  * (spec §14, §105).
  */
-export default async function DocumentsPage({ params }: { params: Promise<{ locale: string }> }) {
+export default async function DocumentsPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<{ account?: string | string[] }>;
+}) {
   const { locale } = await params;
+  const { account: wantedAccount } = await searchParams;
   // eslint-disable-next-line @typescript-eslint/no-deprecated
   setRequestLocale(locale);
 
@@ -89,10 +98,12 @@ export default async function DocumentsPage({ params }: { params: Promise<{ loca
     loadRepeatQuestions(session, session.activeHouseholdId),
   ]);
   // After the repeats are settled, so the summary counts what will be filed.
-  const [pending, cardPayments] = await Promise.all([
+  const [pending, cardPayments, gaps] = await Promise.all([
     loadPendingSummary(session, session.activeHouseholdId),
     loadCardPaymentsToLink(session, session.activeHouseholdId),
+    loadCaptureGaps(session, session.activeHouseholdId),
   ]);
+  const likelyGaps = gaps.filter((gap) => gap.evidence !== 'no_overlap').length;
 
   return (
     <Page>
@@ -162,6 +173,26 @@ export default async function DocumentsPage({ params }: { params: Promise<{ loca
         </div>
       )}
 
+      {gaps.length > 0 && (
+        <div className="mb-8">
+          <CaptureGaps
+            locale={locale}
+            gaps={gaps.map((gap) => ({
+              key: gap.olderImportId,
+              accountId: gap.accountId,
+              account: [gap.accountName, gap.maskedNumber].filter(Boolean).join(' · '),
+              from: formatPlainDate(gap.from, locale),
+              to: formatPlainDate(gap.to, locale),
+              olderImportId: gap.olderImportId,
+              evidence: gap.evidence,
+              cutText: gap.cutText ? formatPlainDate(gap.cutText, locale) : null,
+              newer: gap.newer,
+              older: gap.older,
+            }))}
+          />
+        </div>
+      )}
+
       {cardPayments.unmatched.length > 0 && (
         <div className="mb-8">
           <CardLinks
@@ -196,11 +227,21 @@ export default async function DocumentsPage({ params }: { params: Promise<{ loca
             repeatsOpen={repeats.questions.length}
             files={pending.reduce((sum, account) => sum + account.files, 0)}
             summary={<PendingSummary accounts={pending} locale={locale} />}
-            {...(cardPayments.unmatched.length > 0
+            {...(cardPayments.unmatched.length > 0 || likelyGaps > 0
               ? {
-                  warning: t('cardsUnlinked', {
-                    count: cardPayments.unmatched.reduce((sum, group) => sum + group.count, 0),
-                  }),
+                  warning: [
+                    cardPayments.unmatched.length > 0
+                      ? t('cardsUnlinked', {
+                          count: cardPayments.unmatched.reduce(
+                            (sum, group) => sum + group.count,
+                            0,
+                          ),
+                        })
+                      : '',
+                    likelyGaps > 0 ? t('gapsOpen', { count: likelyGaps }) : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' '),
                 }
               : {})}
           />
@@ -258,6 +299,7 @@ export default async function DocumentsPage({ params }: { params: Promise<{ loca
       <Card padding="lg">
         <StatementUploader
           locale={locale}
+          {...(typeof wantedAccount === 'string' ? { initialAccountId: wantedAccount } : {})}
           accounts={importAccounts.map((account) => ({
             id: account.id,
             label: [account.name, account.personName].filter(Boolean).join(' · '),

@@ -22,6 +22,7 @@ import {
   parseDocument,
   StatementParseError,
   type DebtTarget,
+  type EdgeLine,
   type ExistingTransaction,
 } from '@app/transaction-engine';
 import { getServerEnv } from '@app/validation/env';
@@ -281,6 +282,7 @@ registerJobHandler(STATEMENT_IMPORT_JOB, async (job, report) => {
   const mimeType = payload.mimeType ?? '';
 
   let readByOcr = false;
+  let edges: { top: EdgeLine | null; bottom: EdgeLine | null } | null = null;
   let parsed;
   try {
     parsed = parseDocument(bytes, {
@@ -324,6 +326,7 @@ registerJobHandler(STATEMENT_IMPORT_JOB, async (job, report) => {
       if (read.ok) {
         parsed = read.statement;
         readByOcr = true;
+        edges = read.edges;
       } else {
         return { failure: ocrFailureMessage(read.reason), retryable: read.reason === 'transport' };
       }
@@ -358,6 +361,7 @@ registerJobHandler(STATEMENT_IMPORT_JOB, async (job, report) => {
     jobId: job.id,
     parsed,
     readByOcr,
+    edges,
   });
 
   await report(100, 'ready');
@@ -373,6 +377,8 @@ interface FileRowsInput {
   readonly jobId: string;
   readonly parsed: ReturnType<typeof parseDocument>;
   readonly readByOcr: boolean;
+  /** Lines cut at a capture's edges, for the continuity check. */
+  readonly edges?: { readonly top: EdgeLine | null; readonly bottom: EdgeLine | null } | null;
   readonly statedAccountDigits: string | null;
   readonly suggestedAccountId: string | null;
 }
@@ -733,6 +739,7 @@ async function fileImportRows(
     status: 'review',
     format: input.parsed.format,
     readByOcr: input.readByOcr,
+    edgeLines: input.edges ?? null,
     statedAccountDigits: input.statedAccountDigits,
     suggestedAccountId: input.suggestedAccountId,
     rowsFound: counts.found,

@@ -866,7 +866,8 @@
       "months": "missing {months}",
       "never": "no statement has ever been uploaded for this one"
     },
-    "cardsUnlinked": "{count, plural, one {If you save now, the payment to a card we don't recognise counts as spending. Link it above first.} other {If you save now, the # payments to cards we don't recognise count as spending. Link them above first.}}"
+    "cardsUnlinked": "{count, plural, one {If you save now, the payment to a card we don't recognise counts as spending. Link it above first.} other {If you save now, the # payments to cards we don't recognise count as spending. Link them above first.}}",
+    "gapsOpen": "{count, plural, one {Also, a movement may be missing between two captures: check it above.} other {Also, something may be missing at # seams between captures: check them above.}}"
   },
   "nav": {
     "label": "Sections",
@@ -5362,5 +5363,24 @@
     "register": "It's another card: register it",
     "linked": "{count, plural, =0 {Linked to {card}.} one {Linked to {card}: # payment counts as a card payment.} other {Linked to {card}: # payments count as card payments.}}",
     "failed": "It couldn't be linked. Check that the card has its debt registered and try again."
+  },
+  "captureGaps": {
+    "title": "{count, plural, one {A movement may be missing between two captures} other {Something may be missing at # seams between captures}}",
+    "detail": "Going from one capture to the next, a line was cut off and not read in full in either. If a movement was there, it will not show in your accounts. Look at the edge of both captures and tell us.",
+    "cut": "At the top of the second capture part of a line from {text} shows, complete in neither.",
+    "lookFor": "the end of the first and the start of the second",
+    "upload": "Upload a capture of that stretch",
+    "nothingMissing": "Nothing is missing",
+    "confirmed": "Done: we won't ask about this seam again.",
+    "failed": "Your answer couldn't be saved. Try again.",
+    "why": {
+      "cut_line": "Between {from} and {to} there is a cut line that belongs to neither capture: a movement is probably missing.",
+      "days_apart": "The captures jump from {from} to {to} without overlapping: if there were movements on those days, they are in neither.",
+      "no_overlap": "One capture ends on {from} and the next starts on {to} without repeating a line, so we cannot check that they connect."
+    },
+    "minorTitle": "Seams between captures not checked",
+    "minorDetail": "{count, plural, one {One seam between captures could not be checked because they do not overlap. It is most likely complete.} other {# seams between captures could not be checked because they do not overlap. They are most likely complete.}} For Cifra to confirm it on its own, let each capture repeat the last line of the previous one.",
+    "minorShow": "Review (optional)",
+    "minorHide": "Hide"
   }
 }
