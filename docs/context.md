@@ -15,7 +15,7 @@ status table.
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Complete**             | Phases 0–15 and 17–18. Every engine now has the product surface it was written for: **43 of 43 screens built**                              |
 | **Partly built**         | Phase 16 (CMS model, no editor) · 19 (white-label model, no admin UI) · 20 (admin app read-only) · 21 (security audit yes, load testing no) |
-| **Blocked on the world** | OCR needs a provider · billing needs a Stripe account · the copilot needs a key · the Panama tax rules need a qualified reviewer            |
+| **Blocked on the world** | Billing needs a Stripe account · the Panama tax rules need a qualified reviewer. OCR and the assistant run on OpenAI (October 2026)       |
 | **Tests**                | 668 unit and integration, all passing · 38 end-to-end, not run in this pass                                                                 |
 | **Gate**                 | 37/37 tasks green: `lint`, `typecheck`, `test`, `build`                                                                                     |
 | **Migrations**           | 64 applied, schema version 64 — verified against `information_schema`, not assumed                                                          |
@@ -23,6 +23,16 @@ status table.
 Live infrastructure is connected and exercised by the end-to-end suite. This is
 not a repository that merely compiles; it signs a user in, creates their
 household, stores a statement in object storage, and refuses to import it twice.
+
+## Octubre 2026: Gastos familiares, viaje automático y asistente
+
+Lo que se agregó, y dónde vive:
+
+- **Gastos familiares** — `app/[locale]/(product)/family-expenses`, `components/family-expenses/upload-board.tsx`, `server/repositories/family-expenses.ts`. Una zona por cuenta y tarjeta, agrupadas por persona (quien mira primero). Subida en partes de 3,5 MB hasta 15 MB (`lib/statement-upload.ts`, `server/import-actions.ts`), con huella previa contra duplicados.
+- **Lectura** — los dígitos de la cuenta se leen del PDF (`transaction-engine/account-digits.ts`) y de la foto (`statement-ocr.ts`); si contradicen la cuenta elegida, `imports.suggested_account_id` sugiere la correcta y «Moverlo» relee el archivo allá. Las capturas con «28 sep» o «Ayer» toman el año del día de subida (`readLooseDate`).
+- **Viaje** — zonas por tipo (`components/trips/upload-zones.tsx`); `trip-auto-apply-rules.ts` decide si un hotel o vuelo se aplica solo; `trip-document-apply.ts` es la misma transacción que «Confirmar»; `documents.trip_auto_applied` permite deshacer; `lib/trip-gaps.ts` lista lo que falta.
+- **Asistente** — `server/agent.ts` (dos llamadas: elegir consultas de una lista cerrada, responder con guardrail) y `server/agent-actions.ts` (aplicar propuestas con las acciones de cada pantalla). Botón en todas las pantallas (`components/agent/agent-launcher.tsx`). Modelos por trabajo en `platform.ai_settings`, editables en la consola (`/ai`).
+- **Base de datos** — el cliente del pooler usa `max_pipeline: 1`: con pipelining, el pooler de transacciones de Supabase devolvía respuestas cruzadas bajo concurrencia (reproducido).
 
 ## Ingreso variable: el piso, el colchón, la cobertura y la reserva
 

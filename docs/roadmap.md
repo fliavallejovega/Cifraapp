@@ -10,14 +10,14 @@ before it is stable.
 | 1     | Design system: visual identity, typography, color, motion, components, `DESIGN.md`             | **Complete — v2**: private-bank console (ink/ivory/brass), sidebar + revealed drawer, cards, PWA                                                       |
 | 2     | Auth and multi-tenancy: users, households, memberships, organizations, RLS, audit log          | **Complete** — password recovery included; no MFA, magic link, OAuth, invitation sending or household switcher                                         |
 | 3     | Core financial data model: accounts, transactions, categories, merchants, budgets, goals, debt | **Complete** — every entity has a management screen: accounts, movements, income, debts, goals, commitments, categories, merchants, people             |
-| 4     | Import engine: CSV, XLSX, OFX, PDF, document storage, parsing, normalization                   | **Complete except OCR** — CSV, OFX, PDF text layer and XLSX all parse in a background job; a scan is refused by name rather than read as empty         |
+| 4     | Import engine: CSV, XLSX, OFX, PDF, document storage, parsing, normalization                   | **Complete** — scans, photos and banking-app screenshots are read by the configured model (`statement-ocr.ts`); files up to 15 MB travel in 3.5 MB parts; the statement's account digits are checked against the account it was dropped under |
 | 5     | Duplicate and transfer engine: fingerprints, matching, credit-card payment detection           | **Complete**                                                                                                                                           |
 | 6     | Category and learning engine: merchant normalization, user rules, confidence, review           | **Complete** — the scan classifies, merchants are created and named, and anything under the threshold goes to a review queue rather than being applied |
 | 7     | Budgets and recurring expenses: automatic suggestions, safe-to-spend, projections              | **Complete** — budgets with pace and commitments, suggestions from the household's own median, detected series queued for confirmation                 |
 | 8     | Debt engine: avalanche, snowball, simulations, payoff timelines                                | **Complete** — debt CRUD, per-debt payoff, and a simulator that always runs both strategies so the cost of the choice is visible                       |
 | 9     | Rule engine: visual builder, conditions, actions, priorities, audit history                    | **Complete** — the builder writes structured data only, and prints the whole fact catalogue so the sandbox is visible                                  |
 | 10    | Allocation engine: obligation prioritization, tax reserve, goal and debt allocation            | **Complete** — a plan can be accepted, is stored as it was seen, and is measured against what actually moved                                           |
-| 11    | AI copilot: provider abstraction, structured outputs, explanations                             | **Complete in product** — advice, alerts and chat with stored grounding; still **no provider key**, and every screen states that plainly               |
+| 11    | AI copilot: provider abstraction, structured outputs, explanations                             | **Complete in product** — OpenAI configured; the assistant on every screen looks things up from a closed list and proposes changes a person applies (`agent.ts`); the console picks the reading and chat models |
 | 12    | Panama tax engine: jurisdiction model, versioned rules, DGI sources, review workflow           | **Engine complete** — rules are versioned rows; the Panama set is an **unreviewed draft** and shows to nobody                                          |
 | 13    | Reporting: statements, net worth, PDF and XLSX export                                          | **Complete** — month close with its blocking checklist, and CSV, JSON, XLSX and PDF exports written without a dependency                               |
 | 14    | Billing: plans, Stripe abstraction, entitlements, usage, webhooks                              | **Complete in product** — subscription screen leading with usage against limits; still **no Stripe account**, and the screen says so                   |
@@ -28,6 +28,12 @@ before it is stable.
 | 19    | White label                                                                                    | **Model built** — branding, verified domains, per-household resolution; **no admin UI, no domain automation**                                          |
 | 20    | Admin platform                                                                                 | **Built** — separate app, roles, metrics, flags; **read-only, no support or CMS tooling**                                                              |
 | 21    | Hardening: security review, RLS audit, performance, accessibility, load testing                | **Partly done** — the security audit is a test and it found real drift; **no load testing, e2e not run**                                               |
+
+Beyond the original 21 phases (October 2026):
+
+- **Gastos familiares** (`/family-expenses`): one upload place per account and card, grouped by person, with missing months and a warning when the statement belongs to another card.
+- **Viajes / Rumbo** (`docs/viajes/`): upload zones by document kind; a hotel or flight that fits the trip applies itself (undoable), one that clashes waits with the before and after; the nights still without a city or lodging are listed.
+- **Asistente**: see Phase 11.
 
 ## Priority if scope must be cut
 
