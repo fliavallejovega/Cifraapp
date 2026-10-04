@@ -152,6 +152,8 @@ export async function readStatementByOcr(input: {
   readonly dayFirst?: boolean;
   /** The upload day: a screenshot prints «28 sep» or «Ayer» and no year. */
   readonly referenceDate?: PlainDate;
+  /** Bank account or card, for what a printed minus means. */
+  readonly accountKind?: 'bank' | 'card';
 }): Promise<OcrOutcome> {
   if (!canReadByOcr(input.mimeType)) {
     return { ok: false, reason: 'unsupported_type' };
@@ -213,6 +215,7 @@ export async function readStatementByOcr(input: {
     ...(input.referenceDate ? { referenceDate: input.referenceDate } : {}),
     ...(printedYear >= 2000 && printedYear <= 2100 ? { printedYear } : {}),
     ...(accountDigits ? { accountDigits } : {}),
+    ...(input.accountKind ? { accountKind: input.accountKind } : {}),
   });
 
   // Cero filas legibles no es un estado vacío: es una lectura fallida, y decirlo

@@ -865,7 +865,8 @@
       "card": "Card {digits}",
       "months": "missing {months}",
       "never": "no statement has ever been uploaded for this one"
-    }
+    },
+    "cardsUnlinked": "{count, plural, one {If you save now, the payment to a card we don't recognise counts as spending. Link it above first.} other {If you save now, the # payments to cards we don't recognise count as spending. Link them above first.}}"
   },
   "nav": {
     "label": "Sections",
@@ -5328,14 +5329,38 @@
   },
   "saveAll": {
     "title": "{files, plural, one {One read file is waiting to be saved} other {# read files are waiting to be saved}}",
-    "detail": "They were uploaded and read, but until you save them they don't show in your movements, budgets, income or reports.",
-    "files": "{count, plural, one {# file} other {# files}}",
+    "detail": "They were uploaded and read, but until you save them they don't show in your movements, budgets, income or reports. This is what will be saved:",
     "after": "Once saved, Cifra looks for transfers between your accounts, recurring income and duplicates, and proposes a category for each. Money coming in that it doesn't recognize is asked about in Review.",
     "action": "{files, plural, one {Save the file} other {Save the # files}}",
     "answerFirst": "{count, plural, one {First answer the question above about the repeated movement.} other {First answer the # questions above about repeated movements.}}",
     "done": "{filed, plural, one {# movement saved} other {# movements saved}} from {files, plural, one {# file} other {# files}}.",
     "toReview": "See what Cifra is asking you",
     "heldBack": "{count, plural, one {One file was not saved: it says it belongs to another account. Open it in its queue to move it.} other {# files were not saved: they say they belong to another account. Open them in their queue to move them.}}",
-    "nothing": "There were no new movements to save."
+    "nothing": "There were no new movements to save.",
+    "summary": {
+      "files": "{count, plural, one {# file} other {# files}}",
+      "inflow": "Money in · {count}",
+      "outflow": "Money out · {count}",
+      "skipped": "{count, plural, one {One repeated or already recorded movement is not counted.} other {# repeated or already recorded movements are not counted.}}",
+      "cardPayments": "{count, plural, one {Of the money out, # is a payment to your cards and is not spending:} other {Of the money out, # are payments to your cards and are not spending:}}",
+      "paysCard": "payment to {card}",
+      "seeDetail": "See the detail",
+      "hideDetail": "Hide the detail",
+      "inflowTab": "Money in · {count}",
+      "outflowTab": "Money out · {count}",
+      "emptyTab": "No movements here."
+    }
+  },
+  "cardLinks": {
+    "title": "{count, plural, one {Payments to a card we don't recognise} other {Payments to # cards we don't recognise}}",
+    "detail": "The bank prints card digits that do not match the ones you saved; it often shows the first four and you saved the last four. Tell us which card they belong to: they then count as payments to that card, not spending, now and in future statements.",
+    "digits": "Payments to card {digits}",
+    "seen": "{count, plural, one {# payment} other {# payments}}, for example «{example}»",
+    "which": "Which of your cards is it?",
+    "whichHint": "We picked one of the brand the bank prints.",
+    "link": "Link to {card}",
+    "register": "It's another card: register it",
+    "linked": "{count, plural, =0 {Linked to {card}.} one {Linked to {card}: # payment counts as a card payment.} other {Linked to {card}: # payments count as card payments.}}",
+    "failed": "It couldn't be linked. Check that the card has its debt registered and try again."
   }
 }

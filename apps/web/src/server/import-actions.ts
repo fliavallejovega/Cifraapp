@@ -9,7 +9,7 @@ import {
   transactions,
 } from '@app/database/schema';
 import { Money, newId } from '@app/domain';
-import { digitsDisagree } from '@app/transaction-engine';
+import { cardPaymentDigits, digitsDisagree } from '@app/transaction-engine';
 import { and, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { after } from 'next/server';
@@ -908,4 +908,87 @@ export async function undoRepeatMerge(input: {
 
   revalidatePath(`/${input.locale === 'en' ? 'en' : 'es'}/documents`);
   return { ok: true };
+}
+
+/**
+ * «Those payments are to this card»: links the digits a bank printed on card
+ * payments to a card the household registered, and marks the payments still
+ * waiting to be saved as payments to that card's debt — transfers, not
+ * expenses. Future statements pick the link up when they are read.
+ */
+export async function linkCardDigits(input: {
+  readonly digits: string;
+  readonly accountId: string;
+  readonly locale: string;
+}): Promise<{ readonly error?: string; readonly linked?: number }> {
+  const session = await loadSession();
+  if (!session?.activeHouseholdId) return { error: 'signInRequired' };
+  const accountId = z.uuid().safeParse(input.accountId);
+  const digits = z
+    .string()
+    .regex(/^\d{4}$/)
+    .safeParse(input.digits);
+  if (!accountId.success || !digits.success) return { error: 'notFound' };
+  const householdId = session.activeHouseholdId;
+
+  const linked = await queryAsUser(session, async (tx) => {
+    const [card] = await tx
+      .select({ id: accounts.id, aliases: accounts.cardAliasDigits })
+      .from(accounts)
+      .where(
+        and(
+          eq(accounts.id, accountId.data),
+          eq(accounts.householdId, householdId),
+          eq(accounts.accountType, 'credit_card'),
+          isNull(accounts.deletedAt),
+        ),
+      )
+      .limit(1);
+    if (!card) return null;
+
+    const [debt] = await tx
+      .select({ id: debts.id })
+      .from(debts)
+      .where(and(eq(debts.accountId, card.id), isNull(debts.deletedAt)))
+      .limit(1);
+    if (!debt) return null;
+
+    if (!card.aliases.includes(digits.data)) {
+      await tx
+        .update(accounts)
+        .set({ cardAliasDigits: [...card.aliases, digits.data] })
+        .where(eq(accounts.id, card.id));
+    }
+
+    // The same reading the engine does — `cardPaymentDigits` — over the lines
+    // still waiting, so only payments to a card with these digits are marked.
+    const waiting = await tx
+      .select({ id: importRows.id, description: importRows.descriptionOriginal })
+      .from(importRows)
+      .innerJoin(imports, eq(imports.id, importRows.importId))
+      .where(
+        and(
+          eq(imports.householdId, householdId),
+          eq(imports.status, 'review'),
+          eq(importRows.verdict, 'new'),
+          isNull(importRows.createdTransactionId),
+          isNull(importRows.applyToDebtId),
+          sql`${importRows.amount} < 0`,
+        ),
+      );
+    const ids = waiting
+      .filter((row) => cardPaymentDigits(row.description ?? '') === digits.data)
+      .map((row) => row.id);
+    if (ids.length > 0) {
+      await tx
+        .update(importRows)
+        .set({ applyToDebtId: debt.id })
+        .where(inArray(importRows.id, ids));
+    }
+    return ids.length;
+  });
+
+  if (linked === null) return { error: 'cannotLink' };
+  revalidatePath(`/${input.locale === 'en' ? 'en' : 'es'}/documents`);
+  return { linked };
 }

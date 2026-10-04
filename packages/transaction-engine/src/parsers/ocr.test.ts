@@ -190,4 +190,43 @@ describe('readLooseDate', () => {
     expect(statement.accountHint).toBe('0209');
     expect(statement.rejected).toEqual([]);
   });
+
+  it('en una cuenta de banco con signos, el menos impreso decide aunque el lector se equivoque', () => {
+    const { transactions } = readOcrRows(
+      [
+        row({ amount: '-$50.00', direction: 'credit' }),
+        row({ amount: '$225.00', direction: 'debit' }),
+        row({ amount: '$0.05', direction: 'unknown' }),
+      ],
+      { ...options, accountKind: 'bank' },
+    );
+    expect(transactions.map((t) => t.direction)).toEqual(['outflow', 'inflow', 'inflow']);
+    expect(transactions.map((t) => t.amount.toDecimalString())).toEqual([
+      '-50.0000',
+      '225.0000',
+      '0.0500',
+    ]);
+  });
+
+  it('en una tarjeta el signo no decide: manda lo que la página dice de cada línea', () => {
+    const { transactions } = readOcrRows(
+      [
+        row({ amount: '-$50.00', direction: 'debit' }),
+        row({ amount: '$100.00', direction: 'credit' }),
+      ],
+      { ...options, accountKind: 'card' },
+    );
+    expect(transactions.map((t) => t.direction)).toEqual(['outflow', 'inflow']);
+  });
+
+  it('sin signos en la página (columnas de débito y crédito) manda el lector', () => {
+    const { transactions } = readOcrRows(
+      [
+        row({ amount: '50.00', direction: 'debit' }),
+        row({ amount: '100.00', direction: 'credit' }),
+      ],
+      { ...options, accountKind: 'bank' },
+    );
+    expect(transactions.map((t) => t.direction)).toEqual(['outflow', 'inflow']);
+  });
 });

@@ -19,6 +19,8 @@ import { desc, eq } from 'drizzle-orm';
 import { getFormatter, getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { RepeatQuestions } from '@/components/statements/repeat-questions';
+import { CardLinks } from '@/components/statements/card-links';
+import { PendingSummary } from '@/components/statements/pending-summary';
 import { SaveAll } from '@/components/statements/save-all';
 import { StatementUploader } from '@/components/statements/statement-uploader';
 import { Link } from '@/i18n/navigation';
@@ -26,6 +28,8 @@ import { formatPlainDate } from '@/lib/format';
 import { loadHouseholdContext } from '@/server/household-context';
 import { loadAccountOptions } from '@/server/repositories/administration';
 import { loadStatementCoverage } from '@/server/repositories/statement-coverage';
+import { loadCardPaymentsToLink } from '@/server/repositories/card-payments';
+import { loadPendingSummary } from '@/server/repositories/pending-summary';
 import { loadRepeatQuestions } from '@/server/repositories/repeat-questions';
 import { loadStatementQueues } from '@/server/repositories/statement-queue';
 import { queryAsUser, requireHousehold } from '@/server/session';
@@ -83,6 +87,11 @@ export default async function DocumentsPage({ params }: { params: Promise<{ loca
   const [queues, repeats] = await Promise.all([
     loadStatementQueues(session, session.activeHouseholdId),
     loadRepeatQuestions(session, session.activeHouseholdId),
+  ]);
+  // After the repeats are settled, so the summary counts what will be filed.
+  const [pending, cardPayments] = await Promise.all([
+    loadPendingSummary(session, session.activeHouseholdId),
+    loadCardPaymentsToLink(session, session.activeHouseholdId),
   ]);
 
   return (
@@ -153,18 +162,47 @@ export default async function DocumentsPage({ params }: { params: Promise<{ loca
         </div>
       )}
 
-      {coverage.awaiting.length > 0 && (
+      {cardPayments.unmatched.length > 0 && (
+        <div className="mb-8">
+          <CardLinks
+            locale={locale}
+            groups={cardPayments.unmatched.map((group) => ({
+              digits: group.digits,
+              example: group.example,
+              count: group.count,
+              total: (
+                <Amount
+                  value={Money.fromDecimalString(
+                    group.total,
+                    group.currency === 'PAB' ? 'PAB' : 'USD',
+                  )}
+                  size="sm"
+                />
+              ),
+            }))}
+            cards={cardPayments.cards.map((card) => ({
+              accountId: card.accountId,
+              label: card.maskedNumber ? `${card.name} · ${card.maskedNumber}` : card.name,
+              network: card.network,
+            }))}
+          />
+        </div>
+      )}
+
+      {pending.length > 0 && (
         <div className="mb-8">
           <SaveAll
             locale={locale}
             repeatsOpen={repeats.questions.length}
-            accounts={coverage.awaiting.map((account) => ({
-              accountId: account.accountId,
-              label: account.maskedNumber
-                ? `${account.name} · ${account.maskedNumber}`
-                : account.name,
-              files: account.files,
-            }))}
+            files={pending.reduce((sum, account) => sum + account.files, 0)}
+            summary={<PendingSummary accounts={pending} locale={locale} />}
+            {...(cardPayments.unmatched.length > 0
+              ? {
+                  warning: t('cardsUnlinked', {
+                    count: cardPayments.unmatched.reduce((sum, group) => sum + group.count, 0),
+                  }),
+                }
+              : {})}
           />
         </div>
       )}

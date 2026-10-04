@@ -1,7 +1,7 @@
 import { Money } from '@app/domain';
 import { describe, expect, it } from 'vitest';
 
-import { proposeDebt, type DebtTarget } from './debt-match.js';
+import { cardPaymentDigits, proposeDebt, type DebtTarget } from './debt-match.js';
 
 /**
  * Lo que se prueba aquí es sobre todo cuándo **no** se propone.
@@ -79,10 +79,9 @@ describe('proposeDebt', () => {
     // Una entrada no baja una deuda: la sube, o es otra cosa. En los dos casos
     // no es esto.
     expect(
-      proposeDebt(
-        { descriptionNormalized: 'pago a giovanni cintione', direction: 'inflow' },
-        [giovanni],
-      ),
+      proposeDebt({ descriptionNormalized: 'pago a giovanni cintione', direction: 'inflow' }, [
+        giovanni,
+      ]),
     ).toBeNull();
   });
 
@@ -114,5 +113,38 @@ describe('proposeDebt', () => {
   it('no se cae sin deudas ni con descripción vacía', () => {
     expect(proposeDebt(out('cualquier cosa'), [])).toBeNull();
     expect(proposeDebt(out('   '), [giovanni])).toBeNull();
+  });
+});
+
+describe('cardPaymentDigits', () => {
+  it('lee los dígitos que el banco imprime en un pago a tarjeta', () => {
+    expect(cardPaymentDigits('BANCA MOVIL PAGO VISA 4468-...')).toBe('4468');
+    expect(cardPaymentDigits('PAGO TARJETA *0209')).toBe('0209');
+    expect(cardPaymentDigits('PAGO MASTERCARD 5412 REF 99')).toBe('5412');
+  });
+
+  it('no confunde una transferencia con un pago a tarjeta', () => {
+    expect(cardPaymentDigits('BANCA MOVIL TRANSFERENCIA 4468')).toBeNull();
+    expect(cardPaymentDigits('YAPPY BG A JOSE 1234')).toBeNull();
+  });
+});
+
+describe('proposeDebt con dígitos vinculados', () => {
+  it('reconoce el pago por los primeros cuatro que la casa vinculó a la tarjeta', () => {
+    const proposal = proposeDebt(
+      { descriptionNormalized: 'banca movil pago visa 4468', direction: 'outflow' },
+      [
+        {
+          debtId: 'd1',
+          label: 'Visa Blei BG',
+          counterpartyNormalized: null,
+          maskedNumber: '0931',
+          aliasDigits: ['4468'],
+          isCard: true,
+          outstanding: Money.fromDecimalString('500', 'USD'),
+        },
+      ],
+    );
+    expect(proposal).toEqual({ debtId: 'd1', because: 'card_digits', label: 'Visa Blei BG' });
   });
 });

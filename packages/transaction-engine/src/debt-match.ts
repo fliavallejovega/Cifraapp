@@ -38,6 +38,11 @@ export interface DebtTarget {
   readonly counterpartyNormalized: string | null;
   /** Los últimos cuatro de la tarjeta que la lleva, cuando es una tarjeta. */
   readonly maskedNumber: string | null;
+  /**
+   * Otros grupos de cuatro que el banco imprime para esta tarjeta y que la casa
+   * vinculó — el banco suele mostrar los primeros cuatro, no los últimos.
+   */
+  readonly aliasDigits?: readonly string[];
   readonly isCard: boolean;
   readonly outstanding: Money;
 }
@@ -93,8 +98,11 @@ export function proposeDebt(
     transferencia todo el tiempo.
   */
   for (const debt of debts) {
-    if (!debt.isCard || !debt.maskedNumber) continue;
-    if (new RegExp(`(^|\\D)${debt.maskedNumber}(\\D|$)`).test(text)) {
+    if (!debt.isCard) continue;
+    const groups = [debt.maskedNumber, ...(debt.aliasDigits ?? [])].filter(
+      (digits): digits is string => typeof digits === 'string' && /^\d{4}$/.test(digits),
+    );
+    if (groups.some((digits) => new RegExp(`(^|\\D)${digits}(\\D|$)`).test(text))) {
       return { debtId: debt.debtId, because: 'card_digits', label: debt.label };
     }
   }
@@ -127,4 +135,19 @@ function namedIn(text: string, name: string): boolean {
   if (parts.length === 0) return false;
 
   return parts.every((part) => words.has(part));
+}
+
+/**
+ * Los cuatro dígitos de un pago a tarjeta, tal como el banco los imprime.
+ *
+ * «BANCA MOVIL PAGO VISA 4468-...», «PAGO TARJETA *0209», «PAGO MASTERCARD
+ * 5412». Sólo pagos a tarjeta: una transferencia con cuatro dígitos en la
+ * referencia no es esto, y confundirlas convertiría un gasto en un pago.
+ */
+export function cardPaymentDigits(description: string): string | null {
+  const match =
+    /\bPAGO\s+(?:A\s+)?(?:TARJETA(?:\s+DE\s+CR[EÉ]DITO)?|TDC|TC|VISA|MASTER\s*CARD|MC|AMEX|AMERICAN\s+EXPRESS|DINERS)\b\D{0,8}?(\d{4})(?!\d)/iu.exec(
+      description,
+    );
+  return match?.[1] ?? null;
 }

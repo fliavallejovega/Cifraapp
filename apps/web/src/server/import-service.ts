@@ -307,12 +307,19 @@ registerJobHandler(STATEMENT_IMPORT_JOB, async (job, report) => {
       await report(45, 'reading_scan');
 
       const referenceDate = await uploadDay(db, job.householdId, payload.uploadedAt);
+      // Bank or card: a printed minus means opposite things in each.
+      const [held] = await db
+        .select({ type: accounts.accountType })
+        .from(accounts)
+        .where(eq(accounts.id, accountId))
+        .limit(1);
       const read = await readStatementByOcr({
         bytes,
         mimeType,
         accountId,
         currency,
         referenceDate,
+        ...(held ? { accountKind: held.type === 'credit_card' ? 'card' : 'bank' } : {}),
       });
       if (read.ok) {
         parsed = read.statement;
@@ -559,7 +566,10 @@ async function fileImportRows(
         kind: debts.kind,
         outstanding: debts.currentBalance,
         maskedNumber: sql<string | null>`(
-          select a.masked_number from app.accounts a where a.id = ${debts.accountId}
+          select a.masked_number from app.accounts a where a.id = app.debts.account_id
+        )`,
+        aliasDigits: sql<string[] | null>`(
+          select a.card_alias_digits from app.accounts a where a.id = app.debts.account_id
         )`,
       })
       .from(debts)
@@ -569,6 +579,7 @@ async function fileImportRows(
     label: row.label,
     counterpartyNormalized: row.counterpartyNormalized,
     maskedNumber: row.maskedNumber,
+    aliasDigits: row.aliasDigits ?? [],
     isCard: row.kind === 'credit_card',
     outstanding: Money.fromDecimalString(row.outstanding, input.currency),
   }));

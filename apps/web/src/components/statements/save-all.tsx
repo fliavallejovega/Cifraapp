@@ -2,7 +2,7 @@
 
 import { Button, Card, Status } from '@app/ui';
 import { useTranslations } from 'next-intl';
-import { useState, useTransition } from 'react';
+import { useState, useTransition, type ReactNode } from 'react';
 
 import { Link, useRouter } from '@/i18n/navigation';
 import { saveAllReviewed, type SaveAllResult } from '@/server/import-actions';
@@ -17,26 +17,25 @@ import { saveAllReviewed, type SaveAllResult } from '@/server/import-actions';
  * answered first; that is why the button waits for them.
  */
 
-export interface AwaitingAccount {
-  readonly accountId: string;
-  readonly label: string;
-  readonly files: number;
-}
-
 export function SaveAll({
-  accounts,
+  files,
+  summary,
   repeatsOpen,
   locale,
+  warning,
 }: {
-  readonly accounts: readonly AwaitingAccount[];
+  readonly files: number;
+  /** What saving would file, per account — rendered on the server, where the money lives. */
+  readonly summary: ReactNode;
   readonly repeatsOpen: number;
   readonly locale: string;
+  /** Something saving now would get wrong, said before the button. */
+  readonly warning?: ReactNode;
 }) {
   const t = useTranslations('saveAll');
   const router = useRouter();
   const [pending, start] = useTransition();
   const [result, setResult] = useState<SaveAllResult | null>(null);
-  const files = accounts.reduce((sum, account) => sum + account.files, 0);
 
   if (files === 0 && !result?.filed) return null;
 
@@ -46,20 +45,16 @@ export function SaveAll({
       <p className="mt-1 max-w-[68ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]">
         {t('detail')}
       </p>
-      <ul className="mt-4 flex list-none flex-col gap-2 p-0">
-        {accounts.map((account) => (
-          <li key={account.accountId} className="flex flex-wrap justify-between gap-x-4 text-sm">
-            <span className="min-w-0 font-medium [overflow-wrap:anywhere]">{account.label}</span>
-            <span className="tabular shrink-0 text-[color:var(--color-ink-secondary)]">
-              {t('files', { count: account.files })}
-            </span>
-          </li>
-        ))}
-      </ul>
+      <div className="mt-4">{summary}</div>
       <p className="mt-4 max-w-[68ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]">
         {t('after')}
       </p>
       <div className="mt-4 flex flex-col gap-2">
+        {warning && (
+          <p className="max-w-[68ch] text-sm text-pretty text-[color:var(--color-caution)]">
+            {warning}
+          </p>
+        )}
         <Button
           size="lg"
           className="self-start"

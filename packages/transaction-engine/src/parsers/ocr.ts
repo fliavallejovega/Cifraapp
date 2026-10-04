@@ -78,6 +78,12 @@ export interface OcrParseOptions {
   readonly printedYear?: number;
   /** Los dígitos de la cuenta o tarjeta tal como el lector los vio impresos. */
   readonly accountDigits?: string;
+  /**
+   * Cuenta de banco o tarjeta. En una cuenta de banco que imprime signos, el
+   * signo decide la dirección; en una tarjeta, o sin saberlo, decide lo que el
+   * lector leyó de cada línea.
+   */
+  readonly accountKind?: 'bank' | 'card';
 }
 
 /**
@@ -91,6 +97,10 @@ const MAX_ROWS = 600;
 
 export function readOcrRows(rows: readonly OcrRow[], options: OcrParseOptions): ParsedStatement {
   const dayFirst = options.dayFirst ?? true;
+  // ¿La página marca con un menos? Sólo entonces el signo impreso es la
+  // convención de esa página — en un estado con columnas de débito y crédito
+  // nada lleva menos y el signo no dice nada.
+  const pageSigns = rows.some((row) => printedMinus(row.amount));
   const transactions: CandidateTransaction[] = [];
   const rejected: RejectedRow[] = [];
 
@@ -126,7 +136,7 @@ export function readOcrRows(rows: readonly OcrRow[], options: OcrParseOptions): 
       return;
     }
 
-    const direction = directionOf(row.direction);
+    const direction = settleDirection(row, pageSigns, options.accountKind);
     // Signed like every other parser: the sign is the direction downstream.
     // Filing reads it from the amount, so an unsigned outflow would be filed as
     // money coming in.
@@ -271,6 +281,26 @@ export function readLooseDate(
  * líneas, todo esto entra a revisión igual, y corregir una casilla cuesta menos
  * que dar por recibido dinero que nadie recibió.
  */
+function settleDirection(
+  row: OcrRow,
+  pageSigns: boolean,
+  kind: 'bank' | 'card' | undefined,
+): 'inflow' | 'outflow' {
+  // En una cuenta de banco, cuando la página usa signos, lo impreso gana sobre
+  // lo que el lector interpretó: menos es salida, sin signo es entrada. Es igual
+  // en todos los bancos. En una tarjeta no: unas apps marcan la compra con
+  // menos y otras el pago, así que ahí decide lo que la página dice de cada
+  // línea.
+  if (pageSigns && kind === 'bank') return printedMinus(row.amount) ? 'outflow' : 'inflow';
+  return directionOf(row.direction);
+}
+
+/** `-40.00`, `-$40.00`, `B/. -40.00`, `(40.00)`, `40.00-`, `−40`: un menos impreso. */
+function printedMinus(amount: string): boolean {
+  const text = amount.trim();
+  return /^[^\d]*[-\u2212]/.test(text) || /^\(.*\)$/.test(text) || /\d\s*-$/.test(text);
+}
+
 function directionOf(declared: string): 'inflow' | 'outflow' {
   const said = declared.trim().toLowerCase();
   return said === 'credit' || said === 'inflow' ? 'inflow' : 'outflow';

@@ -865,7 +865,8 @@
       "card": "Tarjeta {digits}",
       "months": "falta {months}",
       "never": "nunca subiste un estado de cuenta de esta"
-    }
+    },
+    "cardsUnlinked": "{count, plural, one {Si guardas ahora, el pago a una tarjeta que no reconocemos cuenta como gasto. Vincúlalo arriba primero.} other {Si guardas ahora, los # pagos a tarjetas que no reconocemos cuentan como gasto. Vincúlalos arriba primero.}}"
   },
   "nav": {
     "label": "Secciones",
@@ -5328,14 +5329,38 @@
   },
   "saveAll": {
     "title": "{files, plural, one {Un archivo leído espera que lo guardes} other {# archivos leídos esperan que los guardes}}",
-    "detail": "Ya se subieron y se leyeron, pero hasta que los guardes no aparecen en tus movimientos, presupuestos, ingresos ni reportes.",
-    "files": "{count, plural, one {# archivo} other {# archivos}}",
+    "detail": "Ya se subieron y se leyeron, pero hasta que los guardes no aparecen en tus movimientos, presupuestos, ingresos ni reportes. Esto es lo que se va a guardar:",
     "after": "Al guardarlos, Cifra busca transferencias entre tus cuentas, ingresos que se repiten y movimientos duplicados, y propone un rubro a cada uno. Las entradas de dinero que no reconozca te las pregunta en Revisar.",
     "action": "{files, plural, one {Guardar el archivo} other {Guardar los # archivos}}",
     "answerFirst": "{count, plural, one {Responde primero la pregunta de arriba sobre el movimiento repetido.} other {Responde primero las # preguntas de arriba sobre movimientos repetidos.}}",
     "done": "{filed, plural, one {# movimiento guardado} other {# movimientos guardados}} de {files, plural, one {# archivo} other {# archivos}}.",
     "toReview": "Ver lo que Cifra te pregunta",
     "heldBack": "{count, plural, one {Un archivo quedó sin guardar: dice ser de otra cuenta. Ábrelo en su cola para moverlo.} other {# archivos quedaron sin guardar: dicen ser de otra cuenta. Ábrelos en su cola para moverlos.}}",
-    "nothing": "No había movimientos nuevos que guardar."
+    "nothing": "No había movimientos nuevos que guardar.",
+    "summary": {
+      "files": "{count, plural, one {# archivo} other {# archivos}}",
+      "inflow": "Entradas · {count}",
+      "outflow": "Salidas · {count}",
+      "skipped": "{count, plural, one {Un movimiento repetido o ya registrado no se cuenta.} other {# movimientos repetidos o ya registrados no se cuentan.}}",
+      "cardPayments": "{count, plural, one {De las salidas, # es pago a tus tarjetas y no cuenta como gasto:} other {De las salidas, # son pagos a tus tarjetas y no cuentan como gasto:}}",
+      "paysCard": "pago a {card}",
+      "seeDetail": "Ver el detalle",
+      "hideDetail": "Ocultar el detalle",
+      "inflowTab": "Entradas · {count}",
+      "outflowTab": "Salidas · {count}",
+      "emptyTab": "No hay movimientos aquí."
+    }
+  },
+  "cardLinks": {
+    "title": "{count, plural, one {Pagos a una tarjeta que no reconocemos} other {Pagos a # tarjetas que no reconocemos}}",
+    "detail": "El banco imprime unos dígitos de la tarjeta que no coinciden con los que guardaste; muchas veces muestra los primeros cuatro y tú guardaste los últimos. Dinos de qué tarjeta son: así cuentan como pago a esa tarjeta y no como gasto, ahora y en los próximos estados.",
+    "digits": "Pagos a la tarjeta {digits}",
+    "seen": "{count, plural, one {# pago} other {# pagos}}, por ejemplo «{example}»",
+    "which": "¿De cuál de tus tarjetas es?",
+    "whichHint": "Elegimos una de la misma marca que imprime el banco.",
+    "link": "Vincular con {card}",
+    "register": "Es otra tarjeta: registrarla",
+    "linked": "{count, plural, =0 {Vinculada con {card}.} one {Vinculada con {card}: # pago cuenta como pago a la tarjeta.} other {Vinculada con {card}: # pagos cuentan como pago a la tarjeta.}}",
+    "failed": "No se pudo vincular. Revisa que la tarjeta tenga su deuda registrada e inténtalo de nuevo."
   }
 }

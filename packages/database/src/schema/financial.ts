@@ -170,6 +170,10 @@ export const accounts = appSchema.table(
     name: text('name').notNull(),
     /** Last four digits at most. Full account numbers are never stored. */
     maskedNumber: text('masked_number'),
+    cardAliasDigits: text('card_alias_digits')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
     accountType: accountType('account_type').notNull(),
     scope: financialScope('scope').notNull().default('household'),
     currency: char('currency', { length: 3 })

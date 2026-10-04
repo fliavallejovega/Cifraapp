@@ -97,7 +97,12 @@ export {
   type YearMonth,
 } from './statement-coverage.js';
 
-export { proposeDebt, type DebtProposal, type DebtTarget } from './debt-match.js';
+export {
+  cardPaymentDigits,
+  proposeDebt,
+  type DebtProposal,
+  type DebtTarget,
+} from './debt-match.js';
 
 export {
   resolveRepeatLines,
