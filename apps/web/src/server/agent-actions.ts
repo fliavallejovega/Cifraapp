@@ -1,13 +1,14 @@
 'use server';
 
-import { chatMessages, chatThreads, tripLegs } from '@app/database/schema';
+import { chatMessages, chatThreads, obligations, tripLegs } from '@app/database/schema';
 import { and, asc, desc, eq, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 
 import { assignAccountOwner } from './account-actions';
 import { runAgentTurn, type AgentProposal, type AgentScope } from './agent';
 import { copilotIsConfigured } from './ai';
-import { setMovementCategory } from './movement-actions';
+import { createManualMovement, setMovementCategory } from './movement-actions';
+import { revalidateFinancials } from './revalidate';
 import { conversationGrounding } from './repositories/chat-opening';
 import { loadSession, queryAsUser } from './session';
 import { saveTripLeg } from './trip-actions';
@@ -227,6 +228,48 @@ async function execute(
     form.set('locale', locale);
     const result = await assignAccountOwner({}, form);
     return result.error ? { error: result.error } : {};
+  }
+
+  if (proposal.kind === 'record_movement') {
+    const [amountText = '', date = '', ...rest] = proposal.value.split('|');
+    const form = new FormData();
+    form.set('accountId', proposal.target);
+    form.set('transactionDate', date);
+    form.set('amount', amountText.replace('-', ''));
+    form.set('direction', amountText.startsWith('-') ? 'outflow' : 'inflow');
+    form.set('description', rest.join('|').trim());
+    form.set('locale', locale);
+    const result = await createManualMovement({}, form);
+    return result.error ? { error: result.error } : {};
+  }
+
+  if (proposal.kind === 'set_commitment_amount') {
+    const session = await loadSession();
+    if (!session?.activeHouseholdId) return { error: 'signInRequired' };
+    const householdId = session.activeHouseholdId;
+    const amount = z
+      .string()
+      .regex(/^\d{1,9}(\.\d{1,2})?$/)
+      .safeParse(proposal.value);
+    if (!amount.success) return { error: 'amountInvalid' };
+    const [updated] = await queryAsUser(session, (tx) =>
+      tx
+        .update(obligations)
+        .set({ expectedAmount: amount.data, updatedAt: new Date() })
+        .where(
+          and(
+            eq(obligations.id, proposal.target),
+            eq(obligations.householdId, householdId),
+            isNull(obligations.deletedAt),
+          ),
+        )
+        .returning({ id: obligations.id }),
+    );
+    if (!updated) return { error: 'notFound' };
+    const form = new FormData();
+    form.set('locale', locale);
+    revalidateFinancials(form);
+    return {};
   }
 
   // A trip leg: the whole leg is re-read and saved with one field changed, through

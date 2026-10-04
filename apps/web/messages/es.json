@@ -478,6 +478,11 @@
         "quarterly": "cada trimestre",
         "annual": "cada año"
       }
+    },
+    "pending": {
+      "body": "{count, plural, one {Tienes 1 cosa por revisar.} other {Tienes # cosas por revisar.}}",
+      "withSafe": "{count, plural, one {Tienes 1 cosa por revisar} other {Tienes # cosas por revisar}}; {safe, plural, one {1 ya la puedes aprobar de un toque.} other {# ya las puedes aprobar de un toque.}}",
+      "action": "Ir a Por revisar"
     }
   },
   "plan": {
@@ -2209,7 +2214,13 @@
     },
     "markPaid": "Ya lo pagué",
     "undoPaid": "Deshacer el pago",
-    "paidOn": "Pagado el {date}"
+    "paidOn": "Pagado el {date}",
+    "minimums": {
+      "title": "También sale cada mes",
+      "detail": "El pago mínimo de cada deuda. Se cuenta en tu disponible junto con los compromisos de arriba.",
+      "day": "Vence el día {day}",
+      "link": "Ver tus deudas"
+    }
   },
   "categories": {
     "title": "Rubros de gasto",

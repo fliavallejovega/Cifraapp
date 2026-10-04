@@ -1,7 +1,14 @@
 import 'server-only';
 
 import { AGENT_ANSWER_V1, AGENT_ROUTE_V1, type PromptLocale } from '@app/ai';
-import { accounts, categories, transactions, tripLegs, trips } from '@app/database/schema';
+import {
+  accounts,
+  categories,
+  obligations,
+  transactions,
+  tripLegs,
+  trips,
+} from '@app/database/schema';
 import { formatMoney, Money, type CurrencyCode } from '@app/domain';
 import { and, asc, desc, eq, gte, ilike, isNull, lte, or, sql } from 'drizzle-orm';
 
@@ -36,7 +43,12 @@ export type AgentScope =
   { readonly kind: 'finances' } | { readonly kind: 'trip'; readonly tripId: string };
 
 export type ProposalKind =
-  'recategorize_movement' | 'set_account_owner' | 'set_leg_dates' | 'set_leg_lodging';
+  | 'recategorize_movement'
+  | 'set_account_owner'
+  | 'set_leg_dates'
+  | 'set_leg_lodging'
+  | 'record_movement'
+  | 'set_commitment_amount';
 
 export interface AgentProposal {
   readonly kind: ProposalKind;
@@ -66,6 +78,8 @@ interface Known {
   people: Map<string, string>;
   legs: Map<string, { city: string; tripId: string }>;
   tripWindow: { start: string; end: string } | null;
+  commitments: Map<string, string>;
+  today: string;
 }
 
 export async function runAgentTurn(
@@ -122,6 +136,8 @@ export async function runAgentTurn(
     people: new Map(),
     legs: new Map(),
     tripWindow: null,
+    commitments: new Map(),
+    today: context.today,
   };
 
   const plan = await loadPlan(session, householdId);
@@ -165,6 +181,22 @@ export async function runAgentTurn(
     if (lookup.lookup === 'trip' && input.scope.kind === 'trip') {
       facts['trip'] = await lookupTrip(session, householdId, input.scope.tripId, known);
     }
+  }
+
+  /*
+    Lo que la casa dice que pasó o cambió —«gasté 20 en el súper», «el alquiler
+    subió a 900»— necesita saber en qué cuenta y qué compromiso. Las cuentas y
+    los compromisos van siempre, así el asistente puede armar el cambio y la
+    persona sólo toca Aplicar.
+  */
+  if (input.scope.kind === 'finances') {
+    facts['accounts'] ??= await lookupAccounts(
+      session,
+      householdId,
+      context.today.slice(0, 7),
+      known,
+    );
+    facts['commitments'] = await lookupCommitments(session, householdId, money, known);
   }
 
   const tripDays = known.tripWindow ? calendar(known.tripWindow.start, known.tripWindow.end) : [];
@@ -276,6 +308,37 @@ async function lookupMovements(
       known.movements.set(row.id, row.description);
       const amount = money(Money.fromDecimalString(row.amount, currency).abs());
       return `${row.id} | ${row.date} | ${row.description} | ${row.direction === 'inflow' ? 'in' : 'out'} ${amount} | category: ${row.category ?? 'none'} | account: ${row.account}`;
+    })
+    .join('\n');
+}
+
+async function lookupCommitments(
+  session: Session,
+  householdId: string,
+  money: (value: Money) => string,
+  known: Known,
+): Promise<string> {
+  const rows = await queryAsUser(session, (tx) =>
+    tx
+      .select({
+        id: obligations.id,
+        name: obligations.name,
+        amount: obligations.expectedAmount,
+        currency: obligations.currency,
+        frequency: obligations.frequency,
+      })
+      .from(obligations)
+      .where(and(eq(obligations.householdId, householdId), isNull(obligations.deletedAt)))
+      .orderBy(asc(obligations.name))
+      .limit(60),
+  );
+  return rows
+    .map((row) => {
+      known.commitments.set(row.id, row.name);
+      const amount = money(
+        Money.fromDecimalString(row.amount, row.currency.trim() === 'PAB' ? 'PAB' : 'USD'),
+      );
+      return `commitment ${row.id} | ${row.name} | ${amount} | ${row.frequency ?? 'monthly'}`;
     })
     .join('\n');
 }
@@ -480,6 +543,32 @@ export function validateProposals(
           undecided: ['hospedaje por decidir', 'lodging undecided'],
         };
         label = `${leg.city}: ${names[value]?.[es ? 0 : 1] ?? value}`;
+      }
+    }
+
+    if (kind === 'record_movement') {
+      const account = known.accounts.get(target);
+      const [amountText = '', date = '', ...rest] = value.split('|');
+      const description = rest.join('|').trim().slice(0, 80);
+      if (
+        account &&
+        /^-?\d{1,9}(\.\d{1,2})?$/.test(amountText) &&
+        Number(amountText) !== 0 &&
+        DATE.test(date) &&
+        date <= known.today &&
+        description !== ''
+      ) {
+        const spent = amountText.startsWith('-');
+        const shown = amountText.replace('-', '');
+        label = es
+          ? `${spent ? 'Registrar gasto' : 'Registrar ingreso'} de ${shown} · ${description} · ${account} · ${date}`
+          : `${spent ? 'Record spending' : 'Record income'} of ${shown} · ${description} · ${account} · ${date}`;
+      }
+    }
+    if (kind === 'set_commitment_amount') {
+      const commitment = known.commitments.get(target);
+      if (commitment && /^\d{1,9}(\.\d{1,2})?$/.test(value) && Number(value) > 0) {
+        label = es ? `${commitment} pasa a ${value}` : `${commitment} becomes ${value}`;
       }
     }
 

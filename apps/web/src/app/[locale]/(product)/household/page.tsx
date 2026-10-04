@@ -18,7 +18,7 @@ const SECTIONS = [
   { key: 'money', items: ['accounts', 'cards', 'offers', 'investments'] },
   { key: 'flows', items: ['income', 'commitments', 'debts', 'budgets', 'goals', 'trips'] },
   { key: 'order', items: ['review', 'categories', 'rules', 'merchants', 'familyExpenses'] },
-  { key: 'ahead', items: ['advice', 'alerts', 'projection', 'scenarios', 'debtSimulator', 'chat'] },
+  { key: 'ahead', items: ['advice', 'alerts', 'projection', 'scenarios', 'debtSimulator'] },
   { key: 'record', items: ['reports', 'close', 'exports'] },
   {
     key: 'home',
@@ -47,7 +47,6 @@ const HREF: Record<(typeof SECTIONS)[number]['items'][number], string> = {
   projection: '/projection',
   scenarios: '/scenarios',
   debtSimulator: '/debt-simulator',
-  chat: '/chat',
   reports: '/reports',
   close: '/close',
   exports: '/exports',

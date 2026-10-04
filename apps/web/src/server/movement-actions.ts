@@ -12,9 +12,12 @@ import { Money, type CurrencyCode, type PlainDate } from '@app/domain';
 import { computeFingerprint, normalizeDescription } from '@app/transaction-engine';
 import { and, eq, isNull } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
+import { after } from 'next/server';
 import { z } from 'zod';
 
+import { scheduleAnalysis } from './analysis-service';
 import { learnFromCorrection } from './category-learning';
+import { runQueuedJobs } from './jobs';
 import { currencyOf } from './household-context';
 import {
   firstIssueKey,
@@ -501,6 +504,19 @@ export async function createManualMovement(
   });
 
   if (!created) return { error: 'accountRequired' };
+
+  // Without a category chosen, the same engines that classify an import look
+  // at it — a movement typed by hand is not left uncategorised by default.
+  if (!parsed.data.categoryId) {
+    await scheduleAnalysis(session, householdId);
+    after(async () => {
+      try {
+        await runQueuedJobs();
+      } catch (error: unknown) {
+        console.error('[movement] analysis run failed', { householdId, error });
+      }
+    });
+  }
 
   revalidateFinancials(formData);
 

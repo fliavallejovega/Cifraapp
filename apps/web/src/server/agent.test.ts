@@ -23,6 +23,7 @@ const CATEGORY = '01a08cdf-0000-7e51-a232-5ab200400001';
 const ACCOUNT = '01a08cdf-0000-7e51-a232-5ab200400002';
 const PERSON = '01a08cdf-0000-7e51-a232-5ab200400003';
 const LEG = '01a08cdf-0000-7e51-a232-5ab200400004';
+const COMMITMENT = '01a08cdf-0000-7e51-a232-5ab200400005';
 
 function known(): AgentKnown {
   return {
@@ -32,6 +33,8 @@ function known(): AgentKnown {
     people: new Map([[PERSON, 'Blei']]),
     legs: new Map([[LEG, { city: 'Venecia', tripId: 't' }]]),
     tripWindow: { start: '2026-12-09', end: '2026-12-27' },
+    commitments: new Map([[COMMITMENT, 'Arriendo']]),
+    today: '2026-10-04',
   };
 }
 
@@ -91,5 +94,35 @@ describe('validateProposals', () => {
     );
     expect(proposal?.label).toBe('Master Card Blei es de la casa');
     expect(proposal?.status).toBe('proposed');
+  });
+
+  it('records a movement the household described, and refuses one dated ahead or unnamed', () => {
+    const proposals = validateProposals(
+      [
+        {
+          kind: 'record_movement',
+          target: ACCOUNT,
+          value: '-20.00|2026-10-04|Supermercado',
+          reason: '',
+        },
+        { kind: 'record_movement', target: ACCOUNT, value: '-20.00|2026-10-09|Mañana', reason: '' },
+      ],
+      known(),
+      'es',
+    );
+    expect(proposals).toHaveLength(1);
+    expect(proposals[0]?.label).toContain('Registrar gasto de 20.00');
+  });
+
+  it('changes a commitment the lookups returned to the amount the household said', () => {
+    const proposals = validateProposals(
+      [
+        { kind: 'set_commitment_amount', target: COMMITMENT, value: '900', reason: '' },
+        { kind: 'set_commitment_amount', target: 'made-up', value: '900', reason: '' },
+      ],
+      known(),
+      'es',
+    );
+    expect(proposals.map((p) => p.label)).toEqual(['Arriendo pasa a 900']);
   });
 });

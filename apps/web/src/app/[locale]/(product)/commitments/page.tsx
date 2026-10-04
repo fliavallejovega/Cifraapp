@@ -13,9 +13,10 @@ import {
   settleDueCommitments,
   updateCommitment,
 } from '@/server/commitment-actions';
+import { Link } from '@/i18n/navigation';
 import { loadHouseholdContext } from '@/server/household-context';
 import { recordLabels } from '@/server/record-labels';
-import { loadCategories, loadCommitments } from '@/server/repositories/administration';
+import { loadCategories, loadCommitments, loadDebts } from '@/server/repositories/administration';
 import { requireHousehold } from '@/server/session';
 
 /**
@@ -36,10 +37,14 @@ export default async function CommitmentsPage({ params }: { params: Promise<{ lo
 
   const session = await requireHousehold(locale);
   const context = loadHouseholdContext(session, session.activeHouseholdId, locale);
-  const [commitments, categories] = await Promise.all([
+  const [commitments, categories, debts] = await Promise.all([
     loadCommitments(session, session.activeHouseholdId, context.currency),
     loadCategories(session, session.activeHouseholdId),
+    loadDebts(session, session.activeHouseholdId, context.currency),
   ]);
+  // What else leaves every month: the minimum on each debt. Shown here so a
+  // household reads one list of what goes out, not two screens.
+  const minimums = debts.filter((debt) => debt.minimumPayment.isPositive());
 
   const t = await getTranslations('commitments');
   const shared = await getTranslations('records');
@@ -269,6 +274,36 @@ export default async function CommitmentsPage({ params }: { params: Promise<{ lo
           />
         </Card>
       </Section>
+
+      {minimums.length > 0 && (
+        <Section title={t('minimums.title')} detail={t('minimums.detail')} className="mt-12">
+          <Card>
+            <ul className="grid list-none gap-3 p-0">
+              {minimums.map((debt) => (
+                <li key={debt.id} className="flex items-baseline justify-between gap-4">
+                  <span className="min-w-0">
+                    <span className="block text-sm font-medium break-words">{debt.name}</span>
+                    {debt.dueDay !== null && (
+                      <span className="block text-xs text-[color:var(--color-ink-secondary)]">
+                        {t('minimums.day', { day: debt.dueDay })}
+                      </span>
+                    )}
+                  </span>
+                  <span className="tabular shrink-0 text-sm">
+                    {formatMoney(debt.minimumPayment, { locale: context.moneyLocale })}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <Link
+              href="/debts"
+              className="mt-4 inline-flex min-h-11 items-center text-sm font-medium underline decoration-[color:var(--color-brand)] underline-offset-4"
+            >
+              {t('minimums.link')}
+            </Link>
+          </Card>
+        </Section>
+      )}
     </Page>
   );
 }

@@ -2,15 +2,24 @@ import 'server-only';
 
 import { getAdminDb } from '@app/database';
 import {
+  accounts,
   households,
   householdMembers,
   notificationPreferences,
   obligations,
   profiles,
+  transactions,
 } from '@app/database/schema';
-import { formatMoney, Money, todayIn, type CurrencyCode, type PlainDate } from '@app/domain';
+import {
+  addDays,
+  formatMoney,
+  Money,
+  todayIn,
+  type CurrencyCode,
+  type PlainDate,
+} from '@app/domain';
 import { getClientEnv, getServerEnv } from '@app/validation/env';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, gte, inArray, isNull, lte, sql } from 'drizzle-orm';
 
 import { dispatch, type Channel, type Notice, type Recipient } from './notification-service';
 
@@ -250,12 +259,72 @@ async function noticesFor(
         subjectKey: `statements:${today.slice(0, 7)}:${String(dayOfMonth)}`,
         title: 'Toca subir los estados de cuenta',
         body: 'Con los movimientos al día podemos decirte en qué se fue el dinero de verdad, y no lo que calculamos. Son dos minutos.',
-        url: '/imports',
+        url: '/documents',
         email: { template: 'statement_upload', values: { es: {}, en: {} } },
       },
       fallback: { channel: 'email', throttleHours: 24 * 10 },
     });
   }
 
+  // 3. El resumen de la semana, los lunes.
+  //
+  // Lo que entró, lo que salió y lo que hay, en un correo. Sin movimientos en
+  // la semana no se manda: un resumen de ceros no resume nada.
+  if (weekdayOf(today) === 1) {
+    const from = addDays(today, -7);
+    const [week] = await db
+      .select({
+        income: sql<string>`coalesce(sum(${transactions.amount}) filter (where ${transactions.amount} > 0), 0)::text`,
+        spent: sql<string>`coalesce(-sum(${transactions.amount}) filter (where ${transactions.amount} < 0), 0)::text`,
+        rows: sql<number>`count(*)::int`,
+      })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.householdId, householdId),
+          isNull(transactions.deletedAt),
+          inArray(transactions.status, ['posted', 'reconciled', 'pending', 'needs_review']),
+          gte(transactions.transactionDate, from),
+          lte(transactions.transactionDate, today),
+        ),
+      );
+    const [held] = await db
+      .select({ liquid: sql<string>`coalesce(sum(${accounts.currentBalance}), 0)::text` })
+      .from(accounts)
+      .where(
+        and(
+          eq(accounts.householdId, householdId),
+          eq(accounts.status, 'active'),
+          isNull(accounts.deletedAt),
+          inArray(accounts.accountType, ['checking', 'savings', 'cash', 'digital_wallet']),
+        ),
+      );
+    if (week && week.rows > 0) {
+      const income = money(Money.fromDecimalString(week.income, currency));
+      const spent = money(Money.fromDecimalString(week.spent, currency));
+      const liquid = money(Money.fromDecimalString(held?.liquid ?? '0', currency));
+      out.push({
+        notice: {
+          kind: 'weeklySummary',
+          subjectKey: `week:${today}`,
+          title: `Tu semana: salieron ${spent}`,
+          body: `Entraron ${income} y salieron ${spent}. Hoy tienes ${liquid} en tus cuentas.`,
+          url: '/overview',
+          email: {
+            template: 'weekly_summary',
+            values: { es: { income, spent, liquid }, en: { income, spent, liquid } },
+          },
+        },
+        fallback: { channel: 'email', throttleHours: 168 },
+      });
+    }
+  }
+
   return out;
+}
+
+/** 0 is Sunday, 1 Monday — of a calendar date, without a timezone. */
+function weekdayOf(date: PlainDate): number {
+  const [y = 1970, m = 1, d = 1] = date.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
 }

@@ -20,9 +20,13 @@ import {
 import { formatMoney } from '@app/domain';
 import { getFormatter, getTranslations, setRequestLocale } from 'next-intl/server';
 
+import { after } from 'next/server';
+
 import { Link } from '@/i18n/navigation';
+import { closePreviousMonthIfClear } from '@/server/auto-close';
 import { UnderstoodCard } from '@/components/understood-card';
 import { loadMonthGlance } from '@/server/repositories/month-glance';
+import { loadQueueCounts } from '@/server/repositories/review';
 import { loadUnderstood } from '@/server/repositories/understood';
 import { loadPosition } from '@/server/repositories/position';
 import { requireHousehold } from '@/server/session';
@@ -43,11 +47,27 @@ export default async function OverviewPage({ params }: { params: Promise<{ local
   setRequestLocale(locale);
 
   const session = await requireHousehold(locale);
-  const [position, glance, understood] = await Promise.all([
+  const [position, glance, understood, queue] = await Promise.all([
     loadPosition(session, session.activeHouseholdId),
     loadMonthGlance(session, session.activeHouseholdId),
     loadUnderstood(session, session.activeHouseholdId),
+    loadQueueCounts(session, session.activeHouseholdId),
   ]);
+
+  // Last month seals itself once nothing is left to decide — after the page is
+  // sent, so opening the home screen never waits on it.
+  const active = session.households.find((entry) => entry.id === session.activeHouseholdId);
+  after(async () => {
+    try {
+      await closePreviousMonthIfClear(
+        session,
+        session.activeHouseholdId,
+        active?.timeZone ?? 'America/Panama',
+      );
+    } catch (error: unknown) {
+      console.error('[close] automatic close failed', { error });
+    }
+  });
 
   const t = await getTranslations('overview');
   const setupComplete =
@@ -153,6 +173,20 @@ export default async function OverviewPage({ params }: { params: Promise<{ local
               </Stat>
             </Card>
           </div>
+
+          {/* What is waiting on a person, in one line, with the shortcut. */}
+          {queue.total > 0 && (
+            <Card className="mt-6">
+              <p className="text-sm text-pretty">
+                {queue.safe > 0
+                  ? t('pending.withSafe', { count: queue.total, safe: queue.safe })
+                  : t('pending.body', { count: queue.total })}
+              </p>
+              <Link href="/review" className={`${linkClass} mt-2`}>
+                {t('pending.action')}
+              </Link>
+            </Card>
+          )}
 
           {/* What the movements already say, confirmed in one tap. */}
           {understood.length > 0 && (

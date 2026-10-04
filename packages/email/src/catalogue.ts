@@ -126,7 +126,8 @@ const commitmentDue: TemplateDefinition = {
       heading: 'Lo que vence hoy',
       body: 'Estos pagos vencen hoy. Cuando salgan, marcalos como pagados y el plan del mes se ajusta solo.',
       ctaLabel: 'Ver mis compromisos',
-      footnote: 'Te escribimos porque tenés activados los avisos de pagos. Se apagan desde Ajustes.',
+      footnote:
+        'Te escribimos porque tenés activados los avisos de pagos. Se apagan desde Ajustes.',
     },
     en: {
       subject: 'Due today: {due}',
@@ -168,6 +169,53 @@ const statementUpload: TemplateDefinition = {
   },
 };
 
+const weekIn: VariableSpec = {
+  name: 'income',
+  description: 'What came into the household’s accounts in the last seven days, formatted.',
+  example: { es: '$1,250.00', en: '$1,250.00' },
+};
+
+const weekOut: VariableSpec = {
+  name: 'spent',
+  description: 'What went out of the household’s accounts in the last seven days, formatted.',
+  example: { es: '$486.30', en: '$486.30' },
+};
+
+const liquidNow: VariableSpec = {
+  name: 'liquid',
+  description: 'What the household’s spendable accounts hold today, formatted.',
+  example: { es: '$2,140.55', en: '$2,140.55' },
+};
+
+const weeklySummary: TemplateDefinition = {
+  key: 'weekly_summary',
+  channel: 'brevo',
+  group: 'notices',
+  name: 'Your week',
+  purpose: 'Sent on Mondays: what came in, what went out, and what the accounts hold.',
+  variables: [weekIn, weekOut, liquidNow],
+  feature: 'none',
+  button: { required: false },
+  defaults: {
+    es: {
+      subject: 'Tu semana: salieron {spent}',
+      preheader: 'Entraron {income}. Hoy tienes {liquid} en tus cuentas.',
+      heading: 'Así fue tu semana',
+      body: 'En los últimos siete días entraron {income} y salieron {spent}. Hoy tienes {liquid} en tus cuentas.\n\nSi subes los estados de esta semana, el resumen sale completo.',
+      ctaLabel: 'Ver mi inicio',
+      footnote: 'Te escribimos los lunes. Se apaga desde Ajustes.',
+    },
+    en: {
+      subject: 'Your week: {spent} went out',
+      preheader: '{income} came in. Your accounts hold {liquid} today.',
+      heading: 'Your week',
+      body: 'In the last seven days {income} came in and {spent} went out. Your accounts hold {liquid} today.\n\nUpload this week’s statements and the summary comes out complete.',
+      ctaLabel: 'See my home',
+      footnote: 'We write on Mondays. Turn it off in Settings.',
+    },
+  },
+};
+
 // ── Cuenta (Supabase) ─────────────────────────────────────────────────────────
 
 const confirmation: TemplateDefinition = {
@@ -187,7 +235,8 @@ const confirmation: TemplateDefinition = {
       heading: 'Confirmá tu correo',
       body: 'Creaste una cuenta en Cifraapp con {email}. Tocá el botón para confirmar que es tuyo y entrar.\n\nEl enlace sirve una sola vez.',
       ctaLabel: 'Confirmar mi correo',
-      footnote: 'Si no creaste esta cuenta, ignorá este correo: sin confirmarla, nadie puede usarla.',
+      footnote:
+        'Si no creaste esta cuenta, ignorá este correo: sin confirmarla, nadie puede usarla.',
     },
     en: {
       subject: 'Confirm your email to get started',
@@ -195,7 +244,8 @@ const confirmation: TemplateDefinition = {
       heading: 'Confirm your email',
       body: 'You created a Cifraapp account with {email}. Tap the button to confirm it’s yours and sign in.\n\nThe link works once.',
       ctaLabel: 'Confirm my email',
-      footnote: "If you didn't create this account, ignore this email: without confirming it, nobody can use it.",
+      footnote:
+        "If you didn't create this account, ignore this email: without confirming it, nobody can use it.",
     },
   },
 };
@@ -277,7 +327,8 @@ const magicLink: TemplateDefinition = {
       heading: 'Tu enlace para entrar',
       body: 'Tocá el botón para entrar a Cifraapp con {email}.\n\nEl enlace sirve una sola vez y vence en una hora.',
       ctaLabel: 'Entrar a Cifraapp',
-      footnote: 'Si no pediste entrar, ignorá este correo: el enlace sólo funciona desde tu bandeja.',
+      footnote:
+        'Si no pediste entrar, ignorá este correo: el enlace sólo funciona desde tu bandeja.',
     },
     en: {
       subject: 'Your link to sign in to Cifraapp',
@@ -285,7 +336,8 @@ const magicLink: TemplateDefinition = {
       heading: 'Your sign-in link',
       body: 'Tap the button to sign in to Cifraapp as {email}.\n\nThe link works once and expires in an hour.',
       ctaLabel: 'Sign in to Cifraapp',
-      footnote: "If you didn't ask to sign in, ignore this email: the link only works from your inbox.",
+      footnote:
+        "If you didn't ask to sign in, ignore this email: the link only works from your inbox.",
     },
   },
 };
@@ -315,7 +367,8 @@ const emailChange: TemplateDefinition = {
       heading: 'Confirm your new email',
       body: 'You asked to change your account email from {email} to {new_email}. Tap the button to confirm it.',
       ctaLabel: 'Confirm the new email',
-      footnote: "If you didn't ask for this change, ignore this email and your account stays as it is.",
+      footnote:
+        "If you didn't ask for this change, ignore this email and your account stays as it is.",
     },
   },
 };
@@ -337,7 +390,8 @@ const reauthentication: TemplateDefinition = {
       heading: 'Tu código de verificación',
       body: 'Escribí este código para confirmar que sos vos. Vence pronto y sirve una sola vez.',
       ctaLabel: '',
-      footnote: 'Si no pediste un código, cambiá tu contraseña: alguien pudo haber entrado a tu cuenta.',
+      footnote:
+        'Si no pediste un código, cambiá tu contraseña: alguien pudo haber entrado a tu cuenta.',
     },
     en: {
       subject: 'Your Cifraapp code: {token}',
@@ -345,7 +399,8 @@ const reauthentication: TemplateDefinition = {
       heading: 'Your verification code',
       body: 'Enter this code to confirm it’s you. It expires soon and works once.',
       ctaLabel: '',
-      footnote: "If you didn't ask for a code, change your password: someone may have signed in to your account.",
+      footnote:
+        "If you didn't ask for a code, change your password: someone may have signed in to your account.",
     },
   },
 };
@@ -391,8 +446,10 @@ function securityNotice(input: {
   };
 }
 
-const IF_NOT_YOU_ES = 'Si no fuiste vos, cambiá tu contraseña cuanto antes desde la pantalla de entrada.';
-const IF_NOT_YOU_EN = "If this wasn't you, change your password right away from the sign-in screen.";
+const IF_NOT_YOU_ES =
+  'Si no fuiste vos, cambiá tu contraseña cuanto antes desde la pantalla de entrada.';
+const IF_NOT_YOU_EN =
+  "If this wasn't you, change your password right away from the sign-in screen.";
 
 const emailChanged = securityNotice({
   key: 'auth_email_changed',
@@ -524,6 +581,7 @@ const mfaUnenrolled = securityNotice({
 export const CATALOGUE: readonly TemplateDefinition[] = [
   commitmentDue,
   statementUpload,
+  weeklySummary,
   confirmation,
   recovery,
   magicLink,

@@ -478,6 +478,11 @@
         "quarterly": "every quarter",
         "annual": "every year"
       }
+    },
+    "pending": {
+      "body": "{count, plural, one {You have 1 thing to review.} other {You have # things to review.}}",
+      "withSafe": "{count, plural, one {You have 1 thing to review} other {You have # things to review}}; {safe, plural, one {1 can be approved in one tap.} other {# can be approved in one tap.}}",
+      "action": "Go to To review"
     }
   },
   "plan": {
@@ -2209,7 +2214,13 @@
     },
     "markPaid": "I paid this",
     "undoPaid": "Undo the payment",
-    "paidOn": "Paid on {date}"
+    "paidOn": "Paid on {date}",
+    "minimums": {
+      "title": "Also goes out every month",
+      "detail": "The minimum payment on each debt. It counts in your available money together with the commitments above.",
+      "day": "Due on day {day}",
+      "link": "See your debts"
+    }
   },
   "categories": {
     "title": "Spending categories",
