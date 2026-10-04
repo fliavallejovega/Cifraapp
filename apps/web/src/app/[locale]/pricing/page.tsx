@@ -144,7 +144,7 @@ export default async function PricingPage({ params }: { params: Promise<{ locale
             </Section>
 
             <Section title="" className="mt-16">
-              <Link href="/sign-up">
+              <Link href="/sign-up" className="inline-block">
                 <Button size="lg">{t('pricing.cta')}</Button>
               </Link>
             </Section>

@@ -4,7 +4,13 @@ import { Button, Problem, Status } from '@app/ui';
 import { useActionState } from 'react';
 
 import { RecordFieldset } from './record-fieldset';
-import type { FieldSpec, RecordAction, RecordActionResult, RecordValues } from './spec';
+import {
+  pairedHalves,
+  type FieldSpec,
+  type RecordAction,
+  type RecordActionResult,
+  type RecordValues,
+} from './spec';
 
 /**
  * One settings form, saved in place.
@@ -49,6 +55,8 @@ export function SingleForm({
 }: SingleFormProps) {
   const [state, formAction, pending] = useActionState<RecordActionResult, FormData>(action, {});
 
+  const paired = pairedHalves(fields);
+
   return (
     <form action={formAction} className="flex flex-col gap-5">
       <input type="hidden" name="locale" value={locale} />
@@ -65,7 +73,7 @@ export function SingleForm({
 
       <div className="grid gap-5 sm:grid-cols-2">
         {fields.map((field) => (
-          <div key={field.name} className={field.half ? '' : 'sm:col-span-2'}>
+          <div key={field.name} className={paired.has(field.name) ? '' : 'sm:col-span-2'}>
             <RecordFieldset
               field={field}
               currencySymbol={currencySymbol}

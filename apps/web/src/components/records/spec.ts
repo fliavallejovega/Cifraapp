@@ -148,3 +148,28 @@ export interface RecordLabels {
   readonly errors: Readonly<Record<string, string>>;
   readonly openDetail?: string;
 }
+
+/**
+ * The half-width fields that actually have a partner on their row.
+ *
+ * Halves pair up in the order they come. A run with an odd count leaves its
+ * last field alone on a row, ending at half the width of the field above it —
+ * so that one is laid out full width instead.
+ */
+export function pairedHalves(
+  fields: readonly { readonly name: string; readonly half?: boolean }[],
+): ReadonlySet<string> {
+  const paired = new Set<string>();
+  let run: string[] = [];
+  const close = () => {
+    const even = run.length - (run.length % 2);
+    run.slice(0, even).forEach((name) => paired.add(name));
+    run = [];
+  };
+  for (const field of fields) {
+    if (field.half) run.push(field.name);
+    else close();
+  }
+  close();
+  return paired;
+}

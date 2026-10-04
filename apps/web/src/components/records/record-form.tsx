@@ -4,12 +4,13 @@ import { Button, Problem } from '@app/ui';
 import { useActionState, useState } from 'react';
 
 import { RecordFieldset } from './record-fieldset';
-import type {
-  FieldSpec,
-  RecordAction,
-  RecordActionResult,
-  RecordLabels,
-  RecordValues,
+import {
+  pairedHalves,
+  type FieldSpec,
+  type RecordAction,
+  type RecordActionResult,
+  type RecordLabels,
+  type RecordValues,
 } from './spec';
 
 /**
@@ -66,7 +67,9 @@ export function RecordForm({
    * crear, que es lo que el navegador va a tener seleccionado.
    */
   const controllers = new Set(
-    fields.map((field) => field.showWhen?.field).filter((name): name is string => name !== undefined),
+    fields
+      .map((field) => field.showWhen?.field)
+      .filter((name): name is string => name !== undefined),
   );
 
   const [values, setValues] = useState<RecordValues>(() =>
@@ -91,6 +94,7 @@ export function RecordForm({
   const visible = fields.filter(
     (field) => !field.showWhen || field.showWhen.is.includes(values[field.showWhen.field] ?? ''),
   );
+  const paired = pairedHalves(visible);
 
   return (
     <form action={formAction} className="flex flex-col gap-5">
@@ -109,7 +113,7 @@ export function RecordForm({
 
       <div className="grid gap-5 sm:grid-cols-2">
         {visible.map((field) => (
-          <div key={field.name} className={field.half ? '' : 'sm:col-span-2'}>
+          <div key={field.name} className={paired.has(field.name) ? '' : 'sm:col-span-2'}>
             <RecordFieldset
               field={field}
               currencySymbol={currencySymbol}

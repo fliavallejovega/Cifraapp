@@ -114,7 +114,7 @@ export default async function PlanPage({ params }: { params: Promise<{ locale: s
           title={t('empty.title')}
           body={t('empty.body')}
           action={
-            <Link href="/accounts">
+            <Link href="/accounts" className="inline-block">
               <Button size="lg">{t('empty.action')}</Button>
             </Link>
           }

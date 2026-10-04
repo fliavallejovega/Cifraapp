@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, EmptyState, Status } from '@app/ui';
+import { Card, EmptyState, Select, Status } from '@app/ui';
 import { useState } from 'react';
 
 /**
@@ -80,24 +80,24 @@ export function CardCompare({
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-col gap-1.5">
         <label htmlFor="compare-category" className="text-sm">
           {labels.category}
         </label>
-        <select
+        <Select
           id="compare-category"
+          className="h-11"
           value={category}
           onChange={(event) => {
             setCategory(event.target.value);
           }}
-          className="min-h-11 rounded-(--radius-sm) border border-[color:var(--color-surface-border)] bg-[color:var(--color-surface)] px-3 text-sm"
         >
           {categories.map((one) => (
             <option key={one} value={one}>
               {labels.categories[one] ?? one}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
 
       {!result || (result.ranked.length === 0 && result.unquantified.length === 0) ? (

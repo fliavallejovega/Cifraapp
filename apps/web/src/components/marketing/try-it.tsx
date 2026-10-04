@@ -258,7 +258,7 @@ export function TryIt({
         </Card>
 
         <div>
-          <Link href="/sign-up" onClick={keep}>
+          <Link href="/sign-up" onClick={keep} className="inline-block">
             <Button size="lg">{labels.cta}</Button>
           </Link>
           <p className="mt-3 max-w-[52ch] text-xs text-pretty text-[color:var(--color-ink-tertiary)]">

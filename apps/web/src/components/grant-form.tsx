@@ -46,8 +46,8 @@ export function GrantForm({
         />
       )}
 
-      <div className="grid gap-5 sm:grid-cols-3">
-        <Field label={labels.email} required>
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <Field label={labels.email} required className="sm:col-span-2 lg:col-span-1">
           {({ id }) => <Input id={id} name="email" type="email" required autoComplete="email" />}
         </Field>
 
@@ -72,7 +72,7 @@ export function GrantForm({
               inputMode="numeric"
               defaultValue="90"
               aria-describedby={describedBy}
-              className="max-w-28 text-left"
+              className="text-left"
             />
           )}
         </Field>

@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, EmptyState, Status } from '@app/ui';
+import { Card, EmptyState, Select, Status } from '@app/ui';
 import { useMemo, useState } from 'react';
 
 /**
@@ -106,10 +106,10 @@ export function OffersBoard({
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="grid grid-cols-1 items-center gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {/* El filtro que más se usa, primero y como interruptor: es una pregunta
             de sí o no, y un selector de dos opciones sería una pregunta de más. */}
-        <label className="flex min-h-11 items-center gap-2 text-sm">
+        <label className="flex min-h-11 items-center gap-2 text-sm sm:col-span-2 xl:col-span-1">
           <input
             type="checkbox"
             checked={onlyMine}
@@ -121,13 +121,13 @@ export function OffersBoard({
           {labels.onlyMine}
         </label>
 
-        <select
+        <Select
+          className="h-11"
           aria-label={labels.everyIssuer}
           value={issuer}
           onChange={(event) => {
             setIssuer(event.target.value);
           }}
-          className="min-h-11 rounded-(--radius-sm) border border-[color:var(--color-surface-border)] bg-[color:var(--color-surface)] px-3 text-sm"
         >
           <option value="">{labels.everyIssuer}</option>
           {issuers.map((one) => (
@@ -135,15 +135,15 @@ export function OffersBoard({
               {one.name}
             </option>
           ))}
-        </select>
+        </Select>
 
-        <select
+        <Select
+          className="h-11"
           aria-label={labels.everyCategory}
           value={category}
           onChange={(event) => {
             setCategory(event.target.value);
           }}
-          className="min-h-11 rounded-(--radius-sm) border border-[color:var(--color-surface-border)] bg-[color:var(--color-surface)] px-3 text-sm"
         >
           <option value="">{labels.everyCategory}</option>
           {categories.map((one) => (
@@ -151,7 +151,7 @@ export function OffersBoard({
               {labels.categories[one] ?? one}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
 
       {shown.length === 0 ? (
@@ -162,9 +162,7 @@ export function OffersBoard({
             <Card key={offer.id} {...(offer.isMine ? {} : { tone: 'sunk' as const })}>
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <h3 className="text-base font-medium break-words">{offer.merchantName}</h3>
-                {offer.isToday && offer.isMine && (
-                  <Status tone="positive">{labels.today}</Status>
-                )}
+                {offer.isToday && offer.isMine && <Status tone="positive">{labels.today}</Status>}
               </div>
 
               <p className="mt-1 text-lg font-medium text-[color:var(--color-ink)]">
@@ -173,7 +171,9 @@ export function OffersBoard({
 
               <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[color:var(--color-ink-secondary)]">
                 <span className="font-medium">{offer.issuerName}</span>
-                {offer.category && <span>{labels.categories[offer.category] ?? offer.category}</span>}
+                {offer.category && (
+                  <span>{labels.categories[offer.category] ?? offer.category}</span>
+                )}
                 <span>
                   {offer.weekdayNames.length === 0
                     ? labels.daysUnknown

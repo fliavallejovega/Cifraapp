@@ -57,7 +57,7 @@ export async function SiteHeader({ locale }: { locale: string }) {
           <Link href="/sign-in" className="py-3 text-sm underline underline-offset-4">
             {t('nav.signIn')}
           </Link>
-          <Link href="/sign-up">
+          <Link href="/sign-up" className="inline-block">
             <Button size="sm">{t('nav.start')}</Button>
           </Link>
         </div>
