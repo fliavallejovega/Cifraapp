@@ -5206,5 +5206,44 @@
       "noMatch": "No household account ends in {digits}. Check it's the right one or add those digits to the account.",
       "moveFailed": "We couldn't move it. Open it and review it from there."
     }
+  },
+  "agent": {
+    "open": "Ask the assistant",
+    "title": "Assistant",
+    "scopeFinances": "Household finances",
+    "scopeTrip": "This trip",
+    "newThread": "New conversation",
+    "close": "Close the assistant",
+    "emptyTitle": "Ask about your numbers or ask for a change",
+    "emptyBody": "It searches your movements, accounts and trips and only quotes figures that are in Cifraapp. If it proposes a change, you decide whether it's applied.",
+    "suggestionsFinances": [
+      "How much did I spend on groceries this month?",
+      "Which statements am I missing?",
+      "How much do I really have available?"
+    ],
+    "suggestionsTrip": [
+      "What's left to book on this trip?",
+      "Which nights have no lodging?",
+      "Summarize the trip day by day"
+    ],
+    "placeholder": "Type your question",
+    "inputLabel": "Your question for the assistant",
+    "send": "Ask",
+    "thinking": "Searching your data…",
+    "you": "You",
+    "assistant": "Assistant",
+    "proposalsTitle": "It proposes these changes",
+    "apply": "Apply",
+    "discard": "Discard",
+    "applied": "Applied",
+    "discarded": "Discarded",
+    "applyFailed": "Couldn't apply it. Review it from its own screen.",
+    "errors": {
+      "copilotOff": "The assistant isn't set up for your household yet.",
+      "signInRequired": "Your session ended. Sign in again.",
+      "messageRequired": "Type a question of at least two letters.",
+      "saveFailed": "We couldn't save the conversation. Try again.",
+      "generic": "We couldn't reach the assistant. Try again."
+    }
   }
 }

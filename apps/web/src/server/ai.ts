@@ -10,6 +10,7 @@ import {
   type AIFailure,
   type AIProvider,
   type Grounding,
+  type GuardrailOptions,
   type Invocation,
   type ModelPricing,
   type PromptDefinition,
@@ -17,7 +18,8 @@ import {
   type ResponseCache,
   type StructuredOutput,
 } from '@app/ai';
-import { aiBudgets, aiCache, aiInvocations, aiModels } from '@app/database/schema';
+import { getDb } from '@app/database';
+import { aiBudgets, aiCache, aiInvocations, aiModels, aiSettings } from '@app/database/schema';
 import { Money, type CurrencyCode } from '@app/domain';
 import { getServerEnv } from '@app/validation/env';
 import { and, eq, gte, sql } from 'drizzle-orm';
@@ -59,24 +61,58 @@ export function copilotIsConfigured(): boolean {
   return false;
 }
 
-export function buildProvider(): AIProvider {
+export function buildProvider(model?: string): AIProvider {
   const env = getServerEnv();
+  const chosen = model ?? env.AI_MODEL;
 
   if (env.AI_PROVIDER === 'anthropic' && env.ANTHROPIC_API_KEY) {
     return new AnthropicProvider({
       apiKey: env.ANTHROPIC_API_KEY,
-      ...(env.AI_MODEL ? { model: env.AI_MODEL } : {}),
+      ...(chosen ? { model: chosen } : {}),
     });
   }
 
   if (env.AI_PROVIDER === 'openai' && env.OPENAI_API_KEY) {
     return new OpenAIProvider({
       apiKey: env.OPENAI_API_KEY,
-      ...(env.AI_MODEL ? { model: env.AI_MODEL } : {}),
+      ...(chosen ? { model: chosen } : {}),
     });
   }
 
   return new NullProvider();
+}
+
+/**
+ * Which job a model is doing.
+ *
+ * `reading` transcribes statements and travel documents; `chat` is the
+ * assistant. The console can point each at a different model — reading asks
+ * for more precision than conversation — and without a choice both use the
+ * environment's model.
+ */
+export type AIPurpose = 'reading' | 'chat';
+
+const SETTING_TTL_MS = 60_000;
+const settingCache = new Map<AIPurpose, { model: string | null; until: number }>();
+
+export async function providerFor(purpose: AIPurpose): Promise<AIProvider> {
+  const cached = settingCache.get(purpose);
+  if (cached && cached.until > Date.now()) return buildProvider(cached.model ?? undefined);
+
+  let model: string | null = null;
+  try {
+    const [row] = await getDb(getServerEnv().DATABASE_URL)
+      .select({ model: aiSettings.modelKey })
+      .from(aiSettings)
+      .where(eq(aiSettings.purpose, purpose))
+      .limit(1);
+    model = row?.model ?? null;
+  } catch {
+    // A setting that cannot be read is the same as no setting: the environment
+    // model still answers.
+  }
+  settingCache.set(purpose, { model, until: Date.now() + SETTING_TTL_MS });
+  return buildProvider(model ?? undefined);
 }
 
 /**
@@ -94,9 +130,13 @@ export async function ask(
     grounding: Grounding;
     locale: PromptLocale;
     currency?: CurrencyCode;
+    /** Figures the caller vouches for beyond the grounding (dates it computed). */
+    guardrail?: GuardrailOptions;
+    purpose?: AIPurpose;
+    timeoutMs?: number;
   },
 ): Promise<CopilotResult> {
-  const provider = buildProvider();
+  const provider = await providerFor(options.purpose ?? 'chat');
   const currency = options.currency ?? 'USD';
 
   return queryAsUser(session, async (tx) => {
@@ -115,6 +155,8 @@ export async function ask(
       pricing: () => pricing,
       cache: databaseCache(tx, householdId),
       budget: { capMicros, spentMicros, currency },
+      ...(options.guardrail ? { guardrail: options.guardrail } : {}),
+      ...(options.timeoutMs ? { timeoutMs: options.timeoutMs } : {}),
     });
 
     if (!result.ok) {

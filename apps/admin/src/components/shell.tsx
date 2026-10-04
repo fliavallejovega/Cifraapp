@@ -5,6 +5,7 @@ import { signOut } from '@/server/auth-actions';
 import {
   IconEmails,
   IconFlags,
+  IconModels,
   IconHouseholds,
   IconOperations,
   IconOverview,
@@ -37,6 +38,7 @@ const SECTIONS = [
   { key: 'operations', href: '/operations', label: 'Operations', icon: IconOperations },
   { key: 'emails', href: '/emails', label: 'Emails', icon: IconEmails },
   { key: 'flags', href: '/flags', label: 'Feature flags', icon: IconFlags },
+  { key: 'ai', href: '/ai', label: 'AI models', icon: IconModels },
 ] as const;
 
 export type AdminSectionKey = (typeof SECTIONS)[number]['key'];

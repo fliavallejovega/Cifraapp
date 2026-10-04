@@ -1,6 +1,7 @@
 import { getClientEnv } from '@app/validation/env';
 import type { ReactNode } from 'react';
 
+import { AgentLauncher } from '@/components/agent/agent-launcher';
 import { AppShell } from '@/components/app-shell';
 import { tripsEnabled } from '@/server/repositories/trips';
 import { loadSession } from '@/server/session';
@@ -40,6 +41,7 @@ export default async function ProductLayout({
       consoleUrl={session?.isPlatformAdmin ? (getClientEnv().NEXT_PUBLIC_ADMIN_URL ?? null) : null}
     >
       {children}
+      {session && <AgentLauncher locale={locale} />}
     </AppShell>
   );
 }

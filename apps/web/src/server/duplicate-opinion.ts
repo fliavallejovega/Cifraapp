@@ -3,7 +3,7 @@ import 'server-only';
 import { parseOutput, toJsonSchema, type ObjectShape } from '@app/ai';
 import type { AiOpinion } from '@app/transaction-engine';
 
-import { buildProvider } from './ai';
+import { providerFor } from './ai';
 
 /**
  * La segunda lectura sobre un par que el motor no supo resolver.
@@ -105,7 +105,7 @@ export async function askAboutNearMisses(
   const empty = new Map<string, Opinion>();
   if (pairs.length === 0) return empty;
 
-  const provider = buildProvider();
+  const provider = await providerFor('chat');
   if (provider.id === 'none') return empty;
 
   const asked = pairs.slice(0, MAX_PAIRS);

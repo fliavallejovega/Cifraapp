@@ -5206,5 +5206,44 @@
       "noMatch": "Ninguna cuenta de la casa termina en {digits}. Revisa que sea la correcta o agrega esos dígitos a la cuenta.",
       "moveFailed": "No pudimos moverlo. Ábrelo y revísalo desde ahí."
     }
+  },
+  "agent": {
+    "open": "Preguntar al asistente",
+    "title": "Asistente",
+    "scopeFinances": "Finanzas de la casa",
+    "scopeTrip": "Este viaje",
+    "newThread": "Nueva conversación",
+    "close": "Cerrar el asistente",
+    "emptyTitle": "Pregúntale por tus números o pídele un cambio",
+    "emptyBody": "Busca en tus movimientos, cuentas y viajes y responde solo con cifras que están en Cifraapp. Si propone un cambio, tú decides si se aplica.",
+    "suggestionsFinances": [
+      "¿Cuánto gasté en supermercado este mes?",
+      "¿Qué estados de cuenta me faltan por subir?",
+      "¿Cuánto tengo disponible de verdad?"
+    ],
+    "suggestionsTrip": [
+      "¿Qué me falta por reservar en este viaje?",
+      "¿Qué noches no tienen hospedaje?",
+      "Resume el viaje día por día"
+    ],
+    "placeholder": "Escribe tu pregunta",
+    "inputLabel": "Tu pregunta para el asistente",
+    "send": "Preguntar",
+    "thinking": "Buscando en tus datos…",
+    "you": "Tú",
+    "assistant": "Asistente",
+    "proposalsTitle": "Propone estos cambios",
+    "apply": "Aplicar",
+    "discard": "Descartar",
+    "applied": "Aplicado",
+    "discarded": "Descartado",
+    "applyFailed": "No se pudo aplicar. Revísalo desde su pantalla.",
+    "errors": {
+      "copilotOff": "El asistente todavía no está configurado para tu hogar.",
+      "signInRequired": "Tu sesión terminó. Vuelve a entrar.",
+      "messageRequired": "Escribe una pregunta de al menos dos letras.",
+      "saveFailed": "No pudimos guardar la conversación. Intenta de nuevo.",
+      "generic": "No pudimos comunicarnos con el asistente. Intenta de nuevo."
+    }
   }
 }

@@ -251,3 +251,15 @@ export const planProposals = appSchema.table(
     index('plan_proposals_thread_idx').on(table.threadId),
   ],
 );
+
+/**
+ * Which model does which job: `reading` (statements and travel documents) and
+ * `chat` (the assistant). Without a row, the environment's model is used.
+ * Written only from the console, with an audit entry.
+ */
+export const aiSettings = platformSchema.table('ai_settings', {
+  purpose: text('purpose').primaryKey(),
+  modelKey: text('model_key').notNull(),
+  updatedBy: uuid('updated_by').references(() => profiles.id, { onDelete: 'set null' }),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});

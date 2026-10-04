@@ -27,6 +27,8 @@ export const chatThreads = appSchema.table(
       .references(() => households.id, { onDelete: 'cascade' }),
     /** Taken from the first question, so nothing has to be named up front. */
     title: text('title').notNull(),
+    /** `finances`, or `trip:<id>` for a conversation about one trip. */
+    scope: text('scope').notNull().default('finances'),
     createdBy: uuid('created_by').references(() => profiles.id, { onDelete: 'set null' }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -56,6 +58,20 @@ export const chatMessages = appSchema.table(
     }),
     /** Figures the guardrail could not tie back to the grounding. */
     ungrounded: text('ungrounded').array().notNull().default([]),
+    /** Changes the assistant proposed in this answer, each applied by a person. */
+    proposals: jsonb('proposals')
+      .$type<
+        {
+          kind: string;
+          target: string;
+          value: string;
+          reason: string;
+          label: string;
+          status: 'proposed' | 'applied' | 'discarded';
+        }[]
+      >()
+      .notNull()
+      .default([]),
     authorId: uuid('author_id').references(() => profiles.id, { onDelete: 'set null' }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },

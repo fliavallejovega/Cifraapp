@@ -4,7 +4,7 @@ import { parseOutput, toJsonSchema, type ObjectShape } from '@app/ai';
 import { readOcrRows, type OcrRow, type ParsedStatement } from '@app/transaction-engine';
 import type { CurrencyCode, PlainDate } from '@app/domain';
 
-import { buildProvider } from './ai';
+import { providerFor } from './ai';
 
 /**
  * Leer un estado de cuenta que llegó como escaneo o como foto.
@@ -154,7 +154,7 @@ export async function readStatementByOcr(input: {
     return { ok: false, reason: 'too_large' };
   }
 
-  const provider = buildProvider();
+  const provider = await providerFor('reading');
   if (provider.id === 'none') {
     return { ok: false, reason: 'not_configured' };
   }

@@ -84,6 +84,16 @@ export function IconFlags() {
   );
 }
 
+/** Which model does which job: a chip with its pins. */
+export function IconModels() {
+  return (
+    <Frame>
+      <rect x="6" y="6" width="8" height="8" rx="1.5" />
+      <path d="M8.5 3.5v2.5M11.5 3.5v2.5M8.5 14v2.5M11.5 14v2.5M3.5 8.5H6M3.5 11.5H6M14 8.5h2.5M14 11.5h2.5" />
+    </Frame>
+  );
+}
+
 /** What the product writes to people. */
 export function IconEmails() {
   return (

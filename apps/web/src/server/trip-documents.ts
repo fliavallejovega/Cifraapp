@@ -9,7 +9,7 @@ import { getServerEnv } from '@app/validation/env';
 import { and, asc, eq, isNull } from 'drizzle-orm';
 import { createHash } from 'node:crypto';
 
-import { buildProvider } from './ai';
+import { providerFor } from './ai';
 import { enqueueJob, registerJobHandler } from './jobs';
 import { autoApplyTripDocument } from './trip-auto-apply';
 import { queryAsUser, type Session } from './session';
@@ -368,7 +368,7 @@ registerJobHandler(TRIP_DOCUMENT_JOB, async (job, report) => {
   }
   if (bytes.byteLength > MAX_MODEL_BYTES) return fail('too_large', false);
 
-  const provider = buildProvider();
+  const provider = await providerFor('reading');
   if (provider.id === 'none') return fail('not_configured', false);
 
   const schema = toJsonSchema(SHAPE);

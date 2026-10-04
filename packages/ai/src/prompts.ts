@@ -360,7 +360,7 @@ export const PLAN_PROPOSAL_V1 = define({
     '- Every id must appear in FACTS. Never invent one, never guess a name.',
     '- If the request does not map onto the catalogue, return no rows and say so',
     '  in summary. An empty list is a correct answer.',
-    '- reason is one sentence in the household\'s own terms, saying what changes',
+    "- reason is one sentence in the household's own terms, saying what changes",
     '  and why they asked for it.',
   ].join('\n'),
   output: {
@@ -415,6 +415,122 @@ export const PLAN_PROPOSAL_V1 = define({
   cacheable: false,
 });
 
+/**
+ * The assistant's first step on each message: which lookups to run.
+ *
+ * It answers nothing. It picks, from a closed list, the read-only lookups that
+ * would let the second step answer — and deterministic code runs them. The
+ * model never touches a query, an id or a table; it names a lookup and the
+ * filters a person would type.
+ */
+export const AGENT_ROUTE_V1 = define({
+  key: 'agent-route',
+  version: 1,
+  feature: 'question_answer',
+  instruction: [
+    'You are the household assistant inside a family-finance app. Read the latest',
+    'message and the conversation, and choose the read-only lookups that would let',
+    'you answer it. You do not answer here.',
+    '',
+    'lookup must be exactly one of:',
+    '  movements             search movements. text: words from the description,',
+    '                        or empty. from / to: YYYY-MM-DD, or empty.',
+    '  spending_by_category  totals per category for one month. month: YYYY-MM.',
+    '  accounts              accounts and cards, their owners and missing statements.',
+    '  trip                  the trip being viewed: cities, dates, bookings, gaps.',
+    '',
+    'Choose at most three. Choose none when the facts already given answer it or',
+    'when the message is a greeting. Use trip only when scope says a trip is open.',
+    'Dates you write must be real calendar dates near today; never invent ids.',
+  ].join('\n'),
+  output: {
+    lookups: {
+      kind: 'record_list',
+      description: 'The lookups to run, most useful first. Empty when none is needed.',
+      maxItems: 3,
+      fields: {
+        lookup: {
+          kind: 'choice',
+          description: 'Which lookup.',
+          options: ['movements', 'spending_by_category', 'accounts', 'trip'],
+        },
+        text: { kind: 'text', description: 'Search words, or empty.', maxLength: 60 },
+        from: { kind: 'text', description: 'YYYY-MM-DD or empty.', maxLength: 10 },
+        to: { kind: 'text', description: 'YYYY-MM-DD or empty.', maxLength: 10 },
+        month: { kind: 'text', description: 'YYYY-MM or empty.', maxLength: 7 },
+      },
+    },
+  },
+  maxOutputTokens: 300,
+  requires: ['message', 'scope', 'today'],
+  cacheable: false,
+});
+
+/**
+ * The assistant's answer, and the changes it proposes.
+ *
+ * The answer may only quote figures present in FACTS — the guardrail strikes
+ * anything else. A change is a row of a closed catalogue whose ids must come
+ * from FACTS; code validates every row against the household's own data and a
+ * person taps «Aplicar» before anything is written. The model never writes.
+ */
+export const AGENT_ANSWER_V1 = define({
+  key: 'agent-answer',
+  version: 1,
+  feature: 'question_answer',
+  instruction: [
+    'You are the household assistant inside a family-finance app. Answer the latest',
+    'message from FACTS and the conversation. Be brief and concrete: two to five',
+    'sentences. Quote figures exactly as they appear in FACTS; never compute a new',
+    'one, not even a sum of two that are there. If FACTS do not answer it, say what',
+    'is missing and where in the app to find or upload it. Say things in plain words:',
+    'never repeat the labels, ids or English words of FACTS (write «compartida de la',
+    'casa», not «household (shared)»). Write dates the way people say them',
+    '(«10 de diciembre», not 2026-12-10).',
+    '',
+    'When the household asks for a change, propose it as rows of this catalogue.',
+    'You are drafting; a person applies or discards each row.',
+    '  recategorize_movement  target: a movement id from FACTS',
+    '                         value: a category id from FACTS',
+    '  set_account_owner      target: an account id from FACTS',
+    '                         value: a person id from FACTS, or household',
+    '  set_leg_dates          target: a leg id from FACTS',
+    '                         value: YYYY-MM-DD..YYYY-MM-DD (arrival..departure)',
+    '  set_leg_lodging        target: a leg id from FACTS',
+    '                         value: prepaid | pay_on_site | none | undecided',
+    '',
+    'Never invent an id. If the change is not in the catalogue, return no rows and',
+    'say in the answer where in the app it is done. reason is one short sentence in',
+    "the household's terms.",
+  ].join('\n'),
+  output: {
+    answer: { kind: 'text', description: 'The reply to the household.', maxLength: 900 },
+    proposals: {
+      kind: 'record_list',
+      description: 'Changes for the household to apply or discard. Usually empty.',
+      maxItems: 5,
+      fields: {
+        kind: {
+          kind: 'choice',
+          description: 'Which change.',
+          options: [
+            'recategorize_movement',
+            'set_account_owner',
+            'set_leg_dates',
+            'set_leg_lodging',
+          ],
+        },
+        target: { kind: 'text', description: 'The id from FACTS.', maxLength: 40 },
+        value: { kind: 'text', description: 'The new value.', maxLength: 40 },
+        reason: { kind: 'text', description: 'One short sentence.', maxLength: 160 },
+      },
+    },
+  },
+  maxOutputTokens: 1200,
+  requires: ['message', 'scope', 'today'],
+  cacheable: false,
+});
+
 export const PROMPTS: readonly PromptDefinition[] = [
   MERCHANT_CLASSIFICATION_V1,
   ALLOCATION_EXPLANATION_V1,
@@ -425,6 +541,8 @@ export const PROMPTS: readonly PromptDefinition[] = [
   PLAN_PROPOSAL_V1,
   SCENARIO_NARRATION_V1,
   QUESTION_ANSWER_V1,
+  AGENT_ROUTE_V1,
+  AGENT_ANSWER_V1,
 ];
 
 export function findPrompt(id: string): PromptDefinition | undefined {

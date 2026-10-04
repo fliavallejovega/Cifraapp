@@ -4,7 +4,7 @@ import { parseOutput, toJsonSchema, type ObjectShape } from '@app/ai';
 import { aiInvocations } from '@app/database/schema';
 import { todayIn } from '@app/domain';
 
-import { buildProvider, copilotIsConfigured } from './ai';
+import { copilotIsConfigured, providerFor } from './ai';
 import { currencyOf } from './household-context';
 import { tripsEnabled } from './repositories/trips';
 import { loadSession, queryAsUser } from './session';
@@ -86,7 +86,7 @@ export async function readTripText(
   const timeZone =
     session.households.find((h) => h.id === householdId)?.timeZone ?? 'America/Panama';
   const today = todayIn(timeZone);
-  const provider = buildProvider();
+  const provider = await providerFor('chat');
   const started = Date.now();
   const result = await provider.complete({
     system: SYSTEM,
