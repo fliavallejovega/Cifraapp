@@ -796,7 +796,7 @@
       "queuedHeading": "Recibimos tu archivo.",
       "queuedDetail": "Lo estamos leyendo. Suele tomar unos segundos; si es un PDF largo, un poco más.",
       "watchLink": "Ver cómo va",
-      "detect": "Que la app la reconozca por el estado"
+      "detect": "Que la app la reconozca"
     },
     "history": {
       "title": "Importaciones anteriores",

@@ -203,6 +203,34 @@ export function ShellChrome({
   const pathname = usePathname();
   const under = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
   const family = families.find((tabs) => tabs.some((tab) => under(tab.href)));
+  const tabsRef = useRef<HTMLUListElement>(null);
+
+  // The current tab is always in view inside its own strip. Only the strip
+  // scrolls — never the page — so a phone opening «Compromisos» sees it marked.
+  useEffect(() => {
+    const strip = tabsRef.current;
+    if (!strip) return;
+    const center = () => {
+      const active = strip.querySelector<HTMLElement>('[aria-current="page"]');
+      if (!active) return;
+      const box = strip.getBoundingClientRect();
+      const mark = active.getBoundingClientRect();
+      const left = mark.left - box.left + strip.scrollLeft;
+      const right = left + mark.width;
+      if (left < strip.scrollLeft || right > strip.scrollLeft + strip.clientWidth) {
+        strip.scrollLeft = Math.max(0, left - (strip.clientWidth - mark.width) / 2);
+      }
+    };
+    // Again once layout settles and whenever the strip changes size: the first
+    // pass can run before the fonts give the tabs their real width.
+    const frame = requestAnimationFrame(center);
+    const observer = new ResizeObserver(center);
+    observer.observe(strip);
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
+  }, [pathname]);
   const isActive = (href: string) => {
     const destination = destinations.find((entry) => entry.href === href);
     return under(href) || (destination?.also ?? []).some(under);
@@ -333,7 +361,10 @@ export function ShellChrome({
               aria-label={labels.tabs}
               className="mx-auto w-full max-w-5xl px-5 pt-4 sm:px-10 sm:pt-6"
             >
-              <ul className="-mx-1 flex [scrollbar-width:none] list-none gap-1 overflow-x-auto p-0 pb-1">
+              <ul
+                ref={tabsRef}
+                className="-mx-1 flex [scrollbar-width:none] list-none gap-1 overflow-x-auto p-0 pb-1"
+              >
                 {family.map((tab) => {
                   const current = under(tab.href);
                   return (

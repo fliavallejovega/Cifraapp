@@ -796,7 +796,7 @@
       "queuedHeading": "We have your file.",
       "queuedDetail": "We are reading it. It usually takes a few seconds; a long PDF takes a little more.",
       "watchLink": "See how it is going",
-      "detect": "Let the app recognise it from the statement"
+      "detect": "Let the app find it"
     },
     "history": {
       "title": "Earlier imports",
