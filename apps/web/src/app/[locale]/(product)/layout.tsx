@@ -3,7 +3,6 @@ import type { ReactNode } from 'react';
 
 import { AgentLauncher } from '@/components/agent/agent-launcher';
 import { AppShell } from '@/components/app-shell';
-import { tripsEnabled } from '@/server/repositories/trips';
 import { loadSession } from '@/server/session';
 
 /**
@@ -28,8 +27,6 @@ export default async function ProductLayout({
   const { locale } = await params;
   const session = await loadSession();
 
-  const showTrips = session ? await tripsEnabled(session, session.activeHouseholdId) : false;
-
   const householdName =
     session?.households.find((household) => household.id === session.activeHouseholdId)?.name ?? '';
 
@@ -37,7 +34,6 @@ export default async function ProductLayout({
     <AppShell
       locale={locale}
       householdName={householdName}
-      showTrips={showTrips}
       consoleUrl={session?.isPlatformAdmin ? (getClientEnv().NEXT_PUBLIC_ADMIN_URL ?? null) : null}
     >
       {children}

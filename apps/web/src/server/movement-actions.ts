@@ -14,6 +14,7 @@ import { and, eq, isNull } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 
+import { learnFromCorrection } from './category-learning';
 import { currencyOf } from './household-context';
 import {
   firstIssueKey,
@@ -110,6 +111,15 @@ export async function setMovementCategory(
       actorId: session.user.id,
       reason: 'Corrected by a household member.',
     });
+
+    // Said once: the rest of this merchant's movements follow.
+    if (categoryId.data) {
+      await learnFromCorrection(tx, {
+        householdId,
+        transactionId: id.data,
+        categoryId: categoryId.data,
+      });
+    }
 
     return 'ok' as const;
   });

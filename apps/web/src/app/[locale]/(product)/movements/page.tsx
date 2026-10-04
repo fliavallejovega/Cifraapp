@@ -260,7 +260,7 @@ export default async function MovementsPage({
                           <LedgerCell>
                             <Link
                               href={`/movements/${row.id}`}
-                              className="font-medium text-[color:var(--color-ink)] underline decoration-transparent underline-offset-4 hover:decoration-[color:var(--color-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-brand)]"
+                              className="inline-flex min-h-8 items-center font-medium text-[color:var(--color-ink)] underline decoration-transparent underline-offset-4 hover:decoration-[color:var(--color-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-brand)]"
                             >
                               {row.description}
                             </Link>

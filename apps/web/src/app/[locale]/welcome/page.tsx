@@ -6,6 +6,7 @@ import { AuthScreen } from '@/components/auth-screen';
 import { InviteForm } from '@/components/invite-form';
 import { HouseholdForm } from '@/components/household-form';
 import { SetupQuestionnaire } from '@/components/setup-questionnaire';
+import { Link } from '@/i18n/navigation';
 import { formatMoment } from '@/lib/format';
 import { isOwner, loadInvitations } from '@/server/repositories/access';
 import { loadSetupAnswers } from '@/server/repositories/setup-answers';
@@ -41,6 +42,7 @@ export default async function WelcomePage({ params }: { params: Promise<{ locale
   const household = session.households.find((entry) => entry.id === householdId);
   const currency = (household?.baseCurrency.trim() ?? 'USD') as CurrencyCode;
   const t = await getTranslations('setup');
+  const startHint = await getTranslations('welcomeStart');
 
   // Answered before, so this is a review: same six questions, filled in with
   // what is on record. It used to redirect anybody who came back, which made a
@@ -144,6 +146,19 @@ export default async function WelcomePage({ params }: { params: Promise<{ locale
       detail={review ? t('review.detail') : t('detail')}
       wide
     >
+      {/* Optional, and it says so first: a household can start by uploading a
+          statement and come back to this when it wants a sharper plan. */}
+      {!review && (
+        <p className="mb-8 max-w-[62ch] text-sm text-pretty text-[color:var(--color-ink-secondary)]">
+          {startHint('body')}{' '}
+          <Link
+            href="/documents"
+            className="inline-flex min-h-11 items-center font-medium text-[color:var(--color-ink)] underline decoration-[color:var(--color-brand)] underline-offset-4"
+          >
+            {startHint('skip')}
+          </Link>
+        </p>
+      )}
       <SetupQuestionnaire
         locale={locale}
         currencySymbol={getCurrency(currency).symbol}

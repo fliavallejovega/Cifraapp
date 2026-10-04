@@ -157,6 +157,8 @@ export const imports = appSchema.table(
      */
     printedBalance: numeric('printed_balance', { precision: 19, scale: 4, mode: 'string' }),
     printedBalanceDate: date('printed_balance_date'),
+    /** When the app filed this import on its own; null when a person did, or nobody has. */
+    autoFiledAt: timestamp('auto_filed_at', { withTimezone: true }),
     source: importSource('source').notNull().default('upload'),
     status: importStatus('status').notNull().default('uploaded'),
     format: text('format'),

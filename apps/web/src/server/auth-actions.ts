@@ -179,10 +179,9 @@ export async function createFirstHousehold(
     return { error: 'householdCreateFailed' };
   }
 
-  // Back to `/welcome`, which now has a second half: the household exists and
-  // the questionnaire that gives it its figures has not been answered yet.
-  // Sending them to the position here would land them on an empty gauge with
-  // nothing to explain it.
+  // Straight to the first upload. The questionnaire is still there, offered
+  // from the home screen, but the first thing a new household does is give the
+  // app a statement to read — not describe its finances field by field.
   const locale = formData.get('locale');
-  redirect(`/${typeof locale === 'string' ? locale : 'es'}/welcome`);
+  redirect(`/${typeof locale === 'string' ? locale : 'es'}/documents`);
 }

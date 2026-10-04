@@ -225,6 +225,8 @@ export const accounts = appSchema.table(
     interestRate: numeric('interest_rate', { precision: 6, scale: 3, mode: 'string' }),
     status: accountStatus('status').notNull().default('active'),
     source: provenance('source').notNull().default('user'),
+    /** Opened by the app for a statement uploaded without an account, until it is read. */
+    needsConfirmation: boolean('needs_confirmation').notNull().default(false),
     lastImportedAt: timestamp('last_imported_at', { withTimezone: true }),
     createdBy: uuid('created_by').references(() => profiles.id, { onDelete: 'set null' }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

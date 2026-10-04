@@ -100,6 +100,23 @@ export async function enqueueJob(
 }
 
 /** Marks a queued job cancelled. A running one is left to finish. */
+/**
+ * Queues work from inside a job, where there is no session. The household id
+ * is the one the running job already carries.
+ */
+export async function enqueueSystemJob(
+  database: Database,
+  householdId: string,
+  kind: string,
+  payload: JobPayload,
+  createdBy: string | null,
+): Promise<void> {
+  await database
+    .insert(jobs)
+    .values({ householdId, kind, payload, status: 'queued', createdBy })
+    .onConflictDoNothing();
+}
+
 export async function cancelJob(
   session: Session,
   householdId: string,

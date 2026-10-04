@@ -1,8 +1,8 @@
 import 'server-only';
 
-import { accounts, imports } from '@app/database/schema';
+import { accounts, debts, imports } from '@app/database/schema';
 import { Money } from '@app/domain';
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 
 import type { queryAsUser } from './session';
 
@@ -84,6 +84,15 @@ export async function applyStatementBalance(tx: Tx, importId: string): Promise<b
       updatedAt: new Date(),
     })
     .where(eq(accounts.id, row.accountId));
+
+  // A card's debt is the same number seen from the other side: what the bank
+  // says is owed is what the debt carries.
+  if (OWED.has(row.type) && newer) {
+    await tx
+      .update(debts)
+      .set({ currentBalance: stated.abs().toDecimalString(), updatedAt: new Date() })
+      .where(and(eq(debts.accountId, row.accountId), isNull(debts.deletedAt)));
+  }
 
   return true;
 }

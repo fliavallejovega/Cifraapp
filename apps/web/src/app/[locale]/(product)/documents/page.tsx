@@ -9,7 +9,6 @@ import {
   LedgerRow,
   Page,
   PageHeader,
-  Problem,
   Section,
   Status,
 } from '@app/ui';
@@ -23,6 +22,7 @@ import { CaptureGaps } from '@/components/statements/capture-gaps';
 import { CardLinks } from '@/components/statements/card-links';
 import { PendingSummary } from '@/components/statements/pending-summary';
 import { SaveAll } from '@/components/statements/save-all';
+import { UndoAutoFiled } from '@/components/statements/undo-auto-filed';
 import { StatementUploader } from '@/components/statements/statement-uploader';
 import { Link } from '@/i18n/navigation';
 import { formatPlainDate } from '@/lib/format';
@@ -72,6 +72,7 @@ export default async function DocumentsPage({
         review: imports.rowsReview,
         rejected: imports.rowsRejected,
         startedAt: imports.startedAt,
+        autoFiledAt: imports.autoFiledAt,
         fileName: documents.fileName,
       })
       .from(imports)
@@ -82,7 +83,6 @@ export default async function DocumentsPage({
   );
 
   const importAccounts = await loadAccountOptions(session, session.activeHouseholdId);
-  const hasAccount = importAccounts.length > 0;
 
   // Qué falta por subir. Se lee de los movimientos ya registrados, no de una
   // lista de archivos: un documento puede traer un trimestre.
@@ -109,23 +109,6 @@ export default async function DocumentsPage({
     <Page>
       <PageHeader title={t('title')} detail={t('detail')} />
 
-      {/* An import needs an account to file against. Saying so here, before the
-          file picker, beats letting someone choose a statement and then telling
-          them it cannot be used. */}
-      {!hasAccount && (
-        <div className="mb-8">
-          <Problem
-            title={t('noAccount.title')}
-            body={t('noAccount.body')}
-            action={
-              <Link href="/accounts" className="py-3 text-sm underline underline-offset-4">
-                {t('noAccount.action')}
-              </Link>
-            }
-          />
-        </div>
-      )}
-
       {/* El selector va primero. Subir es la razón de esta pantalla, y lo que
           queda por decidir de lo ya subido va debajo, no delante. */}
       <Card padding="lg" className="mb-8">
@@ -142,6 +125,7 @@ export default async function DocumentsPage({
             account: t('form.account'),
             accountHint: t('form.accountHint'),
             hint: t('form.fileHint'),
+            detect: t('form.detect'),
           }}
         />
       </Card>
@@ -363,6 +347,17 @@ export default async function DocumentsPage({
                       <Status tone={run.review > 0 ? 'caution' : 'neutral'}>
                         {t(`history.statuses.${run.status}`)}
                       </Status>
+                      {run.autoFiledAt && (
+                        <UndoAutoFiled
+                          importId={run.id}
+                          locale={locale}
+                          labels={{
+                            saved: t('history.autoSaved'),
+                            undo: t('history.undo'),
+                            error: t('history.undoFailed'),
+                          }}
+                        />
+                      )}
                     </LedgerCell>
                   </LedgerRow>
                 ))}

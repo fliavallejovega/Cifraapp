@@ -1,6 +1,7 @@
 import { Card, Page, PageHeader, Section, Status } from '@app/ui';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
+import { ApproveSafe } from '@/components/approve-safe';
 import { RescanButton } from '@/components/rescan-button';
 import { Link } from '@/i18n/navigation';
 import { loadQueueCounts } from '@/server/repositories/review';
@@ -42,6 +43,19 @@ export default async function ReviewPage({ params }: { params: Promise<{ locale:
         title={t('title')}
         detail={counts.total === 0 ? t('detail') : t('totalPending', { count: counts.total })}
       />
+
+      {counts.safe > 0 && (
+        <ApproveSafe
+          locale={locale}
+          labels={{
+            title: t('safe.title'),
+            body: t('safe.body'),
+            action: t('safe.action', { count: counts.safe }),
+            done: t('safe.done'),
+            error: shared('errors.generic'),
+          }}
+        />
+      )}
 
       <Section>
         <ul className="grid gap-4 sm:grid-cols-2">

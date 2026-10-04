@@ -30,14 +30,18 @@ import { and, eq, gte, isNull, lte, sql } from 'drizzle-orm';
 
 import { askAboutNearMisses } from './duplicate-opinion';
 import { loadClassificationInputs } from './classification-context';
-import { enqueueJob, registerJobHandler } from './jobs';
+import { ANALYSIS_JOBS } from './analysis-service';
+import { fileImportInto } from './import-filing';
+import { enqueueJob, enqueueSystemJob, registerJobHandler } from './jobs';
 import { queryAsUser, type Session } from './session';
 import {
   canReadByOcr,
   readStatementByOcr,
   type OcrFailure,
   type PrintedBalance,
+  type StatementHeader,
 } from './statement-ocr';
+import { settleDetectedAccount } from './detected-account';
 import { buildStorageKey, putDocument, readDocument } from './storage';
 import { MAX_STATEMENT_BYTES } from '../lib/upload-limits';
 
@@ -289,6 +293,7 @@ registerJobHandler(STATEMENT_IMPORT_JOB, async (job, report) => {
   let readByOcr = false;
   let edges: { top: EdgeLine | null; bottom: EdgeLine | null } | null = null;
   let printed: PrintedBalance | null = null;
+  let header: StatementHeader | null = null;
   let parsed;
   try {
     parsed = parseDocument(bytes, {
@@ -334,6 +339,7 @@ registerJobHandler(STATEMENT_IMPORT_JOB, async (job, report) => {
         readByOcr = true;
         edges = read.edges;
         printed = read.balance;
+        header = read.header;
       } else {
         return { failure: ocrFailureMessage(read.reason), retryable: read.reason === 'transport' };
       }
@@ -353,9 +359,20 @@ registerJobHandler(STATEMENT_IMPORT_JOB, async (job, report) => {
 
   await report(65, 'matching');
 
-  const accountCheck = await checkStatedAccount(db, {
+  // Uploaded without an account: the printed digits decide which one it is.
+  const settled = await settleDetectedAccount(db, {
     householdId: job.householdId,
     accountId,
+    documentId,
+    parsed,
+    header,
+  });
+  parsed = settled.parsed;
+  const target = settled.accountId;
+
+  const accountCheck = await checkStatedAccount(db, {
+    householdId: job.householdId,
+    accountId: target,
     stated: parsed.accountHint ?? null,
   });
 
@@ -363,7 +380,7 @@ registerJobHandler(STATEMENT_IMPORT_JOB, async (job, report) => {
     ...accountCheck,
     householdId: job.householdId,
     documentId,
-    accountId,
+    accountId: target,
     currency,
     jobId: job.id,
     parsed,
@@ -375,6 +392,47 @@ registerJobHandler(STATEMENT_IMPORT_JOB, async (job, report) => {
         ? { amount: parsed.closingBalance.toDecimalString(), date: parsed.periodEnd ?? null }
         : null),
   });
+
+  /*
+    Y lo seguro se guarda solo.
+
+    La familia decidió (2026-10-04) que la app guarde lo que puede decidir con
+    seguridad, con deshacer. Seguro es: la cuenta la confirman los dígitos
+    impresos (o el estado no imprime otros), y la fila es nueva — ni está ya en
+    el libro ni se parece a algo que esté. Lo dudoso se queda esperando a una
+    persona, igual que antes; lo seguro ya no la necesita.
+  */
+  if (accountCheck.suggestedAccountId === null && summary.counts.created > 0) {
+    const [uploader] = await db
+      .select({ id: documents.uploadedBy })
+      .from(documents)
+      .where(eq(documents.id, documentId))
+      .limit(1);
+    const filed = await db.transaction((tx) =>
+      fileImportInto(tx, {
+        householdId: job.householdId,
+        userId: uploader?.id ?? null,
+        importId: summary.importId,
+        chosen: 'proposed',
+      }),
+    );
+    if (filed > 0) {
+      await db
+        .update(imports)
+        .set({ autoFiledAt: new Date() })
+        .where(eq(imports.id, summary.importId));
+      // What filing by hand sets off, filing alone sets off too.
+      for (const kind of ANALYSIS_JOBS) {
+        await enqueueSystemJob(
+          db,
+          job.householdId,
+          kind,
+          { requestedAt: new Date().toISOString() },
+          uploader?.id ?? null,
+        );
+      }
+    }
+  }
 
   await report(100, 'ready');
 

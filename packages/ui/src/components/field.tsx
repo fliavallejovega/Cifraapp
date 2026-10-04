@@ -68,8 +68,8 @@ export function Field({ label, hint, error, required, children, className }: Fie
 
 const CONTROL_BASE = cn(
   'w-full rounded-(--radius-sm) border bg-[color:var(--color-surface)] px-3 text-[color:var(--color-ink)]',
-  // 16px on a phone, or iOS zooms the page on every tap; 44px tall for the thumb.
-  'h-11 text-base sm:h-10 sm:text-sm',
+  // 16px everywhere: below it iOS zooms the page on every tap, landscape included.
+  'h-11 text-base sm:h-10',
   'shadow-[inset_0_1px_2px_var(--c-shadow-near)]',
   'placeholder:text-[color:var(--color-ink-tertiary)]',
   'transition-[border-color,box-shadow] duration-(--duration-quick) ease-(--ease-settle)',

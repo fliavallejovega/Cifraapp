@@ -19,6 +19,7 @@ import {
   IconDebt,
   IconExport,
   IconGoals,
+  IconHome,
   IconImport,
   IconStatements,
   IconInvestments,
@@ -96,7 +97,8 @@ export type DestinationKey =
   | 'tax'
   | 'notifications'
   | 'subscription'
-  | 'settings';
+  | 'settings'
+  | 'household';
 
 export interface ShellDestination {
   readonly href: string;
@@ -104,10 +106,19 @@ export interface ShellDestination {
   readonly label: string;
   /** The heading this destination sits under. Blank groups render ungrouped. */
   readonly group: string;
+  /** Other screens that belong to this destination and mark it as current. */
+  readonly also?: readonly string[];
+}
+
+export interface ShellTab {
+  readonly href: string;
+  readonly label: string;
 }
 
 export interface ShellChromeProps {
   readonly destinations: readonly ShellDestination[];
+  /** Groups of sibling screens shown as tabs while any one of them is open. */
+  readonly families: readonly (readonly ShellTab[])[];
   readonly householdName: string;
   /** Present only for a platform administrator with a console to go to. */
   readonly consoleUrl: string | null;
@@ -123,6 +134,10 @@ export interface ShellChromeProps {
     /** The one action every screen offers: getting a statement in. */
     readonly upload: string;
     readonly uploadShort: string;
+    /** Accessible name of the phone's bottom bar. */
+    readonly bar: string;
+    /** Accessible name of the tabs across a destination's screens. */
+    readonly tabs: string;
     readonly theme: ThemeSwitchLabels;
   };
   /** The sign-out form, built on the server around its action. */
@@ -165,6 +180,7 @@ const ICONS: Record<DestinationKey, () => ReactNode> = {
   notifications: IconNotifications,
   subscription: IconSubscription,
   settings: IconSettings,
+  household: IconHome,
 };
 
 function I18nLink({ href, children, ...rest }: PropiedadesDeEnlace) {
@@ -177,6 +193,7 @@ function I18nLink({ href, children, ...rest }: PropiedadesDeEnlace) {
 
 export function ShellChrome({
   destinations,
+  families,
   householdName,
   consoleUrl,
   labels,
@@ -184,7 +201,12 @@ export function ShellChrome({
   children,
 }: ShellChromeProps) {
   const pathname = usePathname();
-  const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+  const under = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+  const family = families.find((tabs) => tabs.some((tab) => under(tab.href)));
+  const isActive = (href: string) => {
+    const destination = destinations.find((entry) => entry.href === href);
+    return under(href) || (destination?.also ?? []).some(under);
+  };
   const navRef = useRef<HTMLElement>(null);
 
   // The active destination is always in view inside the column, which scrolls
@@ -245,20 +267,12 @@ export function ShellChrome({
         icono: ICONS[destination.key](),
       }))}
       rutaActual={pathname}
+      esActiva={(_ruta, href) => isActive(href)}
       Enlace={I18nLink}
       titulo={labels.menu}
       textoCerrar={labels.close}
       textoVolver={labels.back}
       pie={footer}
-      accion={
-        <Link
-          href="/documents"
-          className="inline-flex h-11 items-center gap-2 rounded-(--radius-md) bg-[color:var(--color-panel)] px-4 text-sm font-medium text-[color:var(--color-panel-ink)] shadow-(--shadow-card) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-ink)]"
-        >
-          <IconImport />
-          {labels.uploadShort}
-        </Link>
-      }
       marca={
         <span className="flex items-center gap-2.5">
           <Monogram size={28} />
@@ -297,7 +311,8 @@ export function ShellChrome({
                 {labels.upload}
               </Link>
             </div>
-            {groupsOf(destinations).map((group) => (
+            {/* Subir is the button above; the list holds the other four. */}
+            {groupsOf(destinations.filter((entry) => entry.key !== 'documents')).map((group) => (
               <NavGroup
                 key={group.name}
                 name={group.name}
@@ -311,9 +326,85 @@ export function ShellChrome({
           <div className="border-t border-[color:var(--color-panel-rule)] px-6 py-5">{footer}</div>
         </aside>
 
-        {/* The content, offset by the column's width. */}
-        <div className="min-w-0 flex-1 md:pl-[16.5rem]">{children}</div>
+        {/* The content, offset by the column's width — and on a phone, clear of the bar. */}
+        <div className="min-w-0 flex-1 pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] md:pb-0 md:pl-[16.5rem]">
+          {family && (
+            <nav
+              aria-label={labels.tabs}
+              className="mx-auto w-full max-w-5xl px-5 pt-4 sm:px-10 sm:pt-6"
+            >
+              <ul className="-mx-1 flex [scrollbar-width:none] list-none gap-1 overflow-x-auto p-0 pb-1">
+                {family.map((tab) => {
+                  const current = under(tab.href);
+                  return (
+                    <li key={tab.href} className="shrink-0">
+                      <Link
+                        href={tab.href}
+                        aria-current={current ? 'page' : undefined}
+                        className={[
+                          'inline-flex min-h-11 items-center rounded-full px-4 text-sm font-medium whitespace-nowrap',
+                          'focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[color:var(--color-ink)]',
+                          current
+                            ? 'bg-[color:var(--color-panel)] text-[color:var(--color-panel-ink)]'
+                            : 'text-[color:var(--color-ink-secondary)] hover:bg-[color:var(--color-ground-sunk)] hover:text-[color:var(--color-ink)]',
+                        ].join(' ')}
+                      >
+                        {tab.label}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </nav>
+          )}
+          {children}
+        </div>
       </div>
+
+      {/* ------------------------------------------------------------------
+          The phone's bar. The same five destinations, under the thumb, with
+          the upload in the middle because it is what the product runs on.
+          ------------------------------------------------------------------ */}
+      <nav
+        aria-label={labels.bar}
+        className="fixed inset-x-0 bottom-0 z-20 border-t border-[color:var(--color-rule)] bg-[color:var(--color-surface)] pb-[env(safe-area-inset-bottom,0px)] md:hidden"
+      >
+        <ul className="mx-auto grid max-w-xl grid-cols-5">
+          {destinations.map((destination) => {
+            const active = isActive(destination.href);
+            const upload = destination.key === 'documents';
+            return (
+              <li key={destination.href} className="min-w-0">
+                <Link
+                  href={destination.href}
+                  aria-current={active ? 'page' : undefined}
+                  className={[
+                    'flex min-h-16 flex-col items-center justify-center gap-1 px-1 text-xs font-medium',
+                    'focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[color:var(--color-brand)]',
+                    active
+                      ? 'text-[color:var(--color-ink)]'
+                      : 'text-[color:var(--color-ink-secondary)]',
+                  ].join(' ')}
+                >
+                  <span
+                    aria-hidden
+                    className={
+                      upload
+                        ? 'flex h-8 w-12 items-center justify-center rounded-full bg-[color:var(--color-panel)] text-[color:var(--color-panel-ink)]'
+                        : active
+                          ? 'flex h-8 w-12 items-center justify-center rounded-full bg-[color:var(--color-ground-sunk)]'
+                          : 'flex h-8 w-12 items-center justify-center'
+                    }
+                  >
+                    {ICONS[destination.key]()}
+                  </span>
+                  <span className="max-w-full truncate">{destination.label}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
     </CajonRevelado>
   );
 }

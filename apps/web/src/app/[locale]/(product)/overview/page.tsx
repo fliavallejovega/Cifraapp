@@ -21,7 +21,9 @@ import { formatMoney } from '@app/domain';
 import { getFormatter, getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { Link } from '@/i18n/navigation';
+import { UnderstoodCard } from '@/components/understood-card';
 import { loadMonthGlance } from '@/server/repositories/month-glance';
+import { loadUnderstood } from '@/server/repositories/understood';
 import { loadPosition } from '@/server/repositories/position';
 import { requireHousehold } from '@/server/session';
 
@@ -41,12 +43,16 @@ export default async function OverviewPage({ params }: { params: Promise<{ local
   setRequestLocale(locale);
 
   const session = await requireHousehold(locale);
-  const [position, glance] = await Promise.all([
+  const [position, glance, understood] = await Promise.all([
     loadPosition(session, session.activeHouseholdId),
     loadMonthGlance(session, session.activeHouseholdId),
+    loadUnderstood(session, session.activeHouseholdId),
   ]);
 
   const t = await getTranslations('overview');
+  const setupComplete =
+    session.households.find((entry) => entry.id === session.activeHouseholdId)?.setupComplete ??
+    true;
   const format = await getFormatter();
   const moneyLocale = locale === 'en' ? 'en-US' : 'es-PA';
 
@@ -94,7 +100,7 @@ export default async function OverviewPage({ params }: { params: Promise<{ local
           title={t('empty.title')}
           body={t('empty.body')}
           action={
-            <Link href="/accounts" className="inline-block">
+            <Link href="/documents" className="inline-block">
               <Button size="lg">{t('empty.action')}</Button>
             </Link>
           }
@@ -147,6 +153,48 @@ export default async function OverviewPage({ params }: { params: Promise<{ local
               </Stat>
             </Card>
           </div>
+
+          {/* What the movements already say, confirmed in one tap. */}
+          {understood.length > 0 && (
+            <UnderstoodCard
+              locale={locale}
+              rows={understood.map((series) => ({
+                id: series.id,
+                name: series.name,
+                detail: t(
+                  series.direction === 'inflow' ? 'understood.inflow' : 'understood.outflow',
+                  {
+                    frequency: t(`understood.frequency.${series.frequency}`),
+                  },
+                ),
+                amount: (
+                  <Amount
+                    value={series.direction === 'inflow' ? series.amount : series.amount.negate()}
+                    locale={moneyLocale}
+                    size="sm"
+                  />
+                ),
+              }))}
+              labels={{
+                title: t('understood.title'),
+                body: t('understood.body'),
+                confirm: t('understood.confirm', { count: understood.length }),
+                review: t('understood.review'),
+                done: t('understood.done'),
+                error: t('understood.error'),
+              }}
+            />
+          )}
+
+          {/* The questionnaire is offered here, never required. */}
+          {!setupComplete && (
+            <Card tone="sunk" className="mt-6">
+              <p className="text-sm text-pretty">{t('setup.body')}</p>
+              <Link href="/welcome" className={`${linkClass} mt-2`}>
+                {t('setup.action')}
+              </Link>
+            </Card>
+          )}
 
           {/* What the balances rest on, when the bank has not confirmed them or disagreed. */}
           {(glance.mismatches.length > 0 || glance.unconfirmedAccounts > 0) && (

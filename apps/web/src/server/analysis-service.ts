@@ -3,6 +3,7 @@ import 'server-only';
 import { getAdminDb, type Database } from '@app/database';
 import {
   accounts,
+  categories,
   classificationLog,
   duplicateCandidates,
   merchantRules,
@@ -30,6 +31,7 @@ import { getServerEnv } from '@app/validation/env';
 import { and, eq, gte, isNull, sql } from 'drizzle-orm';
 
 import { needsACategory } from './repositories/needs-category';
+import { suggestCategories } from './category-ai';
 import { loadMerchantRecords } from './classification-context';
 import { enqueueJob, registerJobHandler } from './jobs';
 import type { Session } from './session';
@@ -421,6 +423,7 @@ registerJobHandler(CATEGORIZATION_SCAN_JOB, async (job, report) => {
 
   let applied = 0;
   let flagged = 0;
+  const unknown: { id: string; descriptor: string }[] = [];
 
   for (const row of uncategorized) {
     const classification = classify(
@@ -451,7 +454,10 @@ registerJobHandler(CATEGORIZATION_SCAN_JOB, async (job, report) => {
       },
     );
 
-    if (classification.categoryId === null) continue;
+    if (classification.categoryId === null) {
+      unknown.push({ id: row.id, descriptor: row.descriptionNormalized });
+      continue;
+    }
 
     const confident = classification.confidence >= AUTO_APPLY && !classification.needsReview;
 
@@ -483,6 +489,54 @@ registerJobHandler(CATEGORIZATION_SCAN_JOB, async (job, report) => {
 
     if (confident) applied += 1;
     else flagged += 1;
+  }
+
+  /*
+    Lo que ni una regla ni un comercio reconoce, se le pregunta al modelo — que
+    sólo propone. Cada sugerencia entra como pendiente de revisión, con su
+    origen dicho («ai»), para que una persona la acepte de un toque en vez de
+    elegir el rubro desde cero. Nunca entra como rubro decidido.
+  */
+  if (unknown.length > 0) {
+    await report(80, 'suggesting');
+    const options = await database
+      .select({ id: categories.id, name: categories.name })
+      .from(categories)
+      .where(
+        and(
+          eq(categories.householdId, job.householdId),
+          isNull(categories.archivedAt),
+          sql`${categories.kind} <> 'transfer'`,
+        ),
+      );
+    const suggested = await suggestCategories(
+      unknown.map((row) => row.descriptor),
+      options,
+    );
+    for (const row of unknown) {
+      const suggestion = suggested.get(row.descriptor);
+      if (!suggestion) continue;
+      await database
+        .update(transactions)
+        .set({
+          categoryId: suggestion.categoryId,
+          categorySource: 'ai',
+          categoryConfidence: suggestion.confidence.toFixed(3),
+          status: 'needs_review',
+          updatedAt: new Date(),
+        })
+        .where(and(eq(transactions.id, row.id), isNull(transactions.categoryId)));
+      await database.insert(classificationLog).values({
+        householdId: job.householdId,
+        transactionId: row.id,
+        categoryId: suggestion.categoryId,
+        source: 'ai',
+        confidence: suggestion.confidence.toFixed(3),
+        reason:
+          'Suggested by the model for a descriptor no rule or merchant knew; awaiting review.',
+      });
+      flagged += 1;
+    }
   }
 
   await report(100, 'ready');

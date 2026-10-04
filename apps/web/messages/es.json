@@ -386,7 +386,7 @@
     }
   },
   "overview": {
-    "title": "Tu posición",
+    "title": "Inicio",
     "gauge": {
       "label": "Disponible para gastar",
       "buffer": "Colchón mínimo",
@@ -403,9 +403,9 @@
       "committedDetail": "Obligaciones próximas, pagos mínimos de deuda, reserva fiscal y tu colchón."
     },
     "empty": {
-      "title": "Dale a tu dinero un lugar donde vivir.",
-      "body": "Agrega tu primera cuenta o importa un estado de cuenta. A partir de ahí calculamos qué está comprometido y qué te queda de verdad.",
-      "action": "Agregar una cuenta"
+      "title": "Empieza subiendo un estado de cuenta.",
+      "body": "Sube un PDF, una foto o una captura de tu banco. La app reconoce la cuenta, lee los movimientos y el saldo, y desde ahí calcula qué tienes y qué está comprometido.",
+      "action": "Subir un estado de cuenta"
     },
     "claims": {
       "title": "Qué reclama ese dinero",
@@ -455,6 +455,29 @@
       "mismatchAbove": "{account}: el banco dice {gap} más de lo que calculamos al {date}. Casi siempre es un estado de cuenta que falta por subir.",
       "mismatchBelow": "{account}: el banco dice {gap} menos de lo que calculamos al {date}. Casi siempre es un estado de cuenta que falta por subir.",
       "action": "Subir una captura con el saldo"
+    },
+    "setup": {
+      "body": "Cuando quieras, cuéntanos tu sueldo y tus pagos fijos: el plan sale más exacto. No hace falta para empezar.",
+      "action": "Completar el perfil del hogar"
+    },
+    "understood": {
+      "title": "Esto entendimos de tus movimientos",
+      "body": "Lo que se repite en tus cuentas. Si está bien, confírmalo y entra a tu plan; si algo no es así, revísalo uno por uno.",
+      "confirm": "{count, plural, one {Sí, es así} other {Sí, son estos #}}",
+      "review": "Revisar uno por uno",
+      "done": "Listo. Ya cuentan en tu plan y en tu disponible.",
+      "error": "No se pudo guardar. Vuelve a intentarlo.",
+      "inflow": "Entra {frequency}",
+      "outflow": "Sale {frequency}",
+      "frequency": {
+        "daily": "cada día",
+        "weekly": "cada semana",
+        "biweekly": "cada dos semanas",
+        "semimonthly": "cada quincena",
+        "monthly": "cada mes",
+        "quarterly": "cada trimestre",
+        "annual": "cada año"
+      }
     }
   },
   "plan": {
@@ -764,10 +787,11 @@
         "queueUnavailable": "No pudimos poner el archivo en cola. Vuelve a intentarlo en un momento."
       },
       "account": "¿De qué cuenta es este estado?",
-      "accountHint": "Filar un estado en la cuenta equivocada es peor que no filarlo.",
+      "accountHint": "Si no eliges, la app reconoce la cuenta por los dígitos impresos o la crea con lo que dice el estado.",
       "queuedHeading": "Recibimos tu archivo.",
       "queuedDetail": "Lo estamos leyendo. Suele tomar unos segundos; si es un PDF largo, un poco más.",
-      "watchLink": "Ver cómo va"
+      "watchLink": "Ver cómo va",
+      "detect": "Que la app la reconozca por el estado"
     },
     "history": {
       "title": "Importaciones anteriores",
@@ -789,7 +813,10 @@
         "completed": "Completado",
         "failed": "Falló",
         "discarded": "Descartado"
-      }
+      },
+      "autoSaved": "Guardado solo por la app",
+      "undo": "Deshacer",
+      "undoFailed": "No se pudo deshacer. Vuelve a intentarlo."
     },
     "note": "Analizar un archivo no crea movimientos todavía. Cada línea recibe un veredicto y tú confirmas antes de que algo entre a tus registros.",
     "noAccount": {
@@ -895,7 +922,10 @@
       "never": "nunca subiste un estado de cuenta de esta"
     },
     "cardsUnlinked": "{count, plural, one {Si guardas ahora, el pago a una tarjeta que no reconocemos cuenta como gasto. Vincúlalo arriba primero.} other {Si guardas ahora, los # pagos a tarjetas que no reconocemos cuentan como gasto. Vincúlalos arriba primero.}}",
-    "gapsOpen": "{count, plural, one {Además, puede faltar un movimiento entre dos capturas: revísalo arriba.} other {Además, puede faltar algo en # cortes entre capturas: revísalos arriba.}}"
+    "gapsOpen": "{count, plural, one {Además, puede faltar un movimiento entre dos capturas: revísalo arriba.} other {Además, puede faltar algo en # cortes entre capturas: revísalos arriba.}}",
+    "detected": {
+      "name": "Cuenta por identificar"
+    }
   },
   "nav": {
     "label": "Secciones",
@@ -955,7 +985,16 @@
     "offers": "Ofertas",
     "familyExpenses": "Gastos familiares",
     "upload": "Subir estado o captura",
-    "uploadShort": "Subir"
+    "uploadShort": "Subir",
+    "primary": {
+      "overview": "Inicio",
+      "movements": "Movimientos",
+      "documents": "Subir",
+      "plan": "Plan",
+      "household": "Hogar"
+    },
+    "bar": "Destinos",
+    "tabs": "Pantallas de esta sección"
   },
   "accounts": {
     "title": "Tus cuentas",
@@ -2471,7 +2510,13 @@
     "rescanDetail": "Corre los cuatro análisis otra vez sobre tus movimientos.",
     "rescanQueued": "Análisis en cola. En unos segundos aparece lo nuevo.",
     "errorTitle": "No se pudo guardar",
-    "totalPending": "{count} decisiones esperándote"
+    "totalPending": "{count} decisiones esperándote",
+    "safe": {
+      "title": "Lo que la app ya tiene claro",
+      "body": "Transferencias entre tus cuentas que cuadran y movimientos que ya traen un rubro propuesto. Al aprobarlos, la app aprende cada comercio y no te lo vuelve a preguntar. Los posibles duplicados siempre se revisan uno por uno.",
+      "action": "{count, plural, one {Aprobar 1} other {Aprobar los #}}",
+      "done": "Listo. Lo que queda abajo sí necesita que lo mires."
+    }
   },
   "duplicates": {
     "title": "Posibles repetidos",
@@ -5413,5 +5458,147 @@
     "minorDetail": "{count, plural, one {Hay un corte entre capturas que no se pudo comprobar porque no se solapan. Lo más probable es que esté completo.} other {Hay # cortes entre capturas que no se pudieron comprobar porque no se solapan. Lo más probable es que estén completos.}} Para que Cifra lo confirme sola, deja que cada captura repita la última línea de la anterior.",
     "minorShow": "Revisar (opcional)",
     "minorHide": "Ocultar"
+  },
+  "hub": {
+    "title": "Hogar",
+    "detail": "Todo lo demás, ordenado por lo que quieres hacer.",
+    "sections": {
+      "money": "Tu dinero",
+      "flows": "Lo que entra y sale",
+      "order": "Revisar y ordenar",
+      "ahead": "Mirar adelante",
+      "record": "El registro",
+      "home": "Tu hogar"
+    },
+    "items": {
+      "accounts": {
+        "title": "Cuentas",
+        "detail": "Tus cuentas de banco, efectivo y billeteras, con su saldo."
+      },
+      "cards": {
+        "title": "Tarjetas",
+        "detail": "Cupo, pago mínimo y en qué se está usando cada tarjeta."
+      },
+      "offers": {
+        "title": "Ofertas",
+        "detail": "Con cuál tarjeta conviene pagar cada cosa."
+      },
+      "investments": {
+        "title": "Inversiones",
+        "detail": "Lo que tienes invertido y cómo va."
+      },
+      "income": {
+        "title": "Ingresos",
+        "detail": "Tu sueldo y lo que esperas cobrar."
+      },
+      "commitments": {
+        "title": "Compromisos",
+        "detail": "Pagos fijos: alquiler, servicios, colegio."
+      },
+      "debts": {
+        "title": "Deudas",
+        "detail": "Lo que debes y cuánto te cuesta."
+      },
+      "budgets": {
+        "title": "Presupuestos",
+        "detail": "Cuánto quieres gastar por rubro."
+      },
+      "goals": {
+        "title": "Metas",
+        "detail": "Lo que estás juntando y cuánto falta."
+      },
+      "trips": {
+        "title": "Viajes",
+        "detail": "Presupuesto, gastos y documentos de cada viaje."
+      },
+      "review": {
+        "title": "Por revisar",
+        "detail": "Lo que la app no pudo decidir sola."
+      },
+      "categories": {
+        "title": "Rubros",
+        "detail": "Las categorías en que se ordenan tus gastos."
+      },
+      "rules": {
+        "title": "Reglas",
+        "detail": "Cómo se clasifica cada movimiento automáticamente."
+      },
+      "merchants": {
+        "title": "Comercios",
+        "detail": "Dónde se fue el dinero, comercio por comercio."
+      },
+      "familyExpenses": {
+        "title": "Gastos familiares",
+        "detail": "Subir los estados de cada persona del hogar."
+      },
+      "advice": {
+        "title": "Consejo del mes",
+        "detail": "Qué conviene hacer este mes, explicado."
+      },
+      "alerts": {
+        "title": "Alertas",
+        "detail": "Lo que se salió de lo normal."
+      },
+      "projection": {
+        "title": "Proyección",
+        "detail": "Cómo se verán tus cuentas los próximos meses."
+      },
+      "scenarios": {
+        "title": "Escenarios",
+        "detail": "Qué pasa si cambias algo: un gasto, un ingreso."
+      },
+      "debtSimulator": {
+        "title": "Simulador de deuda",
+        "detail": "Cuándo terminas de pagar y cuánto ahorras."
+      },
+      "chat": {
+        "title": "Preguntar",
+        "detail": "Pregúntale a la app sobre tu dinero."
+      },
+      "reports": {
+        "title": "Estados",
+        "detail": "Ingresos, gastos y patrimonio del mes."
+      },
+      "close": {
+        "title": "Cierre de mes",
+        "detail": "Dejar el mes terminado y revisado."
+      },
+      "exports": {
+        "title": "Exportar",
+        "detail": "Descargar tus datos o mandarlos a tu contador."
+      },
+      "people": {
+        "title": "Personas",
+        "detail": "Quiénes forman el hogar."
+      },
+      "access": {
+        "title": "Accesos",
+        "detail": "Quién más puede ver tu hogar, incluido tu contador."
+      },
+      "tax": {
+        "title": "Fiscal",
+        "detail": "Tu perfil de impuestos y lo que conviene apartar."
+      },
+      "notifications": {
+        "title": "Avisos",
+        "detail": "Qué te avisamos y por dónde."
+      },
+      "subscription": {
+        "title": "Suscripción",
+        "detail": "Tu plan y tus pagos."
+      },
+      "settings": {
+        "title": "Ajustes",
+        "detail": "Colchón, moneda, seguridad y conexiones."
+      },
+      "households": {
+        "title": "Cambiar de hogar",
+        "detail": "Si perteneces a más de un hogar."
+      }
+    }
+  },
+  "welcomeStart": {
+    "body": "Esto es opcional. Puedes empezar subiendo un estado de cuenta y llenar esto después, cuando quieras un plan más exacto.",
+    "skip": "Empezar subiendo un estado"
   }
 }

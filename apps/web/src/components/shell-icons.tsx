@@ -393,6 +393,17 @@ export function IconExport() {
   );
 }
 
+/** The household: a house, for everything about how this home is set up. */
+export function IconHome() {
+  return (
+    <Icon>
+      <path d="M3 9.25 10 3.5l7 5.75" />
+      <path d="M5 8v8.5h10V8" />
+      <path d="M8.5 16.5v-4h3v4" />
+    </Icon>
+  );
+}
+
 /** Settings: the household's own choices. */
 export function IconSettings() {
   return (

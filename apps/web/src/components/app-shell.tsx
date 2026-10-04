@@ -16,89 +16,102 @@ import { IconSignOut } from './shell-icons';
  */
 
 /**
- * Every signed-in destination, in the order the product argues for.
+ * The five destinations, and nothing else in the column.
  *
- * The groups answer, in sequence, the questions the product exists to answer:
- * what do I have, what already claims it, how does the data get in, what should
- * I do, what is the record, and how is this household set up. A screen that
- * does not answer one of those does not belong in the column.
+ * The column used to list thirty-four screens under six headings, and a
+ * household that opened it could not tell where to start. Five answer what a
+ * person comes to do: see how things stand, look at what moved, get a
+ * statement in, decide what to do next, and set up the home. Every other
+ * screen still exists and is reached from inside one of these — Plan carries
+ * its own tabs, and Hogar lists the rest — so the screens a destination owns
+ * mark it as current (`also`).
  */
 const DESTINATIONS = [
-  { href: '/overview', key: 'overview', group: 'money' },
-  { href: '/accounts', key: 'accounts', group: 'money' },
-  // Detrás de Cuentas y delante de Movimientos: una tarjeta es una cuenta, y lo
-  // que se mira en ella —cupo, mínimo, en qué se está usando— está entre las dos.
-  { href: '/cards', key: 'cards', group: 'money' },
-  // Las ofertas van pegadas a las tarjetas porque son la misma decisión vista
-  // desde el otro lado: la tarjeta dice qué tenés, la oferta con cuál pagar.
-  { href: '/offers', key: 'offers', group: 'money' },
-  { href: '/movements', key: 'movements', group: 'money' },
+  { href: '/overview', key: 'overview', also: [] },
+  {
+    href: '/movements',
+    key: 'movements',
+    also: ['/review', '/accounts', '/cards', '/merchants', '/categories', '/rules'],
+  },
+  { href: '/documents', key: 'documents', also: ['/family-expenses'] },
+  {
+    href: '/plan',
+    key: 'plan',
+    also: [
+      '/goals',
+      '/budgets',
+      '/debts',
+      '/debt-simulator',
+      '/commitments',
+      '/income',
+      '/projection',
+      '/scenarios',
+      '/advice',
+    ],
+  },
+  { href: '/household', key: 'household', also: [] },
+] as const;
 
-  { href: '/commitments', key: 'commitments', group: 'claims' },
-  { href: '/debts', key: 'debts', group: 'claims' },
-  { href: '/goals', key: 'goals', group: 'claims' },
-  { href: '/trips', key: 'trips', group: 'claims' },
-  { href: '/income', key: 'income', group: 'claims' },
-  { href: '/budgets', key: 'budgets', group: 'claims' },
-
-  { href: '/family-expenses', key: 'familyExpenses', group: 'intake' },
-  { href: '/documents', key: 'documents', group: 'intake' },
-  { href: '/review', key: 'review', group: 'intake' },
-  { href: '/merchants', key: 'merchants', group: 'intake' },
-
-  { href: '/plan', key: 'plan', group: 'decide' },
-  { href: '/advice', key: 'advice', group: 'decide' },
-  { href: '/alerts', key: 'alerts', group: 'decide' },
-  { href: '/debt-simulator', key: 'debtSimulator', group: 'decide' },
-  { href: '/scenarios', key: 'scenarios', group: 'decide' },
-  { href: '/projection', key: 'projection', group: 'decide' },
-  { href: '/investments', key: 'investments', group: 'decide' },
-  { href: '/chat', key: 'chat', group: 'decide' },
-
-  { href: '/reports', key: 'reports', group: 'record' },
-  { href: '/close', key: 'close', group: 'record' },
-  { href: '/exports', key: 'exports', group: 'record' },
-
-  { href: '/people', key: 'people', group: 'household' },
-  { href: '/categories', key: 'categories', group: 'household' },
-  { href: '/rules', key: 'rules', group: 'household' },
-  { href: '/access', key: 'access', group: 'household' },
-  { href: '/tax', key: 'tax', group: 'household' },
-  { href: '/notifications', key: 'notifications', group: 'household' },
-  { href: '/subscription', key: 'subscription', group: 'household' },
-  { href: '/settings', key: 'settings', group: 'household' },
+/**
+ * The screens a destination owns, shown as tabs across the top of each one, so
+ * moving between the plan and its goals, or between movements and what is left
+ * to review, never needs the column.
+ */
+const FAMILIES = [
+  [
+    { href: '/plan', key: 'plan' },
+    { href: '/goals', key: 'goals' },
+    { href: '/budgets', key: 'budgets' },
+    { href: '/debts', key: 'debts' },
+    { href: '/commitments', key: 'commitments' },
+    { href: '/income', key: 'income' },
+    { href: '/projection', key: 'projection' },
+    { href: '/scenarios', key: 'scenarios' },
+    { href: '/debt-simulator', key: 'debtSimulator' },
+    { href: '/advice', key: 'advice' },
+  ],
+  [
+    { href: '/movements', key: 'movements' },
+    { href: '/review', key: 'review' },
+    { href: '/accounts', key: 'accounts' },
+    { href: '/cards', key: 'cards' },
+    { href: '/categories', key: 'categories' },
+    { href: '/rules', key: 'rules' },
+    { href: '/merchants', key: 'merchants' },
+  ],
 ] as const;
 
 export async function AppShell({
   locale,
   householdName,
   consoleUrl,
-  showTrips = false,
   children,
 }: {
   readonly locale: string;
   readonly householdName: string;
   /** The administrative console, for the few people who hold a seat there. */
   readonly consoleUrl: string | null;
-  /** Viajes, behind the `trips_module` flag: absent from the column while it is off. */
-  readonly showTrips?: boolean;
   readonly children: ReactNode;
 }) {
   const t = await getTranslations('nav');
   const common = await getTranslations('common');
 
-  const destinations: ShellDestination[] = DESTINATIONS.filter(
-    (destination) => destination.key !== 'trips' || showTrips,
-  ).map((destination) => ({
+  const destinations: ShellDestination[] = DESTINATIONS.map((destination) => ({
     href: destination.href,
     key: destination.key,
-    label: t(destination.key),
-    group: t(`groups.${destination.group}`),
+    label: t(`primary.${destination.key}`),
+    group: '',
+    also: destination.also,
   }));
+
+  const families = FAMILIES.map((family) =>
+    family.map((tab) => ({ href: tab.href, label: t(tab.key) })),
+  );
 
   return (
     <ShellChrome
       destinations={destinations}
+      families={families}
       householdName={householdName}
       consoleUrl={consoleUrl}
       labels={{
@@ -112,6 +125,8 @@ export async function AppShell({
         console: t('console'),
         upload: t('upload'),
         uploadShort: t('uploadShort'),
+        bar: t('bar'),
+        tabs: t('tabs'),
         theme: {
           legend: t('theme.legend'),
           system: t('theme.system'),

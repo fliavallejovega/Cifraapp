@@ -58,4 +58,5 @@ export const PROTECTED_SEGMENTS = [
   '/subscription',
   '/settings',
   '/households',
+  '/household',
 ];

@@ -10,16 +10,19 @@ import {
   transfers,
 } from '@app/database/schema';
 import { Money } from '@app/domain';
-import { and, eq, inArray, isNull } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import { after } from 'next/server';
 import { z } from 'zod';
 
 import { scheduleAnalysis } from './analysis-service';
 import { runQueuedJobs } from './jobs';
 import { firstIssueKey, optionalUuid, recordName } from './record-input';
+import { learnFromCorrection } from './category-learning';
 import { revalidateFinancials } from './revalidate';
 import { loadSession, queryAsUser } from './session';
 import type { RecordActionResult } from '@/components/records/spec';
+
+type Tx = Parameters<Parameters<typeof queryAsUser<unknown>>[1]>[0];
 
 /**
  * Resolving what the engines proposed.
@@ -196,87 +199,224 @@ export async function resolveRecurring(
 
   const householdId = session.activeHouseholdId;
 
-  const updated = await queryAsUser(session, async (tx) => {
-    const [series] = await tx
-      .update(recurringSeries)
-      .set(
-        decision.data === 'confirm'
-          ? {
-              isActive: true,
-              isEssential: essential,
-              confirmedBy: session.user.id,
-              confirmedAt: new Date(),
-              updatedAt: new Date(),
-            }
-          : { deletedAt: new Date(), isActive: false, updatedAt: new Date() },
-      )
-      .where(
-        and(
-          eq(recurringSeries.id, id.data),
-          eq(recurringSeries.householdId, householdId),
-          isNull(recurringSeries.deletedAt),
-        ),
-      )
-      .returning({
-        id: recurringSeries.id,
-        name: recurringSeries.name,
-        direction: recurringSeries.direction,
-        amount: recurringSeries.expectedAmount,
-        currency: recurringSeries.currency,
-        frequency: recurringSeries.frequency,
-        anchorDays: recurringSeries.anchorDays,
-        anchorAmounts: recurringSeries.anchorAmounts,
-        next: recurringSeries.nextExpectedDate,
-        accountId: recurringSeries.accountId,
-        categoryId: recurringSeries.categoryId,
-        merchantId: recurringSeries.merchantId,
-      });
-
-    /*
-      Un gasto que se repite, confirmado, es un compromiso.
-
-      Antes confirmarlo sólo encendía la serie, y nada leía las series de gasto:
-      el plan y el disponible miran los compromisos. La persona decía «sí, esto
-      se repite, cuéntalo» y no se contaba. Ahora la confirmación crea el
-      compromiso que la serie describe, una sola vez.
-    */
-    if (series && decision.data === 'confirm' && series.direction === 'outflow') {
-      const [existing] = await tx
-        .select({ id: obligations.id })
-        .from(obligations)
-        .where(
-          and(
-            eq(obligations.householdId, householdId),
-            eq(obligations.seriesId, series.id),
-            isNull(obligations.deletedAt),
-          ),
-        )
-        .limit(1);
-      if (!existing) {
-        const currency = series.currency.trim() === 'PAB' ? 'PAB' : 'USD';
-        await tx.insert(obligations).values({
-          householdId,
-          name: series.name,
-          expectedAmount: Money.fromDecimalString(series.amount, currency).abs().toDecimalString(),
-          currency,
-          dueDate: series.next,
-          frequency: series.frequency,
-          anchorDays: series.anchorDays,
-          anchorAmounts: series.anchorAmounts,
-          isEssential: essential,
-          detectedBy: 'system',
-          seriesId: series.id,
-          accountId: series.accountId,
-          categoryId: series.categoryId,
-          merchantId: series.merchantId,
-        });
-      }
-    }
-
-    return series;
-  });
+  const updated = await queryAsUser(session, (tx) =>
+    settleSeries(tx, {
+      householdId,
+      userId: session.user.id,
+      id: id.data,
+      decision: decision.data,
+      essential,
+    }),
+  );
 
   if (!updated) return { error: 'notFound' };
+
+  revalidateFinancials(formData);
+  return { ok: true };
+}
+
+/**
+ * Confirms or dismisses one detected series, and turns a confirmed expense into
+ * its commitment. Shared by the review queue and by «esto entendimos».
+ */
+async function settleSeries(
+  tx: Tx,
+  input: {
+    readonly householdId: string;
+    readonly userId: string;
+    readonly id: string;
+    readonly decision: 'confirm' | 'dismiss';
+    /** Null keeps what detection decided. */
+    readonly essential: boolean | null;
+  },
+) {
+  const [series] = await tx
+    .update(recurringSeries)
+    .set(
+      input.decision === 'confirm'
+        ? {
+            isActive: true,
+            ...(input.essential === null ? {} : { isEssential: input.essential }),
+            confirmedBy: input.userId,
+            confirmedAt: new Date(),
+            updatedAt: new Date(),
+          }
+        : { deletedAt: new Date(), isActive: false, updatedAt: new Date() },
+    )
+    .where(
+      and(
+        eq(recurringSeries.id, input.id),
+        eq(recurringSeries.householdId, input.householdId),
+        isNull(recurringSeries.deletedAt),
+      ),
+    )
+    .returning({
+      id: recurringSeries.id,
+      name: recurringSeries.name,
+      direction: recurringSeries.direction,
+      amount: recurringSeries.expectedAmount,
+      currency: recurringSeries.currency,
+      frequency: recurringSeries.frequency,
+      anchorDays: recurringSeries.anchorDays,
+      anchorAmounts: recurringSeries.anchorAmounts,
+      next: recurringSeries.nextExpectedDate,
+      accountId: recurringSeries.accountId,
+      categoryId: recurringSeries.categoryId,
+      merchantId: recurringSeries.merchantId,
+      isEssential: recurringSeries.isEssential,
+    });
+
+  /*
+    Un gasto que se repite, confirmado, es un compromiso.
+
+    Antes confirmarlo sólo encendía la serie, y nada leía las series de gasto:
+    el plan y el disponible miran los compromisos. La persona decía «sí, esto
+    se repite, cuéntalo» y no se contaba. Ahora la confirmación crea el
+    compromiso que la serie describe, una sola vez.
+  */
+  if (series && input.decision === 'confirm' && series.direction === 'outflow') {
+    const [existing] = await tx
+      .select({ id: obligations.id })
+      .from(obligations)
+      .where(
+        and(
+          eq(obligations.householdId, input.householdId),
+          eq(obligations.seriesId, series.id),
+          isNull(obligations.deletedAt),
+        ),
+      )
+      .limit(1);
+    if (!existing) {
+      const currency = series.currency.trim() === 'PAB' ? 'PAB' : 'USD';
+      await tx.insert(obligations).values({
+        householdId: input.householdId,
+        name: series.name,
+        expectedAmount: Money.fromDecimalString(series.amount, currency).abs().toDecimalString(),
+        currency,
+        dueDate: series.next,
+        frequency: series.frequency,
+        anchorDays: series.anchorDays,
+        anchorAmounts: series.anchorAmounts,
+        isEssential: series.isEssential,
+        detectedBy: 'system',
+        seriesId: series.id,
+        accountId: series.accountId,
+        categoryId: series.categoryId,
+        merchantId: series.merchantId,
+      });
+    }
+  }
+
+  return series;
+}
+
+/**
+ * «Esto entendimos — sí, es así.»
+ *
+ * The income and fixed payments the movements show, confirmed in one tap
+ * instead of one screen each. Each keeps whether detection judged it essential;
+ * a person who disagrees with one dismisses it on its own.
+ */
+export async function confirmUnderstood(
+  _previous: RecordActionResult,
+  formData: FormData,
+): Promise<RecordActionResult> {
+  const session = await loadSession();
+  if (!session?.activeHouseholdId) return { error: 'signInRequired' };
+  const householdId = session.activeHouseholdId;
+
+  const ids = z.array(z.uuid()).max(50).safeParse(formData.getAll('id'));
+  if (!ids.success || ids.data.length === 0) return { error: 'notFound' };
+
+  await queryAsUser(session, async (tx) => {
+    for (const id of ids.data) {
+      await settleSeries(tx, {
+        householdId,
+        userId: session.user.id,
+        id,
+        decision: 'confirm',
+        essential: null,
+      });
+    }
+  });
+
+  revalidateFinancials(formData);
+  return { ok: true };
+}
+
+/** Transfers at or above this are safe to confirm in bulk. */
+const SAFE_TRANSFER = '0.900';
+
+/**
+ * «Aprobar todo lo seguro.»
+ *
+ * The review queues used to be one decision per row, by design, and a first
+ * month of statements meant a hundred taps. Two kinds of item are safe to
+ * settle together: transfers the engine is sure of (the same amount leaving
+ * one account of the household and arriving in another), and categories that
+ * already carry a proposal. Each accepted category also teaches its merchant,
+ * so the next statement asks less. Duplicates are not here: deciding that two
+ * movements are one is never done in bulk.
+ */
+export async function approveSafe(
+  _previous: RecordActionResult,
+  formData: FormData,
+): Promise<RecordActionResult> {
+  const session = await loadSession();
+  if (!session?.activeHouseholdId) return { error: 'signInRequired' };
+  const householdId = session.activeHouseholdId;
+
+  await queryAsUser(session, async (tx) => {
+    const sure = await tx
+      .update(transfers)
+      .set({ confirmedBy: session.user.id, confirmedAt: new Date() })
+      .where(
+        and(
+          eq(transfers.householdId, householdId),
+          isNull(transfers.confirmedAt),
+          sql`${transfers.confidence} >= ${SAFE_TRANSFER}::numeric`,
+        ),
+      )
+      .returning({ from: transfers.fromTransactionId, to: transfers.toTransactionId });
+    const legs = sure.flatMap((pair) => [pair.from, pair.to]);
+    if (legs.length > 0) {
+      await tx
+        .update(transactions)
+        .set({ status: 'transfer', updatedAt: new Date() })
+        .where(and(eq(transactions.householdId, householdId), inArray(transactions.id, legs)));
+    }
+
+    const proposed = await tx
+      .update(transactions)
+      .set({ status: 'posted', updatedAt: new Date() })
+      .where(
+        and(
+          eq(transactions.householdId, householdId),
+          eq(transactions.status, 'needs_review'),
+          isNotNull(transactions.categoryId),
+          isNull(transactions.deletedAt),
+        ),
+      )
+      .returning({ id: transactions.id, categoryId: transactions.categoryId });
+
+    for (const row of proposed) {
+      if (!row.categoryId) continue;
+      await tx.insert(classificationLog).values({
+        householdId,
+        transactionId: row.id,
+        categoryId: row.categoryId,
+        source: 'user',
+        confidence: '1.000',
+        actorId: session.user.id,
+        reason: 'Accepted with everything safe from the review screen.',
+      });
+      await learnFromCorrection(tx, {
+        householdId,
+        transactionId: row.id,
+        categoryId: row.categoryId,
+      });
+    }
+  });
 
   revalidateFinancials(formData);
   return { ok: true };
@@ -352,6 +492,11 @@ export async function resolveCategory(
           ? 'Corrected from the review queue.'
           : 'Confirmed from the review queue.',
     });
+
+    const chosen = categoryId.data ?? existing.categoryId;
+    if (chosen) {
+      await learnFromCorrection(tx, { householdId, transactionId: id.data, categoryId: chosen });
+    }
 
     return 'ok' as const;
   });

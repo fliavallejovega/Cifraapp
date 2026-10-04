@@ -116,8 +116,7 @@ export function AgentLauncher({ locale }: { readonly locale: string }) {
         }}
         aria-label={t('open')}
         aria-expanded={open}
-        className="fixed right-4 z-30 flex h-14 items-center gap-2 rounded-full bg-[color:var(--color-panel)] px-5 text-sm font-medium text-[color:var(--color-panel-ink)] shadow-(--shadow-card) transition-transform duration-(--duration-quick) hover:bg-[color:var(--color-panel-raised)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-brand)] motion-reduce:transition-none"
-        style={{ bottom: 'calc(16px + env(safe-area-inset-bottom, 0px))' }}
+        className="fixed right-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))] z-30 flex h-14 items-center gap-2 rounded-full bg-[color:var(--color-panel)] px-5 text-sm font-medium text-[color:var(--color-panel-ink)] shadow-(--shadow-card) transition-transform duration-(--duration-quick) hover:bg-[color:var(--color-panel-raised)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-brand)] motion-reduce:transition-none md:bottom-[calc(16px+env(safe-area-inset-bottom,0px))]"
         hidden={open}
       >
         <ChatGlyph />

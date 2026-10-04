@@ -167,6 +167,53 @@ const BALANCE_SHAPE = {
   },
 } as const satisfies ObjectShape;
 
+/**
+ * What the header says about the account itself.
+ *
+ * A statement uploaded without choosing an account opens one, and the header
+ * is where that account's facts are printed: whose bank it is, whether it is a
+ * card, and — on a card — the minimum, the due date, the rate and the limit.
+ * Read as printed and validated like every other figure; nothing is inferred.
+ */
+const HEADER_SHAPE = {
+  institutionName: {
+    kind: 'text',
+    description:
+      'The bank or issuer name as printed in the header or logo («Banco General», «Banistmo», «BAC»). Empty if none is shown.',
+    maxLength: 60,
+  },
+  statementKind: {
+    kind: 'choice',
+    description:
+      'card if this is a credit-card statement or a card screen in a banking app; bank if it is a checking, savings or wallet account; unknown if the page does not make it clear.',
+    options: ['bank', 'card', 'unknown'],
+  },
+  cardMinimumPayment: {
+    kind: 'text',
+    description:
+      'On a card statement, the minimum payment as printed («Pago mínimo»). Empty otherwise.',
+    maxLength: 32,
+  },
+  cardDueDate: {
+    kind: 'text',
+    description:
+      'On a card statement, the payment due date as printed («Fecha límite de pago»). Empty otherwise.',
+    maxLength: 24,
+  },
+  cardApr: {
+    kind: 'text',
+    description:
+      'On a card statement, the annual interest rate as printed («Tasa de interés anual», «24.00%»). Empty otherwise.',
+    maxLength: 16,
+  },
+  cardCreditLimit: {
+    kind: 'text',
+    description:
+      'On a card statement, the credit limit as printed («Límite de crédito»). Empty otherwise.',
+    maxLength: 32,
+  },
+} as const satisfies ObjectShape;
+
 const SYSTEM = [
   'You transcribe bank and credit-card statements. You are a reader, not an analyst.',
   '',
@@ -202,6 +249,8 @@ export type OcrOutcome =
       readonly edges: { readonly top: EdgeLine | null; readonly bottom: EdgeLine | null };
       /** The balance the page prints, as printed and validated; null when none. */
       readonly balance: PrintedBalance | null;
+      /** What the header says about the account, for opening one. */
+      readonly header: StatementHeader;
     }
   | { readonly ok: false; readonly reason: OcrFailure; readonly detail?: string };
 
@@ -209,6 +258,16 @@ export type OcrOutcome =
 export interface PrintedBalance {
   readonly amount: string;
   readonly date: PlainDate | null;
+}
+
+/** The account facts a statement header prints, each validated or null. */
+export interface StatementHeader {
+  readonly institution: string | null;
+  readonly kind: 'bank' | 'card' | null;
+  readonly minimumPayment: string | null;
+  readonly dueDay: number | null;
+  readonly apr: string | null;
+  readonly creditLimit: string | null;
 }
 
 export type OcrFailure =
@@ -260,7 +319,7 @@ export async function readStatementByOcr(input: {
       mediaType: input.mimeType,
       dataBase64: Buffer.from(input.bytes).toString('base64'),
     },
-    outputSchema: toJsonSchema({ ...SHAPE, ...EDGE_SHAPE, ...BALANCE_SHAPE }),
+    outputSchema: toJsonSchema({ ...SHAPE, ...EDGE_SHAPE, ...BALANCE_SHAPE, ...HEADER_SHAPE }),
     // Un estado de cuenta largo son muchas filas cortas. El techo alto es lo que
     // impide que la transcripción se corte a la mitad del mes.
     maxOutputTokens: 16_000,
@@ -278,7 +337,10 @@ export async function readStatementByOcr(input: {
     };
   }
 
-  const parsed = parseOutput({ ...SHAPE, ...EDGE_SHAPE, ...BALANCE_SHAPE }, result.value.raw);
+  const parsed = parseOutput(
+    { ...SHAPE, ...EDGE_SHAPE, ...BALANCE_SHAPE, ...HEADER_SHAPE },
+    result.value.raw,
+  );
   if (!parsed.ok) {
     return { ok: false, reason: 'malformed', detail: parsed.error.join('; ') };
   }
@@ -310,6 +372,12 @@ export async function readStatementByOcr(input: {
     ...promoted.filter((_, index) => legibleCut[index]?.edge === 'bottom'),
   ];
 
+  // The account chosen says bank or card; without one, the page says it.
+  const printedKind = asText(parsed.value['statementKind']);
+  const kind: 'bank' | 'card' | undefined =
+    input.accountKind ??
+    (printedKind === 'card' ? 'card' : printedKind === 'bank' ? 'bank' : undefined);
+
   const statement = readOcrRows(ordered, {
     accountId: input.accountId,
     currency: input.currency,
@@ -317,7 +385,7 @@ export async function readStatementByOcr(input: {
     ...(input.referenceDate ? { referenceDate: input.referenceDate } : {}),
     ...(printedYear >= 2000 && printedYear <= 2100 ? { printedYear } : {}),
     ...(accountDigits ? { accountDigits } : {}),
-    ...(input.accountKind ? { accountKind: input.accountKind } : {}),
+    ...(kind ? { accountKind: kind } : {}),
   });
 
   // Cero filas legibles no es un estado vacío: es una lectura fallida, y decirlo
@@ -357,6 +425,14 @@ export async function readStatementByOcr(input: {
       asText(parsed.value['printedBalanceDate']),
       options,
     ),
+    header: {
+      institution: asText(parsed.value['institutionName']).trim() || null,
+      kind: kind ?? null,
+      minimumPayment: positiveFigure(asText(parsed.value['cardMinimumPayment']), options.currency),
+      dueDay: dueDayOf(asText(parsed.value['cardDueDate']), options),
+      apr: rate(asText(parsed.value['cardApr'])),
+      creditLimit: positiveFigure(asText(parsed.value['cardCreditLimit']), options.currency),
+    },
   };
 }
 
@@ -392,6 +468,34 @@ function printedBalance(
   }
   const { date } = readEdgeLine({ date: dateText.trim(), amount: '', description: '' }, options);
   return { amount, date };
+}
+
+/** A printed figure as a positive decimal string, or null when it does not read as one. */
+function positiveFigure(text: string, currency: CurrencyCode): string | null {
+  const parsed = parseAmountText(text.trim());
+  if (parsed === null) return null;
+  try {
+    const value = Money.fromDecimalString(parsed, currency).abs();
+    return value.isZero() ? null : value.toDecimalString();
+  } catch {
+    return null;
+  }
+}
+
+/** The day of the month a printed due date falls on, or null. */
+function dueDayOf(text: string, options: Parameters<typeof readEdgeLine>[1]): number | null {
+  const { date } = readEdgeLine({ date: text.trim(), amount: '', description: '' }, options);
+  return date ? Number(date.slice(8, 10)) : null;
+}
+
+/** A printed annual rate («24.00%», «24,5 %») as a decimal string, within 0–200. */
+function rate(text: string): string | null {
+  const match = /(\d{1,3})(?:[.,](\d{1,3}))?\s*%?/.exec(text.trim());
+  if (!match?.[1]) return null;
+  const whole = match[1];
+  const fraction = match[2] ?? '0';
+  if (Number(whole) > 200) return null;
+  return `${whole}.${fraction}`;
 }
 
 /** The reader's cut lines, flattened to text before anything reads them. */

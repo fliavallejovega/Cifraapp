@@ -10,7 +10,18 @@ import {
   transfers,
 } from '@app/database/schema';
 import { Money, type CurrencyCode, type PlainDate } from '@app/domain';
-import { aliasedTable, and, count, desc, eq, inArray, isNull, or, sql } from 'drizzle-orm';
+import {
+  aliasedTable,
+  and,
+  count,
+  desc,
+  eq,
+  inArray,
+  isNotNull,
+  isNull,
+  or,
+  sql,
+} from 'drizzle-orm';
 
 import { needsACategory } from './needs-category';
 import { queryAsUser, type Session } from '../session';
@@ -30,6 +41,8 @@ import { queryAsUser, type Session } from '../session';
  */
 
 export interface QueueCounts {
+  /** What «approve everything safe» would settle: sure transfers and proposed categories. */
+  readonly safe: number;
   readonly duplicates: number;
   readonly transfers: number;
   readonly recurring: number;
@@ -85,7 +98,35 @@ export async function loadQueueCounts(session: Session, householdId: string): Pr
       categories: uncertain[0]?.total ?? 0,
     };
 
-    return { ...counts, total: Object.values(counts).reduce((sum, value) => sum + value, 0) };
+    const [safeTransfers, proposed] = await Promise.all([
+      tx
+        .select({ total: count() })
+        .from(transfers)
+        .where(
+          and(
+            eq(transfers.householdId, householdId),
+            isNull(transfers.confirmedAt),
+            sql`${transfers.confidence} >= 0.900`,
+          ),
+        ),
+      tx
+        .select({ total: count() })
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.householdId, householdId),
+            eq(transactions.status, 'needs_review'),
+            isNotNull(transactions.categoryId),
+            isNull(transactions.deletedAt),
+          ),
+        ),
+    ]);
+
+    return {
+      ...counts,
+      safe: (safeTransfers[0]?.total ?? 0) + (proposed[0]?.total ?? 0),
+      total: Object.values(counts).reduce((sum, value) => sum + value, 0),
+    };
   });
 }
 

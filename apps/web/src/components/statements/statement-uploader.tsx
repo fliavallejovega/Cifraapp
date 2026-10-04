@@ -22,6 +22,9 @@ import { AccountQueue } from './account-queue';
 const ACCEPT =
   '.pdf,.csv,.ofx,.qfx,.xlsx,application/pdf,text/csv,application/x-ofx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,image/*';
 
+/** The choice that means «read the account from the statement». */
+const DETECT = 'auto';
+
 export interface UploaderAccount {
   readonly id: string;
   readonly label: string;
@@ -47,23 +50,35 @@ export function StatementUploader({
     readonly account: string;
     readonly accountHint: string;
     readonly hint: string;
+    /** «Let the app find it»: the statement's own digits pick the account. */
+    readonly detect?: string;
   };
 }) {
   const t = useTranslations('statementQueue');
-  const router = useRouter();
+  // Without a choice the statement decides: its printed digits name the
+  // account, or a new one is opened from what it prints.
+  const detects = fixedAccountId === undefined && labels.detect !== undefined;
   const [accountId, setAccountId] = useState(
     fixedAccountId ??
       accounts.find((account) => account.id === initialAccountId)?.id ??
-      accounts[0]?.id ??
-      '',
+      (detects ? DETECT : (accounts[0]?.id ?? '')),
   );
+  const router = useRouter();
   const [bumps, setBumps] = useState<Readonly<Record<string, number>>>({});
-  const onQueued = useCallback((id: string) => {
-    setBumps((current) => ({ ...current, [id]: (current[id] ?? 0) + 1 }));
-  }, []);
+  const onQueued = useCallback(
+    (id: string) => {
+      setBumps((current) => ({ ...current, [id]: (current[id] ?? 0) + 1 }));
+      // The account it went to exists only on the server now: fetch it.
+      if (id === DETECT) router.refresh();
+    },
+    [router],
+  );
   const queue = useStatementQueue(locale, onQueued);
   const picker = useRef<HTMLInputElement>(null);
-  const label = accounts.find((account) => account.id === accountId)?.label ?? '';
+  const label =
+    accountId === DETECT
+      ? (labels.detect ?? '')
+      : (accounts.find((account) => account.id === accountId)?.label ?? '');
 
   const refresh = useCallback(() => {
     router.refresh();
@@ -78,6 +93,8 @@ export function StatementUploader({
       (bumps[account.id] ?? 0) > 0 ||
       queue.items.some((item) => item.accountId === account.id),
   );
+
+  const detecting = queue.items.filter((item) => item.accountId === DETECT);
 
   const groups = new Map<string, UploaderAccount[]>();
   for (const account of accounts) {
@@ -98,6 +115,7 @@ export function StatementUploader({
                 setAccountId(event.target.value);
               }}
             >
+              {detects && <option value={DETECT}>{labels.detect}</option>}
               {[...groups.entries()].map(([group, entries]) => (
                 <optgroup key={group} label={group}>
                   {entries.map((account) => (
@@ -155,7 +173,7 @@ export function StatementUploader({
               onSettled={refresh}
             />
           )
-        : shown.length > 0 && (
+        : (shown.length > 0 || detecting.length > 0) && (
             <section aria-labelledby="statement-queues" className="flex flex-col gap-4">
               <div className="flex flex-col gap-1">
                 <h3 id="statement-queues" className="text-base font-medium">
@@ -165,6 +183,17 @@ export function StatementUploader({
                   {t('allDetail')}
                 </p>
               </div>
+              {detecting.length > 0 && (
+                <AccountQueue
+                  accountId={DETECT}
+                  title={labels.detect ?? ''}
+                  initial={[]}
+                  uploads={detecting}
+                  bump={0}
+                  locale={locale}
+                  onDismissUpload={queue.dismiss}
+                />
+              )}
               {shown.map((account) => (
                 <AccountQueue
                   key={account.id}

@@ -225,12 +225,11 @@ export async function requireHousehold(
   const session = await requireSession(locale);
   if (!session.activeHouseholdId) redirect(`/${locale}/welcome`);
 
-  // And the questionnaire has to be finished, not merely started. A household
-  // that answered two of the six questions has income and no obligations, and
-  // every engine downstream would read that as «nothing claims your money» —
-  // which is not a partial answer, it is a wrong one stated with confidence.
-  const active = session.households.find((entry) => entry.id === session.activeHouseholdId);
-  if (active && !active.setupComplete) redirect(`/${locale}/welcome`);
+  // The questionnaire no longer stands in front of the product. It used to be
+  // finished before any screen opened, and sixty fields before the first figure
+  // is how a household gives up. Now a statement is the first step and the
+  // questionnaire is offered, never required; the screens that read from it say
+  // what is missing rather than refusing to open.
 
   return { ...session, activeHouseholdId: session.activeHouseholdId };
 }

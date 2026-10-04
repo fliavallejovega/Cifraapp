@@ -386,7 +386,7 @@
     }
   },
   "overview": {
-    "title": "Your position",
+    "title": "Home",
     "gauge": {
       "label": "Safe to spend",
       "buffer": "Buffer minimum",
@@ -403,9 +403,9 @@
       "committedDetail": "Upcoming obligations, minimum debt payments, the tax reserve and your buffer."
     },
     "empty": {
-      "title": "Give your money somewhere to live.",
-      "body": "Add your first account or import a statement. From there we work out what is committed and what is genuinely left.",
-      "action": "Add an account"
+      "title": "Start by uploading a statement.",
+      "body": "Upload a PDF, a photo or a screenshot from your bank. The app recognises the account, reads the movements and the balance, and works out what you have and what is committed.",
+      "action": "Upload a statement"
     },
     "claims": {
       "title": "What claims that money",
@@ -455,6 +455,29 @@
       "mismatchAbove": "{account}: the bank says {gap} more than we calculated on {date}. It is almost always a statement still to upload.",
       "mismatchBelow": "{account}: the bank says {gap} less than we calculated on {date}. It is almost always a statement still to upload.",
       "action": "Upload a screenshot with the balance"
+    },
+    "setup": {
+      "body": "Whenever you like, tell us your salary and fixed payments: the plan gets sharper. You do not need it to start.",
+      "action": "Complete the household profile"
+    },
+    "understood": {
+      "title": "This is what we understood from your movements",
+      "body": "What repeats in your accounts. If it is right, confirm it and it goes into your plan; if something is off, review them one by one.",
+      "confirm": "{count, plural, one {Yes, that is right} other {Yes, these #}}",
+      "review": "Review one by one",
+      "done": "Done. They now count in your plan and your available money.",
+      "error": "It could not be saved. Try again.",
+      "inflow": "Comes in {frequency}",
+      "outflow": "Goes out {frequency}",
+      "frequency": {
+        "daily": "every day",
+        "weekly": "every week",
+        "biweekly": "every two weeks",
+        "semimonthly": "twice a month",
+        "monthly": "every month",
+        "quarterly": "every quarter",
+        "annual": "every year"
+      }
     }
   },
   "plan": {
@@ -764,10 +787,11 @@
         "queueUnavailable": "We could not queue the file. Try again in a moment."
       },
       "account": "Which account is this statement for?",
-      "accountHint": "Filing a statement against the wrong account is worse than not filing it.",
+      "accountHint": "If you do not choose, the app recognises the account by its printed digits or opens it from what the statement says.",
       "queuedHeading": "We have your file.",
       "queuedDetail": "We are reading it. It usually takes a few seconds; a long PDF takes a little more.",
-      "watchLink": "See how it is going"
+      "watchLink": "See how it is going",
+      "detect": "Let the app recognise it from the statement"
     },
     "history": {
       "title": "Earlier imports",
@@ -789,7 +813,10 @@
         "completed": "Completed",
         "failed": "Failed",
         "discarded": "Discarded"
-      }
+      },
+      "autoSaved": "Saved by the app on its own",
+      "undo": "Undo",
+      "undoFailed": "It could not be undone. Try again."
     },
     "note": "Analyzing a file does not create transactions yet. Every line gets a verdict and you confirm before anything enters your records.",
     "noAccount": {
@@ -895,7 +922,10 @@
       "never": "no statement has ever been uploaded for this one"
     },
     "cardsUnlinked": "{count, plural, one {If you save now, the payment to a card we don't recognise counts as spending. Link it above first.} other {If you save now, the # payments to cards we don't recognise count as spending. Link them above first.}}",
-    "gapsOpen": "{count, plural, one {Also, a movement may be missing between two captures: check it above.} other {Also, something may be missing at # seams between captures: check them above.}}"
+    "gapsOpen": "{count, plural, one {Also, a movement may be missing between two captures: check it above.} other {Also, something may be missing at # seams between captures: check them above.}}",
+    "detected": {
+      "name": "Account to identify"
+    }
   },
   "nav": {
     "label": "Sections",
@@ -955,7 +985,16 @@
     "offers": "Offers",
     "familyExpenses": "Family expenses",
     "upload": "Upload statement or screenshot",
-    "uploadShort": "Upload"
+    "uploadShort": "Upload",
+    "primary": {
+      "overview": "Home",
+      "movements": "Movements",
+      "documents": "Upload",
+      "plan": "Plan",
+      "household": "Household"
+    },
+    "bar": "Destinations",
+    "tabs": "Screens in this section"
   },
   "accounts": {
     "title": "Your accounts",
@@ -2471,7 +2510,13 @@
     "rescanDetail": "Runs the four analyses over your movements again.",
     "rescanQueued": "Analysis queued. Anything new shows up in a few seconds.",
     "errorTitle": "Could not save",
-    "totalPending": "{count} decisions waiting for you"
+    "totalPending": "{count} decisions waiting for you",
+    "safe": {
+      "title": "What the app is already sure of",
+      "body": "Transfers between your accounts that match, and movements that already carry a proposed category. Approving them teaches the app each merchant so it does not ask again. Possible duplicates are always reviewed one by one.",
+      "action": "{count, plural, one {Approve 1} other {Approve all #}}",
+      "done": "Done. What is left below does need a look."
+    }
   },
   "duplicates": {
     "title": "Possible repeats",
@@ -5413,5 +5458,147 @@
     "minorDetail": "{count, plural, one {One seam between captures could not be checked because they do not overlap. It is most likely complete.} other {# seams between captures could not be checked because they do not overlap. They are most likely complete.}} For Cifra to confirm it on its own, let each capture repeat the last line of the previous one.",
     "minorShow": "Review (optional)",
     "minorHide": "Hide"
+  },
+  "hub": {
+    "title": "Household",
+    "detail": "Everything else, ordered by what you want to do.",
+    "sections": {
+      "money": "Your money",
+      "flows": "What comes in and goes out",
+      "order": "Review and organize",
+      "ahead": "Look ahead",
+      "record": "The record",
+      "home": "Your household"
+    },
+    "items": {
+      "accounts": {
+        "title": "Accounts",
+        "detail": "Your bank, cash and wallet accounts, with their balance."
+      },
+      "cards": {
+        "title": "Cards",
+        "detail": "Limit, minimum payment and what each card is used for."
+      },
+      "offers": {
+        "title": "Offers",
+        "detail": "Which card is best for each purchase."
+      },
+      "investments": {
+        "title": "Investments",
+        "detail": "What you have invested and how it is going."
+      },
+      "income": {
+        "title": "Income",
+        "detail": "Your salary and what you expect to collect."
+      },
+      "commitments": {
+        "title": "Commitments",
+        "detail": "Fixed payments: rent, utilities, school."
+      },
+      "debts": {
+        "title": "Debts",
+        "detail": "What you owe and what it costs you."
+      },
+      "budgets": {
+        "title": "Budgets",
+        "detail": "How much you want to spend per category."
+      },
+      "goals": {
+        "title": "Goals",
+        "detail": "What you are saving for and how much is left."
+      },
+      "trips": {
+        "title": "Trips",
+        "detail": "Budget, spending and documents for each trip."
+      },
+      "review": {
+        "title": "To review",
+        "detail": "What the app could not decide on its own."
+      },
+      "categories": {
+        "title": "Categories",
+        "detail": "The categories your spending is sorted into."
+      },
+      "rules": {
+        "title": "Rules",
+        "detail": "How each movement is classified automatically."
+      },
+      "merchants": {
+        "title": "Merchants",
+        "detail": "Where the money went, merchant by merchant."
+      },
+      "familyExpenses": {
+        "title": "Family expenses",
+        "detail": "Upload each household member's statements."
+      },
+      "advice": {
+        "title": "Advice of the month",
+        "detail": "What to do this month, explained."
+      },
+      "alerts": {
+        "title": "Alerts",
+        "detail": "What fell out of the ordinary."
+      },
+      "projection": {
+        "title": "Projection",
+        "detail": "How your accounts will look in the coming months."
+      },
+      "scenarios": {
+        "title": "Scenarios",
+        "detail": "What happens if you change something."
+      },
+      "debtSimulator": {
+        "title": "Debt simulator",
+        "detail": "When you finish paying and how much you save."
+      },
+      "chat": {
+        "title": "Ask",
+        "detail": "Ask the app about your money."
+      },
+      "reports": {
+        "title": "Statements",
+        "detail": "Income, spending and net worth for the month."
+      },
+      "close": {
+        "title": "Month close",
+        "detail": "Leave the month finished and reviewed."
+      },
+      "exports": {
+        "title": "Export",
+        "detail": "Download your data or send it to your accountant."
+      },
+      "people": {
+        "title": "People",
+        "detail": "Who makes up the household."
+      },
+      "access": {
+        "title": "Access",
+        "detail": "Who else can see your household, including your accountant."
+      },
+      "tax": {
+        "title": "Tax",
+        "detail": "Your tax profile and what to set aside."
+      },
+      "notifications": {
+        "title": "Notifications",
+        "detail": "What we tell you and how."
+      },
+      "subscription": {
+        "title": "Subscription",
+        "detail": "Your plan and payments."
+      },
+      "settings": {
+        "title": "Settings",
+        "detail": "Cushion, currency, security and connections."
+      },
+      "households": {
+        "title": "Switch household",
+        "detail": "If you belong to more than one household."
+      }
+    }
+  },
+  "welcomeStart": {
+    "body": "This is optional. You can start by uploading a statement and fill this in later, when you want a sharper plan.",
+    "skip": "Start by uploading a statement"
   }
 }

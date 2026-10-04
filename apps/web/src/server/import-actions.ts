@@ -2,22 +2,24 @@
 
 import {
   accounts,
+  debtPayments,
   debts,
   documents,
   importRows,
   imports,
   transactions,
 } from '@app/database/schema';
-import { Money, newId } from '@app/domain';
+import { newId } from '@app/domain';
 import { cardPaymentDigits, digitsDisagree } from '@app/transaction-engine';
 import { and, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
+import { getTranslations } from 'next-intl/server';
 import { after } from 'next/server';
 import { z } from 'zod';
 
-import { applyStatementBalance } from './account-balance';
+import { fileImportInto } from './import-filing';
 import { scheduleAnalysis } from './analysis-service';
-import { applyPaymentToDebt, paysTheDebt } from './debt-payments';
+import { reversePayment } from './debt-payments';
 import { MAX_STATEMENT_BYTES, MAX_UPLOAD_PARTS, UPLOAD_CHUNK_BYTES } from '../lib/upload-limits';
 import {
   isAcceptedStatementType,
@@ -246,7 +248,55 @@ async function resolveTargetAccount(
       ),
   );
 
+  // «Let the app find it», or a household with no account yet: the statement
+  // itself will say which account it is once it is read.
+  if (rawAccountId === DETECT || available.length === 0) {
+    const household = session.households.find((entry) => entry.id === householdId);
+    return { id: DETECT, currency: household?.baseCurrency ?? 'USD' };
+  }
+
   return chosen.success ? available.find((account) => account.id === chosen.data) : available[0];
+}
+
+/** The account choice that means «read it from the statement». */
+const DETECT = 'auto';
+
+/**
+ * A provisional account for a statement uploaded without one.
+ *
+ * The worker fills it in from the header, or folds it into the account the
+ * printed digits name. Its balance counts every movement until the statement
+ * states one, because nobody typed a figure for it.
+ */
+async function openDetectedAccount(
+  session: Session,
+  householdId: string,
+  currency: string,
+  locale: unknown,
+): Promise<string | null> {
+  const t = await getTranslations({
+    locale: locale === 'en' ? 'en' : 'es',
+    namespace: 'documents',
+  });
+  const [created] = await queryAsUser(session, (tx) =>
+    tx
+      .insert(accounts)
+      .values({
+        householdId,
+        name: t('detected.name'),
+        accountType: 'checking',
+        currency: currency.trim() === 'PAB' ? 'PAB' : 'USD',
+        balanceAnchor: '0',
+        balanceAnchorDate: null,
+        status: 'active',
+        source: 'system',
+        needsConfirmation: true,
+        createdBy: session.user.id,
+        ownerId: session.user.id,
+      })
+      .returning({ id: accounts.id }),
+  );
+  return created?.id ?? null;
 }
 
 async function stageAndQueue(
@@ -260,9 +310,15 @@ async function stageAndQueue(
     readonly locale: unknown;
   },
 ): Promise<ImportActionResult> {
+  const accountId =
+    input.target.id === DETECT
+      ? await openDetectedAccount(session, input.householdId, input.target.currency, input.locale)
+      : input.target.id;
+  if (!accountId) return { error: 'noAccount' };
+
   const outcome = await stageDocument(session, {
     householdId: input.householdId,
-    accountId: input.target.id,
+    accountId,
     currency: input.target.currency.trim() === 'PAB' ? 'PAB' : 'USD',
     fileName: input.fileName,
     mimeType: input.mimeType,
@@ -270,6 +326,15 @@ async function stageAndQueue(
   });
 
   if (!outcome.ok) {
+    // A refused file leaves no provisional account behind it.
+    if (input.target.id === DETECT) {
+      await queryAsUser(session, (tx) =>
+        tx
+          .update(accounts)
+          .set({ deletedAt: new Date(), status: 'closed' })
+          .where(and(eq(accounts.id, accountId), eq(accounts.needsConfirmation, true))),
+      );
+    }
     return { error: outcome.reason, ...(outcome.detail ? { detail: outcome.detail } : {}) };
   }
 
@@ -345,233 +410,16 @@ export async function confirmImport(
   return { filed };
 }
 
-/**
- * Files the chosen rows of one import as transactions, in one database
- * transaction. `'proposed'` takes what the review screen would have selected
- * by itself: the rows the engine believes are new.
- */
+/** Files the chosen rows of one import as the signed-in person. */
 async function fileImport(
   session: Session,
   householdId: string,
   importId: string,
   chosen: ReadonlySet<string> | 'proposed',
 ): Promise<number> {
-  return queryAsUser(session, async (tx) => {
-    const [header] = await tx
-      .select({
-        id: imports.id,
-        accountId: imports.accountId,
-        documentId: imports.documentId,
-      })
-      .from(imports)
-      .where(and(eq(imports.id, importId), eq(imports.householdId, householdId)))
-      .limit(1);
-
-    if (!header?.accountId) return 0;
-
-    const [account] = await tx
-      .select({ currency: accounts.currency })
-      .from(accounts)
-      .where(eq(accounts.id, header.accountId))
-      .limit(1);
-
-    const currency = account?.currency.trim() === 'PAB' ? 'PAB' : 'USD';
-
-    const candidates = await tx
-      .select({
-        id: importRows.id,
-        transactionDate: importRows.transactionDate,
-        amount: importRows.amount,
-        descriptionOriginal: importRows.descriptionOriginal,
-        descriptionNormalized: importRows.descriptionNormalized,
-        externalReference: importRows.externalReference,
-        fingerprint: importRows.fingerprint,
-        verdict: importRows.verdict,
-        createdTransactionId: importRows.createdTransactionId,
-        proposedCategoryId: importRows.proposedCategoryId,
-        chosenCategoryId: importRows.chosenCategoryId,
-        applyToDebtId: importRows.applyToDebtId,
-        distinctConfirmed: importRows.distinctConfirmed,
-      })
-      .from(importRows)
-      .where(eq(importRows.importId, header.id));
-
-    const selected =
-      chosen === 'proposed'
-        ? new Set(candidates.filter((row) => row.verdict === 'new').map((row) => row.id))
-        : chosen;
-
-    /*
-      The same movement already filed from another file of this account.
-
-      Overlapping screenshots carry the same lines, and confirming the second
-      file would file them twice. A line whose fingerprint is already in the
-      ledger from a different import is held back — unless the person said, on
-      the repeat question, that they are two movements.
-    */
-    const fingerprints = candidates
-      .map((row) => row.fingerprint)
-      .filter((value): value is string => value !== null);
-    const already = new Set(
-      fingerprints.length === 0
-        ? []
-        : (
-            await tx
-              .select({ fingerprint: transactions.fingerprint })
-              .from(transactions)
-              .where(
-                and(
-                  eq(transactions.householdId, householdId),
-                  eq(transactions.accountId, header.accountId),
-                  isNull(transactions.deletedAt),
-                  inArray(transactions.fingerprint, fingerprints),
-                  sql`${transactions.sourceImportId} is distinct from ${header.id}`,
-                ),
-              )
-          ).map((row) => row.fingerprint),
-    );
-
-    const writable = candidates.filter(
-      (row) =>
-        selected.has(row.id) &&
-        // Already filed once. Re-submitting the form must not double it.
-        row.createdTransactionId === null &&
-        row.verdict !== 'rejected' &&
-        row.transactionDate !== null &&
-        row.amount !== null &&
-        row.fingerprint !== null &&
-        (row.distinctConfirmed || !already.has(row.fingerprint)),
-    );
-
-    let count = 0;
-
-    for (const row of writable) {
-      const amount = Money.fromDecimalString(row.amount ?? '0', currency);
-      const description = row.descriptionOriginal ?? '';
-      const direction = amount.isNegative() ? ('outflow' as const) : ('inflow' as const);
-
-      /*
-        Si esta fila paga una deuda, se decide **antes** de insertar.
-
-        Un pago no es un gasto: es plata moviéndose de un bolsillo a otro de la
-        misma casa. Nace como transferencia y sin rubro, en una sola escritura —
-        insertarlo como gasto y corregirlo después deja un instante en que las
-        cifras del mes están mal, y el cierre del mes puede caer justo ahí.
-
-        Y hacia dónde va el dinero decide si paga: entrando a la cuenta que lleva
-        la deuda, o saliendo de cualquier otra.
-      */
-      let paysDebt = false;
-      if (row.applyToDebtId) {
-        const [target] = await tx
-          .select({ accountId: debts.accountId })
-          .from(debts)
-          .where(and(eq(debts.id, row.applyToDebtId), eq(debts.householdId, householdId)))
-          .limit(1);
-
-        paysDebt =
-          target !== undefined &&
-          paysTheDebt({
-            debtAccountId: target.accountId,
-            movementAccountId: header.accountId,
-            direction,
-          });
-      }
-
-      const [created] = await tx
-        .insert(transactions)
-        .values({
-          householdId,
-          accountId: header.accountId,
-          ownerId: session.user.id,
-          transactionDate: row.transactionDate ?? '',
-          amount: row.amount ?? '0',
-          currency,
-          // The sign in the statement is the direction. Nothing infers it from
-          // the description, which is where categorization guesses go wrong.
-          direction,
-          // Un pago no lleva rubro: no le falta uno, no le toca ninguno.
-          // Fuera de ese caso, el que la persona eligió al revisar gana sobre el
-          // que el motor propuso, y sin ninguno de los dos queda nulo — y una
-          // fila sin rubro entra a la cola en vez de quedarse invisible.
-          categoryId: paysDebt ? null : (row.chosenCategoryId ?? row.proposedCategoryId),
-          descriptionOriginal: description,
-          descriptionNormalized: row.descriptionNormalized ?? description,
-          externalReference: row.externalReference,
-          fingerprint: row.fingerprint ?? '',
-          // Una transferencia no es gasto ni ingreso, así que no entra en el
-          // mes ni en ningún presupuesto.
-          status: paysDebt ? 'transfer' : 'posted',
-          source: 'imported',
-          sourceDocumentId: header.documentId,
-          sourceImportId: header.id,
-        })
-        .returning({ id: transactions.id });
-
-      if (!created) continue;
-
-      await tx
-        .update(importRows)
-        .set({ createdTransactionId: created.id })
-        .where(eq(importRows.id, row.id));
-
-      /*
-        Y si esta fila es un pago a una deuda, se aplica ahora.
-
-        Este es el paso que faltaba entero. Un pago a Giovanni entraba como un
-        gasto suelto: salía del mes, no bajaba de ningún saldo, y la deuda
-        seguía diciendo mil ochocientos para siempre. La casa terminaba llevando
-        esa cuenta en la cabeza, que es el trabajo que este producto existe para
-        quitar.
-
-        Se aplica dentro de la misma transacción de base que creó el movimiento:
-        un pago registrado cuya deuda no bajó, o una deuda que bajó sin pago que
-        la explique, son dos formas de que los números dejen de cuadrar.
-      */
-      if (paysDebt && row.applyToDebtId) {
-        await applyPaymentToDebt(tx, {
-          householdId,
-          debtId: row.applyToDebtId,
-          transactionId: created.id,
-          amount: amount.abs(),
-          currency,
-          paidOn: row.transactionDate ?? '',
-          appliedBy: session.user.id,
-        });
-      }
-
-      count += 1;
-    }
-
-    // Settled only when nothing importable is still waiting. A partial
-    // confirmation leaves the import open, because the rest is still a decision
-    // somebody has to make.
-    // A line held back because it is already filed from another file is not
-    // waiting on anybody: it is settled.
-    const remaining = candidates.filter(
-      (row) =>
-        row.verdict !== 'rejected' &&
-        row.createdTransactionId === null &&
-        !writable.some((written) => written.id === row.id) &&
-        !(row.fingerprint !== null && !row.distinctConfirmed && already.has(row.fingerprint)),
-    );
-
-    await tx
-      .update(imports)
-      .set(
-        remaining.length === 0
-          ? { status: 'completed', completedAt: new Date() }
-          : { status: 'review' },
-      )
-      .where(eq(imports.id, header.id));
-
-    // The balance the statement prints becomes the account's, in the same
-    // transaction as its movements, so the position never shows one without
-    // the other.
-    await applyStatementBalance(tx, header.id);
-
-    return count;
-  });
+  return queryAsUser(session, (tx) =>
+    fileImportInto(tx, { householdId, userId: session.user.id, importId, chosen }),
+  );
 }
 
 /**
@@ -663,6 +511,81 @@ export async function saveAllReviewed(input: { readonly locale: string }): Promi
   if (filed === 0) return { error: 'nothingFiled', heldBack };
   await afterFiling(session, householdId, locale);
   return { files, filed, heldBack };
+}
+
+/**
+ * Undoes an import the app saved on its own.
+ *
+ * Every movement it filed is set aside (soft-deleted, so the record of what
+ * happened stays), any debt payment it applied is reversed, and the import
+ * goes back to waiting for a person — exactly where it would have been had the
+ * app not saved it. The balances follow on their own.
+ */
+export async function undoAutoFiledImport(input: {
+  readonly importId: string;
+  readonly locale: string;
+}): Promise<{ readonly error?: string; readonly undone?: number }> {
+  const session = await loadSession();
+  if (!session?.activeHouseholdId) return { error: 'signInRequired' };
+  const householdId = session.activeHouseholdId;
+
+  const importId = z.uuid().safeParse(input.importId);
+  if (!importId.success) return { error: 'notFound' };
+
+  const undone = await queryAsUser(session, async (tx) => {
+    const [run] = await tx
+      .select({ id: imports.id, autoFiledAt: imports.autoFiledAt })
+      .from(imports)
+      .where(and(eq(imports.id, importId.data), eq(imports.householdId, householdId)))
+      .limit(1);
+    if (!run?.autoFiledAt) return null;
+
+    const filed = await tx
+      .select({ id: transactions.id })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.householdId, householdId),
+          eq(transactions.sourceImportId, run.id),
+          isNull(transactions.deletedAt),
+        ),
+      );
+    const ids = filed.map((row) => row.id);
+
+    if (ids.length > 0) {
+      const payments = await tx
+        .select({ id: debtPayments.id })
+        .from(debtPayments)
+        .where(and(inArray(debtPayments.transactionId, ids), isNull(debtPayments.reversedAt)));
+      for (const payment of payments) {
+        await reversePayment(tx, {
+          householdId,
+          paymentId: payment.id,
+          reversedBy: session.user.id,
+          reason: 'Undone with the import it came from.',
+        });
+      }
+      await tx
+        .update(transactions)
+        .set({ deletedAt: new Date(), updatedAt: new Date() })
+        .where(inArray(transactions.id, ids));
+      await tx
+        .update(importRows)
+        .set({ createdTransactionId: null })
+        .where(eq(importRows.importId, run.id));
+    }
+
+    await tx
+      .update(imports)
+      .set({ status: 'review', autoFiledAt: null, completedAt: null })
+      .where(eq(imports.id, run.id));
+
+    return ids.length;
+  });
+
+  if (undone === null) return { error: 'notFound' };
+  await afterFiling(session, householdId, input.locale === 'en' ? 'en' : 'es');
+  return { undone };
 }
 
 /** Closes an import without filing anything. The rows and the file stay. */
