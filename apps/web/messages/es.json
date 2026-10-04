@@ -5287,16 +5287,39 @@
     "allDetail": "Cada cuenta con su cola. Puedes cerrar la app: lo que ya subió se sigue leyendo y aquí ves en qué va."
   },
   "repeatQuestions": {
-    "title": "{count, plural, one {Un movimiento aparece dos veces} other {# movimientos aparecen repetidos}}",
-    "detail": "Están en más de un archivo de la misma cuenta, con la misma fecha, monto y descripción. Suele pasar cuando dos capturas se solapan. Dinos si es uno solo para no contarlo doble.",
-    "inFiles": "{count, plural, one {En # archivo} other {En # archivos}}: {files}",
+    "title": "{count, plural, one {Cifra no pudo decidir un movimiento repetido} other {Cifra no pudo decidir # movimientos repetidos}}",
+    "detail": "Están en más de una captura de la misma cuenta con la misma fecha y monto, pero no en la zona donde las capturas se solapan, y el banco corta la descripción, así que no hay número de transferencia para compararlas. Mira las capturas y dinos.",
     "same": "Es uno solo",
     "different": "Son distintos",
     "sameLabel": "{description}: es un solo movimiento",
     "differentLabel": "{description}: son movimientos distintos",
     "failed": "No se pudo guardar tu respuesta. Inténtalo de nuevo.",
     "answeredSame": "Listo: se guarda una sola vez.",
-    "answeredDifferent": "Listo: se guardan los dos."
+    "answeredDifferent": "Listo: se guardan los dos.",
+    "field": {
+      "account": "Cuenta",
+      "movement": "Movimiento",
+      "amount": "Monto",
+      "bankSays": "El banco dice"
+    },
+    "outflow": "Salida",
+    "inflow": "Entrada",
+    "whyAsk": "{count, plural, one {Aparece en # captura.} other {Aparece en # capturas. Toca una para verla completa.}}",
+    "openCapture": "Abrir {file} completa",
+    "captureAlt": "Captura {file}",
+    "merged": {
+      "title": "{count, plural, one {Cifra unió un movimiento repetido} other {Cifra unió # movimientos repetidos}}",
+      "detail": "Aparecían dos veces porque tus capturas se solapan. Se guardan una sola vez. Si alguno sí eran dos, deshazlo.",
+      "reason": {
+        "screenshot_overlap": "En {file} está en la parte que se repite con la captura anterior: las dos muestran los mismos movimientos en esas fechas.",
+        "screenshot_seam": "En {file} es la primera línea y en la captura anterior la última: ahí se unen las dos.",
+        "same_reference": "En {file} trae el mismo número de referencia que en el otro archivo."
+      },
+      "undo": "No, eran dos: deshacer",
+      "undone": "Deshecho: se guardan los dos.",
+      "more": "Ver {count} más",
+      "less": "Ver menos"
+    }
   },
   "saveAll": {
     "title": "{files, plural, one {Un archivo leído espera que lo guardes} other {# archivos leídos esperan que los guardes}}",

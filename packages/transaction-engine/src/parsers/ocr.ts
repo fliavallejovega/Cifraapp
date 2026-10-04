@@ -124,8 +124,11 @@ export function readOcrRows(rows: readonly OcrRow[], options: OcrParseOptions): 
       return;
     }
 
-    const amount = signed.abs();
     const direction = directionOf(row.direction);
+    // Signed like every other parser: the sign is the direction downstream.
+    // Filing reads it from the amount, so an unsigned outflow would be filed as
+    // money coming in.
+    const amount = direction === 'outflow' ? signed.abs().negate() : signed.abs();
     const { normalized } = normalizeDescription(description);
 
     transactions.push({

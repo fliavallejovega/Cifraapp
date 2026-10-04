@@ -5287,16 +5287,39 @@
     "allDetail": "Each account with its own queue. You can close the app: what already uploaded keeps being read, and you can follow it here."
   },
   "repeatQuestions": {
-    "title": "{count, plural, one {One movement appears twice} other {# movements appear repeated}}",
-    "detail": "They are in more than one file of the same account, with the same date, amount and description. It usually happens when two screenshots overlap. Tell us if it is one so it is not counted twice.",
-    "inFiles": "{count, plural, one {In # file} other {In # files}}: {files}",
+    "title": "{count, plural, one {Cifra could not decide one repeated movement} other {Cifra could not decide # repeated movements}}",
+    "detail": "They are in more than one capture of the same account with the same date and amount, but not where the captures overlap, and the bank cuts the description short, so there is no transfer number to compare. Look at the captures and tell us.",
     "same": "It is one",
     "different": "They are different",
     "sameLabel": "{description}: it is one movement",
     "differentLabel": "{description}: they are different movements",
     "failed": "Your answer couldn't be saved. Try again.",
     "answeredSame": "Done: it is saved once.",
-    "answeredDifferent": "Done: both are saved."
+    "answeredDifferent": "Done: both are saved.",
+    "field": {
+      "account": "Account",
+      "movement": "Movement",
+      "amount": "Amount",
+      "bankSays": "The bank says"
+    },
+    "outflow": "Money out",
+    "inflow": "Money in",
+    "whyAsk": "{count, plural, one {It appears in # capture.} other {It appears in # captures. Tap one to see it in full.}}",
+    "openCapture": "Open {file} in full",
+    "captureAlt": "Capture {file}",
+    "merged": {
+      "title": "{count, plural, one {Cifra merged one repeated movement} other {Cifra merged # repeated movements}}",
+      "detail": "They appeared twice because your captures overlap. They are saved once. If any really were two, undo it.",
+      "reason": {
+        "screenshot_overlap": "In {file} it sits in the part repeated from the previous capture: both show the same movements on those dates.",
+        "screenshot_seam": "In {file} it is the first line and in the previous capture the last: that is where the two meet.",
+        "same_reference": "In {file} it carries the same reference number as in the other file."
+      },
+      "undo": "No, they were two: undo",
+      "undone": "Undone: both are saved.",
+      "more": "See {count} more",
+      "less": "See less"
+    }
   },
   "saveAll": {
     "title": "{files, plural, one {One read file is waiting to be saved} other {# read files are waiting to be saved}}",

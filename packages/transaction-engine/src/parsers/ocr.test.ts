@@ -29,8 +29,23 @@ describe('readOcrRows', () => {
     expect(rejected).toEqual([]);
     expect(transactions).toHaveLength(1);
     expect(transactions[0]?.transactionDate).toBe('2026-09-07');
-    expect(transactions[0]?.amount.toDecimalString()).toBe('125.4000');
+    expect(transactions[0]?.amount.toDecimalString()).toBe('-125.4000');
     expect(transactions[0]?.direction).toBe('outflow');
+  });
+
+  it('firma el monto según la dirección, como los demás lectores', () => {
+    // Guardar lee la dirección del signo. Un cargo sin signo se guardaba como
+    // dinero que entraba: 135 líneas de capturas reales, todas como ingreso.
+    const { transactions } = readOcrRows(
+      [
+        row({ amount: '-$1,000.00', direction: 'debit' }),
+        row({ amount: '$225.00', direction: 'credit' }),
+      ],
+      options,
+    );
+    expect(transactions[0]?.amount.toDecimalString()).toBe('-1000.0000');
+    expect(transactions[1]?.amount.toDecimalString()).toBe('225.0000');
+    expect(transactions[1]?.direction).toBe('inflow');
   });
 
   it('lee día primero, que es como escribe Panamá', () => {
@@ -42,7 +57,7 @@ describe('readOcrRows', () => {
 
   it('conserva los separadores de miles que el banco imprime', () => {
     const { transactions } = readOcrRows([row({ amount: 'B/. 1,234.56' })], options);
-    expect(transactions[0]?.amount.toDecimalString()).toBe('1234.5600');
+    expect(transactions[0]?.amount.toDecimalString()).toBe('-1234.5600');
   });
 
   it('rechaza una fecha que no lo es, con su texto crudo', () => {

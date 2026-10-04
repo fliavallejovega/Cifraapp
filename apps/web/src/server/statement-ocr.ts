@@ -84,7 +84,7 @@ const SHAPE = {
       direction: {
         kind: 'choice',
         description:
-          'What the page itself says: debit if the line is a charge or withdrawal, credit if it is a payment or deposit, unknown if the page does not make it clear. Do not infer from the merchant.',
+          'What the page itself says: debit if the line is a charge or withdrawal, credit if it is a payment or deposit, unknown if the page does not make it clear. Read the page’s own marks: in a bank account or a banking-app list, a minus sign or a red figure is a debit, and an unsigned figure in a list where others carry a minus is a credit. On a credit-card statement, a minus, «CR» or «PAGO» on the figure is a credit. Do not infer from the merchant.',
         options: ['debit', 'credit', 'unknown'],
       },
     },

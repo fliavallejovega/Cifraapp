@@ -626,7 +626,7 @@ export async function saveAllReviewed(input: { readonly locale: string }): Promi
   const locale = input.locale === 'en' ? 'en' : 'es';
 
   const repeats = await loadRepeatQuestions(session, householdId);
-  if (repeats.length > 0) return { error: 'repeatsOpen' };
+  if (repeats.questions.length > 0) return { error: 'repeatsOpen' };
 
   const waiting = await queryAsUser(session, (tx) =>
     tx
@@ -875,5 +875,37 @@ export async function answerRepeat(input: {
 
   const locale = input.locale === 'en' ? 'en' : 'es';
   revalidatePath(`/${locale}/documents`);
+  return { ok: true };
+}
+
+/**
+ * Undoes a merge the engine made on its own: the copy goes back to being a
+ * movement to save, and is marked as distinct so it is not merged again.
+ */
+export async function undoRepeatMerge(input: {
+  readonly rowId: string;
+  readonly locale: string;
+}): Promise<{ readonly error?: string; readonly ok?: true }> {
+  const session = await loadSession();
+  if (!session?.activeHouseholdId) return { error: 'signInRequired' };
+  const rowId = z.uuid().safeParse(input.rowId);
+  if (!rowId.success) return { error: 'notFound' };
+  const householdId = session.activeHouseholdId;
+
+  await queryAsUser(session, (tx) =>
+    tx
+      .update(importRows)
+      .set({ verdict: 'new', matchedSignals: [], distinctConfirmed: true })
+      .where(
+        and(
+          eq(importRows.id, rowId.data),
+          eq(importRows.householdId, householdId),
+          eq(importRows.verdict, 'duplicate'),
+          isNull(importRows.createdTransactionId),
+        ),
+      ),
+  );
+
+  revalidatePath(`/${input.locale === 'en' ? 'en' : 'es'}/documents`);
   return { ok: true };
 }

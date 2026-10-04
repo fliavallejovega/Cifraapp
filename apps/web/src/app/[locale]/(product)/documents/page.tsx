@@ -108,17 +108,18 @@ export default async function DocumentsPage({ params }: { params: Promise<{ loca
 
       {/* Lo que se repite entre archivos se pregunta aquí, donde se subió, y
           antes de que alguien lo confirme dos veces. */}
-      {repeats.length > 0 && (
+      {(repeats.questions.length > 0 || repeats.merged.length > 0) && (
         <div className="mb-8">
           <RepeatQuestions
             locale={locale}
-            items={repeats.map((repeat) => ({
+            items={repeats.questions.map((repeat) => ({
               key: `${repeat.accountId}:${repeat.fingerprint}`,
               accountId: repeat.accountId,
               fingerprint: repeat.fingerprint,
-              accountName: repeat.accountName,
+              account: [repeat.accountName, repeat.maskedNumber].filter(Boolean).join(' · '),
               date: formatPlainDate(repeat.date, locale),
               description: repeat.description,
+              outflow: repeat.amount.startsWith('-'),
               amount: (
                 <Amount
                   value={Money.fromDecimalString(
@@ -130,6 +131,23 @@ export default async function DocumentsPage({ params }: { params: Promise<{ loca
               ),
               files: repeat.files,
             }))}
+            merged={repeats.merged.map((merge) => ({
+              rowId: merge.rowId,
+              account: [merge.accountName, merge.maskedNumber].filter(Boolean).join(' · '),
+              date: formatPlainDate(merge.date, locale),
+              description: merge.description,
+              reason: merge.reason,
+              fileName: merge.fileName,
+              amount: (
+                <Amount
+                  value={Money.fromDecimalString(
+                    merge.amount,
+                    merge.currency === 'PAB' ? 'PAB' : 'USD',
+                  )}
+                  size="sm"
+                />
+              ),
+            }))}
           />
         </div>
       )}
@@ -138,7 +156,7 @@ export default async function DocumentsPage({ params }: { params: Promise<{ loca
         <div className="mb-8">
           <SaveAll
             locale={locale}
-            repeatsOpen={repeats.length}
+            repeatsOpen={repeats.questions.length}
             accounts={coverage.awaiting.map((account) => ({
               accountId: account.accountId,
               label: account.maskedNumber
