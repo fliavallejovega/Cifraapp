@@ -5297,5 +5297,17 @@
     "failed": "Your answer couldn't be saved. Try again.",
     "answeredSame": "Done: it is saved once.",
     "answeredDifferent": "Done: both are saved."
+  },
+  "saveAll": {
+    "title": "{files, plural, one {One read file is waiting to be saved} other {# read files are waiting to be saved}}",
+    "detail": "They were uploaded and read, but until you save them they don't show in your movements, budgets, income or reports.",
+    "files": "{count, plural, one {# file} other {# files}}",
+    "after": "Once saved, Cifra looks for transfers between your accounts, recurring income and duplicates, and proposes a category for each. Money coming in that it doesn't recognize is asked about in Review.",
+    "action": "{files, plural, one {Save the file} other {Save the # files}}",
+    "answerFirst": "{count, plural, one {First answer the question above about the repeated movement.} other {First answer the # questions above about repeated movements.}}",
+    "done": "{filed, plural, one {# movement saved} other {# movements saved}} from {files, plural, one {# file} other {# files}}.",
+    "toReview": "See what Cifra is asking you",
+    "heldBack": "{count, plural, one {One file was not saved: it says it belongs to another account. Open it in its queue to move it.} other {# files were not saved: they say they belong to another account. Open them in their queue to move them.}}",
+    "nothing": "There were no new movements to save."
   }
 }

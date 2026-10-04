@@ -140,7 +140,7 @@ export async function loadAccounts(
         // twenty accounts should not cost twenty round trips.
         transactionCount: sql<number>`(
           select count(*)::int from app.transactions t
-          where t.account_id = ${accounts.id} and t.deleted_at is null
+          where t.account_id = app.accounts.id and t.deleted_at is null
         )`,
       })
       .from(accounts)

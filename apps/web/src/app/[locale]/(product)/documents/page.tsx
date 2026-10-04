@@ -19,6 +19,7 @@ import { desc, eq } from 'drizzle-orm';
 import { getFormatter, getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { RepeatQuestions } from '@/components/statements/repeat-questions';
+import { SaveAll } from '@/components/statements/save-all';
 import { StatementUploader } from '@/components/statements/statement-uploader';
 import { Link } from '@/i18n/navigation';
 import { formatPlainDate } from '@/lib/format';
@@ -105,6 +106,50 @@ export default async function DocumentsPage({ params }: { params: Promise<{ loca
         </div>
       )}
 
+      {/* Lo que se repite entre archivos se pregunta aquí, donde se subió, y
+          antes de que alguien lo confirme dos veces. */}
+      {repeats.length > 0 && (
+        <div className="mb-8">
+          <RepeatQuestions
+            locale={locale}
+            items={repeats.map((repeat) => ({
+              key: `${repeat.accountId}:${repeat.fingerprint}`,
+              accountId: repeat.accountId,
+              fingerprint: repeat.fingerprint,
+              accountName: repeat.accountName,
+              date: formatPlainDate(repeat.date, locale),
+              description: repeat.description,
+              amount: (
+                <Amount
+                  value={Money.fromDecimalString(
+                    repeat.amount,
+                    repeat.currency === 'PAB' ? 'PAB' : 'USD',
+                  )}
+                  size="sm"
+                />
+              ),
+              files: repeat.files,
+            }))}
+          />
+        </div>
+      )}
+
+      {coverage.awaiting.length > 0 && (
+        <div className="mb-8">
+          <SaveAll
+            locale={locale}
+            repeatsOpen={repeats.length}
+            accounts={coverage.awaiting.map((account) => ({
+              accountId: account.accountId,
+              label: account.maskedNumber
+                ? `${account.name} · ${account.maskedNumber}`
+                : account.name,
+              files: account.files,
+            }))}
+          />
+        </div>
+      )}
+
       {/*
         Lo que falta, antes del selector de archivo.
 
@@ -150,34 +195,6 @@ export default async function DocumentsPage({ params }: { params: Promise<{ loca
               ))}
             </ul>
           </Card>
-        </div>
-      )}
-
-      {/* Lo que se repite entre archivos se pregunta aquí, donde se subió, y
-          antes de que alguien lo confirme dos veces. */}
-      {repeats.length > 0 && (
-        <div className="mb-8">
-          <RepeatQuestions
-            locale={locale}
-            items={repeats.map((repeat) => ({
-              key: `${repeat.accountId}:${repeat.fingerprint}`,
-              accountId: repeat.accountId,
-              fingerprint: repeat.fingerprint,
-              accountName: repeat.accountName,
-              date: formatPlainDate(repeat.date, locale),
-              description: repeat.description,
-              amount: (
-                <Amount
-                  value={Money.fromDecimalString(
-                    repeat.amount,
-                    repeat.currency === 'PAB' ? 'PAB' : 'USD',
-                  )}
-                  size="sm"
-                />
-              ),
-              files: repeat.files,
-            }))}
-          />
         </div>
       )}
 

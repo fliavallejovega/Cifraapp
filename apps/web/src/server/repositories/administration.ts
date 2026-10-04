@@ -321,12 +321,12 @@ export async function loadCommitments(
         lastPaidDueOn: sql<string | null>`(
           select max(s.due_on)
             from app.commitment_settlements s
-           where s.obligation_id = ${obligations.id}
+           where s.obligation_id = app.obligations.id
         )`,
         lastPaidOn: sql<string | null>`(
           select s.settled_on
             from app.commitment_settlements s
-           where s.obligation_id = ${obligations.id}
+           where s.obligation_id = app.obligations.id
            order by s.due_on desc
            limit 1
         )`,
@@ -394,7 +394,7 @@ export async function loadCategories(
         sortOrder: categories.sortOrder,
         transactionCount: sql<number>`(
           select count(*)::int from app.transactions t
-          where t.category_id = ${categories.id} and t.deleted_at is null
+          where t.category_id = app.categories.id and t.deleted_at is null
         )`,
       })
       .from(categories)
@@ -564,9 +564,7 @@ export async function loadSettings(
 export async function loadAccountOptions(
   session: Session,
   householdId: string,
-): Promise<
-  readonly { id: string; name: string; type: string; personName: string | null }[]
-> {
+): Promise<readonly { id: string; name: string; type: string; personName: string | null }[]> {
   return queryAsUser(session, (tx) =>
     tx
       .select({

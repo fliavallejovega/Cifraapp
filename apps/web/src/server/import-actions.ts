@@ -9,6 +9,7 @@ import {
   transactions,
 } from '@app/database/schema';
 import { Money, newId } from '@app/domain';
+import { digitsDisagree } from '@app/transaction-engine';
 import { and, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { after } from 'next/server';
@@ -24,6 +25,7 @@ import {
   stageDocument,
 } from './import-service';
 import { enqueueJob, runJobNow, runQueuedJobs } from './jobs';
+import { loadRepeatQuestions } from './repositories/repeat-questions';
 import { loadStatementQueue, type QueueEntry } from './repositories/statement-queue';
 import { loadSession, queryAsUser, type Session } from './session';
 import { buildUploadPartKey, deleteDocument, putDocument, readDocument } from './storage';
@@ -332,8 +334,28 @@ export async function confirmImport(
   if (selected.size === 0) return { error: 'nothingSelected' };
 
   const householdId = session.activeHouseholdId;
+  const filed = await fileImport(session, householdId, importId.data, selected);
 
-  const filed = await queryAsUser(session, async (tx) => {
+  if (filed === 0) return { error: 'nothingFiled' };
+
+  await afterFiling(session, householdId, formData.get('locale') === 'en' ? 'en' : 'es');
+  revalidatePath(`/${formData.get('locale') === 'en' ? 'en' : 'es'}/documents/${importId.data}`);
+
+  return { filed };
+}
+
+/**
+ * Files the chosen rows of one import as transactions, in one database
+ * transaction. `'proposed'` takes what the review screen would have selected
+ * by itself: the rows the engine believes are new.
+ */
+async function fileImport(
+  session: Session,
+  householdId: string,
+  importId: string,
+  chosen: ReadonlySet<string> | 'proposed',
+): Promise<number> {
+  return queryAsUser(session, async (tx) => {
     const [header] = await tx
       .select({
         id: imports.id,
@@ -341,7 +363,7 @@ export async function confirmImport(
         documentId: imports.documentId,
       })
       .from(imports)
-      .where(and(eq(imports.id, importId.data), eq(imports.householdId, householdId)))
+      .where(and(eq(imports.id, importId), eq(imports.householdId, householdId)))
       .limit(1);
 
     if (!header?.accountId) return 0;
@@ -372,6 +394,11 @@ export async function confirmImport(
       })
       .from(importRows)
       .where(eq(importRows.importId, header.id));
+
+    const selected =
+      chosen === 'proposed'
+        ? new Set(candidates.filter((row) => row.verdict === 'new').map((row) => row.id))
+        : chosen;
 
     /*
       The same movement already filed from another file of this account.
@@ -518,11 +545,14 @@ export async function confirmImport(
     // Settled only when nothing importable is still waiting. A partial
     // confirmation leaves the import open, because the rest is still a decision
     // somebody has to make.
+    // A line held back because it is already filed from another file is not
+    // waiting on anybody: it is settled.
     const remaining = candidates.filter(
       (row) =>
         row.verdict !== 'rejected' &&
         row.createdTransactionId === null &&
-        !writable.some((written) => written.id === row.id),
+        !writable.some((written) => written.id === row.id) &&
+        !(row.fingerprint !== null && !row.distinctConfirmed && already.has(row.fingerprint)),
     );
 
     await tx
@@ -536,12 +566,14 @@ export async function confirmImport(
 
     return count;
   });
+}
 
-  if (filed === 0) return { error: 'nothingFiled' };
-
-  // Now that there are transactions, the four engines that were built and never
-  // run against a real row have something to look at: transfers, duplicates,
-  // recurring patterns and categories. All four propose; none of them decides.
+/**
+ * Now that there are transactions, the four engines that were built and never
+ * run against a real row have something to look at: transfers, duplicates,
+ * recurring patterns and categories. All four propose; none of them decides.
+ */
+async function afterFiling(session: Session, householdId: string, locale: 'es' | 'en') {
   await scheduleAnalysis(session, householdId);
   after(async () => {
     try {
@@ -551,7 +583,6 @@ export async function confirmImport(
     }
   });
 
-  const locale = formData.get('locale') === 'en' ? 'en' : 'es';
   for (const path of [
     'documents',
     'family-expenses',
@@ -568,9 +599,64 @@ export async function confirmImport(
   ]) {
     revalidatePath(`/${locale}/${path}`);
   }
-  revalidatePath(`/${locale}/documents/${importId.data}`);
+}
 
-  return { filed };
+export interface SaveAllResult {
+  readonly error?: 'signInRequired' | 'repeatsOpen' | 'nothingFiled';
+  readonly files?: number;
+  readonly filed?: number;
+  /** Files left for a person to look at: their digits name another account. */
+  readonly heldBack?: number;
+}
+
+/**
+ * «Guardar todo lo leído»: every file waiting for review, filed the way its
+ * review screen would file it — the lines the engine believes are new.
+ *
+ * Still a person's decision, made once instead of eleven times. Two things
+ * keep it from deciding what only a person can: repeated lines must be
+ * answered first, and a file whose own digits name another account is left
+ * out for its own screen. Oldest file first, so an overlapping line is filed
+ * from the file it appeared in first and held back from the rest.
+ */
+export async function saveAllReviewed(input: { readonly locale: string }): Promise<SaveAllResult> {
+  const session = await loadSession();
+  if (!session?.activeHouseholdId) return { error: 'signInRequired' };
+  const householdId = session.activeHouseholdId;
+  const locale = input.locale === 'en' ? 'en' : 'es';
+
+  const repeats = await loadRepeatQuestions(session, householdId);
+  if (repeats.length > 0) return { error: 'repeatsOpen' };
+
+  const waiting = await queryAsUser(session, (tx) =>
+    tx
+      .select({
+        id: imports.id,
+        statedDigits: imports.statedAccountDigits,
+        onFile: accounts.maskedNumber,
+      })
+      .from(imports)
+      .innerJoin(accounts, eq(accounts.id, imports.accountId))
+      .where(and(eq(imports.householdId, householdId), eq(imports.status, 'review')))
+      .orderBy(imports.startedAt),
+  );
+
+  let files = 0;
+  let filed = 0;
+  let heldBack = 0;
+  for (const run of waiting) {
+    if (digitsDisagree(run.statedDigits, run.onFile)) {
+      heldBack += 1;
+      continue;
+    }
+    const count = await fileImport(session, householdId, run.id, 'proposed');
+    if (count > 0) files += 1;
+    filed += count;
+  }
+
+  if (filed === 0) return { error: 'nothingFiled', heldBack };
+  await afterFiling(session, householdId, locale);
+  return { files, filed, heldBack };
 }
 
 /** Closes an import without filing anything. The rows and the file stay. */

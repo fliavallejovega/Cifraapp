@@ -94,7 +94,7 @@ export async function loadFamilyBoard(
         months: sql<string[]>`coalesce((
           select array_agg(distinct to_char(t.transaction_date, 'YYYY-MM'))
           from app.transactions t
-          where t.account_id = ${accounts.id}
+          where t.account_id = app.accounts.id
             and t.deleted_at is null
         ), '{}')`,
       })

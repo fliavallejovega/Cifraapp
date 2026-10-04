@@ -5297,5 +5297,17 @@
     "failed": "No se pudo guardar tu respuesta. Inténtalo de nuevo.",
     "answeredSame": "Listo: se guarda una sola vez.",
     "answeredDifferent": "Listo: se guardan los dos."
+  },
+  "saveAll": {
+    "title": "{files, plural, one {Un archivo leído espera que lo guardes} other {# archivos leídos esperan que los guardes}}",
+    "detail": "Ya se subieron y se leyeron, pero hasta que los guardes no aparecen en tus movimientos, presupuestos, ingresos ni reportes.",
+    "files": "{count, plural, one {# archivo} other {# archivos}}",
+    "after": "Al guardarlos, Cifra busca transferencias entre tus cuentas, ingresos que se repiten y movimientos duplicados, y propone un rubro a cada uno. Las entradas de dinero que no reconozca te las pregunta en Revisar.",
+    "action": "{files, plural, one {Guardar el archivo} other {Guardar los # archivos}}",
+    "answerFirst": "{count, plural, one {Responde primero la pregunta de arriba sobre el movimiento repetido.} other {Responde primero las # preguntas de arriba sobre movimientos repetidos.}}",
+    "done": "{filed, plural, one {# movimiento guardado} other {# movimientos guardados}} de {files, plural, one {# archivo} other {# archivos}}.",
+    "toReview": "Ver lo que Cifra te pregunta",
+    "heldBack": "{count, plural, one {Un archivo quedó sin guardar: dice ser de otra cuenta. Ábrelo en su cola para moverlo.} other {# archivos quedaron sin guardar: dicen ser de otra cuenta. Ábrelos en su cola para moverlos.}}",
+    "nothing": "No había movimientos nuevos que guardar."
   }
 }
