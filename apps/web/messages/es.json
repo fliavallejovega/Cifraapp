@@ -5254,5 +5254,48 @@
       "saveFailed": "No pudimos guardar la conversación. Intenta de nuevo.",
       "generic": "No pudimos comunicarnos con el asistente. Intenta de nuevo."
     }
+  },
+  "statementQueue": {
+    "title": "Cola de esta cuenta",
+    "detail": "Lo que subiste a esta cuenta en las últimas horas. Puedes cerrar la app: lo que ya subió se sigue leyendo.",
+    "uploadMany": "Subir estados",
+    "uploadLabel": "Subir estados de {name}",
+    "waiting": "En espera para subir",
+    "preparing": "Preparando",
+    "sending": "Subiendo",
+    "keepOpen": "No cierres la app hasta que termine de subir.",
+    "queued": "En cola para leer",
+    "stage": {
+      "reading": "Abriendo el archivo",
+      "parsing": "Leyendo los movimientos",
+      "reading_scan": "Leyendo la imagen",
+      "matching": "Comparando con lo que ya tienes",
+      "ready": "Listo"
+    },
+    "ready": "{found, plural, one {# movimiento} other {# movimientos}} · {created, plural, one {# nuevo} other {# nuevos}}",
+    "readyNothing": "Leído. No encontramos movimientos nuevos.",
+    "saved": "Guardado",
+    "review": "Revisar y guardar",
+    "failed": "No se pudo leer",
+    "whatHappened": "Ver qué pasó",
+    "dismiss": "Quitar",
+    "dismissLabel": "Quitar {name} de la lista",
+    "progressLabel": "{name}: {percent}",
+    "cancelled": "Cancelado",
+    "accountQueue": "Cola de {name}",
+    "allTitle": "Lo que se está leyendo",
+    "allDetail": "Cada cuenta con su cola. Puedes cerrar la app: lo que ya subió se sigue leyendo y aquí ves en qué va."
+  },
+  "repeatQuestions": {
+    "title": "{count, plural, one {Un movimiento aparece dos veces} other {# movimientos aparecen repetidos}}",
+    "detail": "Están en más de un archivo de la misma cuenta, con la misma fecha, monto y descripción. Suele pasar cuando dos capturas se solapan. Dinos si es uno solo para no contarlo doble.",
+    "inFiles": "{count, plural, one {En # archivo} other {En # archivos}}: {files}",
+    "same": "Es uno solo",
+    "different": "Son distintos",
+    "sameLabel": "{description}: es un solo movimiento",
+    "differentLabel": "{description}: son movimientos distintos",
+    "failed": "No se pudo guardar tu respuesta. Inténtalo de nuevo.",
+    "answeredSame": "Listo: se guarda una sola vez.",
+    "answeredDifferent": "Listo: se guardan los dos."
   }
 }

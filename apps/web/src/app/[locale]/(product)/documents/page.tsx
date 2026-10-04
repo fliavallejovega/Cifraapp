@@ -18,11 +18,15 @@ import { Money } from '@app/domain';
 import { desc, eq } from 'drizzle-orm';
 import { getFormatter, getTranslations, setRequestLocale } from 'next-intl/server';
 
-import { ImportForm } from '@/components/import-form';
+import { RepeatQuestions } from '@/components/statements/repeat-questions';
+import { StatementUploader } from '@/components/statements/statement-uploader';
 import { Link } from '@/i18n/navigation';
+import { formatPlainDate } from '@/lib/format';
 import { loadHouseholdContext } from '@/server/household-context';
 import { loadAccountOptions } from '@/server/repositories/administration';
 import { loadStatementCoverage } from '@/server/repositories/statement-coverage';
+import { loadRepeatQuestions } from '@/server/repositories/repeat-questions';
+import { loadStatementQueues } from '@/server/repositories/statement-queue';
 import { queryAsUser, requireHousehold } from '@/server/session';
 
 /**
@@ -74,6 +78,11 @@ export default async function DocumentsPage({ params }: { params: Promise<{ loca
     session.activeHouseholdId,
     context.today.slice(0, 7),
   );
+
+  const [queues, repeats] = await Promise.all([
+    loadStatementQueues(session, session.activeHouseholdId),
+    loadRepeatQuestions(session, session.activeHouseholdId),
+  ]);
 
   return (
     <Page>
@@ -144,36 +153,47 @@ export default async function DocumentsPage({ params }: { params: Promise<{ loca
         </div>
       )}
 
+      {/* Lo que se repite entre archivos se pregunta aquí, donde se subió, y
+          antes de que alguien lo confirme dos veces. */}
+      {repeats.length > 0 && (
+        <div className="mb-8">
+          <RepeatQuestions
+            locale={locale}
+            items={repeats.map((repeat) => ({
+              key: `${repeat.accountId}:${repeat.fingerprint}`,
+              accountId: repeat.accountId,
+              fingerprint: repeat.fingerprint,
+              accountName: repeat.accountName,
+              date: formatPlainDate(repeat.date, locale),
+              description: repeat.description,
+              amount: (
+                <Amount
+                  value={Money.fromDecimalString(
+                    repeat.amount,
+                    repeat.currency === 'PAB' ? 'PAB' : 'USD',
+                  )}
+                  size="sm"
+                />
+              ),
+              files: repeat.files,
+            }))}
+          />
+        </div>
+      )}
+
       <Card padding="lg">
-        <ImportForm
+        <StatementUploader
           locale={locale}
           accounts={importAccounts.map((account) => ({
             id: account.id,
-            name: account.name,
-            typeLabel: t(`accountTypes.${account.type}`),
+            label: [account.name, account.personName].filter(Boolean).join(' · '),
             group: t(`accountGroups.${groupForAccountType(account.type)}`),
-            personName: account.personName,
           }))}
+          queues={Object.fromEntries(queues)}
           labels={{
-            file: t('form.file'),
-            fileHint: t('form.fileHint'),
             account: t('form.account'),
             accountHint: t('form.accountHint'),
-            submit: t('form.submit'),
-            errorTitle: t('form.errorTitle'),
-            queuedHeading: t('form.queuedHeading'),
-            queuedDetail: t('form.queuedDetail'),
-            watchLink: t('form.watchLink'),
-            errors: {
-              tooLarge: t('form.errors.tooLarge'),
-              unsupportedType: t('form.errors.unsupportedType'),
-              alreadyImported: t('form.errors.alreadyImported'),
-              unreadable: t('form.errors.unreadable'),
-              storageUnavailable: t('form.errors.storageUnavailable'),
-              queueUnavailable: t('form.errors.queueUnavailable'),
-              noAccount: t('form.errors.noAccount'),
-              generic: t('form.errors.generic'),
-            },
+            hint: t('form.fileHint'),
           }}
         />
       </Card>
@@ -240,9 +260,6 @@ export default async function DocumentsPage({ params }: { params: Promise<{ loca
     </Page>
   );
 }
-
-void Amount;
-void Money;
 
 /**
  * Which heading an account sits under in the import picker.

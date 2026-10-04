@@ -9,7 +9,7 @@ import {
   transactions,
 } from '@app/database/schema';
 import { Money, newId } from '@app/domain';
-import { and, eq, isNotNull, isNull } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { after } from 'next/server';
 import { z } from 'zod';
@@ -24,6 +24,7 @@ import {
   stageDocument,
 } from './import-service';
 import { enqueueJob, runJobNow, runQueuedJobs } from './jobs';
+import { loadStatementQueue, type QueueEntry } from './repositories/statement-queue';
 import { loadSession, queryAsUser, type Session } from './session';
 import { buildUploadPartKey, deleteDocument, putDocument, readDocument } from './storage';
 
@@ -367,9 +368,40 @@ export async function confirmImport(
         proposedCategoryId: importRows.proposedCategoryId,
         chosenCategoryId: importRows.chosenCategoryId,
         applyToDebtId: importRows.applyToDebtId,
+        distinctConfirmed: importRows.distinctConfirmed,
       })
       .from(importRows)
       .where(eq(importRows.importId, header.id));
+
+    /*
+      The same movement already filed from another file of this account.
+
+      Overlapping screenshots carry the same lines, and confirming the second
+      file would file them twice. A line whose fingerprint is already in the
+      ledger from a different import is held back — unless the person said, on
+      the repeat question, that they are two movements.
+    */
+    const fingerprints = candidates
+      .map((row) => row.fingerprint)
+      .filter((value): value is string => value !== null);
+    const already = new Set(
+      fingerprints.length === 0
+        ? []
+        : (
+            await tx
+              .select({ fingerprint: transactions.fingerprint })
+              .from(transactions)
+              .where(
+                and(
+                  eq(transactions.householdId, householdId),
+                  eq(transactions.accountId, header.accountId),
+                  isNull(transactions.deletedAt),
+                  inArray(transactions.fingerprint, fingerprints),
+                  sql`${transactions.sourceImportId} is distinct from ${header.id}`,
+                ),
+              )
+          ).map((row) => row.fingerprint),
+    );
 
     const writable = candidates.filter(
       (row) =>
@@ -379,7 +411,8 @@ export async function confirmImport(
         row.verdict !== 'rejected' &&
         row.transactionDate !== null &&
         row.amount !== null &&
-        row.fingerprint !== null,
+        row.fingerprint !== null &&
+        (row.distinctConfirmed || !already.has(row.fingerprint)),
     );
 
     let count = 0;
@@ -654,4 +687,107 @@ export async function moveImportToAccount(input: {
   revalidatePath(`/${locale}/family-expenses`);
   revalidatePath(`/${locale}/documents`);
   return { jobId };
+}
+
+/**
+ * One account's reading queue, for the zone that shows it.
+ *
+ * Polled while something is still being read. Every poll also nudges a job
+ * that has waited too long — the same trick the processing screen uses: on a
+ * platform where a killed invocation can strand a job, a person watching is
+ * the most reliable worker available.
+ */
+export async function readStatementQueue(
+  accountId: string,
+): Promise<{ readonly entries: readonly QueueEntry[] }> {
+  const session = await loadSession();
+  if (!session?.activeHouseholdId) return { entries: [] };
+  const id = z.uuid().safeParse(accountId);
+  if (!id.success) return { entries: [] };
+
+  const entries = await loadStatementQueue(session, session.activeHouseholdId, id.data);
+  const stranded = entries.find(
+    (entry) =>
+      entry.status === 'queued' && Date.now() - Date.parse(entry.createdAt) > STRANDED_AFTER_MS,
+  );
+  if (stranded) {
+    after(async () => {
+      try {
+        await runJobNow(stranded.jobId);
+      } catch (error: unknown) {
+        console.error('[import] queue nudge failed', { jobId: stranded.jobId, error });
+      }
+    });
+  }
+  return { entries };
+}
+
+const STRANDED_AFTER_MS = 20_000;
+
+/**
+ * The answer to «is this one movement or two?» for a line repeated across
+ * pending files.
+ *
+ * «One» keeps the copy in the oldest file and marks the others as duplicates,
+ * which start unselected on the review screen — nothing is deleted, and a
+ * person can still tick one back. «Two» records the answer on every copy, so
+ * the question is not asked again and confirming files them all.
+ */
+export async function answerRepeat(input: {
+  readonly accountId: string;
+  readonly fingerprint: string;
+  readonly same: boolean;
+  readonly locale: string;
+}): Promise<{ readonly error?: string; readonly ok?: true }> {
+  const session = await loadSession();
+  if (!session?.activeHouseholdId) return { error: 'signInRequired' };
+  const accountId = z.uuid().safeParse(input.accountId);
+  const fingerprint = z
+    .string()
+    .regex(/^[0-9a-f]{16,64}$/)
+    .safeParse(input.fingerprint);
+  if (!accountId.success || !fingerprint.success) return { error: 'notFound' };
+  const householdId = session.activeHouseholdId;
+
+  await queryAsUser(session, async (tx) => {
+    const copies = await tx
+      .select({ id: importRows.id, startedAt: imports.startedAt })
+      .from(importRows)
+      .innerJoin(imports, eq(imports.id, importRows.importId))
+      .where(
+        and(
+          eq(imports.householdId, householdId),
+          eq(imports.accountId, accountId.data),
+          eq(imports.status, 'review'),
+          eq(importRows.fingerprint, fingerprint.data),
+          eq(importRows.verdict, 'new'),
+          isNull(importRows.createdTransactionId),
+        ),
+      )
+      .orderBy(imports.startedAt);
+
+    if (input.same) {
+      const extra = copies.slice(1).map((copy) => copy.id);
+      if (extra.length > 0) {
+        await tx
+          .update(importRows)
+          .set({ verdict: 'duplicate' })
+          .where(inArray(importRows.id, extra));
+      }
+    } else if (copies.length > 0) {
+      await tx
+        .update(importRows)
+        .set({ distinctConfirmed: true })
+        .where(
+          inArray(
+            importRows.id,
+            copies.map((copy) => copy.id),
+          ),
+        );
+    }
+  });
+
+  const locale = input.locale === 'en' ? 'en' : 'es';
+  revalidatePath(`/${locale}/documents`);
+  return { ok: true };
 }

@@ -187,6 +187,8 @@ export const importRows = appSchema.table(
     externalReference: text('external_reference'),
     fingerprint: text('fingerprint'),
     verdict: text('verdict').notNull(),
+    /** A person said this line is not the same as an identical one in another pending file. */
+    distinctConfirmed: boolean('distinct_confirmed').notNull().default(false),
     confidence: numeric('confidence', { precision: 4, scale: 3, mode: 'string' }),
     matchedTransactionId: uuid('matched_transaction_id').references(() => transactions.id, {
       onDelete: 'set null',

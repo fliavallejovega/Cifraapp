@@ -2,12 +2,12 @@
 
 import { Button, Select, Status } from '@app/ui';
 import { useTranslations } from 'next-intl';
-import { useActionState, useRef, useState, useTransition, type DragEvent } from 'react';
+import { useActionState, useCallback, useRef, useState, type DragEvent } from 'react';
 
 import { Link, useRouter } from '@/i18n/navigation';
-import { useStatementQueue, type QueueItem } from '@/lib/use-statement-queue';
+import { AccountQueue } from '@/components/statements/account-queue';
+import { useStatementQueue, type UploadItem } from '@/lib/use-statement-queue';
 import { assignAccountOwner, type AccountActionResult } from '@/server/account-actions';
-import { moveImportToAccount } from '@/server/import-actions';
 import type { BoardAccount, BoardPerson, FamilyBoard } from '@/server/repositories/family-expenses';
 
 /**
@@ -36,7 +36,13 @@ export function UploadBoard({
   readonly locale: string;
 }) {
   const t = useTranslations('familyExpenses');
-  const queue = useStatementQueue(locale);
+  const router = useRouter();
+  // A file just stored for an account: that account's queue polls right away.
+  const [bumps, setBumps] = useState<Readonly<Record<string, number>>>({});
+  const onQueued = useCallback((accountId: string) => {
+    setBumps((current) => ({ ...current, [accountId]: (current[accountId] ?? 0) + 1 }));
+  }, []);
+  const queue = useStatementQueue(locale, onQueued);
   const picker = useRef<HTMLInputElement>(null);
   const target = useRef<string | null>(null);
 
@@ -53,11 +59,14 @@ export function UploadBoard({
           person={person}
           owners={board.owners}
           locale={locale}
-          items={queue.items}
+          uploads={queue.items}
+          bumps={bumps}
           onPick={pick}
           onDrop={queue.add}
           onDismiss={queue.dismiss}
-          onMoved={queue.moved}
+          onMoved={() => {
+            router.refresh();
+          }}
         />
       ))}
 
@@ -84,7 +93,8 @@ function PersonSection({
   person,
   owners,
   locale,
-  items,
+  uploads,
+  bumps,
   onPick,
   onDrop,
   onDismiss,
@@ -93,11 +103,12 @@ function PersonSection({
   readonly person: BoardPerson;
   readonly owners: FamilyBoard['owners'];
   readonly locale: string;
-  readonly items: readonly QueueItem[];
+  readonly uploads: readonly UploadItem[];
+  readonly bumps: Readonly<Record<string, number>>;
   readonly onPick: (accountId: string) => void;
   readonly onDrop: (files: FileList, accountId: string) => void;
   readonly onDismiss: (key: string) => void;
-  readonly onMoved: (key: string, jobId: string, accountId: string) => void;
+  readonly onMoved: () => void;
 }) {
   const t = useTranslations('familyExpenses');
   const shared = person.personId === null;
@@ -149,7 +160,8 @@ function PersonSection({
                         account={account}
                         owners={shared ? owners : null}
                         locale={locale}
-                        items={items.filter((item) => item.accountId === account.id)}
+                        uploads={uploads.filter((item) => item.accountId === account.id)}
+                        bump={bumps[account.id] ?? 0}
                         onPick={onPick}
                         onDrop={onDrop}
                         onDismiss={onDismiss}
@@ -171,7 +183,8 @@ function AccountZone({
   account,
   owners,
   locale,
-  items,
+  uploads,
+  bump,
   onPick,
   onDrop,
   onDismiss,
@@ -181,13 +194,15 @@ function AccountZone({
   /** Offered only where an account has no owner yet. */
   readonly owners: FamilyBoard['owners'] | null;
   readonly locale: string;
-  readonly items: readonly QueueItem[];
+  readonly uploads: readonly UploadItem[];
+  readonly bump: number;
   readonly onPick: (accountId: string) => void;
   readonly onDrop: (files: FileList, accountId: string) => void;
   readonly onDismiss: (key: string) => void;
-  readonly onMoved: (key: string, jobId: string, accountId: string) => void;
+  readonly onMoved: () => void;
 }) {
   const t = useTranslations('familyExpenses');
+  const tq = useTranslations('statementQueue');
   const [over, setOver] = useState(false);
   const label = account.maskedNumber
     ? `${account.name} ${t('zone.digits', { digits: account.maskedNumber })}`
@@ -199,8 +214,11 @@ function AccountZone({
     if (event.dataTransfer.files.length > 0) onDrop(event.dataTransfer.files, account.id);
   };
 
-  const reviewTotal = account.toReview.reduce((sum, entry) => sum + entry.rows, 0);
-  const firstReview = account.toReview[0];
+  // Reviews the queue below does not already show (older than its window).
+  const inQueue = new Set(account.queue.map((entry) => entry.importId));
+  const olderReviews = account.toReview.filter((entry) => !inQueue.has(entry.importId));
+  const reviewTotal = olderReviews.reduce((sum, entry) => sum + entry.rows, 0);
+  const firstReview = olderReviews[0];
 
   return (
     <article
@@ -239,20 +257,16 @@ function AccountZone({
           variant="secondary"
           size="md"
           className="min-h-11 shrink-0"
-          aria-label={t('zone.uploadLabel', { name: label })}
+          aria-label={tq('uploadLabel', { name: label })}
           onClick={() => {
             onPick(account.id);
           }}
         >
-          {t('zone.upload')}
+          {tq('uploadMany')}
         </Button>
       </div>
 
       <CoverageLine account={account} locale={locale} />
-
-      {account.reading > 0 && (
-        <Status tone="neutral">{t('zone.reading', { count: account.reading })}</Status>
-      )}
 
       {firstReview && (
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -266,19 +280,15 @@ function AccountZone({
         </div>
       )}
 
-      {items.length > 0 && (
-        <ul className="flex list-none flex-col gap-2 border-t border-[color:var(--color-rule)] p-0 pt-3">
-          {items.map((item) => (
-            <QueueLine
-              key={item.key}
-              item={item}
-              locale={locale}
-              onDismiss={onDismiss}
-              onMoved={onMoved}
-            />
-          ))}
-        </ul>
-      )}
+      <AccountQueue
+        accountId={account.id}
+        initial={account.queue}
+        uploads={uploads}
+        bump={bump}
+        locale={locale}
+        onDismissUpload={onDismiss}
+        onMoved={onMoved}
+      />
 
       {owners && owners.length > 0 && (
         <OwnerChoice accountId={account.id} owners={owners} locale={locale} />
@@ -323,166 +333,6 @@ function CoverageLine({
     <Status tone="positive">
       {t('zone.upToDate', { month: monthName(account.latestMonth, locale) })}
     </Status>
-  );
-}
-
-function QueueLine({
-  item,
-  locale,
-  onDismiss,
-  onMoved,
-}: {
-  readonly item: QueueItem;
-  readonly locale: string;
-  readonly onDismiss: (key: string) => void;
-  readonly onMoved: (key: string, jobId: string, accountId: string) => void;
-}) {
-  const t = useTranslations('familyExpenses');
-  const router = useRouter();
-  const counts = item.job?.counts;
-
-  let text: string;
-  let tone: 'neutral' | 'positive' | 'negative' | 'caution' = 'neutral';
-  switch (item.state) {
-    case 'waiting':
-      text = t('queue.waiting');
-      break;
-    case 'preparing':
-      text = t('queue.preparing');
-      break;
-    case 'sending':
-      text = t('queue.sending', {
-        percent: new Intl.NumberFormat(undefined, { style: 'percent' }).format(item.fraction),
-      });
-      break;
-    case 'reading':
-      text = t('queue.reading');
-      break;
-    case 'ready':
-      tone = 'positive';
-      text =
-        counts && counts.found > 0
-          ? t('queue.ready', { found: counts.found, created: counts.created })
-          : t('queue.readyNothing');
-      break;
-    case 'failed':
-      tone = 'negative';
-      text = t.has(`errors.${item.error ?? 'generic'}`)
-        ? t(`errors.${item.error ?? 'generic'}`)
-        : t('errors.generic');
-      break;
-  }
-
-  const busy = item.state === 'sending' || item.state === 'reading' || item.state === 'preparing';
-  const importId = item.job?.importId;
-
-  return (
-    <li className="flex flex-col gap-2">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="min-w-0 flex-1 basis-32 truncate text-sm">{item.fileName}</p>
-        {(item.state === 'ready' || item.state === 'failed') && (
-          <button
-            type="button"
-            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-(--radius-sm) px-2 text-sm text-[color:var(--color-ink-secondary)] hover:bg-[color:var(--color-ground-sunk)]"
-            aria-label={t('queue.dismissLabel', { name: item.fileName })}
-            onClick={() => {
-              onDismiss(item.key);
-              router.refresh();
-            }}
-          >
-            {t('queue.dismiss')}
-          </button>
-        )}
-      </div>
-      <Status tone={tone}>{text}</Status>
-      {busy && (
-        <div
-          className="h-1 overflow-hidden rounded-full bg-[color:var(--color-rule)]"
-          role="progressbar"
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={Math.round(item.fraction * 100)}
-          aria-label={item.fileName}
-        >
-          <div
-            className="h-full origin-left bg-[color:var(--color-brand)] transition-transform duration-(--duration-quick) motion-reduce:transition-none"
-            style={{ transform: `scaleX(${Math.max(0.04, item.fraction)})` }}
-          />
-        </div>
-      )}
-      {item.state === 'ready' && item.job?.mismatch && importId && (
-        <MismatchNotice
-          mismatch={item.job.mismatch}
-          importId={importId}
-          locale={locale}
-          onMoved={(jobId, accountId) => {
-            onMoved(item.key, jobId, accountId);
-          }}
-        />
-      )}
-      {item.state === 'ready' && importId && (
-        <Link
-          href={`/documents/${importId}`}
-          className="inline-flex min-h-11 items-center self-start text-sm font-medium underline underline-offset-4 hover:no-underline"
-        >
-          {t('queue.review')}
-        </Link>
-      )}
-    </li>
-  );
-}
-
-function MismatchNotice({
-  mismatch,
-  importId,
-  locale,
-  onMoved,
-}: {
-  readonly mismatch: NonNullable<NonNullable<QueueItem['job']>['mismatch']>;
-  readonly importId: string;
-  readonly locale: string;
-  readonly onMoved: (jobId: string, accountId: string) => void;
-}) {
-  const t = useTranslations('familyExpenses');
-  const [pending, start] = useTransition();
-  const [failed, setFailed] = useState(false);
-  const suggested = mismatch.suggested;
-
-  return (
-    <div
-      role="status"
-      className="flex flex-col gap-2 rounded-(--radius-sm) border-l-2 border-[color:var(--color-caution)] bg-[color:var(--color-caution-sunk)] px-3 py-2"
-    >
-      <p className="text-sm [overflow-wrap:anywhere]">
-        {t('mismatch.body', { digits: mismatch.statedDigits, account: mismatch.uploadedTo })}{' '}
-        {suggested
-          ? t('mismatch.suggest', { name: suggested.name })
-          : t('mismatch.noMatch', { digits: mismatch.statedDigits })}
-      </p>
-      {suggested && (
-        <Button
-          variant="primary"
-          size="md"
-          className="min-h-11 self-start"
-          loading={pending}
-          onClick={() => {
-            setFailed(false);
-            start(async () => {
-              const result = await moveImportToAccount({
-                importId,
-                accountId: suggested.id,
-                locale,
-              });
-              if (result.jobId) onMoved(result.jobId, suggested.id);
-              else setFailed(true);
-            });
-          }}
-        >
-          {t('mismatch.move', { name: suggested.name })}
-        </Button>
-      )}
-      {failed && <Status tone="negative">{t('mismatch.moveFailed')}</Status>}
-    </div>
   );
 }
 

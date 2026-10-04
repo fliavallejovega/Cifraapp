@@ -5254,5 +5254,48 @@
       "saveFailed": "We couldn't save the conversation. Try again.",
       "generic": "We couldn't reach the assistant. Try again."
     }
+  },
+  "statementQueue": {
+    "title": "This account's queue",
+    "detail": "What you uploaded to this account in the last hours. You can close the app: what already uploaded keeps being read.",
+    "uploadMany": "Upload statements",
+    "uploadLabel": "Upload statements for {name}",
+    "waiting": "Waiting to upload",
+    "preparing": "Preparing",
+    "sending": "Uploading",
+    "keepOpen": "Don't close the app until the upload finishes.",
+    "queued": "Queued for reading",
+    "stage": {
+      "reading": "Opening the file",
+      "parsing": "Reading the movements",
+      "reading_scan": "Reading the image",
+      "matching": "Comparing with what you have",
+      "ready": "Done"
+    },
+    "ready": "{found, plural, one {# movement} other {# movements}} · {created, plural, one {# new} other {# new}}",
+    "readyNothing": "Read. No new movements found.",
+    "saved": "Saved",
+    "review": "Review and save",
+    "failed": "Couldn't read it",
+    "whatHappened": "See what happened",
+    "dismiss": "Remove",
+    "dismissLabel": "Remove {name} from the list",
+    "progressLabel": "{name}: {percent}",
+    "cancelled": "Cancelled",
+    "accountQueue": "{name} queue",
+    "allTitle": "What is being read",
+    "allDetail": "Each account with its own queue. You can close the app: what already uploaded keeps being read, and you can follow it here."
+  },
+  "repeatQuestions": {
+    "title": "{count, plural, one {One movement appears twice} other {# movements appear repeated}}",
+    "detail": "They are in more than one file of the same account, with the same date, amount and description. It usually happens when two screenshots overlap. Tell us if it is one so it is not counted twice.",
+    "inFiles": "{count, plural, one {In # file} other {In # files}}: {files}",
+    "same": "It is one",
+    "different": "They are different",
+    "sameLabel": "{description}: it is one movement",
+    "differentLabel": "{description}: they are different movements",
+    "failed": "Your answer couldn't be saved. Try again.",
+    "answeredSame": "Done: it is saved once.",
+    "answeredDifferent": "Done: both are saved."
   }
 }

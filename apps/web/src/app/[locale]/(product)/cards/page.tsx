@@ -13,7 +13,7 @@ import {
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { AddCard, CardManage } from '@/components/cards-manager';
-import { ImportForm } from '@/components/import-form';
+import { StatementUploader } from '@/components/statements/statement-uploader';
 import { formatPlainDate, trimRate } from '@/lib/format';
 import { loadHouseholdContext } from '@/server/household-context';
 import { loadInstitutions, loadPeople } from '@/server/repositories/administration';
@@ -22,6 +22,7 @@ import { loadCardPrograms } from '@/server/repositories/card-programs';
 import { loadCategoryOptions } from '@/server/repositories/review-options';
 import { loadCards } from '@/server/repositories/cards';
 import { loadOffers } from '@/server/repositories/offers';
+import { loadStatementQueues } from '@/server/repositories/statement-queue';
 import { requireHousehold } from '@/server/session';
 
 /**
@@ -432,25 +433,22 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
    * respuesta ya está en la pantalla — y la ocasión de archivar el estado de
    * cuenta de la Visa contra la Mastercard.
    */
+  const statementQueues = Object.fromEntries(
+    await loadStatementQueues(session, session.activeHouseholdId),
+  );
   const statementFor = Object.fromEntries(
     view.cards.map((card) => [
       card.accountId,
-      <ImportForm
+      <StatementUploader
         key={card.accountId}
         locale={locale}
-        accounts={[]}
+        accounts={[{ id: card.accountId, label: '', group: '' }]}
         fixedAccountId={card.accountId}
+        queues={statementQueues}
         labels={{
-          file: documents('form.file'),
-          fileHint: documents('form.fileHint'),
           account: documents('form.account'),
           accountHint: documents('form.accountHint'),
-          submit: documents('form.submit'),
-          errorTitle: documents('form.errorTitle'),
-          queuedHeading: documents('form.queuedHeading'),
-          queuedDetail: documents('form.queuedDetail'),
-          watchLink: documents('form.watchLink'),
-          errors: errorsOf(documents, 'form.errors'),
+          hint: documents('form.fileHint'),
         }}
       />,
     ]),

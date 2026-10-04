@@ -11,6 +11,7 @@ import { findCoverageGaps, type AccountActivity } from '@app/transaction-engine'
 import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm';
 
 import { queryAsUser, type Session } from '../session';
+import { loadStatementQueues, type QueueEntry } from './statement-queue';
 
 /**
  * Gastos familiares: every account and card in the house, under the person it
@@ -42,6 +43,8 @@ export interface BoardAccount {
   readonly reading: number;
   /** Imports read and waiting for someone to confirm them. */
   readonly toReview: readonly { readonly importId: string; readonly rows: number }[];
+  /** This account's own reading queue: what was uploaded and where each file is. */
+  readonly queue: readonly QueueEntry[];
 }
 
 export interface BoardPerson {
@@ -119,6 +122,8 @@ export async function loadFamilyBoard(
     return [people, rows, open] as const;
   });
 
+  const queues = await loadStatementQueues(session, householdId);
+
   const activity: AccountActivity[] = rows.map((row) => ({
     accountId: row.id,
     name: row.name,
@@ -144,6 +149,7 @@ export async function loadFamilyBoard(
       toReview: mine
         .filter((entry) => entry.status === 'review')
         .map((entry) => ({ importId: entry.id, rows: entry.rows })),
+      queue: queues.get(row.id) ?? [],
     };
   };
 
