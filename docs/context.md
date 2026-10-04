@@ -24,6 +24,39 @@ Live infrastructure is connected and exercised by the end-to-end suite. This is
 not a repository that merely compiles; it signs a user in, creates their
 household, stores a statement in object storage, and refuses to import it twice.
 
+## Octubre 2026: «Sube y listo» — la simplificación en olas
+
+El plan y las decisiones del usuario viven en el artifact
+https://claude.ai/artifact/XQ1pTTESa3Tr183QJR6hpG. Lo que cambió, y dónde:
+
+- **Saldos derivados** (`20261004200000`) — `current_balance` lo mantiene la base:
+  `balance_anchor` + movimientos con fecha posterior a `balance_anchor_date`.
+  Disparadores en `app.transactions` y `app.accounts`; el código ya no suma ni
+  resta saldos. El saldo impreso de un estado (OCR `printedBalance`, OFX
+  `LEDGERBAL`) pasa a ser el ancla al guardar (`server/account-balance.ts`) y la
+  diferencia con lo calculado queda en `balance_mismatch`.
+- **Inicio** — mes en curso (o el último con movimientos), lo normal, lo último
+  que se movió, pendientes, «Esto entendimos» (series detectadas confirmadas de
+  un toque, `confirmUnderstood`) y cierre automático del mes anterior
+  (`server/auto-close.ts`).
+- **Navegación** — cinco destinos (`components/app-shell.tsx`), pestañas por
+  familia de pantallas, barra inferior en el teléfono y `/household` con todo lo
+  demás. Ninguna pantalla se borró.
+- **Sin configuración previa** — el cuestionario ya no bloquea
+  (`requireHousehold`). Subir sin cuenta abre una provisional
+  (`accounts.needs_confirmation`, `20261004210000`); al leer, `detected-account.ts`
+  la junta con la que tenga los mismos dígitos (re-huella de filas) o la completa
+  con el encabezado del estado.
+- **Piloto automático** — lo nuevo de una cuenta confirmada se guarda al leer
+  (`import-filing.ts`, `imports.auto_filed_at`, `20261004220000`) con deshacer;
+  corregir un rubro enseña al comercio (`category-learning.ts`); comercios
+  desconocidos reciben una sugerencia del modelo que espera aprobación
+  (`category-ai.ts`); «Aprobar todo lo seguro» en Por revisar.
+- **Asistente** — propone también `record_movement` y `set_commitment_amount`.
+  Resumen semanal por correo los lunes (`weekly_summary`).
+- **Pendiente** — unir los cálculos hacia adelante de Plan, Proyección y
+  Escenarios en uno solo.
+
 ## Octubre 2026: Gastos familiares, viaje automático y asistente
 
 Lo que se agregó, y dónde vive:
