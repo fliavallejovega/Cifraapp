@@ -158,17 +158,21 @@ export function MovementFilters({
           )}
         </Field>
 
-        <Field label={labels.min}>
-          {({ id }) => (
-            <AmountInput id={id} name="min" value={current.min} symbol={currencySymbol} />
-          )}
-        </Field>
+        {/* Los dos montos van juntos en su propia fila completa: sueltos en la
+            grilla de tres, la última fila quedaba con dos campos y un hueco. */}
+        <div className="grid gap-4 sm:col-span-2 sm:grid-cols-2 lg:col-span-3">
+          <Field label={labels.min}>
+            {({ id }) => (
+              <AmountInput id={id} name="min" value={current.min} symbol={currencySymbol} />
+            )}
+          </Field>
 
-        <Field label={labels.max}>
-          {({ id }) => (
-            <AmountInput id={id} name="max" value={current.max} symbol={currencySymbol} />
-          )}
-        </Field>
+          <Field label={labels.max}>
+            {({ id }) => (
+              <AmountInput id={id} name="max" value={current.max} symbol={currencySymbol} />
+            )}
+          </Field>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">

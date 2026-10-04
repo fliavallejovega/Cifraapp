@@ -1074,14 +1074,14 @@ export function SetupQuestionnaire({
                 </Field>
 
                 <div className="sm:col-span-2">
-                  <label className="flex items-start gap-2.5 text-sm text-[color:var(--color-ink-secondary)]">
+                  <label className="flex min-h-11 items-center gap-2.5 py-2 text-sm text-[color:var(--color-ink-secondary)]">
                     <input
                       type="checkbox"
                       checked={row.isDependent}
                       onChange={(event) => {
                         setPeople(patch(people, at, { isDependent: event.target.checked }));
                       }}
-                      className="mt-0.5 h-4 w-4 shrink-0 accent-[color:var(--color-brand)]"
+                      className="h-4 w-4 shrink-0 accent-[color:var(--color-brand)]"
                     />
                     <span>{copy('household.dependent')}</span>
                   </label>
@@ -3146,7 +3146,9 @@ function RowEditor<T>({
                 hacen es cerrar este ítem, que es lo que la persona quiere decir
                 cuando dice «ya».
               */}
-              <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
+              {/* Apilados en el teléfono: envueltos, quedaban dos botones en una fila
+                  y uno suelto en la otra, con bordes que no coincidían. */}
+              <div className="grid grid-cols-1 gap-3 sm:col-span-2 sm:flex sm:flex-wrap sm:items-center">
                 <Button
                   type="button"
                   size="sm"

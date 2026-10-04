@@ -67,7 +67,7 @@ export async function AuthScreen({
             tener que atravesar el onboarding entero a oscuras para poder
             elegir.
           */}
-          <div className="mb-8 flex items-center justify-between gap-3">
+          <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3 lg:invisible">
               <Monogram size={30} />
               <span className="font-(family-name:--font-mono) text-sm font-semibold tracking-[0.18em] text-[color:var(--color-ink)] uppercase">

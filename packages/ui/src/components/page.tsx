@@ -37,8 +37,13 @@ export interface PageHeaderProps {
 
 export function PageHeader({ title, detail, actions, className }: PageHeaderProps) {
   return (
-    <header className={cn('mb-10 flex items-end justify-between gap-6', className)}>
-      <div className="min-w-0">
+    <header
+      className={cn('mb-10 flex flex-wrap items-end justify-between gap-x-6 gap-y-4', className)}
+    >
+      {/* The text claims a readable width before the actions sit beside it: on a
+          phone the actions drop below instead of squeezing the detail into a
+          one-word column. */}
+      <div className="min-w-0 flex-1 basis-[min(100%,28rem)]">
         <h1
           className="text-3xl font-medium text-balance sm:text-4xl"
           style={{ letterSpacing: 'var(--tracking-display)', lineHeight: 1.1 }}
@@ -51,7 +56,7 @@ export function PageHeader({ title, detail, actions, className }: PageHeaderProp
           </p>
         )}
       </div>
-      {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
+      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </header>
   );
 }

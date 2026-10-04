@@ -98,7 +98,7 @@ export default async function MovementsPage({
           <div className="flex flex-wrap items-center gap-4">
             <Link
               href="/movements/new?kind=payment"
-              className="text-sm font-medium underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
+              className="inline-flex min-h-11 items-center text-sm font-medium underline decoration-[color:var(--color-rule-strong)] underline-offset-4 hover:decoration-[color:var(--color-brand)]"
             >
               {t('addPayment')}
             </Link>
@@ -174,9 +174,7 @@ export default async function MovementsPage({
               </Stat>
             </Card>
             <Card>
-              <Stat label={t('summary.shown', { count: view.total })}>
-                {view.total === 1 ? t('summary.shownOne') : String(view.total)}
-              </Stat>
+              <Stat label={t('title')}>{String(view.total)}</Stat>
             </Card>
           </div>
 

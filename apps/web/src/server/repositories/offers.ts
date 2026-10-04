@@ -224,8 +224,16 @@ export async function loadOffers(
     };
   });
 
+  // Como texto ISO y no como `Date`: una columna leída por `sql` crudo no pasa
+  // por el mapeo de Drizzle y llegaba como la cadena de Postgres, que
+  // `Intl.DateTimeFormat` no acepta — /ofertas reventaba en cuanto el catálogo
+  // se había refrescado una vez.
   const [lastRun] = await db
-    .select({ finishedAt: sql<Date | null>`max(finished_at)` })
+    .select({
+      finishedAt: sql<
+        string | null
+      >`to_char(max(finished_at) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`,
+    })
     .from(sql`platform.catalogue_refresh_runs`);
 
   return {
@@ -241,8 +249,10 @@ export async function loadOffers(
     issuers: [...new Map(offers.map((one) => [one.issuerKey, one.issuerName])).entries()]
       .map(([key, name]) => ({ key, name }))
       .sort((a, b) => a.name.localeCompare(b.name)),
-    categories: [...new Set(offers.map((one) => one.category).filter((one): one is string => one !== null))].sort(),
-    lastRefresh: lastRun?.finishedAt ?? null,
+    categories: [
+      ...new Set(offers.map((one) => one.category).filter((one): one is string => one !== null)),
+    ].sort(),
+    lastRefresh: lastRun?.finishedAt ? new Date(lastRun.finishedAt) : null,
     isEmpty: offers.length === 0,
   };
 }

@@ -82,18 +82,21 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
    */
   const catalogues = Object.fromEntries(
     await Promise.all(
-      view.cards.map(async (card) => [
-        card.accountId,
-        await loadCatalogueFor(
-          {
-            issuerKey: card.issuerKey,
-            network: card.network,
-            tier: card.tier,
-            program: card.programKey,
-          },
-          context.today,
-        ),
-      ] as const),
+      view.cards.map(
+        async (card) =>
+          [
+            card.accountId,
+            await loadCatalogueFor(
+              {
+                issuerKey: card.issuerKey,
+                network: card.network,
+                tier: card.tier,
+                program: card.programKey,
+              },
+              context.today,
+            ),
+          ] as const,
+      ),
     ),
   );
 
@@ -225,7 +228,7 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
       },
     },
     balance: {
-      title: t('manage.balance.title'),
+      title: rawOf(t)('manage.balance.title'),
       ask: rawOf(t)('manage.balance.ask'),
       amount: t('manage.balance.amount'),
       asOf: t('manage.balance.asOf'),
@@ -370,10 +373,7 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
       : null,
     programBalanceAgeDays:
       card.programBalanceAsOf === null ? null : daysBetween(card.programBalanceAsOf, context.today),
-    spentSinceBalance:
-      card.spentSinceBalance?.isPositive()
-        ? money(card.spentSinceBalance)
-        : null,
+    spentSinceBalance: card.spentSinceBalance?.isPositive() ? money(card.spentSinceBalance) : null,
     marketReferences: (catalogues[card.accountId]?.marketReferences ?? []).map((entry) => ({
       id: entry.id,
       label: entry.label,
@@ -528,9 +528,7 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
                     {card.isArchived && <Status tone="neutral">{t('list.archived')}</Status>}
                     {/* Sin deuda ligada, el motor no la ataca y nadie lo sabría
                         mirando esta tarjeta. Se dice, con el camino al lado. */}
-                    {card.debtId === null && (
-                      <Status tone="caution">{t('list.noDebt')}</Status>
-                    )}
+                    {card.debtId === null && <Status tone="caution">{t('list.noDebt')}</Status>}
                   </p>
                 </div>
                 <Amount value={card.owed} locale={moneyLocale} size="lg" tone="plain" />
@@ -598,9 +596,7 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
                 <Detail
                   label={t('list.movements')}
                   value={
-                    card.movementCount === 0
-                      ? t('list.noMovements')
-                      : String(card.movementCount)
+                    card.movementCount === 0 ? t('list.noMovements') : String(card.movementCount)
                   }
                 />
               </dl>
@@ -630,10 +626,7 @@ export default async function CardsPage({ params }: { params: Promise<{ locale: 
               {card.benefits.length > 0 && (
                 <p className="mt-4 flex flex-wrap items-center gap-2 text-xs text-[color:var(--color-ink-secondary)]">
                   {card.benefits.slice(0, 4).map((benefit) => (
-                    <Status
-                      key={benefit.id}
-                      tone={benefit.isExpired ? 'neutral' : 'positive'}
-                    >
+                    <Status key={benefit.id} tone={benefit.isExpired ? 'neutral' : 'positive'}>
                       {benefit.label}
                     </Status>
                   ))}
@@ -710,7 +703,9 @@ function errorsOf(
   if (typeof value !== 'object' || value === null) return {};
 
   return Object.fromEntries(
-    Object.entries(value).filter((entry): entry is [string, string] => typeof entry[1] === 'string'),
+    Object.entries(value).filter(
+      (entry): entry is [string, string] => typeof entry[1] === 'string',
+    ),
   );
 }
 
