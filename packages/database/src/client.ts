@@ -51,6 +51,19 @@ interface ConnectionOptions {
 function createClient({ url, pooled, maxConnections }: ConnectionOptions): postgres.Sql {
   return postgres(url, {
     prepare: !pooled,
+    /*
+      One statement in flight per connection on the pooler.
+
+      postgres-js pipelines up to 100 statements on one socket by default. The
+      transaction pooler hands each statement to whatever server connection is
+      free, so pipelined replies came back to the wrong query: reproduced
+      against this project's pooler (6543) with three concurrent selects, one
+      of which received another's columns — and nothing at all on the session
+      port. In the product it surfaced as «reading 'map' of undefined» and
+      pages that never finished loading (/tarjetas, /ofertas, /cuentas) as
+      soon as a few renders ran at once.
+    */
+    ...(pooled ? { max_pipeline: 1 } : {}),
     max: maxConnections ?? (pooled ? 10 : 4),
     idle_timeout: 20,
     connect_timeout: 10,
