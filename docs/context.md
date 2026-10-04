@@ -15,7 +15,7 @@ status table.
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Complete**             | Phases 0–15 and 17–18. Every engine now has the product surface it was written for: **43 of 43 screens built**                              |
 | **Partly built**         | Phase 16 (CMS model, no editor) · 19 (white-label model, no admin UI) · 20 (admin app read-only) · 21 (security audit yes, load testing no) |
-| **Blocked on the world** | Billing needs a Stripe account · the Panama tax rules need a qualified reviewer. OCR and the assistant run on OpenAI (October 2026)       |
+| **Blocked on the world** | Billing needs a Stripe account · the Panama tax rules need a qualified reviewer. OCR and the assistant run on OpenAI (October 2026)         |
 | **Tests**                | 668 unit and integration, all passing · 38 end-to-end, not run in this pass                                                                 |
 | **Gate**                 | 37/37 tasks green: `lint`, `typecheck`, `test`, `build`                                                                                     |
 | **Migrations**           | 64 applied, schema version 64 — verified against `information_schema`, not assumed                                                          |
